@@ -1,7 +1,7 @@
+import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
@@ -17,37 +17,66 @@ class MapScreen extends ConsumerStatefulWidget {
 class _MapScreenState extends ConsumerState<MapScreen> {
   MapLibreMapController? mapController;
   bool styleInitialized = false;
+  bool userMovedMap = false;
+  bool listenerAttached = false;
 
   @override
   Widget build(BuildContext context) {
     final track = ref.watch(trackProvider);
 
-    // Quan arriben noves coordenades → actualitzar punt + centrar mapa
-    ref.listen(trackProvider, (previous, next) {
-      if (!styleInitialized || mapController == null) return;
-      if (next.coordinates.isEmpty) return;
+    // Attach listener només una vegada
+    if (!listenerAttached) {
+      listenerAttached = true;
 
-      final last = next.coordinates.last;
-      final lon = last[0];
-      final lat = last[1];
+      ref.listen(trackProvider, (previous, next) {
+        if (!styleInitialized || mapController == null) return;
+        if (next.coordinates.isEmpty) return;
 
-      // Actualitzar punt d’usuari
-      mapController!.setGeoJsonSource("user_location", {
-        "type": "FeatureCollection",
-        "features": [
-          {
-            "type": "Feature",
-            "geometry": {
-              "type": "Point",
-              "coordinates": [lon, lat],
-            },
-          },
-        ],
+        final last = next.coordinates.last;
+        final lon = last[0];
+        final lat = last[1];
+
+        try {
+          // Actualitzar punt d’usuari
+          mapController!.setGeoJsonSource("user_location", {
+            "type": "FeatureCollection",
+            "features": [
+              {
+                "type": "Feature",
+                "geometry": {
+                  "type": "Point",
+                  "coordinates": [lon, lat],
+                },
+              },
+            ],
+          });
+
+          // Actualitzar línia del track
+          mapController!.setGeoJsonSource("track_line", {
+            "type": "FeatureCollection",
+            "features": [
+              {
+                "type": "Feature",
+                "geometry": {
+                  "type": "LineString",
+                  "coordinates": next.coordinates, // ja és [lon, lat]
+                },
+              },
+            ],
+          });
+        } catch (_) {
+          // Si la source encara no existeix (p.e. després d’un reload d’estil), no matem el mapa
+          return;
+        }
+
+        // Centrar mapa si l’usuari no l’ha mogut
+        if (!userMovedMap) {
+          mapController!.animateCamera(
+            CameraUpdate.newLatLng(LatLng(lat, lon)),
+          );
+        }
       });
-
-      // Centrar mapa
-      mapController!.animateCamera(CameraUpdate.newLatLng(LatLng(lat, lon)));
-    });
+    }
 
     return Scaffold(
       body: Stack(
@@ -58,12 +87,12 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               target: LatLng(0, 0),
               zoom: 14,
             ),
-
             onMapCreated: (controller) {
               mapController = controller;
             },
-
-            // AQUEST és el callback que SÍ funciona a la 0.25.0
+            onCameraMove: (_) {
+              userMovedMap = true;
+            },
             onStyleLoadedCallback: () async {
               await _setupUserLocationLayer();
               styleInitialized = true;
@@ -115,7 +144,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
 
                   // 1. Obtenir posició actual
                   final pos = await Geolocator.getCurrentPosition();
-                  // AFEGIR PRIMERA COORDENADA AL TRACK
+
+                  // 1b. Afegir primera coordenada al track
                   ref
                       .read(trackProvider.notifier)
                       .addCoordinate(pos.latitude, pos.longitude);
@@ -137,12 +167,34 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               },
             ),
           ),
+
+          // BOTÓ CENTRAR-ME
+          Positioned(
+            bottom: 120,
+            right: 20,
+            child: FloatingActionButton(
+              heroTag: "center",
+              backgroundColor: Colors.blue,
+              child: const Icon(Icons.my_location),
+              onPressed: () {
+                userMovedMap = false; // tornem al mode auto
+                if (track.coordinates.isNotEmpty && mapController != null) {
+                  final last = track.coordinates.last;
+                  final lon = last[0];
+                  final lat = last[1];
+                  mapController!.animateCamera(
+                    CameraUpdate.newLatLng(LatLng(lat, lon)),
+                  );
+                }
+              },
+            ),
+          ),
         ],
       ),
     );
   }
 
-  /// Configura la font i capa per mostrar el punt de l’usuari
+  /// Configura la font i capes per mostrar el punt de l’usuari i la línia del track
   Future<void> _setupUserLocationLayer() async {
     if (mapController == null) return;
 
@@ -150,7 +202,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     final Uint8List blueDot = await _createBlueDot();
     await mapController!.addImage("user_icon", blueDot);
 
-    // 2. Crear SOURCE buida
+    // 2. SOURCE del punt
     await mapController!.addSource(
       "user_location",
       GeojsonSourceProperties(
@@ -158,25 +210,32 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       ),
     );
 
-    // 3. Crear CAPA amb la icona
+    // 3. CAPA del punt
     await mapController!.addLayer(
       "user_location",
       "user_location_layer",
       const SymbolLayerProperties(iconImage: "user_icon", iconSize: 1.0),
     );
 
-    await mapController!.setGeoJsonSource("user_location", {
-      "type": "FeatureCollection",
-      "features": [
-        {
-          "type": "Feature",
-          "geometry": {
-            "type": "Point",
-            "coordinates": [2.82, 41.98], // Girona
-          },
-        },
-      ],
-    });
+    // 4. SOURCE de la línia del track
+    await mapController!.addSource(
+      "track_line",
+      GeojsonSourceProperties(
+        data: {"type": "FeatureCollection", "features": []},
+      ),
+    );
+
+    // 5. CAPA de la línia del track
+    await mapController!.addLayer(
+      "track_line",
+      "track_line_layer",
+      const LineLayerProperties(
+        lineColor: "#FF0000",
+        lineWidth: 4.0,
+        lineJoin: "round",
+        lineCap: "round",
+      ),
+    );
   }
 
   Future<Uint8List> _createBlueDot() async {
@@ -185,7 +244,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     final canvas = Canvas(pictureRecorder);
     final paint = Paint()..color = Colors.blue;
 
-    // Cercle blau
     canvas.drawCircle(const Offset(size / 2, size / 2), size / 2, paint);
 
     final picture = pictureRecorder.endRecording();
