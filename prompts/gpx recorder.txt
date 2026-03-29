@@ -1,0 +1,24 @@
+Projecte: GPXly (Flutter)
+
+Objectiu actual:
+- Gravació de tracks GPS amb actualització automàtica del TrackNotifier.
+- Funcionament en background amb flutter_foreground_task 9.2.1.
+- Compatibilitat amb geolocator 14.0.2 i flutter_riverpod 3.3.1.
+- Comunicació entre foreground service i l’app mitjançant ReceivePort/IsolateNameServer.
+- Funcions disponibles: startRecording(), stopRecording(), reset(), addPointFromPosition().
+
+Estat actual:
+- gps_service.dart implementat i funcional.
+- BackgroundTaskHandler implementat amb totes les funcions obligatòries.
+- Provider modern de Riverpod creat i integrat.
+
+Pendents / següents passos:
+1. Integrar la gravació amb MapLibre per veure el track en temps real.
+2. Afegir exportació de tracks a fitxer GPX.
+3. Afegir la selecció de sexe, pes, altura per calcular calories (opcional si es vol).
+4. Millorar interfície d’usuari amb botons Iniciar/Parar/Reiniciar i mostrar informació del track.
+5. Testar behavior en background i en diferents escenaris (app minimitzada, bloquejada, reinici del servei).
+
+Notes:
+- Ja hem resolt errors de sintaxi amb TaskHandler segons FlutterForegroundTask 9.2.1.
+- El codi és totalment modern amb Riverpod 3.x.
