@@ -8,49 +8,78 @@ import 'package:geolocator/geolocator.dart';
 
 import '../models/track.dart';
 
-/// Notifier modern amb gravació GPS en background
 class TrackNotifier extends Notifier<Track> {
   ReceivePort? _receivePort;
+  Timer? _timer;
 
   @override
   Track build() {
-    return Track(coordinates: [], altitudes: [], timestamps: []);
+    return Track(
+      coordinates: [],
+      altitudes: [],
+      timestamps: [],
+      recording: false,
+      duration: Duration.zero,
+    );
   }
 
-  /// Inicia la gravació automàtica del track en foreground service
   Future<void> startRecording() async {
     await stopRecording();
 
-    // Crear port per rebre dades del servei
-    _receivePort = ReceivePort();
+    // 1. Permisos
+    final perm = await Geolocator.requestPermission();
+    if (perm == LocationPermission.denied ||
+        perm == LocationPermission.deniedForever) {
+      return;
+    }
 
-    // Registrar-lo perquè el servei el pugui trobar
+    // 2. Estat inicial
+    state = state.copyWith(
+      recording: true,
+      duration: Duration.zero,
+      coordinates: [],
+      altitudes: [],
+      timestamps: [],
+    );
+
+    // 3. Timer per comptar el temps
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (state.recording) {
+        state = state.copyWith(
+          duration: state.duration + const Duration(seconds: 1),
+        );
+      }
+    });
+
+    // 4. Crear port per rebre dades del servei
+    _receivePort = ReceivePort();
     IsolateNameServer.registerPortWithName(
       _receivePort!.sendPort,
       'gpxly_port',
     );
 
-    // Escoltar dades enviades des del servei
+    // 5. Escoltar dades del servei
     _receivePort!.listen((data) {
       if (data is Map<String, dynamic>) {
-        final pos = Position(
-          latitude: data['latitude'] as double,
-          longitude: data['longitude'] as double,
-          timestamp: DateTime.now(),
-          accuracy: 0,
-          altitude: data['altitude'] as double,
-          altitudeAccuracy: 0,
-          heading: 0,
-          headingAccuracy: 0,
-          speed: 0,
-          speedAccuracy: 0,
-          isMocked: false,
+        addPointFromPosition(
+          Position(
+            latitude: data['latitude'],
+            longitude: data['longitude'],
+            altitude: data['altitude'],
+            timestamp: DateTime.now(),
+            accuracy: 0,
+            altitudeAccuracy: 0,
+            heading: 0,
+            headingAccuracy: 0,
+            speed: 0,
+            speedAccuracy: 0,
+            isMocked: false,
+          ),
         );
-        addPointFromPosition(pos);
       }
     });
 
-    // Iniciar servei de foreground
+    // 6. Iniciar servei de foreground
     await FlutterForegroundTask.startService(
       notificationTitle: 'GPXly registrant track',
       notificationText: 'Gravant GPS en background',
@@ -58,9 +87,13 @@ class TrackNotifier extends Notifier<Track> {
     );
   }
 
-  /// Para la gravació
   Future<void> stopRecording() async {
     await FlutterForegroundTask.stopService();
+
+    state = state.copyWith(recording: false);
+
+    _timer?.cancel();
+    _timer = null;
 
     if (_receivePort != null) {
       IsolateNameServer.removePortNameMapping('gpxly_port');
@@ -69,7 +102,6 @@ class TrackNotifier extends Notifier<Track> {
     }
   }
 
-  /// Afegeix un punt donat un Position
   void addPointFromPosition(Position pos) {
     final now = DateTime.now();
     state = state.copyWith(
@@ -82,21 +114,23 @@ class TrackNotifier extends Notifier<Track> {
     );
   }
 
-  /// Reinicia el track
   void reset() {
-    state = Track(coordinates: [], altitudes: [], timestamps: []);
+    state = Track(
+      coordinates: [],
+      altitudes: [],
+      timestamps: [],
+      recording: false,
+      duration: Duration.zero,
+    );
   }
 }
 
-/// Provider modern de Riverpod
 final trackProvider = NotifierProvider<TrackNotifier, Track>(TrackNotifier.new);
 
-/// Callback del Foreground Service
 void startCallback() {
   FlutterForegroundTask.setTaskHandler(BackgroundTaskHandler());
 }
 
-/// Handler del foreground task
 class BackgroundTaskHandler extends TaskHandler {
   StreamSubscription<Position>? _positionStreamSub;
   SendPort? _sendPort;
@@ -105,7 +139,6 @@ class BackgroundTaskHandler extends TaskHandler {
   Future<void> onStart(DateTime timestamp, TaskStarter starter) async {
     _sendPort = IsolateNameServer.lookupPortByName('gpxly_port');
 
-    // GPS
     _positionStreamSub =
         Geolocator.getPositionStream(
           locationSettings: const LocationSettings(
@@ -127,13 +160,13 @@ class BackgroundTaskHandler extends TaskHandler {
     _positionStreamSub = null;
   }
 
-  Future<void> onEvent(DateTime timestamp) async {}
+  @override
+  Future<void> onRepeatEvent(DateTime timestamp) async {
+    // Pots deixar-ho buit
+  }
 
   @override
-  Future<void> onRepeatEvent(DateTime timestamp) async {}
-
-  void onButtonPressed(String id) {}
-
-  @override
-  void onNotificationPressed() {}
+  void onNotificationPressed() {
+    // Pots deixar-ho buit
+  }
 }
