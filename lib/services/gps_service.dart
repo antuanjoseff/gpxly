@@ -87,6 +87,15 @@ class TrackNotifier extends Notifier<Track> {
     );
   }
 
+  void addCoordinate(double lat, double lon) {
+    state = state.copyWith(
+      coordinates: [
+        ...state.coordinates,
+        [lon, lat], // GeoJSON = [lon, lat]
+      ],
+    );
+  }
+
   Future<void> stopRecording() async {
     await FlutterForegroundTask.stopService();
 
@@ -107,7 +116,7 @@ class TrackNotifier extends Notifier<Track> {
     state = state.copyWith(
       coordinates: [
         ...state.coordinates,
-        [pos.latitude, pos.longitude],
+        [pos.longitude, pos.latitude], // ✔ CORRECTE
       ],
       altitudes: [...state.altitudes, pos.altitude],
       timestamps: [...state.timestamps, now],
