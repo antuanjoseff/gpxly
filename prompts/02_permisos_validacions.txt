@@ -1,0 +1,19 @@
+Vull continuar exactament on ho vam deixar amb el servei de tracking en Flutter + Android natiu.
+
+Recordatori del context:
+- Ja tinc el servei natiu funcionant i la notificació foreground apareix.
+- Els permisos de localització estan concedits, incloent “Permetre sempre”.
+- Les notificacions estaven bloquejades però ja estan activades.
+- El servei arrenca correctament quan obro l’app des del mòbil.
+
+Vull continuar amb aquests punts:
+1. Implementar el flux complet de permisos perquè l’usuari no hagi d’anar manualment als Ajustos.
+2. Validar correctament els permisos abans d’iniciar el servei.
+3. Preparar el codi Flutter per:
+   - demanar permisos en el moment correcte
+   - obrir la configuració quan calgui
+   - comprovar si ja tenim “Allow all the time”
+4. Revisar i millorar el servei natiu si cal.
+5. Seguir amb els següents passos del tracking (distància, altitud, baròmetre, etc.).
+
+Reprèn la conversa com si no hagués marxat i continua amb el següent pas lògic.

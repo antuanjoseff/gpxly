@@ -39,6 +39,7 @@ dependencies:
   cupertino_icons:
 
 dev_dependencies:
+  change_app_package_name:
   flutter_test:
     sdk: flutter
 

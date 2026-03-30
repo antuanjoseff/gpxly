@@ -4,8 +4,10 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:gpxly/notifiers/track_notifier.dart';
+import 'package:gpxly/services/native_gps_channel.dart';
+import 'package:gpxly/services/permissions_service.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
-import '../services/gps_service.dart';
 
 class MapScreen extends ConsumerStatefulWidget {
   const MapScreen({super.key});
@@ -19,9 +21,22 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   bool styleInitialized = false;
   bool userMovedMap = false;
   bool listenerAttached = false;
+  bool checkingPermissions = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Executem el check de permisos quan l'app arrenca
+    Future.microtask(() async {
+      final p = await Geolocator.checkPermission();
+      print(">>> On app start, permission = $p");
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    print(">>> MapScreen.build()");
     final track = ref.watch(trackProvider);
 
     // Attach listener només una vegada
@@ -121,36 +136,27 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               backgroundColor: track.recording ? Colors.red : Colors.green,
               child: Icon(track.recording ? Icons.stop : Icons.play_arrow),
               onPressed: () async {
+                print(">>> BUTTON PRESSED");
                 final notifier = ref.read(trackProvider.notifier);
 
                 if (!track.recording) {
-                  // 0. Comprovar permís
-                  LocationPermission permission =
-                      await Geolocator.checkPermission();
+                  // 0. Assegurar permisos complets (incloent ALWAYS)
+                  final ok = await PermissionsService.ensurePermissions(
+                    context,
+                  );
+                  if (!context.mounted) return;
+                  if (!ok) return;
 
-                  if (permission == LocationPermission.denied) {
-                    permission = await Geolocator.requestPermission();
-                  }
+                  // 1. Iniciar el servei natiu (FGS) — IMPORTANT a Android 14
+                  await NativeGpsChannel.start();
 
-                  if (permission == LocationPermission.denied ||
-                      permission == LocationPermission.deniedForever) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("Cal donar permís de localització"),
-                      ),
-                    );
-                    return;
-                  }
-
-                  // 1. Obtenir posició actual
+                  // 2. Obtenir posició actual
                   final pos = await Geolocator.getCurrentPosition();
 
-                  // 1b. Afegir primera coordenada al track
-                  ref
-                      .read(trackProvider.notifier)
-                      .addCoordinate(pos.latitude, pos.longitude);
+                  // 3. Afegir primera coordenada
+                  notifier.addCoordinate(pos.latitude, pos.longitude);
 
-                  // 2. Centrar el mapa
+                  // 4. Centrar el mapa
                   if (mapController != null) {
                     mapController!.animateCamera(
                       CameraUpdate.newLatLng(
@@ -159,10 +165,12 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                     );
                   }
 
-                  // 3. Iniciar gravació
-                  notifier.startRecording();
+                  // 5. Iniciar gravació (timer + stream)
+                  notifier.startRecording(context);
                 } else {
+                  // Aturar gravació
                   notifier.stopRecording();
+                  await NativeGpsChannel.stop();
                 }
               },
             ),

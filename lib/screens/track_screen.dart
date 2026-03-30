@@ -1,8 +1,9 @@
+import 'package:gpxly/notifiers/track_notifier.dart';
+
 import '../models/track.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
-import '../services/gps_service.dart';
 import 'package:geolocator/geolocator.dart';
 
 class TrackScreen extends ConsumerStatefulWidget {
@@ -72,7 +73,9 @@ class _TrackScreenState extends ConsumerState<TrackScreen> {
                     : () async {
                         setState(() => recording = true);
                         ref.read(trackProvider.notifier).reset();
-                        await ref.read(trackProvider.notifier).startRecording();
+                        await ref
+                            .read(trackProvider.notifier)
+                            .startRecording(context);
                       },
                 child: const Text("Iniciar"),
               ),

@@ -1,0 +1,8 @@
+Vull reprendre el disseny de la UI estil Wikiloc que estàvem treballant.
+Ens havíem quedat en el punt 3, on proposaves:
+
+- Pantalla A: Tracking en temps real (mapa + stats essencials)
+- Pantalla B: Resum del track (post-activitat)
+- Pantalla C: Estadístiques detallades (gràfics, desnivell, velocitats, etc.)
+
+Vull continuar desenvolupant aquesta arquitectura, els mockups i l’estructura Flutter.

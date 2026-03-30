@@ -1,0 +1,26 @@
+Continuem exactament on ho havíem deixat amb el projecte de tracking en Flutter + servei natiu Android.
+
+Context actual:
+- Els permisos ALWAYS ja funcionen correctament a Samsung OneUI 6 + Android 14.
+- El flux de permisos està implementat amb el nou permissions_service.dart.
+- El botó de gravació segueix el flux correcte:
+    1) ensurePermissions()
+    2) NativeGpsChannel.start()
+    3) notifier.startRecording()
+- TrackNotifier ja no inicia el servei automàticament.
+- TrackingPlugin.kt és correcte.
+- Les notificacions foreground tornen a aparèixer després d’activar el permís de notificacions.
+- El servei foreground funciona i no peta.
+
+Ara vull continuar amb una d’aquestes línies de treball:
+
+1. Validar el tracking real amb pantalla apagada (test de camp).
+2. Revisar TrackingService.kt per assegurar que la notificació foreground està ben implementada.
+3. Polir el flux d’inici/aturada de gravació (UX, estat, mapa, etc.).
+4. Millorar la gestió del primer punt GPS i la sincronització amb el mapa.
+5. Revisar o millorar qualsevol altra part del flux de tracking.
+
+Indica’m quina d’aquestes opcions vols seguir, o si vols atacar un altre punt.
+
+Aquí tens qualsevol fitxer que vulguis revisar:
+[enganxa el fitxer aquí]
