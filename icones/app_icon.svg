@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg
+  width="512"
+  height="512"
+  viewBox="0 0 512 512"
+  xmlns="http://www.w3.org/2000/svg"
+>
+  <!-- Fons transparent -->
+  <rect width="512" height="512" fill="none"/>
+
+  <!-- Línia de track (corba) -->
+  <path
+    d="M120 380 C 180 340, 230 330, 300 340"
+    fill="none"
+    stroke="#FF9800"
+    stroke-width="20"
+    stroke-linecap="round"
+  />
+
+  <!-- Pin de localització (cos) -->
+  <path
+    d="M256 90
+       C 205 90, 165 130, 165 182
+       C 165 245, 215 305, 246 345
+       C 250 350, 262 350, 266 345
+       C 297 305, 347 245, 347 182
+       C 347 130, 307 90, 256 90 Z"
+    fill="#1E88E5"
+  />
+
+  <!-- Cercle interior (fons del rellotge) -->
+  <circle
+    cx="256"
+    cy="182"
+    r="55"
+    fill="#FFFFFF"
+  />
+
+  <!-- Contorn del rellotge -->
+  <circle
+    cx="256"
+    cy="182"
+    r="55"
+    fill="none"
+    stroke="#1E88E5"
+    stroke-width="6"
+  />
+
+  <!-- Agulla d'hores -->
+  <line
+    x1="256"
+    y1="182"
+    x2="256"
+    y2="155"
+    stroke="#1E88E5"
+    stroke-width="8"
+    stroke-linecap="round"
+  />
+
+  <!-- Agulla de minuts -->
+  <line
+    x1="256"
+    y1="182"
+    x2="285"
+    y2="182"
+    stroke="#1E88E5"
+    stroke-width="6"
+    stroke-linecap="round"
+  />
+
+  <!-- Punt central del rellotge -->
+  <circle
+    cx="256"
+    cy="182"
+    r="5"
+    fill="#1E88E5"
+  />
+</svg>
+

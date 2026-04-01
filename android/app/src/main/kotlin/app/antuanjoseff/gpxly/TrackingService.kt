@@ -28,9 +28,16 @@ class TrackingService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // 🔹 Evitem NPE, però si és null, parem
+        if (intent == null) return START_NOT_STICKY
+
+        // 🔹 Llegim la configuració que ve de Flutter
+        val useTime = intent.getBooleanExtra("useTime", true)
+        val seconds = intent.getIntExtra("seconds", 5)
+        val meters = intent.getIntExtra("meters", 10)
 
         startForegroundServiceNotification()
-        startLocationUpdates()
+        startLocationUpdates(useTime, seconds, meters)
 
         return START_STICKY
     }
@@ -64,12 +71,35 @@ class TrackingService : Service() {
         startForeground(1, notification)
     }
 
-    private fun startLocationUpdates() {
-        val request = LocationRequest.Builder(
-            Priority.PRIORITY_HIGH_ACCURACY,
-            2000 // cada 2 segons
-        ).setMinUpdateDistanceMeters(3f).build()
+    private fun startLocationUpdates(
+    useTime: Boolean,
+    seconds: Int,
+    meters: Int
+    ) {
+        val baseIntervalMs = (seconds.coerceAtLeast(1)) * 1000L
+        val baseDistanceM = meters.coerceAtLeast(1).toFloat()
 
+        val builder = LocationRequest.Builder(
+            Priority.PRIORITY_HIGH_ACCURACY,
+            baseIntervalMs
+        )
+            .setGranularity(Granularity.GRANULARITY_FINE)
+            .setWaitForAccurateLocation(false)
+            .setMaxUpdateDelayMillis(0)
+
+        if (useTime) {
+            // MODE TEMPS
+            builder
+                .setMinUpdateIntervalMillis(baseIntervalMs)
+                .setMinUpdateDistanceMeters(0f)
+        } else {
+            // MODE DISTÀNCIA
+            builder
+                .setMinUpdateIntervalMillis(baseIntervalMs)   // 🔥 IMPORTANT
+                .setMinUpdateDistanceMeters(baseDistanceM)    // 🔥 Ara sí funciona
+        }
+
+        val request = builder.build()
         fused.requestLocationUpdates(request, callback, mainLooper)
     }
 

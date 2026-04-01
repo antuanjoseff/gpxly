@@ -10,8 +10,16 @@ class NativeGpsChannel {
 
   static Stream<Map<String, dynamic>>? _locationStream;
 
-  static Future<void> start() async {
-    await _methods.invokeMethod('start');
+  static Future<void> start({
+    required bool useTime,
+    required int seconds,
+    required int meters,
+  }) async {
+    await _methods.invokeMethod('start', {
+      'useTime': useTime,
+      'seconds': seconds,
+      'meters': meters,
+    });
   }
 
   static Future<void> stop() async {

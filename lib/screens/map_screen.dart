@@ -5,7 +5,9 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:gpxly/notifiers/gps_settings_provider.dart';
 import 'package:gpxly/notifiers/track_notifier.dart';
+import 'package:gpxly/screens/gps_settings_screen.dart';
 import 'package:gpxly/services/native_gps_channel.dart';
 import 'package:gpxly/services/permissions_service.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
@@ -55,6 +57,21 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     });
 
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.black87,
+        title: const Text('Mapa'), // Opcional, pots deixar només la icona
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.gps_fixed),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const GpsSettingsScreen()),
+              );
+            },
+          ),
+        ],
+      ),
       body: Stack(
         children: [
           MapLibreMap(
@@ -145,7 +162,12 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                     notifier.addCoordinate(lat, lon);
                   });
 
-                  await NativeGpsChannel.start();
+                  final settings = ref.read(gpsSettingsProvider);
+                  await NativeGpsChannel.start(
+                    useTime: settings.useTime,
+                    seconds: settings.seconds,
+                    meters: settings.meters,
+                  );
 
                   // 🔹 Afegim la posició inicial
                   final pos = await Geolocator.getCurrentPosition();

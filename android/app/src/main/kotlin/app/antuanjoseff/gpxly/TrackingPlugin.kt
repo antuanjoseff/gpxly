@@ -82,7 +82,16 @@ class TrackingPlugin :
             when (call.method) {
 
                 "start" -> {
-                    val intent = Intent(applicationContext, TrackingService::class.java)
+                    val useTime = call.argument<Boolean>("useTime") ?: true
+                    val seconds = call.argument<Int>("seconds") ?: 5
+                    val meters = call.argument<Int>("meters") ?: 10
+
+                    val intent = Intent(applicationContext, TrackingService::class.java).apply {
+                        putExtra("useTime", useTime)
+                        putExtra("seconds", seconds)
+                        putExtra("meters", meters)
+                    }
+
                     applicationContext?.startForegroundService(intent)
                     result.success(null)
                 }
