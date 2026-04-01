@@ -27,13 +27,8 @@ class TrackNotifier extends Notifier<Track> {
 
   Future<void> startRecording(BuildContext context) async {
     // 1. Estat inicial
-    state = state.copyWith(
-      recording: true,
-      duration: Duration.zero,
-      coordinates: [],
-      altitudes: [],
-      timestamps: [],
-    );
+    print(">>> START RECORDING CALLED");
+    state = state.copyWith(recording: true, duration: Duration.zero);
 
     // ❌ NO iniciar el servei aquí
     // await NativeGpsChannel.start();

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 import 'dart:ui';
 
@@ -23,15 +24,17 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   bool listenerAttached = false;
   bool checkingPermissions = false;
 
+  StreamSubscription<Map<String, dynamic>>? _gpsSub;
+
+  @override
+  void dispose() {
+    _gpsSub?.cancel();
+    super.dispose();
+  }
+
   @override
   void initState() {
     super.initState();
-
-    // Executem el check de permisos quan l'app arrenca
-    Future.microtask(() async {
-      final p = await Geolocator.checkPermission();
-      print(">>> On app start, permission = $p");
-    });
   }
 
   @override
@@ -44,6 +47,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       listenerAttached = true;
 
       ref.listen(trackProvider, (previous, next) {
+        print(">>> TRACK SIZE = ${next.coordinates.length}");
         if (!styleInitialized || mapController == null) return;
         if (next.coordinates.isEmpty) return;
 
@@ -140,23 +144,62 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                 final notifier = ref.read(trackProvider.notifier);
 
                 if (!track.recording) {
-                  // 0. Assegurar permisos complets (incloent ALWAYS)
+                  // 0. Permisos complets
                   final ok = await PermissionsService.ensurePermissions(
                     context,
                   );
                   if (!context.mounted) return;
                   if (!ok) return;
 
-                  // 1. Iniciar el servei natiu (FGS) — IMPORTANT a Android 14
+                  // 1. Activar escolta d’events del servei natiu
+                  _gpsSub ??= NativeGpsChannel.positionStream().listen((data) {
+                    final lat = data['lat'] as double;
+                    final lon = data['lon'] as double;
+
+                    notifier.addCoordinate(lat, lon);
+
+                    if (styleInitialized && mapController != null) {
+                      mapController!.setGeoJsonSource("user_location", {
+                        "type": "FeatureCollection",
+                        "features": [
+                          {
+                            "type": "Feature",
+                            "geometry": {
+                              "type": "Point",
+                              "coordinates": [lon, lat],
+                            },
+                          },
+                        ],
+                      });
+
+                      mapController!.setGeoJsonSource("track_line", {
+                        "type": "FeatureCollection",
+                        "features": [
+                          {
+                            "type": "Feature",
+                            "geometry": {
+                              "type": "LineString",
+                              "coordinates": track.coordinates,
+                            },
+                          },
+                        ],
+                      });
+
+                      if (!userMovedMap) {
+                        mapController!.animateCamera(
+                          CameraUpdate.newLatLng(LatLng(lat, lon)),
+                        );
+                      }
+                    }
+                  });
+
+                  // 2. Iniciar servei natiu
                   await NativeGpsChannel.start();
 
-                  // 2. Obtenir posició actual
+                  // 3. Opcional: posició inicial immediata
                   final pos = await Geolocator.getCurrentPosition();
-
-                  // 3. Afegir primera coordenada
                   notifier.addCoordinate(pos.latitude, pos.longitude);
 
-                  // 4. Centrar el mapa
                   if (mapController != null) {
                     mapController!.animateCamera(
                       CameraUpdate.newLatLng(
@@ -165,12 +208,14 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                     );
                   }
 
-                  // 5. Iniciar gravació (timer + stream)
+                  // 4. Iniciar gravació (timer, etc.)
                   notifier.startRecording(context);
                 } else {
                   // Aturar gravació
                   notifier.stopRecording();
                   await NativeGpsChannel.stop();
+                  await _gpsSub?.cancel();
+                  _gpsSub = null;
                 }
               },
             ),
