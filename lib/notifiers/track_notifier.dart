@@ -83,6 +83,7 @@ class TrackNotifier extends Notifier<Track> {
   }
 
   void addCoordinate(double lat, double lon) {
+    print(">>> addCoordinate");
     state = state.copyWith(
       coordinates: [
         ...state.coordinates,
@@ -92,6 +93,7 @@ class TrackNotifier extends Notifier<Track> {
   }
 
   void addPointFromPosition(Position pos) {
+    print(">>> addPointFromPosition");
     final now = DateTime.now();
     state = state.copyWith(
       coordinates: [

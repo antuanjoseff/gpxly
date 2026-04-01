@@ -21,8 +21,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   MapLibreMapController? mapController;
   bool styleInitialized = false;
   bool userMovedMap = false;
-  bool listenerAttached = false;
-  bool checkingPermissions = false;
 
   StreamSubscription<Map<String, dynamic>>? _gpsSub;
 
@@ -33,69 +31,57 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   }
 
   @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
   Widget build(BuildContext context) {
     print(">>> MapScreen.build()");
     final track = ref.watch(trackProvider);
 
-    // Attach listener només una vegada
-    if (!listenerAttached) {
-      listenerAttached = true;
+    // ✅ Listener correcte dins build
+    ref.listen(trackProvider, (previous, next) {
+      print(">>> TRACK SIZE = ${next.coordinates.length}");
+      if (!styleInitialized || mapController == null) return;
+      if (next.coordinates.isEmpty) return;
 
-      ref.listen(trackProvider, (previous, next) {
-        print(">>> TRACK SIZE = ${next.coordinates.length}");
-        if (!styleInitialized || mapController == null) return;
-        if (next.coordinates.isEmpty) return;
+      final last = next.coordinates.last;
+      final lon = last[0];
+      final lat = last[1];
 
-        final last = next.coordinates.last;
-        final lon = last[0];
-        final lat = last[1];
-
-        try {
-          // Actualitzar punt d’usuari
-          mapController!.setGeoJsonSource("user_location", {
-            "type": "FeatureCollection",
-            "features": [
-              {
-                "type": "Feature",
-                "geometry": {
-                  "type": "Point",
-                  "coordinates": [lon, lat],
-                },
+      try {
+        // Punt blau
+        mapController!.setGeoJsonSource("user_location", {
+          "type": "FeatureCollection",
+          "features": [
+            {
+              "type": "Feature",
+              "geometry": {
+                "type": "Point",
+                "coordinates": [lon, lat],
               },
-            ],
-          });
+            },
+          ],
+        });
 
-          // Actualitzar línia del track
-          mapController!.setGeoJsonSource("track_line", {
-            "type": "FeatureCollection",
-            "features": [
-              {
-                "type": "Feature",
-                "geometry": {
-                  "type": "LineString",
-                  "coordinates": next.coordinates, // ja és [lon, lat]
-                },
+        // Línia track
+        mapController!.setGeoJsonSource("track_line", {
+          "type": "FeatureCollection",
+          "features": [
+            {
+              "type": "Feature",
+              "geometry": {
+                "type": "LineString",
+                "coordinates": next.coordinates,
               },
-            ],
-          });
-        } catch (_) {
-          // Si la source encara no existeix (p.e. després d’un reload d’estil), no matem el mapa
-          return;
-        }
+            },
+          ],
+        });
+      } catch (_) {
+        return;
+      }
 
-        // Centrar mapa si l’usuari no l’ha mogut
-        if (!userMovedMap) {
-          mapController!.animateCamera(
-            CameraUpdate.newLatLng(LatLng(lat, lon)),
-          );
-        }
-      });
-    }
+      // Centrar mapa
+      if (!userMovedMap) {
+        mapController!.animateCamera(CameraUpdate.newLatLng(LatLng(lat, lon)));
+      }
+    });
 
     return Scaffold(
       body: Stack(
@@ -118,7 +104,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             },
           ),
 
-          // NAVBAR
+          // TEMPS
           Positioned(
             top: 40,
             left: 20,
@@ -132,7 +118,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             ),
           ),
 
-          // BOTÓ INICIAR / PARAR
+          // BOTÓ START/STOP
           Positioned(
             bottom: 40,
             right: 20,
@@ -144,59 +130,22 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                 final notifier = ref.read(trackProvider.notifier);
 
                 if (!track.recording) {
-                  // 0. Permisos complets
                   final ok = await PermissionsService.ensurePermissions(
                     context,
                   );
                   if (!context.mounted) return;
                   if (!ok) return;
 
-                  // 1. Activar escolta d’events del servei natiu
+                  // ✅ STREAM només envia coordenades
                   _gpsSub ??= NativeGpsChannel.positionStream().listen((data) {
                     final lat = data['lat'] as double;
                     final lon = data['lon'] as double;
 
                     notifier.addCoordinate(lat, lon);
-
-                    if (styleInitialized && mapController != null) {
-                      mapController!.setGeoJsonSource("user_location", {
-                        "type": "FeatureCollection",
-                        "features": [
-                          {
-                            "type": "Feature",
-                            "geometry": {
-                              "type": "Point",
-                              "coordinates": [lon, lat],
-                            },
-                          },
-                        ],
-                      });
-
-                      mapController!.setGeoJsonSource("track_line", {
-                        "type": "FeatureCollection",
-                        "features": [
-                          {
-                            "type": "Feature",
-                            "geometry": {
-                              "type": "LineString",
-                              "coordinates": track.coordinates,
-                            },
-                          },
-                        ],
-                      });
-
-                      if (!userMovedMap) {
-                        mapController!.animateCamera(
-                          CameraUpdate.newLatLng(LatLng(lat, lon)),
-                        );
-                      }
-                    }
                   });
 
-                  // 2. Iniciar servei natiu
                   await NativeGpsChannel.start();
 
-                  // 3. Opcional: posició inicial immediata
                   final pos = await Geolocator.getCurrentPosition();
                   notifier.addCoordinate(pos.latitude, pos.longitude);
 
@@ -208,10 +157,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                     );
                   }
 
-                  // 4. Iniciar gravació (timer, etc.)
                   notifier.startRecording(context);
                 } else {
-                  // Aturar gravació
                   notifier.stopRecording();
                   await NativeGpsChannel.stop();
                   await _gpsSub?.cancel();
@@ -221,7 +168,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             ),
           ),
 
-          // BOTÓ CENTRAR-ME
+          // BOTÓ CENTRAR
           Positioned(
             bottom: 120,
             right: 20,
@@ -230,7 +177,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               backgroundColor: Colors.blue,
               child: const Icon(Icons.my_location),
               onPressed: () {
-                userMovedMap = false; // tornem al mode auto
+                userMovedMap = false;
                 if (track.coordinates.isNotEmpty && mapController != null) {
                   final last = track.coordinates.last;
                   final lon = last[0];
@@ -247,15 +194,12 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     );
   }
 
-  /// Configura la font i capes per mostrar el punt de l’usuari i la línia del track
   Future<void> _setupUserLocationLayer() async {
     if (mapController == null) return;
 
-    // 1. Crear icona en memòria
     final Uint8List blueDot = await _createBlueDot();
     await mapController!.addImage("user_icon", blueDot);
 
-    // 2. SOURCE del punt
     await mapController!.addSource(
       "user_location",
       GeojsonSourceProperties(
@@ -263,14 +207,12 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       ),
     );
 
-    // 3. CAPA del punt
     await mapController!.addLayer(
       "user_location",
       "user_location_layer",
       const SymbolLayerProperties(iconImage: "user_icon", iconSize: 1.0),
     );
 
-    // 4. SOURCE de la línia del track
     await mapController!.addSource(
       "track_line",
       GeojsonSourceProperties(
@@ -278,7 +220,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       ),
     );
 
-    // 5. CAPA de la línia del track
     await mapController!.addLayer(
       "track_line",
       "track_line_layer",
