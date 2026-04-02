@@ -45,5 +45,19 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+	</array>
+
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Necessitem la teva ubicació per mostrar la teva posició al mapa.</string>
+
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Necessitem la teva ubicació fins i tot quan l'app està en segon pla per enregistrar rutes.</string>
+
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>Necessitem la teva ubicació en tot moment per enregistrar rutes correctament.</string>
+
 </dict>
 </plist>

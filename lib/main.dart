@@ -24,6 +24,15 @@ class GPXlyApp extends StatelessWidget {
           foregroundColor: Colors.white,
           elevation: 0,
         ),
+        tabBarTheme: TabBarThemeData(
+          labelColor: Colors.white, // pestanya seleccionada
+          unselectedLabelColor: Colors.white70, // pestanyes no seleccionades
+          indicator: BoxDecoration(
+            color:
+                Colors.blueGrey.shade800, // fons o barra sota la seleccionada
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
         snackBarTheme: const SnackBarThemeData(
           behavior: SnackBarBehavior.floating,
         ),

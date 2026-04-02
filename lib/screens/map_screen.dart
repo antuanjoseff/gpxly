@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:gpxly/notifiers/gps_settings_provider.dart';
@@ -12,7 +13,7 @@ import 'package:gpxly/services/native_gps_channel.dart';
 import 'package:gpxly/services/permissions_service.dart';
 import 'package:gpxly/ui/app_messages.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
-
+import 'package:gpxly/notifiers/gps_settings_provider.dart';
 import 'dart:math';
 
 import 'package:shared_preferences/shared_preferences.dart';
@@ -94,7 +95,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
         }
 
         // Segon back → sortir de l’app
-        Navigator.of(context).maybePop();
+        SystemNavigator.pop();
       },
       child: Scaffold(
         appBar: AppBar(
@@ -241,6 +242,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                       useTime: settings.useTime,
                       seconds: settings.seconds,
                       meters: settings.meters,
+                      accuracy: settings.accuracy,
                     );
 
                     // 🔹 Afegim la posició inicial

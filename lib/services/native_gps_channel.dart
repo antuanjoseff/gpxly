@@ -3,22 +3,22 @@ import 'package:flutter/services.dart';
 
 class NativeGpsChannel {
   static const MethodChannel _methods = MethodChannel('tracking/methods');
-
   static const EventChannel _events = EventChannel('tracking/events');
 
   static Stream<Map<String, dynamic>>? _positionStream;
-
   static Stream<Map<String, dynamic>>? _locationStream;
 
   static Future<void> start({
     required bool useTime,
     required int seconds,
-    required int meters,
+    required double meters, // canviat de int a double
+    required double accuracy,
   }) async {
     await _methods.invokeMethod('start', {
       'useTime': useTime,
       'seconds': seconds,
-      'meters': meters,
+      'meters': meters, // ara és double
+      'accuracy': accuracy,
     });
   }
 
