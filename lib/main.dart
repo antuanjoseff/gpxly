@@ -13,7 +13,21 @@ class GPXlyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'GPXly',
-      theme: ThemeData(primarySwatch: Colors.blue),
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.blue,
+          primary: Colors.black87,
+          onPrimary: Colors.white,
+        ),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.black87,
+          foregroundColor: Colors.white,
+          elevation: 0,
+        ),
+        snackBarTheme: const SnackBarThemeData(
+          behavior: SnackBarBehavior.floating,
+        ),
+      ),
       home: const MapScreen(),
     );
   }

@@ -32,6 +32,7 @@ dependencies:
   maplibre_gl: 0.25.0
   geolocator:
   xml:
+  shared_preferences:
   path_provider:
   permission_handler:
   android_intent_plus:
