@@ -1,20 +1,21 @@
 import 'dart:async';
-import 'dart:typed_data';
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
+
 import 'package:gpxly/notifiers/gps_settings_provider.dart';
 import 'package:gpxly/notifiers/track_notifier.dart';
 import 'package:gpxly/screens/gps_settings_screen.dart';
 import 'package:gpxly/services/native_gps_channel.dart';
 import 'package:gpxly/services/permissions_service.dart';
 import 'package:gpxly/ui/app_messages.dart';
+import 'package:gpxly/widgets/map_buttons.dart';
+import 'package:gpxly/services/gpx_exporter.dart';
+import 'package:gpxly/utils/map_animation.dart';
+import 'package:gpxly/utils/map_layers.dart';
+
 import 'package:maplibre_gl/maplibre_gl.dart';
-import 'package:gpxly/notifiers/gps_settings_provider.dart';
-import 'dart:math';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -75,12 +76,22 @@ class _MapScreenState extends ConsumerState<MapScreen>
       final lat = last[1];
 
       try {
-        _animateLastSegment(lat, lon, next.coordinates);
+        animateLastSegment(
+          lat: lat,
+          lon: lon,
+          allCoordinates: next.coordinates,
+          controller: mapController!,
+          userMovedMap: userMovedMap,
+          currentLastPosition: _lastPosition,
+          currentTimer: _animationTimer,
+          setLastPosition: (p) => _lastPosition = p,
+          setTimer: (t) => _animationTimer = t,
+        );
       } catch (_) {}
     });
 
     return PopScope(
-      canPop: false, // molt important: tu controles el back
+      canPop: false,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
 
@@ -94,13 +105,12 @@ class _MapScreenState extends ConsumerState<MapScreen>
           return;
         }
 
-        // Segon back → sortir de l’app
         SystemNavigator.pop();
       },
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: Colors.black87,
-          title: const Text('Mapa'), // Opcional, pots deixar només la icona
+          title: const Text('Mapa'),
           actions: [
             IconButton(
               icon: const Icon(Icons.gps_fixed),
@@ -124,8 +134,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
               onMapCreated: (controller) => mapController = controller,
               onCameraMove: (_) => userMovedMap = true,
               onStyleLoadedCallback: () async {
-                await _setupUserLocationLayer();
+                await setupUserLocationLayer(mapController!);
                 styleInitialized = true;
+
                 final prefs = await SharedPreferences.getInstance();
                 final lat = prefs.getDouble("last_lat");
                 final lon = prefs.getDouble("last_lon");
@@ -135,16 +146,16 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     CameraUpdate.newLatLng(LatLng(lat, lon)),
                   );
                 }
-                _updateMapPosition(lat ?? 0, lon ?? 0);
+
+                updateMapPosition(mapController!, lat ?? 0, lon ?? 0);
+
                 final track = ref.read(trackProvider);
 
                 if (track.coordinates.isNotEmpty) {
                   final last = track.coordinates.last;
 
-                  // Dibuixa el punt blau
-                  _updateMapPosition(last[1], last[0]);
+                  updateMapPosition(mapController!, last[1], last[0]);
 
-                  // Dibuixa la línia sencera
                   mapController!.setGeoJsonSource("track_line", {
                     "type": "FeatureCollection",
                     "features": [
@@ -174,103 +185,35 @@ class _MapScreenState extends ConsumerState<MapScreen>
               ),
             ),
 
+            // -------------------------
+            // BOTÓ PRINCIPAL
+            // -------------------------
             Positioned(
               bottom: 40,
               right: 20,
-              child: FloatingActionButton(
-                backgroundColor: track.recording ? Colors.red : Colors.green,
-                child: Icon(track.recording ? Icons.stop : Icons.play_arrow),
-                onPressed: () async {
-                  final notifier = ref.read(trackProvider.notifier);
-
-                  if (!track.recording) {
-                    // 🔹 Comprovem si el GPS està activat
-                    final serviceEnabled =
-                        await Geolocator.isLocationServiceEnabled();
-                    if (!serviceEnabled) {
-                      if (!context.mounted) return;
-
-                      final activate = await showDialog<bool>(
-                        context: context,
-                        builder: (context) => AlertDialog(
-                          title: const Text('GPS desactivat'),
-                          content: const Text(
-                            'El GPS està desactivat. Vols activar-lo ara?',
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.of(context).pop(false),
-                              child: const Text('Cancel·lar'),
-                            ),
-                            TextButton(
-                              onPressed: () => Navigator.of(context).pop(true),
-                              child: const Text('Obrir configuració'),
-                            ),
-                          ],
-                        ),
-                      );
-
-                      if (activate == true) {
-                        await Geolocator.openLocationSettings();
-                      }
-
-                      return;
-                    }
-
-                    // 🔹 Comprovem permisos
-                    final ok = await PermissionsService.ensurePermissions(
-                      context,
-                    );
-                    if (!context.mounted || !ok) return;
-
-                    // 🔹 Subscrivim al stream del GPS
-                    _gpsSub ??= NativeGpsChannel.positionStream().listen((
-                      data,
-                    ) {
-                      double lat = data['lat'] as double;
-                      double lon = data['lon'] as double;
-
-                      // Error aleatori de fins a ~5 metres
-                      lat += randomOffset(50);
-                      lon += randomOffset(50);
-
-                      notifier.addCoordinate(lat, lon);
-                    });
-
-                    final settings = ref.read(gpsSettingsProvider);
-                    await NativeGpsChannel.start(
-                      useTime: settings.useTime,
-                      seconds: settings.seconds,
-                      meters: settings.meters,
-                      accuracy: settings.accuracy,
-                    );
-
-                    // 🔹 Afegim la posició inicial
-                    final pos = await Geolocator.getCurrentPosition();
-                    notifier.addCoordinate(pos.latitude, pos.longitude);
-
-                    if (mapController != null) {
-                      mapController!.animateCamera(
-                        CameraUpdate.newLatLng(
-                          LatLng(pos.latitude, pos.longitude),
-                        ),
-                      );
-                    }
-
-                    notifier.startRecording(context);
-                  } else {
-                    // 🔹 Aturem la gravació
-                    notifier.stopRecording();
-                    await NativeGpsChannel.stop();
-                    await _gpsSub?.cancel();
-                    _gpsSub = null;
-                  }
-                },
+              child: StartPauseResumeButton(
+                track: track,
+                onStart: () async => await _startRecording(),
+                onPause: () async => await _pauseRecording(),
+                onResume: () async => await _resumeRecording(),
               ),
             ),
 
+            // -------------------------
+            // BOTÓ STOP
+            // -------------------------
+            if (track.recording && track.paused)
+              Positioned(
+                bottom: 120,
+                right: 20,
+                child: StopButton(onStop: () async => await _stopRecording()),
+              ),
+
+            // -------------------------
+            // BOTÓ CENTER
+            // -------------------------
             Positioned(
-              bottom: 120,
+              bottom: 200,
               right: 20,
               child: FloatingActionButton(
                 heroTag: "center",
@@ -293,175 +236,102 @@ class _MapScreenState extends ConsumerState<MapScreen>
     );
   }
 
-  // ---------------------
-  // Animació suau últim segment
-  // ---------------------
-  void _animateLastSegment(
-    double lat,
-    double lon,
-    List<List<double>> allCoordinates,
-  ) {
-    if (mapController == null) return;
+  // -------------------------
+  // FUNCIONS DE GRAVACIÓ
+  // -------------------------
 
-    final newPos = LatLng(lat, lon);
+  Future<void> _startRecording() async {
+    final notifier = ref.read(trackProvider.notifier);
 
-    // 🔹 Només animar si la posició real ha canviat
-    if (_lastPosition != null &&
-        _lastPosition!.latitude == newPos.latitude &&
-        _lastPosition!.longitude == newPos.longitude) {
-      return; // mateixa posició, no animem
-    }
+    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      if (!context.mounted) return;
 
-    // 🔹 No reiniciem animació si ja hi ha un Timer actiu
-    if (_animationTimer != null && _animationTimer!.isActive) return;
-
-    if (allCoordinates.length < 2) {
-      // Primer punt
-      _lastPosition = newPos;
-      _updateMapPosition(lat, lon);
-      mapController!.setGeoJsonSource("track_line", {
-        "type": "FeatureCollection",
-        "features": [
-          {
-            "type": "Feature",
-            "geometry": {"type": "LineString", "coordinates": allCoordinates},
-          },
-        ],
-      });
+      final activate = await AppMessages.showGpsDisabledDialog(context);
+      if (activate == true) {
+        await Geolocator.openLocationSettings();
+      }
       return;
     }
 
-    final fullTrack = List<List<double>>.from(allCoordinates);
-    final penultimate = fullTrack[fullTrack.length - 2];
-    final startLat = penultimate[1];
-    final startLon = penultimate[0];
+    final ok = await PermissionsService.ensurePermissions(context);
+    if (!context.mounted || !ok) return;
 
-    int currentStep = 0;
-    _animationTimer = Timer.periodic(const Duration(milliseconds: 50), (timer) {
-      const steps = 10;
+    _gpsSub ??= NativeGpsChannel.positionStream().listen((data) {
+      double lat = data['lat'] as double;
+      double lon = data['lon'] as double;
 
-      currentStep++;
+      // lat += randomOffset(50);
+      // lon += randomOffset(50);
 
-      final deltaLat = (lat - startLat) / steps;
-      final deltaLon = (lon - startLon) / steps;
+      notifier.addCoordinate(lat, lon);
+    });
 
-      final animatedLat = startLat + deltaLat * currentStep;
-      final animatedLon = startLon + deltaLon * currentStep;
+    final settings = ref.read(gpsSettingsProvider);
+    await NativeGpsChannel.start(
+      useTime: settings.useTime,
+      seconds: settings.seconds,
+      meters: settings.meters,
+      accuracy: settings.accuracy,
+    );
 
-      // Punt blau
-      _updateMapPosition(animatedLat, animatedLon);
+    final pos = await Geolocator.getCurrentPosition();
+    notifier.addCoordinate(pos.latitude, pos.longitude);
 
-      // Track complet fins al penúltim + punt interpolat
-      final animatedCoordinates = [
-        ...fullTrack.sublist(0, fullTrack.length - 1),
-        [animatedLon, animatedLat],
-      ];
+    if (mapController != null) {
+      mapController!.animateCamera(
+        CameraUpdate.newLatLng(LatLng(pos.latitude, pos.longitude)),
+      );
+    }
 
-      mapController!.setGeoJsonSource("track_line", {
-        "type": "FeatureCollection",
-        "features": [
-          {
-            "type": "Feature",
-            "geometry": {
-              "type": "LineString",
-              "coordinates": animatedCoordinates,
-            },
-          },
-        ],
-      });
+    notifier.startRecording(context);
+  }
 
-      if (currentStep >= steps) {
-        timer.cancel();
-        _lastPosition = newPos;
+  Future<void> _pauseRecording() async {
+    final notifier = ref.read(trackProvider.notifier);
+    notifier.pauseRecording();
+    await NativeGpsChannel.stop();
+    await _gpsSub?.cancel();
+    _gpsSub = null;
+  }
 
-        // Només ara fem animació de la càmera un cop
-        if (!userMovedMap) {
-          mapController!.animateCamera(CameraUpdate.newLatLng(newPos));
-        }
-      }
+  Future<void> _resumeRecording() async {
+    final notifier = ref.read(trackProvider.notifier);
+    notifier.resumeRecording();
+
+    final settings = ref.read(gpsSettingsProvider);
+    await NativeGpsChannel.start(
+      useTime: settings.useTime,
+      seconds: settings.seconds,
+      meters: settings.meters,
+      accuracy: settings.accuracy,
+    );
+
+    _gpsSub ??= NativeGpsChannel.positionStream().listen((data) {
+      double lat = data['lat'] as double;
+      double lon = data['lon'] as double;
+
+      // lat += randomOffset(50);
+      // lon += randomOffset(50);
+
+      notifier.addCoordinate(lat, lon);
     });
   }
 
-  void _updateMapPosition(double lat, double lon) {
-    if (mapController == null) return;
+  Future<void> _stopRecording() async {
+    final notifier = ref.read(trackProvider.notifier);
 
-    mapController!.setGeoJsonSource("user_location", {
-      "type": "FeatureCollection",
-      "features": [
-        {
-          "type": "Feature",
-          "geometry": {
-            "type": "Point",
-            "coordinates": [lon, lat],
-          },
-        },
-      ],
-    });
+    notifier.stopRecording();
+    await NativeGpsChannel.stop();
+    await _gpsSub?.cancel();
+    _gpsSub = null;
 
-    // NO fem moveCamera cada frame de l’animació
-    // El seguiment el farem després de la interpolació
-  }
+    final export = await AppMessages.showExportDialog(context);
 
-  // ---------------------
-  // Configuració del punt i línia
-  // ---------------------
-  Future<void> _setupUserLocationLayer() async {
-    if (mapController == null) return;
-
-    await mapController!.addSource(
-      "track_line",
-      GeojsonSourceProperties(
-        data: {"type": "FeatureCollection", "features": []},
-      ),
-    );
-
-    await mapController!.addLayer(
-      "track_line",
-      "track_line_layer",
-      const LineLayerProperties(
-        lineColor: "#FF0000",
-        lineWidth: 4.0,
-        lineJoin: "round",
-        lineCap: "round",
-      ),
-    );
-
-    final Uint8List blueDot = await _createBlueDot();
-    await mapController!.addImage("user_icon", blueDot);
-
-    await mapController!.addSource(
-      "user_location",
-      GeojsonSourceProperties(
-        data: {"type": "FeatureCollection", "features": []},
-      ),
-    );
-
-    await mapController!.addLayer(
-      "user_location",
-      "user_location_layer",
-      const SymbolLayerProperties(iconImage: "user_icon", iconSize: 1.0),
-    );
-  }
-
-  Future<Uint8List> _createBlueDot() async {
-    const int size = 64;
-    final pictureRecorder = PictureRecorder();
-    final canvas = Canvas(pictureRecorder);
-    final paint = Paint()..color = Colors.blue;
-
-    canvas.drawCircle(const Offset(size / 2, size / 2), size / 2, paint);
-
-    final picture = pictureRecorder.endRecording();
-    final img = await picture.toImage(size, size);
-    final byteData = await img.toByteData(format: ImageByteFormat.png);
-    return byteData!.buffer.asUint8List();
-  }
-
-  double randomOffset(double meters) {
-    // Converteix metres aproximadament a graus
-    const meterInDegree = 1 / 111320.0;
-    final r = Random().nextDouble() * 2 - 1; // [-1, 1]
-    return r * meters * meterInDegree;
+    if (export == true) {
+      final filename = buildGpxFilename();
+      await exportGpx(filename, ref, context);
+    }
   }
 
   Future<void> _saveLastPosition(double lat, double lon) async {

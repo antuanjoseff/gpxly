@@ -33,6 +33,7 @@ dependencies:
   geolocator:
   xml:
   shared_preferences:
+  share_plus:
   path_provider:
   permission_handler:
   android_intent_plus:

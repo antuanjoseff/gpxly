@@ -3,6 +3,7 @@ class Track {
   final List<double> altitudes;
   final List<DateTime> timestamps;
   final bool recording;
+  final bool paused;
   final Duration duration;
 
   Track({
@@ -10,6 +11,7 @@ class Track {
     required this.altitudes,
     required this.timestamps,
     this.recording = false,
+    this.paused = false,
     this.duration = Duration.zero,
   });
 
@@ -18,6 +20,7 @@ class Track {
     List<double>? altitudes,
     List<DateTime>? timestamps,
     bool? recording,
+    bool? paused,
     Duration? duration,
   }) {
     return Track(
@@ -25,6 +28,7 @@ class Track {
       altitudes: altitudes ?? this.altitudes,
       timestamps: timestamps ?? this.timestamps,
       recording: recording ?? this.recording,
+      paused: paused ?? this.paused,
       duration: duration ?? this.duration,
     );
   }

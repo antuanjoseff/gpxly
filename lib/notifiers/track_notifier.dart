@@ -21,29 +21,30 @@ class TrackNotifier extends Notifier<Track> {
       altitudes: [],
       timestamps: [],
       recording: false,
+      paused: false,
       duration: Duration.zero,
     );
   }
 
   Future<void> startRecording(BuildContext context) async {
-    // 1. Estat inicial
-    print(">>> START RECORDING CALLED");
-    state = state.copyWith(recording: true, duration: Duration.zero);
+    // Si venim de Resume → no reiniciem duració
+    if (!state.recording) {
+      state = state.copyWith(recording: true, paused: false);
+    }
 
-    // ❌ NO iniciar el servei aquí
-    // await NativeGpsChannel.start();
-
-    // 2. Timer
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (state.recording) {
+    // Timer
+    _timer ??= Timer.periodic(const Duration(seconds: 1), (_) {
+      if (state.recording && !state.paused) {
         state = state.copyWith(
           duration: state.duration + const Duration(seconds: 1),
         );
       }
     });
 
-    // 3. Escoltar dades del servei natiu
-    _subscription = NativeGpsChannel.locationStream.listen((data) {
+    // Subscriure al GPS només si no existia
+    _subscription ??= NativeGpsChannel.locationStream.listen((data) {
+      if (!state.recording || state.paused) return;
+
       final lat = data["lat"] as double;
       final lon = data["lon"] as double;
       final accuracy = data["accuracy"] as double;
@@ -66,6 +67,14 @@ class TrackNotifier extends Notifier<Track> {
     });
   }
 
+  void pauseRecording() {
+    state = state.copyWith(paused: true);
+  }
+
+  void resumeRecording() {
+    state = state.copyWith(paused: false);
+  }
+
   Future<void> stopRecording() async {
     // 1. Aturar servei natiu
     await NativeGpsChannel.stop();
@@ -79,7 +88,7 @@ class TrackNotifier extends Notifier<Track> {
     _timer = null;
 
     // 4. Actualitzar estat
-    state = state.copyWith(recording: false);
+    state = state.copyWith(recording: false, paused: false);
   }
 
   void addCoordinate(double lat, double lon) {
@@ -111,6 +120,7 @@ class TrackNotifier extends Notifier<Track> {
       altitudes: [],
       timestamps: [],
       recording: false,
+      paused: false,
       duration: Duration.zero,
     );
   }
