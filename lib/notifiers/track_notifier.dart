@@ -20,6 +20,7 @@ class TrackNotifier extends Notifier<Track> {
       coordinates: [],
       altitudes: [],
       timestamps: [],
+      accuracies: [],
       recording: false,
       paused: false,
       duration: Duration.zero,
@@ -111,6 +112,7 @@ class TrackNotifier extends Notifier<Track> {
       ],
       altitudes: [...state.altitudes, pos.altitude],
       timestamps: [...state.timestamps, now],
+      accuracies: [...state.accuracies, pos.accuracy],
     );
   }
 
@@ -119,6 +121,7 @@ class TrackNotifier extends Notifier<Track> {
       coordinates: [],
       altitudes: [],
       timestamps: [],
+      accuracies: [],
       recording: false,
       paused: false,
       duration: Duration.zero,
