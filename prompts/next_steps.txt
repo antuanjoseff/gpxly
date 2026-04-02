@@ -1,0 +1,5 @@
+01.- Exportar track no fa res (potser ha petat al afegit elevation, bbox)
+02.- Posar números als sliders de la configuració del GPS.
+02.- Botons de gravar, pausa, reanudar, Exportar
+03.- Multi idioma
+04.- Grafic elevacions

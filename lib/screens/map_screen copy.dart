@@ -17,7 +17,7 @@ import 'package:maplibre_gl/maplibre_gl.dart';
 import 'dart:math';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:share_plus/share_plus.dart';
 
 class MapScreen extends ConsumerStatefulWidget {
   const MapScreen({super.key});
@@ -87,10 +87,21 @@ class _MapScreenState extends ConsumerState<MapScreen>
     return "Track-gpxly-$y-$m-$d.gpx";
   }
 
-  Future<void> _exportGpx(String filename) async {
+  Future<void> exportGpx(
+    BuildContext context,
+    String filename,
+    WidgetRef ref,
+  ) async {
     final track = ref.read(trackProvider);
 
-    if (track.coordinates.isEmpty) return;
+    if (track.coordinates.isEmpty) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("No hi ha cap track per exportar")),
+        );
+      }
+      return;
+    }
 
     final coords = track.coordinates;
     final alts = track.altitudes;
@@ -103,7 +114,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
     buffer.writeln('<?xml version="1.0" encoding="UTF-8"?>');
     buffer.writeln('<gpx version="1.1" creator="Gpxly">');
 
-    // 🔥 BOUNDS
     buffer.writeln(
       '<bounds minlat="${bounds["minlat"]}" minlon="${bounds["minlon"]}" '
       'maxlat="${bounds["maxlat"]}" maxlon="${bounds["maxlon"]}" />',
@@ -120,7 +130,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
           ? times[i].toUtc().toIso8601String()
           : null;
 
-      // 🔥 SPEED (si hi ha punt anterior)
       double speed = 0;
       if (i > 0 && i < times.length) {
         speed = _computeSpeed(
@@ -134,25 +143,27 @@ class _MapScreenState extends ConsumerState<MapScreen>
       }
 
       buffer.writeln('<trkpt lat="$lat" lon="$lon">');
-
       buffer.writeln('<ele>$ele</ele>');
       if (time != null) buffer.writeln('<time>$time</time>');
       buffer.writeln('<speed>$speed</speed>');
-
       buffer.writeln('</trkpt>');
     }
 
     buffer.writeln('</trkseg></trk></gpx>');
 
-    // Guardar fitxer
-    final dir = await getApplicationDocumentsDirectory();
-    final file = File("${dir.path}/$filename");
+    // 🔥 Guardar temporalment i compartir
+    final dir = await getTemporaryDirectory();
+    final safeName = filename.endsWith(".gpx") ? filename : "$filename.gpx";
+    final file = File("${dir.path}/$safeName");
+
     await file.writeAsString(buffer.toString());
 
+    await Share.shareXFiles([XFile(file.path)], text: "GPX exportat");
+
     if (context.mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("GPX exportat: $filename")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("GPX preparat per compartir: $safeName")),
+      );
     }
   }
 

@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:gpxly/notifiers/track_notifier.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 
 String buildGpxFilename() {
@@ -57,7 +57,14 @@ Future<void> exportGpx(
 ) async {
   final track = ref.read(trackProvider);
 
-  if (track.coordinates.isEmpty) return;
+  if (track.coordinates.isEmpty) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("No hi ha cap track per exportar")),
+      );
+    }
+    return;
+  }
 
   final coords = track.coordinates;
   final alts = track.altitudes;
@@ -105,24 +112,14 @@ Future<void> exportGpx(
 
   buffer.writeln('</trkseg></trk></gpx>');
 
-  // 🔥 GUARDA A DOWNLOADS
-  final dir = Directory('/storage/emulated/0/Download');
-  if (!await dir.exists()) {
-    await dir.create(recursive: true);
-  }
+  // 🔥 Guardar temporalment
+  final dir = await getTemporaryDirectory();
+  final safeName = filename.endsWith(".gpx") ? filename : "$filename.gpx";
+  final file = File("${dir.path}/$safeName");
 
-  final file = File("${dir.path}/$filename");
   await file.writeAsString(buffer.toString());
 
-  // 🔥 MOSTRA SNACKBAR
-  if (context.mounted) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("GPX guardat a Downloads: $filename")),
-    );
-  }
-
-  // 🔥 OBRIR MENÚ DE COMPARTIR
-  await Share.shareXFiles([
-    XFile(file.path),
-  ], text: "Track GPX generat amb Gpxly");
+  // 🔥 Compartir (API funcional encara que deprecated)
+  // ignore: deprecated_member_use
+  await Share.shareXFiles([XFile(file.path)], text: "GPX exportat");
 }
