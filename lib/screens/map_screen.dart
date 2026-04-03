@@ -33,6 +33,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
   DateTime? _lastBackPress;
   Timer? _cameraMoveDebounce;
   bool isProgrammaticMove = false;
+  bool _isPanelExpanded = true;
 
   StreamSubscription<Map<String, dynamic>>? _gpsSub;
 
@@ -90,11 +91,95 @@ class _MapScreenState extends ConsumerState<MapScreen>
     }
   }
 
+  void _handleStopProcess(BuildContext context, WidgetRef ref) async {
+    // PAS 1: Confirmar aturada
+    final volAturar = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Aturar ruta?"),
+        content: const Text("Es deixarà de gravar la teva posició."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("CANCEL·LA"),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("ATURA", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (volAturar != true) return;
+
+    // Aturem la gravació al teu provider
+    await ref.read(trackProvider.notifier).stopRecording();
+
+    if (!context.mounted) return;
+
+    // PAS 2: Preguntar si es vol compartir
+    final volCompartir = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Ruta finalitzada"),
+        content: const Text(
+          "Vols compartir el fitxer GPX d'aquesta activitat?",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("ARA NO"),
+          ),
+          ElevatedButton.icon(
+            onPressed: () => Navigator.pop(context, true),
+            icon: const Icon(Icons.share),
+            label: const Text("COMPARTIR"),
+          ),
+        ],
+      ),
+    );
+
+    if (volCompartir == true) {
+      // Si vol compartir, cridem a la teva funció que ja ho fa tot
+      // (exporta, comparteix i pregunta pel reset)
+      await _shareTrack();
+    } else {
+      // Si NO vol compartir, hem de preguntar igualment si vol fer el Reset
+      // ja que la teva funció _shareTrack no s'executarà.
+      _preguntarNomesReset();
+    }
+  }
+
+  void _preguntarNomesReset() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text("Gestió del track"),
+        content: const Text("Vols netejar el mapa per a una nova ruta?"),
+        actions: [
+          TextButton(
+            onPressed: () {
+              ref.read(trackProvider.notifier).reset();
+              Navigator.pop(context);
+            },
+            child: const Text("REINICIAR (NETEJA)"),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("MANTENIR DADES"),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final track = ref.watch(trackProvider);
     final accuracy = ref.watch(gpsAccuracyProvider);
-    final level = ref.watch(gpsAccuracyLevelProvider);
 
     // Listener dins build (Riverpod obliga)
     ref.listen(trackProvider, (previous, next) {
@@ -159,40 +244,84 @@ class _MapScreenState extends ConsumerState<MapScreen>
         SystemNavigator.pop();
       },
       child: Scaffold(
+        extendBody: true,
         appBar: AppBar(
-          backgroundColor: Colors.black87,
-          title: const Text('Mapa'),
-          actions: [
-            Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  GpsAccuracyBars(),
-                  const SizedBox(width: 4),
-                  // Només mostrem el text si hi ha dades reals
-                  if (accuracy != 999)
-                    Text(
-                      accuracy == 999 ? "?" : "${accuracy.round()} m",
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.gps_fixed),
-              onPressed: () {
-                Navigator.push(
+          backgroundColor: Colors.black,
+          automaticallyImplyLeading: false,
+
+          // 1. TOTA LA INFO TÈCNICA A L'ESQUERRA
+          leadingWidth: 180, // Ampliem per encabir les barres + metres
+          leading: Row(
+            children: [
+              const SizedBox(width: 8),
+              IconButton(
+                visualDensity: VisualDensity.compact,
+                icon: const Icon(
+                  Icons.settings_outlined,
+                  color: Colors.white38,
+                  size: 20,
+                ),
+                onPressed: () => Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const GpsSettingsScreen()),
-                );
-              },
-            ),
-          ],
+                ),
+              ),
+              const GpsAccuracyBars(),
+              const SizedBox(width: 6),
+              // ELS METRES ARA AQUÍ
+              if (accuracy != 999)
+                Text(
+                  "${accuracy.round()}m",
+                  style: const TextStyle(
+                    color: Color(0xFFFFFFFF), // Blau Elèctric per a dades GPS
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+            ],
+          ),
+
+          // 2. CRONÒMETRE A LA DRETA
+          centerTitle: false,
+          title: Align(
+            alignment: Alignment.centerRight,
+            child: track.recording
+                ? Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(
+                        0xFF00E676,
+                      ).withAlpha(30), // Fons verd neó molt tènue
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      track.duration
+                          .toString()
+                          .split('.')
+                          .first
+                          .padLeft(8, "0"),
+                      style: const TextStyle(
+                        fontFamily: 'monospace',
+                        fontWeight: FontWeight.w800,
+                        fontSize: 14,
+                        color: Color(0xFFFFFFFF), // Verd Neó
+                      ),
+                    ),
+                  )
+                : const Text(
+                    'GPXLY',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 2,
+                      color: Colors.white12,
+                    ),
+                  ),
+          ),
         ),
         body: Stack(
           children: [
@@ -260,109 +389,243 @@ class _MapScreenState extends ConsumerState<MapScreen>
               },
             ),
 
-            Positioned(
-              top: 40,
-              left: 20,
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                color: Colors.black54,
-                child: Text(
-                  "${track.formattedDuration} (${track.coordinates.length} punts)",
-                  style: const TextStyle(color: Colors.white, fontSize: 18),
-                ),
-              ),
-            ),
-
-            // -------------------------
-            // BOTÓ PRINCIPAL
-            // -------------------------
-            // -------------------------
-            // BOTÓ PRINCIPAL
-            // -------------------------
-            Positioned(
-              bottom: 20,
-              left: 0,
-              right: 0,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      foregroundColor: Colors.white,
-                      shape: const CircleBorder(),
-                      padding: const EdgeInsets.all(
-                        24,
-                      ), // ajusta segons el que vulguis
-                      elevation: 6,
-                    ),
-                    onPressed: () {
-                      if (!track.recording) {
-                        _startRecording();
-                      } else if (track.paused) {
-                        _resumeRecording();
-                      } else {
-                        _pauseRecording();
-                      }
-                    },
-                    child: Icon(
-                      track.recording
-                          ? (track.paused ? Icons.play_arrow : Icons.pause)
-                          : Icons.fiber_manual_record,
-                      size: 32,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    track.recording
-                        ? (track.paused ? "Pausat" : "Gravant...")
-                        : "Gravant...",
-                    style: recordLabelStyle,
-                  ),
-                  const SizedBox(height: 8),
-                  // Botó de compartir només si està gravant i pausat
-                  if (track.recording && track.paused)
-                    ElevatedButton.icon(
-                      onPressed: _shareTrack,
-                      icon: const Icon(Icons.share),
-                      label: const Text("Compartir"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                      ),
-                    ),
-                ],
-              ),
-            ),
             // -------------------------
             // BOTÓ CENTER
             // -------------------------
-            Positioned(
-              top: 20,
-              right: 20,
-              child: FloatingActionButton(
-                heroTag: "center",
-                backgroundColor: Colors.blue,
-                child: const Icon(Icons.my_location),
-                onPressed: () async {
-                  if (track.coordinates.isEmpty || mapController == null)
-                    return;
+            if (userMovedMap && track.coordinates.isNotEmpty)
+              Positioned(
+                top: 10, // Just a sota de l'AppBar
+                right: 12,
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 200),
+                  opacity: userMovedMap ? 1.0 : 0.0,
+                  child: InkWell(
+                    onTap: () async {
+                      if (track.coordinates.isEmpty || mapController == null)
+                        return;
+                      final last = track.coordinates.last;
 
-                  final last = track.coordinates.last;
+                      setState(() {
+                        isProgrammaticMove = true;
+                        userMovedMap = false;
+                      });
 
-                  print("PROGRAMMATIC MOVE → animateCamera()");
+                      await mapController!.animateCamera(
+                        CameraUpdate.newLatLng(LatLng(last[1], last[0])),
+                      );
 
-                  isProgrammaticMove = true;
-                  userMovedMap = false; // 👈 reset correcte
-
-                  await mapController!.animateCamera(
-                    CameraUpdate.newLatLng(LatLng(last[1], last[0])),
-                  );
-
-                  isProgrammaticMove = false;
-                },
+                      isProgrammaticMove = false;
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withAlpha(180),
+                        borderRadius: BorderRadius.circular(
+                          4,
+                        ), // Cantons més rectes, estil tècnic
+                        border: Border.all(
+                          color: const Color(0xFF2979FF).withAlpha(100),
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Un petit punt que parpelleja o indica activitat
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFFFFFFFF),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          const Text(
+                            "CENTRAR MAPA",
+                            style: TextStyle(
+                              color: Color(0xFFFFFFFF),
+                              fontSize: 10,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1.2,
+                              fontFamily: 'monospace',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
               ),
-            ),
           ],
+        ),
+        bottomNavigationBar: SafeArea(
+          bottom: false,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 400),
+            curve: Curves.fastOutSlowIn,
+            padding: EdgeInsets.fromLTRB(
+              16,
+              4,
+              16,
+              MediaQuery.of(context).padding.bottom + 12,
+            ),
+            decoration: BoxDecoration(
+              // Estil Gràfit amb transparència
+              color: const Color(0xFF1A1A1A).withAlpha(200),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(30),
+              ),
+              border: Border.all(color: Colors.white10),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Nansa per obrir/tancar (Més discreta)
+                GestureDetector(
+                  onTap: () =>
+                      setState(() => _isPanelExpanded = !_isPanelExpanded),
+                  behavior: HitTestBehavior.opaque,
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Center(
+                      child: Container(
+                        width: 45,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.white12,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                if (_isPanelExpanded) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      // ESTAT 1: NO GRAVANT (Botó Únic d'Inici)
+                      if (!track.recording)
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(
+                                0xFF00E676,
+                              ).withAlpha(180), // Verd Neó
+                              foregroundColor:
+                                  Colors.black, // Contrast alt per al verd
+                              minimumSize: const Size(
+                                double.infinity,
+                                58,
+                              ), // Alçada fixa
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            ),
+                            onPressed: () {
+                              _startRecording();
+                              setState(() => _isPanelExpanded = false);
+                            },
+                            icon: const Icon(Icons.play_arrow, size: 28),
+                            label: const Text(
+                              "INICIA RUTA",
+                              style: TextStyle(fontWeight: FontWeight.w900),
+                            ),
+                          ),
+                        )
+                      // ESTAT 2: GRAVANT
+                      else ...[
+                        // Botó de Pausa o Reprèn
+                        Expanded(
+                          flex: 2,
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: track.paused
+                                  ? const Color(0xFF2979FF).withAlpha(
+                                      180,
+                                    ) // Blau Elèctric
+                                  : const Color(
+                                      0xFFFFA000,
+                                    ).withAlpha(180), // Ambre (Pausa)
+                              foregroundColor: Colors.white,
+                              minimumSize: const Size(
+                                double.infinity,
+                                58,
+                              ), // 👈 ALÇADA FIXA
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            ),
+                            onPressed: () => track.paused
+                                ? _resumeRecording()
+                                : _pauseRecording(),
+                            icon: Icon(
+                              track.paused ? Icons.play_arrow : Icons.pause,
+                            ),
+                            label: Text(
+                              track.paused ? "REPRÈN" : "PAUSA",
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(width: 12),
+
+                        // Botó d'Aturar o Compartir
+                        Expanded(
+                          flex: 1,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: track.paused
+                                  ? const Color(0xFF455A64).withAlpha(
+                                      180,
+                                    ) // Gris fosc (Compartir)
+                                  : const Color(
+                                      0xFFFF5252,
+                                    ).withAlpha(180), // Vermell (Aturar)
+                              foregroundColor: Colors.white,
+                              minimumSize: const Size(
+                                double.infinity,
+                                58,
+                              ), // 👈 MATEIXA ALÇADA FIXA
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            ),
+                            onLongPress: () => _handleStopProcess(context, ref),
+                            onPressed: () {
+                              if (track.paused) {
+                                _shareTrack();
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text("Mantén premut per ATURAR"),
+                                    duration: Duration(seconds: 1),
+                                  ),
+                                );
+                              }
+                            },
+                            child: Icon(
+                              track.paused ? Icons.share : Icons.stop,
+                              size: 26,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                ],
+              ],
+            ),
+          ),
         ),
       ),
     );

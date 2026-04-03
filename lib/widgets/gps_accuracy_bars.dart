@@ -12,7 +12,6 @@ class GpsAccuracyBars extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final level = ref.watch(gpsAccuracyLevelProvider);
     final track = ref.watch(trackProvider);
-    final accuracy = ref.watch(gpsAccuracyProvider);
 
     Color color;
     int activeBars;
