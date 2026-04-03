@@ -1,22 +1,20 @@
-import 'package:flutter/foundation.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:flutter/gestures.dart';
 import 'package:gpxly/notifiers/gps_settings_provider.dart';
 import 'package:gpxly/notifiers/track_notifier.dart';
 import 'package:gpxly/screens/gps_settings_screen.dart';
 import 'package:gpxly/services/native_gps_channel.dart';
 import 'package:gpxly/services/permissions_service.dart';
 import 'package:gpxly/ui/app_messages.dart';
-import 'package:gpxly/widgets/map_buttons.dart';
 import 'package:gpxly/services/gpx_exporter.dart';
 import 'package:gpxly/utils/map_animation.dart';
 import 'package:gpxly/utils/map_layers.dart';
-
+import 'package:gpxly/widgets/gps_accuracy_bars.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
+import 'package:gpxly/notifiers/gps_accuracy_provider.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -40,6 +38,20 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
   LatLng? _lastPosition;
   Timer? _animationTimer;
+
+  final ButtonStyle recordButtonStyle = ElevatedButton.styleFrom(
+    backgroundColor: Colors.red,
+    foregroundColor: Colors.white,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+    padding: const EdgeInsets.all(16),
+    elevation: 6,
+  );
+
+  final TextStyle recordLabelStyle = const TextStyle(
+    color: Colors.white,
+    fontSize: 18,
+    fontWeight: FontWeight.bold,
+  );
 
   @override
   void initState() {
@@ -81,6 +93,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
   @override
   Widget build(BuildContext context) {
     final track = ref.watch(trackProvider);
+    final accuracy = ref.watch(gpsAccuracyProvider);
+    final level = ref.watch(gpsAccuracyLevelProvider);
 
     // Listener dins build (Riverpod obliga)
     ref.listen(trackProvider, (previous, next) {
@@ -149,6 +163,26 @@ class _MapScreenState extends ConsumerState<MapScreen>
           backgroundColor: Colors.black87,
           title: const Text('Mapa'),
           actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  GpsAccuracyBars(),
+                  const SizedBox(width: 4),
+                  // Només mostrem el text si hi ha dades reals
+                  if (accuracy != 999)
+                    Text(
+                      accuracy == 999 ? "?" : "${accuracy.round()} m",
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                ],
+              ),
+            ),
             IconButton(
               icon: const Icon(Icons.gps_fixed),
               onPressed: () {
@@ -242,32 +276,68 @@ class _MapScreenState extends ConsumerState<MapScreen>
             // -------------------------
             // BOTÓ PRINCIPAL
             // -------------------------
+            // -------------------------
+            // BOTÓ PRINCIPAL
+            // -------------------------
             Positioned(
-              bottom: 40,
-              right: 20,
-              child: StartPauseResumeButton(
-                track: track,
-                onStart: () async => await _startRecording(),
-                onPause: () async => await _pauseRecording(),
-                onResume: () async => await _resumeRecording(),
+              bottom: 20,
+              left: 0,
+              right: 0,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      foregroundColor: Colors.white,
+                      shape: const CircleBorder(),
+                      padding: const EdgeInsets.all(
+                        24,
+                      ), // ajusta segons el que vulguis
+                      elevation: 6,
+                    ),
+                    onPressed: () {
+                      if (!track.recording) {
+                        _startRecording();
+                      } else if (track.paused) {
+                        _resumeRecording();
+                      } else {
+                        _pauseRecording();
+                      }
+                    },
+                    child: Icon(
+                      track.recording
+                          ? (track.paused ? Icons.play_arrow : Icons.pause)
+                          : Icons.fiber_manual_record,
+                      size: 32,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    track.recording
+                        ? (track.paused ? "Pausat" : "Gravant...")
+                        : "Gravant...",
+                    style: recordLabelStyle,
+                  ),
+                  const SizedBox(height: 8),
+                  // Botó de compartir només si està gravant i pausat
+                  if (track.recording && track.paused)
+                    ElevatedButton.icon(
+                      onPressed: _shareTrack,
+                      icon: const Icon(Icons.share),
+                      label: const Text("Compartir"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                      ),
+                    ),
+                ],
               ),
             ),
-
-            // -------------------------
-            // BOTÓ STOP
-            // -------------------------
-            if (track.recording && track.paused)
-              Positioned(
-                bottom: 120,
-                right: 20,
-                child: StopButton(onStop: () async => await _stopRecording()),
-              ),
-
             // -------------------------
             // BOTÓ CENTER
             // -------------------------
             Positioned(
-              bottom: 200,
+              top: 20,
               right: 20,
               child: FloatingActionButton(
                 heroTag: "center",
@@ -318,15 +388,21 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
     final ok = await PermissionsService.ensurePermissions(context);
     if (!context.mounted || !ok) return;
+    print("GPXLY START RECORDING");
+
+    final pos = await Geolocator.getCurrentPosition();
+    notifier.addCoordinate(pos.latitude, pos.longitude);
+    ref.read(gpsAccuracyProvider.notifier).state = pos.accuracy;
 
     _gpsSub ??= NativeGpsChannel.positionStream().listen((data) {
       double lat = data['lat'] as double;
       double lon = data['lon'] as double;
-
+      double acc = data['accuracy'] as double;
       // lat += randomOffset(50);
       // lon += randomOffset(50);
-
+      print("GPXLY ACCURACY CHANGED ${acc}");
       notifier.addCoordinate(lat, lon);
+      ref.read(gpsAccuracyProvider.notifier).state = acc;
     });
 
     final settings = ref.read(gpsSettingsProvider);
@@ -337,11 +413,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
       accuracy: settings.accuracy,
     );
 
-    final pos = await Geolocator.getCurrentPosition();
-    notifier.addCoordinate(pos.latitude, pos.longitude);
-
     if (mapController != null) {
-      print("PROGRAMMATIC MOVE → animateCamera()");
       isProgrammaticMove = true;
       mapController!
           .animateCamera(
@@ -404,5 +476,46 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final prefs = await SharedPreferences.getInstance();
     await prefs.setDouble("last_lat", lat);
     await prefs.setDouble("last_lon", lon);
+  }
+
+  Future<void> _shareTrack() async {
+    final track = ref.read(trackProvider);
+
+    if (track.coordinates.isEmpty) return;
+
+    // Exporta i comparteix amb la funció que ja tens
+    final filename = buildGpxFilename();
+    await exportGpx(filename, ref, context);
+
+    if (!mounted) return;
+
+    // Diàleg després de compartir
+    final reset = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Vols reiniciar el track?"),
+        content: const Text(
+          "Si continues, el track seguirà sumant punts.\n"
+          "Si reinicies, s'esborrarà tota la informació actual.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Continuar"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Reiniciar"),
+          ),
+        ],
+      ),
+    );
+
+    if (reset == true) {
+      ref.read(trackProvider.notifier).reset();
+      setState(() {});
+    } else {
+      setState(() {});
+    }
   }
 }
