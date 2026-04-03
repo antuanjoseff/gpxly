@@ -1,9 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
-
+import 'package:flutter/gestures.dart';
 import 'package:gpxly/notifiers/gps_settings_provider.dart';
 import 'package:gpxly/notifiers/track_notifier.dart';
 import 'package:gpxly/screens/gps_settings_screen.dart';
@@ -32,6 +33,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
   bool styleInitialized = false;
   bool userMovedMap = false;
   DateTime? _lastBackPress;
+  Timer? _cameraMoveDebounce;
+  bool isProgrammaticMove = false;
 
   StreamSubscription<Map<String, dynamic>>? _gpsSub;
 
@@ -62,6 +65,19 @@ class _MapScreenState extends ConsumerState<MapScreen>
     }
   }
 
+  void _onMapChanged() {
+    if (isProgrammaticMove) return; // 👈 CLAU
+
+    final moving = mapController?.isCameraMoving ?? false;
+
+    if (moving) {
+      _cameraMoveDebounce?.cancel();
+      _cameraMoveDebounce = Timer(const Duration(milliseconds: 150), () {
+        userMovedMap = true;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final track = ref.watch(trackProvider);
@@ -74,6 +90,27 @@ class _MapScreenState extends ConsumerState<MapScreen>
       final last = next.coordinates.last;
       final lon = last[0];
       final lat = last[1];
+
+      // 🔵 PRIMERA COORDENADA → dibuix immediat
+      if (next.coordinates.length == 1) {
+        updateMapPosition(mapController!, lat, lon);
+
+        // També cal dibuixar la línia (buida o amb 1 punt)
+        mapController!.setGeoJsonSource("track_line", {
+          "type": "FeatureCollection",
+          "features": [
+            {
+              "type": "Feature",
+              "geometry": {
+                "type": "LineString",
+                "coordinates": next.coordinates,
+              },
+            },
+          ],
+        });
+
+        return;
+      }
 
       try {
         animateLastSegment(
@@ -126,13 +163,28 @@ class _MapScreenState extends ConsumerState<MapScreen>
         body: Stack(
           children: [
             MapLibreMap(
+              trackCameraPosition: true,
               styleString: "assets/osm_style.json",
               initialCameraPosition: const CameraPosition(
                 target: LatLng(0, 0),
                 zoom: 14,
               ),
-              onMapCreated: (controller) => mapController = controller,
-              onCameraMove: (_) => userMovedMap = true,
+              // onCameraMove: (position) {
+              //   if (isProgrammaticMove) {
+              //     return;
+              //   }
+
+              //   // 👉 Això sí que és usuari
+              //   userMovedMap = true;
+              // },
+              onCameraMove: (position) {
+                if (isProgrammaticMove) return;
+                userMovedMap = true;
+              },
+              onMapCreated: (controller) {
+                mapController = controller;
+                controller.addListener(_onMapChanged);
+              },
               onStyleLoadedCallback: () async {
                 await setupUserLocationLayer(mapController!);
                 styleInitialized = true;
@@ -142,9 +194,11 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 final lon = prefs.getDouble("last_lon");
 
                 if (lat != null && lon != null) {
-                  mapController!.animateCamera(
-                    CameraUpdate.newLatLng(LatLng(lat, lon)),
-                  );
+                  print("PROGRAMMATIC MOVE → animateCamera()");
+                  isProgrammaticMove = true;
+                  mapController!
+                      .animateCamera(CameraUpdate.newLatLng(LatLng(lat, lon)))
+                      .then((_) => isProgrammaticMove = false);
                 }
 
                 updateMapPosition(mapController!, lat ?? 0, lon ?? 0);
@@ -219,14 +273,22 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 heroTag: "center",
                 backgroundColor: Colors.blue,
                 child: const Icon(Icons.my_location),
-                onPressed: () {
-                  userMovedMap = false;
-                  if (track.coordinates.isNotEmpty && mapController != null) {
-                    final last = track.coordinates.last;
-                    mapController!.animateCamera(
-                      CameraUpdate.newLatLng(LatLng(last[1], last[0])),
-                    );
-                  }
+                onPressed: () async {
+                  if (track.coordinates.isEmpty || mapController == null)
+                    return;
+
+                  final last = track.coordinates.last;
+
+                  print("PROGRAMMATIC MOVE → animateCamera()");
+
+                  isProgrammaticMove = true;
+                  userMovedMap = false; // 👈 reset correcte
+
+                  await mapController!.animateCamera(
+                    CameraUpdate.newLatLng(LatLng(last[1], last[0])),
+                  );
+
+                  isProgrammaticMove = false;
                 },
               ),
             ),
@@ -279,9 +341,13 @@ class _MapScreenState extends ConsumerState<MapScreen>
     notifier.addCoordinate(pos.latitude, pos.longitude);
 
     if (mapController != null) {
-      mapController!.animateCamera(
-        CameraUpdate.newLatLng(LatLng(pos.latitude, pos.longitude)),
-      );
+      print("PROGRAMMATIC MOVE → animateCamera()");
+      isProgrammaticMove = true;
+      mapController!
+          .animateCamera(
+            CameraUpdate.newLatLng(LatLng(pos.latitude, pos.longitude)),
+          )
+          .then((_) => isProgrammaticMove = false);
     }
 
     notifier.startRecording(context);

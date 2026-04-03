@@ -34,10 +34,25 @@ void animateLastSegment({
   // Si ja hi ha una animació en marxa, no la reiniciem
   if (currentTimer != null && currentTimer.isActive) return;
 
-  // Si només hi ha un punt, no cal interpolar
+  // 🔵 CAS ESPECIAL: només hi ha un punt → dibuix immediat
   if (allCoordinates.length < 2) {
     setLastPosition(newPos);
 
+    // Punt blau
+    controller.setGeoJsonSource("user_location", {
+      "type": "FeatureCollection",
+      "features": [
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [lon, lat],
+          },
+        },
+      ],
+    });
+
+    // Línia (amb 1 punt no es veu, però és correcte)
     controller.setGeoJsonSource("track_line", {
       "type": "FeatureCollection",
       "features": [
@@ -51,7 +66,7 @@ void animateLastSegment({
     return;
   }
 
-  // Punt anterior
+  // 🔴 A partir d’aquí → animació
   final fullTrack = List<List<double>>.from(allCoordinates);
   final penultimate = fullTrack[fullTrack.length - 2];
   final startLat = penultimate[1];
@@ -70,7 +85,7 @@ void animateLastSegment({
     final animatedLat = startLat + deltaLat * currentStep;
     final animatedLon = startLon + deltaLon * currentStep;
 
-    // Actualitzar punt blau
+    // 🔵 Actualitzar punt blau
     controller.setGeoJsonSource("user_location", {
       "type": "FeatureCollection",
       "features": [
@@ -84,7 +99,7 @@ void animateLastSegment({
       ],
     });
 
-    // Actualitzar línia amb el punt interpolat
+    // 🔴 Actualitzar línia amb el punt interpolat
     final animatedCoordinates = [
       ...fullTrack.sublist(0, fullTrack.length - 1),
       [animatedLon, animatedLat],
@@ -109,6 +124,7 @@ void animateLastSegment({
       setLastPosition(newPos);
 
       if (!userMovedMap) {
+        print(">>> RECENTERING FROM animateLastSegment()");
         controller.animateCamera(CameraUpdate.newLatLng(newPos));
       }
 
@@ -116,6 +132,5 @@ void animateLastSegment({
     }
   });
 
-  // Guardem el timer al MapScreen
   setTimer(timer);
 }

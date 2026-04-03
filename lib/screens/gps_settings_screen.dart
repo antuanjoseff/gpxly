@@ -148,23 +148,35 @@ class _GpsSettingsScreenState extends ConsumerState<GpsSettingsScreen>
                           },
                         ),
                         const SizedBox(height: 20),
-                        Slider(
-                          value: _seconds.toDouble(),
-                          min: 1,
-                          max: 60,
-                          divisions: 59,
-                          label: _seconds.toString(),
-                          onChanged: (val) {
-                            setState(() {
-                              _seconds = val.round();
-                              _meters = 1;
-                              _pendingTime = true;
-                              _hasPendingChanges = true;
-                            });
+                        Column(
+                          children: [
+                            Text(
+                              "Cada $_seconds segons",
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Slider(
+                              value: _seconds.toDouble(),
+                              min: 1,
+                              max: 60,
+                              divisions: 59,
+                              label: _seconds.toString(),
+                              onChanged: (val) {
+                                setState(() {
+                                  _seconds = val.round();
+                                  _meters = 1;
+                                  _pendingTime = true;
+                                  _hasPendingChanges = true;
+                                });
 
-                            _markPending();
-                          },
+                                _markPending();
+                              },
+                            ),
+                          ],
                         ),
+
                         const Icon(Icons.timer),
 
                         const SizedBox(height: 40),
@@ -199,23 +211,35 @@ class _GpsSettingsScreenState extends ConsumerState<GpsSettingsScreen>
                           },
                         ),
                         const SizedBox(height: 20),
-                        Slider(
-                          value: _meters,
-                          min: 1,
-                          max: 100,
-                          divisions: 99,
-                          label: _meters.toInt().toString(),
-                          onChanged: (val) {
-                            setState(() {
-                              _meters = val.roundToDouble();
-                              _seconds = 1;
-                              _pendingMeters = true;
-                              _hasPendingChanges = true;
-                            });
+                        Column(
+                          children: [
+                            Text(
+                              "Cada ${_meters.toInt()} metres",
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Slider(
+                              value: _meters,
+                              min: 1,
+                              max: 100,
+                              divisions: 99,
+                              label: _meters.toInt().toString(),
+                              onChanged: (val) {
+                                setState(() {
+                                  _meters = val.roundToDouble();
+                                  _seconds = 1;
+                                  _pendingMeters = true;
+                                  _hasPendingChanges = true;
+                                });
 
-                            _markPending();
-                          },
+                                _markPending();
+                              },
+                            ),
+                          ],
                         ),
+
                         const Icon(Icons.straighten),
 
                         const SizedBox(height: 40),
@@ -238,7 +262,13 @@ class _GpsSettingsScreenState extends ConsumerState<GpsSettingsScreen>
                     Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text("Accuracy màxima (${_accuracy.toInt()} m)"),
+                        Text(
+                          "Accuracy màxima: ${_accuracy.toInt()} m",
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                         Slider(
                           value: _accuracy,
                           min: 5,
@@ -255,6 +285,7 @@ class _GpsSettingsScreenState extends ConsumerState<GpsSettingsScreen>
                             _markPending();
                           },
                         ),
+
                         const Icon(Icons.gps_fixed),
 
                         const SizedBox(height: 40),
