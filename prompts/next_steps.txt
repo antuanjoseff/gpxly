@@ -1,5 +1,13 @@
-00.- Repasar el smart centering. Ara no funciona
-01.- Posar números als sliders de la configuració del GPS.
-02.- Botons de gravar, pausa, reanudar, Exportar
 03.- Multi idioma
 04.- Grafic elevacions
+
+ICONA
+
+1. Idees per a la icona de GpxGo
+Com que el nom és tecnològic i d'acció, la icona ha de ser neta i reconeixible:
+
+    L'Estil "Ruta Activa": Una lletra "G" majúscula estilitzada on el traç de la lletra és una línia de track (amb punts de coordenada) i acaba en una fletxa que apunta cap amunt (el "Go").
+    El "Pin" Dinàmic: La clàssica xinxeta de mapa, però inclinada 45 graus cap a la dreta per donar sensació de velocitat, amb una estela darrere que formi les lletres "GPX".
+    Minimalisme Flat: Un fons de color taronja potent o blau elèctric (colors d'esport) amb el símbol de "Play" (
+    ) i a dins les lletres "GPX" en blanc.
+    El Contrast: Un cercle negre amb una línia de track vermella fluorescent que dibuixa una "S" tombada (fent referència a un camí) i el text "GO" a sota en negreta.

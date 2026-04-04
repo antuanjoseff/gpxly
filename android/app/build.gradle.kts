@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "app.antuanjoseff.gpxly"
+    namespace = "app.antuanjoseff.gpxgo"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = "28.1.13356709"
 
@@ -21,7 +21,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "app.antuanjoseff.gpxly"
+        applicationId = "app.antuanjoseff.gpxgo"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

@@ -9,8 +9,6 @@ import '../services/native_gps_channel.dart';
 class TrackNotifier extends Notifier<Track> {
   Timer? _timer;
   StreamSubscription<Map<String, dynamic>>? _subscription;
-
-  // 🔥 Estat inicial persistent (NO es reinicia quan el provider es reconstrueix)
   Track? _initialState;
 
   @override
@@ -28,12 +26,10 @@ class TrackNotifier extends Notifier<Track> {
   }
 
   Future<void> startRecording(BuildContext context) async {
-    // Si venim de Resume → no reiniciem duració
     if (!state.recording) {
       state = state.copyWith(recording: true, paused: false);
     }
 
-    // Timer
     _timer ??= Timer.periodic(const Duration(seconds: 1), (_) {
       if (state.recording && !state.paused) {
         state = state.copyWith(
@@ -42,19 +38,19 @@ class TrackNotifier extends Notifier<Track> {
       }
     });
 
-    // Subscriure al GPS només si no existia
     _subscription ??= NativeGpsChannel.locationStream.listen((data) {
       if (!state.recording || state.paused) return;
 
       final lat = data["lat"] as double;
       final lon = data["lon"] as double;
       final accuracy = data["accuracy"] as double;
+      final alt = (data["alt"] ?? 0.0) as double;
 
       addPointFromPosition(
         Position(
           latitude: lat,
           longitude: lon,
-          altitude: 0,
+          altitude: alt,
           timestamp: DateTime.now(),
           accuracy: accuracy,
           altitudeAccuracy: 0,
@@ -68,51 +64,92 @@ class TrackNotifier extends Notifier<Track> {
     });
   }
 
-  void pauseRecording() {
-    state = state.copyWith(paused: true);
-  }
-
-  void resumeRecording() {
-    state = state.copyWith(paused: false);
-  }
+  void pauseRecording() => state = state.copyWith(paused: true);
+  void resumeRecording() => state = state.copyWith(paused: false);
 
   Future<void> stopRecording() async {
-    // 1. Aturar servei natiu
     await NativeGpsChannel.stop();
-
-    // 2. Cancel·lar escolta d’events
     await _subscription?.cancel();
     _subscription = null;
-
-    // 3. Aturar timer
     _timer?.cancel();
     _timer = null;
-
-    // 4. Actualitzar estat
     state = state.copyWith(recording: false, paused: false);
-  }
-
-  void addCoordinate(double lat, double lon) {
-    print(">>> addCoordinate");
-    state = state.copyWith(
-      coordinates: [
-        ...state.coordinates,
-        [lon, lat], // GeoJSON = [lon, lat]
-      ],
-    );
   }
 
   void addPointFromPosition(Position pos) {
     print(">>> addPointFromPosition");
-    final now = DateTime.now();
+
+    double newDistance = state.distance;
+    double newAscent = state.ascent;
+    double newDescent = state.descent;
+    double newMax = state.maxElevation;
+    double newMin = state.minElevation;
+
+    // Si ja hi ha punts, calculem la diferència només amb l'últim punt existent
+    if (state.coordinates.isNotEmpty) {
+      final lastCoords = state.coordinates.last; // [lon, lat]
+      final lastAlt = state.altitudes.last;
+
+      // 1. Distància acumulada
+      newDistance += Geolocator.distanceBetween(
+        lastCoords[1],
+        lastCoords[0],
+        pos.latitude,
+        pos.longitude,
+      );
+
+      // 2. Desnivells (Només si hi ha canvi d'altitud significatiu)
+      double diffAlt = pos.altitude - lastAlt;
+      if (diffAlt > 0) {
+        newAscent += diffAlt;
+      } else if (diffAlt < 0) {
+        newDescent += diffAlt.abs();
+      }
+    }
+
+    // 3. Altituds extremes (Inicialitzem si és el primer punt)
+    if (state.altitudes.isEmpty) {
+      newMax = pos.altitude;
+      newMin = pos.altitude;
+    } else {
+      if (pos.altitude > newMax) newMax = pos.altitude;
+      if (pos.altitude < newMin) newMin = pos.altitude;
+    }
+
     state = state.copyWith(
       coordinates: [
         ...state.coordinates,
         [pos.longitude, pos.latitude],
       ],
       altitudes: [...state.altitudes, pos.altitude],
-      timestamps: [...state.timestamps, now],
+      timestamps: [...state.timestamps, DateTime.now()],
       accuracies: [...state.accuracies, pos.accuracy],
+      distance: newDistance,
+      ascent: newAscent,
+      descent: newDescent,
+      maxElevation: newMax,
+      minElevation: newMin,
+    );
+  }
+
+  // Afegeix això dins de la classe TrackNotifier (track_notifier.dart)
+
+  void addCoordinate(double lat, double lon) {
+    // Fem servir Position amb altitud 0 per reutilitzar la lògica incremental
+    addPointFromPosition(
+      Position(
+        latitude: lat,
+        longitude: lon,
+        altitude: 0.0, // Si no tenim l'altitud, posem 0
+        timestamp: DateTime.now(),
+        accuracy: 0.0,
+        altitudeAccuracy: 0.0,
+        heading: 0.0,
+        headingAccuracy: 0.0,
+        speed: 0.0,
+        speedAccuracy: 0.0,
+        isMocked: false,
+      ),
     );
   }
 
@@ -125,6 +162,11 @@ class TrackNotifier extends Notifier<Track> {
       recording: false,
       paused: false,
       duration: Duration.zero,
+      distance: 0.0,
+      ascent: 0.0,
+      descent: 0.0,
+      maxElevation: -9999.0,
+      minElevation: 9999.0,
     );
   }
 }

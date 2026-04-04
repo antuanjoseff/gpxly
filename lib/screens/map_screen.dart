@@ -6,6 +6,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:gpxly/notifiers/gps_settings_provider.dart';
 import 'package:gpxly/notifiers/track_notifier.dart';
 import 'package:gpxly/screens/gps_settings_screen.dart';
+import 'package:gpxly/screens/stats_screen.dart';
 import 'package:gpxly/services/native_gps_channel.dart';
 import 'package:gpxly/services/permissions_service.dart';
 import 'package:gpxly/ui/app_messages.dart';
@@ -30,10 +31,11 @@ class _MapScreenState extends ConsumerState<MapScreen>
   MapLibreMapController? mapController;
   bool styleInitialized = false;
   bool userMovedMap = false;
-  DateTime? _lastBackPress;
-  Timer? _cameraMoveDebounce;
   bool isProgrammaticMove = false;
   bool _isPanelExpanded = true;
+  Timer? _cameraMoveDebounce;
+  DateTime? _lastBackPress;
+  DateTime? _lastSaveTime;
 
   StreamSubscription<Map<String, dynamic>>? _gpsSub;
 
@@ -69,11 +71,13 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
       final track = ref.read(trackProvider);
       if (track.coordinates.isNotEmpty) {
         final last = track.coordinates.last;
-        _saveLastPosition(last[1], last[0]);
+        // Aquí cridem a la funció que NO té filtre de temps
+        _forceSavePosition(last[1], last[0]);
       }
     }
   }
@@ -325,141 +329,115 @@ class _MapScreenState extends ConsumerState<MapScreen>
         ),
         body: Stack(
           children: [
-            MapLibreMap(
-              trackCameraPosition: true,
-              styleString: "assets/osm_style.json",
-              initialCameraPosition: const CameraPosition(
-                target: LatLng(0, 0),
-                zoom: 14,
-              ),
-              // onCameraMove: (position) {
-              //   if (isProgrammaticMove) {
-              //     return;
-              //   }
+            FutureBuilder(
+              future: _getLastPosition(),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData)
+                  return const Center(child: CircularProgressIndicator());
 
-              //   // 👉 Això sí que és usuari
-              //   userMovedMap = true;
-              // },
-              onCameraMove: (position) {
-                if (isProgrammaticMove) return;
-                userMovedMap = true;
-              },
-              onMapCreated: (controller) {
-                mapController = controller;
-                controller.addListener(_onMapChanged);
-              },
-              onStyleLoadedCallback: () async {
-                await setupUserLocationLayer(mapController!);
-                styleInitialized = true;
+                return MapLibreMap(
+                  trackCameraPosition: true,
+                  styleString: "assets/osm_style.json",
+                  initialCameraPosition: const CameraPosition(
+                    target: LatLng(0, 0),
+                    zoom: 14,
+                  ),
+                  onCameraMove: (position) {
+                    if (isProgrammaticMove) return;
+                    userMovedMap = true;
+                  },
+                  onMapCreated: (controller) {
+                    mapController = controller;
+                    controller.addListener(_onMapChanged);
+                  },
+                  onStyleLoadedCallback: () async {
+                    await setupUserLocationLayer(mapController!);
+                    styleInitialized = true;
 
-                final prefs = await SharedPreferences.getInstance();
-                final lat = prefs.getDouble("last_lat");
-                final lon = prefs.getDouble("last_lon");
+                    final prefs = await SharedPreferences.getInstance();
+                    final lat = prefs.getDouble("last_lat");
+                    final lon = prefs.getDouble("last_lon");
 
-                if (lat != null && lon != null) {
-                  print("PROGRAMMATIC MOVE → animateCamera()");
-                  isProgrammaticMove = true;
-                  mapController!
-                      .animateCamera(CameraUpdate.newLatLng(LatLng(lat, lon)))
-                      .then((_) => isProgrammaticMove = false);
-                }
+                    if (lat != null && lon != null) {
+                      print("PROGRAMMATIC MOVE → animateCamera()");
+                      isProgrammaticMove = true;
+                      mapController!
+                          .animateCamera(
+                            CameraUpdate.newLatLng(LatLng(lat, lon)),
+                          )
+                          .then((_) => isProgrammaticMove = false);
+                    }
 
-                updateMapPosition(mapController!, lat ?? 0, lon ?? 0);
+                    updateMapPosition(mapController!, lat ?? 0, lon ?? 0);
 
-                final track = ref.read(trackProvider);
+                    final track = ref.read(trackProvider);
 
-                if (track.coordinates.isNotEmpty) {
-                  final last = track.coordinates.last;
+                    if (track.coordinates.isNotEmpty) {
+                      final last = track.coordinates.last;
 
-                  updateMapPosition(mapController!, last[1], last[0]);
+                      updateMapPosition(mapController!, last[1], last[0]);
 
-                  mapController!.setGeoJsonSource("track_line", {
-                    "type": "FeatureCollection",
-                    "features": [
-                      {
-                        "type": "Feature",
-                        "geometry": {
-                          "type": "LineString",
-                          "coordinates": track.coordinates,
-                        },
-                      },
-                    ],
-                  });
-                }
+                      mapController!.setGeoJsonSource("track_line", {
+                        "type": "FeatureCollection",
+                        "features": [
+                          {
+                            "type": "Feature",
+                            "geometry": {
+                              "type": "LineString",
+                              "coordinates": track.coordinates,
+                            },
+                          },
+                        ],
+                      });
+                    }
+                  },
+                );
               },
             ),
 
             // -------------------------
-            // BOTÓ CENTER
+            // COLUMNA DE BOTONS SUPERIOR DRETA
             // -------------------------
-            if (userMovedMap && track.coordinates.isNotEmpty)
-              Positioned(
-                top: 10, // Just a sota de l'AppBar
-                right: 12,
-                child: AnimatedOpacity(
-                  duration: const Duration(milliseconds: 200),
-                  opacity: userMovedMap ? 1.0 : 0.0,
-                  child: InkWell(
-                    onTap: () async {
-                      if (track.coordinates.isEmpty || mapController == null)
-                        return;
-                      final last = track.coordinates.last;
-
-                      setState(() {
-                        isProgrammaticMove = true;
-                        userMovedMap = false;
-                      });
-
-                      await mapController!.animateCamera(
-                        CameraUpdate.newLatLng(LatLng(last[1], last[0])),
-                      );
-
-                      isProgrammaticMove = false;
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withAlpha(180),
-                        borderRadius: BorderRadius.circular(
-                          4,
-                        ), // Cantons més rectes, estil tècnic
-                        border: Border.all(
-                          color: const Color(0xFF2979FF).withAlpha(100),
-                          width: 1,
+            Positioned(
+              top: 16,
+              right: 16,
+              child: Column(
+                children: [
+                  // BOTÓ DE DADES (ESTADÍSTIQUES)
+                  FloatingActionButton.small(
+                    heroTag: "btn_stats", // Tag únic per evitar errors de Hero
+                    backgroundColor: Colors.white.withOpacity(0.9),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const TrackStatsScreen(),
                         ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // Un petit punt que parpelleja o indica activitat
-                          Container(
-                            width: 6,
-                            height: 6,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFFFFFFFF),
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          const Text(
-                            "CENTRAR MAPA",
-                            style: TextStyle(
-                              color: Color(0xFFFFFFFF),
-                              fontSize: 10,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 1.2,
-                              fontFamily: 'monospace',
-                            ),
-                          ),
-                        ],
-                      ),
+                      );
+                    },
+                    child: const Icon(Icons.bar_chart, color: Colors.black87),
+                  ),
+
+                  const SizedBox(height: 12), // Espai entre botons
+                  // BOTÓ DE CENTRAR MAPA (Ja el tenies, el posem aquí sota)
+                  FloatingActionButton.small(
+                    heroTag: "btn_recenter",
+                    backgroundColor: Colors.white.withOpacity(0.9),
+                    onPressed: () {
+                      setState(() => userMovedMap = false);
+                      if (track.coordinates.isNotEmpty) {
+                        final last = track.coordinates.last;
+                        updateMapPosition(mapController!, last[1], last[0]);
+                      }
+                    },
+                    child: Icon(
+                      userMovedMap ? Icons.gps_fixed : Icons.my_location,
+                      color: userMovedMap ? Colors.blue : Colors.black87,
                     ),
                   ),
-                ),
+                ],
               ),
+            ),
           ],
         ),
         bottomNavigationBar: SafeArea(
@@ -735,10 +713,31 @@ class _MapScreenState extends ConsumerState<MapScreen>
     }
   }
 
-  Future<void> _saveLastPosition(double lat, double lon) async {
+  // Funció amb filtre de 5 minuts
+  void _saveLastPosition(double lat, double lon) async {
+    final now = DateTime.now();
+
+    // Filtre de 5 minuts (300 segons)
+    if (_lastSaveTime == null ||
+        now.difference(_lastSaveTime!) > const Duration(minutes: 5)) {
+      _forceSavePosition(lat, lon);
+    }
+  }
+
+  Future<void> _forceSavePosition(double lat, double lon) async {
+    _lastSaveTime = DateTime.now();
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setDouble("last_lat", lat);
-    await prefs.setDouble("last_lon", lon);
+    await prefs.setDouble('last_lat', lat);
+    await prefs.setDouble('last_lon', lon);
+    print(">>> Posició guardada (Debounce 5 min)");
+  }
+
+  Future<LatLng> _getLastPosition() async {
+    final prefs = await SharedPreferences.getInstance();
+    final lat =
+        prefs.getDouble('last_lat') ?? 41.3851; // Valor per defecte (ex: BCN)
+    final lon = prefs.getDouble('last_lon') ?? 2.1734;
+    return LatLng(lat, lon);
   }
 
   Future<void> _shareTrack() async {

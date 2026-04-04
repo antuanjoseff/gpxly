@@ -1,4 +1,4 @@
-package app.antuanjoseff.gpxly
+package app.antuanjoseff.gpxgo
 
 import android.Manifest
 import android.util.Log

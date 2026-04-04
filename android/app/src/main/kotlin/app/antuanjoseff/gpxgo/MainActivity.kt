@@ -1,4 +1,4 @@
-package app.antuanjoseff.gpxly
+package app.antuanjoseff.gpxgo
 
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
