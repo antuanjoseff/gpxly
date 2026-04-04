@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://w3.org">
+  <defs>
+    <linearGradient id="meuGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#FF5252;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#E53935;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <circle cx="512" cy="512" r="470" fill="#E53935" />
+  <circle cx="512" cy="512" r="455" fill="white" />
+  <circle cx="512" cy="512" r="440" fill="url(#meuGradient)" />
+  <text x="512" y="460" text-anchor="middle" font-family="Arial, sans-serif" font-weight="900" font-size="200" fill="white">Gpx</text>
+  <text x="512" y="700" text-anchor="middle" font-family="Arial, sans-serif" font-weight="900" font-size="240" fill="white">Go</text>
+</svg>
