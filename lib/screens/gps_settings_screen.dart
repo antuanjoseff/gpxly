@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gpxly/notifiers/gps_settings_provider.dart';
+import 'package:gpxly/ui/app_styles.dart';
 
 class GpsSettingsScreen extends ConsumerStatefulWidget {
   const GpsSettingsScreen({super.key});
@@ -182,11 +183,9 @@ class _GpsSettingsScreenState extends ConsumerState<GpsSettingsScreen>
                         const SizedBox(height: 40),
 
                         ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: _pendingTime
-                                ? Colors.orange
-                                : null,
-                          ),
+                          style: _pendingTime
+                              ? AppButtons.active
+                              : AppButtons.inactive,
                           onPressed: () {
                             _applySettings();
                             setState(() => _pendingTime = false);
@@ -245,11 +244,9 @@ class _GpsSettingsScreenState extends ConsumerState<GpsSettingsScreen>
                         const SizedBox(height: 40),
 
                         ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: _pendingMeters
-                                ? Colors.orange
-                                : null,
-                          ),
+                          style: _pendingMeters
+                              ? AppButtons.active
+                              : AppButtons.inactive,
                           onPressed: () {
                             _applySettings();
                             setState(() => _pendingMeters = false);
@@ -291,11 +288,9 @@ class _GpsSettingsScreenState extends ConsumerState<GpsSettingsScreen>
                         const SizedBox(height: 40),
 
                         ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: _pendingAccuracy
-                                ? Colors.orange
-                                : null,
-                          ),
+                          style: _pendingAccuracy
+                              ? AppButtons.active
+                              : AppButtons.inactive,
                           onPressed: () {
                             _applySettings();
                             setState(() => _pendingAccuracy = false);

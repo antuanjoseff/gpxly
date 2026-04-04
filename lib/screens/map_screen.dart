@@ -34,6 +34,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
   bool userMovedMap = false;
   bool isProgrammaticMove = false;
   bool _isPanelExpanded = true;
+  bool _fullScreen = false;
+
   Timer? _cameraMoveDebounce;
   DateTime? _lastBackPress;
   DateTime? _lastSaveTime;
@@ -257,58 +259,62 @@ class _MapScreenState extends ConsumerState<MapScreen>
       },
       child: Scaffold(
         extendBody: true,
-        appBar: AppBar(
-          centerTitle: false,
-          backgroundColor: Colors.black,
-          automaticallyImplyLeading: false,
-          titleSpacing: 16,
+        appBar: _fullScreen
+            ? null
+            : AppBar(
+                centerTitle: false,
+                backgroundColor: Colors.black,
+                automaticallyImplyLeading: false,
+                titleSpacing: 16,
 
-          // ESQUERRA: Identitat
-          title: const Text(
-            'GpxGo',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w900,
-              color: Colors.white,
-            ),
-          ),
+                // ESQUERRA: Identitat
+                title: const Text(
+                  'GpxGo',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                  ),
+                ),
 
-          // DRETA: Info GPS i Settings (Ara tot junt aquí)
-          actions: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                const GpsAccuracyBars(),
-                const SizedBox(width: 4),
-                if (accuracy != 999)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 0),
-                    child: Text(
-                      "${accuracy.round()}m",
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 9,
-                        fontFamily: 'monospace',
+                // DRETA: Info GPS i Settings (Ara tot junt aquí)
+                actions: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      const GpsAccuracyBars(),
+                      const SizedBox(width: 4),
+                      if (accuracy != 999)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 0),
+                          child: Text(
+                            "${accuracy.round()}m",
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 9,
+                              fontFamily: 'monospace',
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    icon: const Icon(
+                      Icons.settings_outlined,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const GpsSettingsScreen(),
                       ),
                     ),
                   ),
-              ],
-            ),
-            IconButton(
-              visualDensity: VisualDensity.compact,
-              icon: const Icon(
-                Icons.settings_outlined,
-                color: Colors.white,
-                size: 20,
+                  const SizedBox(width: 8),
+                ],
               ),
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const GpsSettingsScreen()),
-              ),
-            ),
-            const SizedBox(width: 8),
-          ],
-        ),
         body: Stack(
           children: [
             FutureBuilder(
@@ -324,6 +330,20 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     target: LatLng(0, 0),
                     zoom: 14,
                   ),
+                  onMapLongClick: (point, latlng) {
+                    SystemChrome.setEnabledSystemUIMode(
+                      SystemUiMode.immersiveSticky,
+                    );
+                    setState(() => _fullScreen = true);
+                  },
+                  onMapClick: (point, latlng) {
+                    if (!_fullScreen) return;
+                    SystemChrome.setEnabledSystemUIMode(
+                      SystemUiMode.edgeToEdge,
+                    );
+                    setState(() => _fullScreen = false);
+                  },
+
                   onCameraMove: (position) {
                     if (isProgrammaticMove) return;
                     userMovedMap = true;
@@ -393,264 +413,284 @@ class _MapScreenState extends ConsumerState<MapScreen>
               },
             ),
 
-            // 2. LA PÍNDOLA FLOTANT (CENTRAT DALT)
-            Positioned(
-              top: 10, // Una mica més amunt
-              left: 10, // Ancorat a l'esquerra
-              child: FloatingRoutePanel(
-                isRecording: track.recording,
-                duration: track.duration,
-                altitude: altitude,
+            if (!_fullScreen) ...[
+              // -------------------------
+              // PÍNDOLA FLOTANT (CENTRAT DALT)
+              // -------------------------
+              Positioned(
+                top: 10, // Una mica més amunt
+                left: 10, // Ancorat a l'esquerra
+                child: FloatingRoutePanel(
+                  isRecording: track.recording,
+                  duration: track.duration,
+                  altitude: altitude,
+                ),
               ),
-            ),
 
-            // -------------------------
-            // COLUMNA DE BOTONS SUPERIOR DRETA
-            // -------------------------
-            Positioned(
-              top: 10,
-              right: 12,
-              child: Column(
-                children: [
-                  // BOTÓ DE DADES (ESTADÍSTIQUES)
-                  GestureDetector(
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const TrackStatsScreen(),
-                      ),
-                    ),
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withAlpha(
-                          180,
-                        ), // Mateix fons que la píndola
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.white10),
-                      ),
-                      child: const Icon(
-                        Icons.bar_chart,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  // BOTÓ DE CENTRAR MAPA
-                  if (userMovedMap)
+              // -------------------------
+              // COLUMNA DE BOTONS SUPERIOR DRETA
+              // -------------------------
+              Positioned(
+                top: 10,
+                right: 12,
+                child: Column(
+                  children: [
+                    // BOTÓ DE DADES (ESTADÍSTIQUES)
                     GestureDetector(
-                      onTap: () {
-                        final track = ref.read(trackProvider);
-                        if (track.coordinates.isEmpty) return;
-                        final last = track.coordinates.last;
-
-                        setState(() {
-                          userMovedMap = false;
-                          isProgrammaticMove = true;
-                        });
-
-                        mapController
-                            ?.animateCamera(
-                              CameraUpdate.newLatLng(LatLng(last[1], last[0])),
-                            )
-                            .then((_) {
-                              Future.delayed(
-                                const Duration(milliseconds: 300),
-                                () {
-                                  if (mounted)
-                                    setState(() => isProgrammaticMove = false);
-                                },
-                              );
-                            });
-                      },
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const TrackStatsScreen(),
+                        ),
+                      ),
                       child: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: Colors.black.withAlpha(180),
+                          color: Colors.black.withAlpha(
+                            180,
+                          ), // Mateix fons que la píndola
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: Colors.white10),
                         ),
                         child: const Icon(
-                          Icons.gps_fixed, // O Icons.my_location
-                          color:
-                              Colors.white, // Blau per destacar que cal centrar
+                          Icons.bar_chart,
+                          color: Colors.white,
                           size: 20,
                         ),
                       ),
                     ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        bottomNavigationBar: SafeArea(
-          bottom: false,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 400),
-            curve: Curves.fastOutSlowIn,
-            padding: EdgeInsets.fromLTRB(
-              16,
-              4,
-              16,
-              MediaQuery.of(context).padding.bottom + 12,
-            ),
-            decoration: BoxDecoration(
-              // Estil Gràfit amb transparència
-              color: const Color(0xFF1A1A1A).withAlpha(200),
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(30),
-              ),
-              border: Border.all(color: Colors.white10),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Nansa per obrir/tancar (Més discreta)
-                GestureDetector(
-                  onTap: () =>
-                      setState(() => _isPanelExpanded = !_isPanelExpanded),
-                  behavior: HitTestBehavior.opaque,
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: Center(
-                      child: Container(
-                        width: 45,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: Colors.white12,
-                          borderRadius: BorderRadius.circular(2),
+
+                    const SizedBox(height: 8),
+
+                    // BOTÓ DE CENTRAR MAPA
+                    if (userMovedMap)
+                      GestureDetector(
+                        onTap: () {
+                          final track = ref.read(trackProvider);
+                          if (track.coordinates.isEmpty) return;
+                          final last = track.coordinates.last;
+
+                          setState(() {
+                            userMovedMap = false;
+                            isProgrammaticMove = true;
+                          });
+
+                          mapController
+                              ?.animateCamera(
+                                CameraUpdate.newLatLng(
+                                  LatLng(last[1], last[0]),
+                                ),
+                              )
+                              .then((_) {
+                                Future.delayed(
+                                  const Duration(milliseconds: 300),
+                                  () {
+                                    if (mounted)
+                                      setState(
+                                        () => isProgrammaticMove = false,
+                                      );
+                                  },
+                                );
+                              });
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withAlpha(180),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.white10),
+                          ),
+                          child: const Icon(
+                            Icons.gps_fixed, // O Icons.my_location
+                            color: Colors
+                                .white, // Blau per destacar que cal centrar
+                            size: 20,
+                          ),
                         ),
                       ),
-                    ),
-                  ),
+                  ],
                 ),
-
-                if (_isPanelExpanded) ...[
-                  const SizedBox(height: 8),
-                  Row(
+              ),
+            ],
+          ],
+        ),
+        bottomNavigationBar: _fullScreen
+            ? null
+            : SafeArea(
+                bottom: false,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 400),
+                  curve: Curves.fastOutSlowIn,
+                  padding: EdgeInsets.fromLTRB(
+                    16,
+                    4,
+                    16,
+                    MediaQuery.of(context).padding.bottom + 12,
+                  ),
+                  decoration: BoxDecoration(
+                    // Estil Gràfit amb transparència
+                    color: const Color(0xFF1A1A1A).withAlpha(200),
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(30),
+                    ),
+                    border: Border.all(color: Colors.white10),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      // ESTAT 1: NO GRAVANT (Botó Únic d'Inici)
-                      if (!track.recording)
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(
-                                0xFF00E676,
-                              ).withAlpha(180), // Verd Neó
-                              foregroundColor:
-                                  Colors.black, // Contrast alt per al verd
-                              minimumSize: const Size(
-                                double.infinity,
-                                58,
-                              ), // Alçada fixa
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                            ),
-                            onPressed: () {
-                              _startRecording();
-                              setState(() => _isPanelExpanded = false);
-                            },
-                            icon: const Icon(Icons.play_arrow, size: 28),
-                            label: const Text(
-                              "INICIA RUTA",
-                              style: TextStyle(fontWeight: FontWeight.w900),
-                            ),
-                          ),
-                        )
-                      // ESTAT 2: GRAVANT
-                      else ...[
-                        // Botó de Pausa o Reprèn
-                        Expanded(
-                          flex: 2,
-                          child: ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: track.paused
-                                  ? const Color(0xFF2979FF).withAlpha(
-                                      180,
-                                    ) // Blau Elèctric
-                                  : const Color(
-                                      0xFFFFA000,
-                                    ).withAlpha(180), // Ambre (Pausa)
-                              foregroundColor: Colors.white,
-                              minimumSize: const Size(
-                                double.infinity,
-                                58,
-                              ), // 👈 ALÇADA FIXA
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                            ),
-                            onPressed: () => track.paused
-                                ? _resumeRecording()
-                                : _pauseRecording(),
-                            icon: Icon(
-                              track.paused ? Icons.play_arrow : Icons.pause,
-                            ),
-                            label: Text(
-                              track.paused ? "REPRÈN" : "PAUSA",
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
+                      // Nansa per obrir/tancar (Més discreta)
+                      GestureDetector(
+                        onTap: () => setState(
+                          () => _isPanelExpanded = !_isPanelExpanded,
+                        ),
+                        behavior: HitTestBehavior.opaque,
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          child: Center(
+                            child: Container(
+                              width: 45,
+                              height: 4,
+                              decoration: BoxDecoration(
+                                color: Colors.white12,
+                                borderRadius: BorderRadius.circular(2),
                               ),
                             ),
                           ),
                         ),
+                      ),
 
-                        const SizedBox(width: 12),
-
-                        // Botó d'Aturar o Compartir
-                        Expanded(
-                          flex: 1,
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: track.paused
-                                  ? const Color(0xFF455A64).withAlpha(
-                                      180,
-                                    ) // Gris fosc (Compartir)
-                                  : const Color(
-                                      0xFFFF5252,
-                                    ).withAlpha(180), // Vermell (Aturar)
-                              foregroundColor: Colors.white,
-                              minimumSize: const Size(
-                                double.infinity,
-                                58,
-                              ), // 👈 MATEIXA ALÇADA FIXA
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                            ),
-                            onLongPress: () => _handleStopProcess(context, ref),
-                            onPressed: () {
-                              if (track.paused) {
-                                _shareTrack();
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text("Mantén premut per ATURAR"),
-                                    duration: Duration(seconds: 1),
+                      if (_isPanelExpanded) ...[
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            // ESTAT 1: NO GRAVANT (Botó Únic d'Inici)
+                            if (!track.recording)
+                              Expanded(
+                                child: ElevatedButton.icon(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(
+                                      0xFF00E676,
+                                    ).withAlpha(180), // Verd Neó
+                                    foregroundColor: Colors
+                                        .black, // Contrast alt per al verd
+                                    minimumSize: const Size(
+                                      double.infinity,
+                                      58,
+                                    ), // Alçada fixa
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
                                   ),
-                                );
-                              }
-                            },
-                            child: Icon(
-                              track.paused ? Icons.share : Icons.stop,
-                              size: 26,
-                            ),
-                          ),
+                                  onPressed: () {
+                                    _startRecording();
+                                    setState(() => _isPanelExpanded = false);
+                                  },
+                                  icon: const Icon(Icons.play_arrow, size: 28),
+                                  label: const Text(
+                                    "INICIA RUTA",
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                ),
+                              )
+                            // ESTAT 2: GRAVANT
+                            else ...[
+                              // Botó de Pausa o Reprèn
+                              Expanded(
+                                flex: 2,
+                                child: ElevatedButton.icon(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: track.paused
+                                        ? const Color(0xFF2979FF).withAlpha(
+                                            180,
+                                          ) // Blau Elèctric
+                                        : const Color(
+                                            0xFFFFA000,
+                                          ).withAlpha(180), // Ambre (Pausa)
+                                    foregroundColor: Colors.white,
+                                    minimumSize: const Size(
+                                      double.infinity,
+                                      58,
+                                    ), // 👈 ALÇADA FIXA
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                  ),
+                                  onPressed: () => track.paused
+                                      ? _resumeRecording()
+                                      : _pauseRecording(),
+                                  icon: Icon(
+                                    track.paused
+                                        ? Icons.play_arrow
+                                        : Icons.pause,
+                                  ),
+                                  label: Text(
+                                    track.paused ? "REPRÈN" : "PAUSA",
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+
+                              const SizedBox(width: 12),
+
+                              // Botó d'Aturar o Compartir
+                              Expanded(
+                                flex: 1,
+                                child: ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: track.paused
+                                        ? const Color(0xFF455A64).withAlpha(
+                                            180,
+                                          ) // Gris fosc (Compartir)
+                                        : const Color(
+                                            0xFFFF5252,
+                                          ).withAlpha(180), // Vermell (Aturar)
+                                    foregroundColor: Colors.white,
+                                    minimumSize: const Size(
+                                      double.infinity,
+                                      58,
+                                    ), // 👈 MATEIXA ALÇADA FIXA
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                  ),
+                                  onLongPress: () =>
+                                      _handleStopProcess(context, ref),
+                                  onPressed: () {
+                                    if (track.paused) {
+                                      _shareTrack();
+                                    } else {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            "Mantén premut per ATURAR",
+                                          ),
+                                          duration: Duration(seconds: 1),
+                                        ),
+                                      );
+                                    }
+                                  },
+                                  child: Icon(
+                                    track.paused ? Icons.share : Icons.stop,
+                                    size: 26,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
+                        const SizedBox(height: 12),
                       ],
                     ],
                   ),
-                  const SizedBox(height: 12),
-                ],
-              ],
-            ),
-          ),
-        ),
+                ),
+              ),
       ),
     );
   }
