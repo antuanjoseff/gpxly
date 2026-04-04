@@ -32,6 +32,8 @@ dependencies:
   maplibre_gl: 0.25.0
   geolocator:
   xml:
+  fl_chart:
+  intl:
   shared_preferences:
   share_plus:
   path_provider:

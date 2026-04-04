@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'dart:math' as Math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:gpxly/notifiers/gps_settings_provider.dart';
 import 'package:gpxly/notifiers/track_notifier.dart';
+import 'package:gpxly/screens/elevation_profile_screen.dart';
 import 'package:gpxly/screens/gps_settings_screen.dart';
 import 'package:gpxly/screens/stats_screen.dart';
 import 'package:gpxly/services/native_gps_channel.dart';
@@ -45,6 +47,58 @@ class _MapScreenState extends ConsumerState<MapScreen>
   LatLng? _lastPosition;
   Timer? _animationTimer;
 
+  // -------------------------------
+  // SIMULADOR PUNTS DE TRACK
+  // -------------------------------
+
+  Timer? _simulationTimer;
+  double _simLat = 41.3850;
+  double _simLon = 2.1734;
+  double _simAlt = 100.0;
+  int _tick = 0;
+
+  void _toggleSimulation() {
+    if (_simulationTimer != null && _simulationTimer!.isActive) {
+      _simulationTimer!.cancel();
+      return;
+    }
+
+    // Reiniciem variables per a una ruta neta
+    _simLat = 41.3850;
+    _simLon = 2.1734;
+    int tick = 0;
+
+    _simulationTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      tick++;
+
+      // Moviment lineal constant (diagonal) per evitar oscil·lacions
+      _simLat += 0.0002;
+      _simLon += 0.0001;
+
+      // Perfil d'alçada: Una pujada constant fins als 30 segons i després baixa
+      double simulatedAlt = 100 + (tick < 30 ? tick * 5 : (60 - tick) * 5);
+
+      // IMPORTANT: Enviem el timestamp com a quart element
+      final double timestamp = DateTime.now().millisecondsSinceEpoch.toDouble();
+
+      ref.read(gpsAltitudeProvider.notifier).state = simulatedAlt;
+
+      // Passem la llista completa al notifier
+      ref
+          .read(trackProvider.notifier)
+          .addCoordinate(
+            _simLat,
+            _simLon,
+            7.0,
+            simulatedAlt,
+            // <--- ASSEGURA'T QUE EL TEU addPoint ACCEPTA AIXÒ
+          );
+    });
+  }
+
+  // -------------------------------
+  // FI DEL SIMULADOR
+  // -------------------------------
   final ButtonStyle recordButtonStyle = ElevatedButton.styleFrom(
     backgroundColor: Colors.red,
     foregroundColor: Colors.white,
@@ -435,6 +489,49 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 right: 12,
                 child: Column(
                   children: [
+                    // // BOTÓ DE TEST (SIMULACIÓ)
+                    // GestureDetector(
+                    //   onTap: _toggleSimulation,
+                    //   child: Container(
+                    //     padding: const EdgeInsets.all(8),
+                    //     decoration: BoxDecoration(
+                    //       color: Colors.red.withAlpha(
+                    //         150,
+                    //       ), // Vermell per saber que és de test
+                    //       borderRadius: BorderRadius.circular(8),
+                    //       border: Border.all(color: Colors.white24),
+                    //     ),
+                    //     child: const Icon(
+                    //       Icons
+                    //           .bug_report_outlined, // Icona de "bicho" per debug
+                    //       color: Colors.white,
+                    //       size: 20,
+                    //     ),
+                    //   ),
+                    // ),
+                    // NOU: BOTÓ DE PERFIL D'ELEVACIÓ
+                    GestureDetector(
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ElevationProfileScreen(),
+                        ),
+                      ),
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withAlpha(180),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.white10),
+                        ),
+                        child: const Icon(
+                          Icons.terrain_outlined, // Icona de muntanya/relleu
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
                     // BOTÓ DE DADES (ESTADÍSTIQUES)
                     GestureDetector(
                       onTap: () => Navigator.push(
