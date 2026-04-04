@@ -62,6 +62,8 @@ void updateMapPosition(
   MapLibreMapController controller,
   double lat,
   double lon,
+  bool userMovedMap,
+  void Function(bool) onAnimate,
 ) {
   controller.setGeoJsonSource("user_location", {
     "type": "FeatureCollection",
@@ -75,6 +77,14 @@ void updateMapPosition(
       },
     ],
   });
+  if (!userMovedMap) {
+    onAnimate(true);
+    controller.animateCamera(CameraUpdate.newLatLng(LatLng(lat, lon))).then((
+      _,
+    ) {
+      onAnimate(false);
+    });
+  }
 }
 
 /// Crea un cercle blau com a icona del punt de l’usuari

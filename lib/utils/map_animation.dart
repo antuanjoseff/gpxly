@@ -21,6 +21,7 @@ void animateLastSegment({
   required Timer? currentTimer,
   required void Function(LatLng) setLastPosition,
   required void Function(Timer?) setTimer,
+  required void Function(bool) onAnimate,
 }) {
   final newPos = LatLng(lat, lon);
 
@@ -124,10 +125,11 @@ void animateLastSegment({
       setLastPosition(newPos);
 
       if (!userMovedMap) {
-        print(">>> RECENTERING FROM animateLastSegment()");
-        controller.animateCamera(CameraUpdate.newLatLng(newPos));
+        onAnimate(true); // Avisem que el moviment és de codi
+        controller.animateCamera(CameraUpdate.newLatLng(newPos)).then((_) {
+          onAnimate(false); // Alliberem quan acaba l'animació
+        });
       }
-
       setTimer(null);
     }
   });

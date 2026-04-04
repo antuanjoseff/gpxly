@@ -196,7 +196,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
       // 🔵 PRIMERA COORDENADA → dibuix immediat
       if (next.coordinates.length == 1) {
-        updateMapPosition(mapController!, lat, lon);
+        updateMapPosition(mapController!, lat, lon, userMovedMap, (val) {
+          if (mounted) setState(() => isProgrammaticMove = val);
+        });
 
         // També cal dibuixar la línia (buida o amb 1 punt)
         mapController!.setGeoJsonSource("track_line", {
@@ -226,6 +228,10 @@ class _MapScreenState extends ConsumerState<MapScreen>
           currentTimer: _animationTimer,
           setLastPosition: (p) => _lastPosition = p,
           setTimer: (t) => _animationTimer = t,
+          onAnimate: (val) {
+            // <--- AFEGEIX AIXÒ
+            if (mounted) setState(() => isProgrammaticMove = val);
+          },
         );
       } catch (_) {}
     });
@@ -283,6 +289,18 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     fontFamily: 'monospace',
                   ),
                 ),
+              const SizedBox(width: 8), // Separació
+              // --- NOU: TEXT D'ALÇADA ---
+              Text(
+                track.coordinates.isNotEmpty
+                    ? "${track.coordinates.last[2].toStringAsFixed(0)}m"
+                    : "? m",
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ],
           ),
 
@@ -368,14 +386,30 @@ class _MapScreenState extends ConsumerState<MapScreen>
                           .then((_) => isProgrammaticMove = false);
                     }
 
-                    updateMapPosition(mapController!, lat ?? 0, lon ?? 0);
+                    updateMapPosition(
+                      mapController!,
+                      lat ?? 0,
+                      lon ?? 0,
+                      userMovedMap,
+                      (val) {
+                        if (mounted) setState(() => isProgrammaticMove = val);
+                      },
+                    );
 
                     final track = ref.read(trackProvider);
 
                     if (track.coordinates.isNotEmpty) {
                       final last = track.coordinates.last;
 
-                      updateMapPosition(mapController!, last[1], last[0]);
+                      updateMapPosition(
+                        mapController!,
+                        last[1],
+                        last[0],
+                        userMovedMap,
+                        (val) {
+                          if (mounted) setState(() => isProgrammaticMove = val);
+                        },
+                      );
 
                       mapController!.setGeoJsonSource("track_line", {
                         "type": "FeatureCollection",
@@ -406,7 +440,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   // BOTÓ DE DADES (ESTADÍSTIQUES)
                   FloatingActionButton.small(
                     heroTag: "btn_stats", // Tag únic per evitar errors de Hero
-                    backgroundColor: Colors.white.withOpacity(0.9),
+                    backgroundColor: Colors.white.withAlpha(230),
                     onPressed: () {
                       Navigator.push(
                         context,
@@ -420,21 +454,42 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
                   const SizedBox(height: 12), // Espai entre botons
                   // BOTÓ DE CENTRAR MAPA (Ja el tenies, el posem aquí sota)
-                  FloatingActionButton.small(
-                    heroTag: "btn_recenter",
-                    backgroundColor: Colors.white.withOpacity(0.9),
-                    onPressed: () {
-                      setState(() => userMovedMap = false);
-                      if (track.coordinates.isNotEmpty) {
+                  if (userMovedMap)
+                    FloatingActionButton.small(
+                      heroTag: "btn_recenter",
+                      backgroundColor: Colors.white.withAlpha(230),
+                      onPressed: () {
+                        final track = ref.read(trackProvider);
+                        if (track.coordinates.isEmpty) return;
                         final last = track.coordinates.last;
-                        updateMapPosition(mapController!, last[1], last[0]);
-                      }
-                    },
-                    child: Icon(
-                      userMovedMap ? Icons.gps_fixed : Icons.my_location,
-                      color: userMovedMap ? Colors.blue : Colors.black87,
+
+                        setState(() {
+                          userMovedMap = false; // Amaguem la icona de centrar
+                          isProgrammaticMove =
+                              true; // Bloquegem la detecció de moviment manual
+                        });
+
+                        mapController
+                            ?.animateCamera(
+                              CameraUpdate.newLatLng(LatLng(last[1], last[0])),
+                            )
+                            .then((_) {
+                              // Donem marge perquè el mapa s'aturi del tot
+                              Future.delayed(
+                                const Duration(milliseconds: 300),
+                                () {
+                                  if (mounted)
+                                    setState(() => isProgrammaticMove = false);
+                                },
+                              );
+                            });
+                      },
+
+                      child: Icon(
+                        userMovedMap ? Icons.gps_fixed : Icons.my_location,
+                        color: userMovedMap ? Colors.blue : Colors.black87,
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),

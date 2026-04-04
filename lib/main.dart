@@ -69,6 +69,9 @@ class GPXlyApp extends StatelessWidget {
         snackBarTheme: SnackBarThemeData(
           behavior: SnackBarBehavior.floating,
           backgroundColor: const Color(0xFF1A1A1A),
+          contentTextStyle: TextStyle(
+            color: Colors.white,
+          ), // Text principal en blanc
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
             side: const BorderSide(color: Color(0xFF00E676), width: 0.5),
