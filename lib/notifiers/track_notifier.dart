@@ -134,15 +134,15 @@ class TrackNotifier extends Notifier<Track> {
 
   // Afegeix això dins de la classe TrackNotifier (track_notifier.dart)
 
-  void addCoordinate(double lat, double lon) {
+  void addCoordinate(double lat, double lon, double acc, double altitude) {
     // Fem servir Position amb altitud 0 per reutilitzar la lògica incremental
     addPointFromPosition(
       Position(
         latitude: lat,
         longitude: lon,
-        altitude: 0.0, // Si no tenim l'altitud, posem 0
+        altitude: altitude,
         timestamp: DateTime.now(),
-        accuracy: 0.0,
+        accuracy: acc,
         altitudeAccuracy: 0.0,
         heading: 0.0,
         headingAccuracy: 0.0,

@@ -146,7 +146,8 @@ class TrackingService : Service() {
             mapOf(
                 "lat" to loc.latitude,
                 "lon" to loc.longitude,
-                "accuracy" to loc.accuracy
+                "accuracy" to loc.accuracy,
+                "altitude" to loc.altitude
             )
         )
     }

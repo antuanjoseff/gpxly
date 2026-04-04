@@ -8,3 +8,6 @@ final gpsAccuracyLevelProvider = Provider<GpsAccuracyLevel>((ref) {
   final acc = ref.watch(gpsAccuracyProvider);
   return getAccuracyLevel(acc);
 });
+
+// Provider per a l'elevació actual (alçada)
+final gpsAltitudeProvider = StateProvider<double?>((ref) => null);

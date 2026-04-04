@@ -13,6 +13,7 @@ import 'package:gpxly/ui/app_messages.dart';
 import 'package:gpxly/services/gpx_exporter.dart';
 import 'package:gpxly/utils/map_animation.dart';
 import 'package:gpxly/utils/map_layers.dart';
+import 'package:gpxly/widgets/floating_route_panel.dart';
 import 'package:gpxly/widgets/gps_accuracy_bars.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:gpxly/notifiers/gps_accuracy_provider.dart';
@@ -184,6 +185,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
   Widget build(BuildContext context) {
     final track = ref.watch(trackProvider);
     final accuracy = ref.watch(gpsAccuracyProvider);
+    final altitude = ref.watch(gpsAltitudeProvider);
 
     // Listener dins build (Riverpod obliga)
     ref.listen(trackProvider, (previous, next) {
@@ -256,94 +258,56 @@ class _MapScreenState extends ConsumerState<MapScreen>
       child: Scaffold(
         extendBody: true,
         appBar: AppBar(
+          centerTitle: false,
           backgroundColor: Colors.black,
           automaticallyImplyLeading: false,
+          titleSpacing: 16,
 
-          // 1. TOTA LA INFO TÈCNICA A L'ESQUERRA
-          leadingWidth: 180, // Ampliem per encabir les barres + metres
-          leading: Row(
-            children: [
-              const SizedBox(width: 8),
-              IconButton(
-                visualDensity: VisualDensity.compact,
-                icon: const Icon(
-                  Icons.settings_outlined,
-                  color: Colors.white38,
-                  size: 20,
-                ),
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const GpsSettingsScreen()),
-                ),
-              ),
-              const GpsAccuracyBars(),
-              const SizedBox(width: 6),
-              // ELS METRES ARA AQUÍ
-              if (accuracy != 999)
-                Text(
-                  "${accuracy.round()}m",
-                  style: const TextStyle(
-                    color: Color(0xFFFFFFFF), // Blau Elèctric per a dades GPS
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'monospace',
-                  ),
-                ),
-              const SizedBox(width: 8), // Separació
-              // --- NOU: TEXT D'ALÇADA ---
-              Text(
-                track.coordinates.isNotEmpty
-                    ? "${track.coordinates.last[2].toStringAsFixed(0)}m"
-                    : "? m",
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
+          // ESQUERRA: Identitat
+          title: const Text(
+            'GpxGo',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+              color: Colors.white,
+            ),
           ),
 
-          // 2. CRONÒMETRE A LA DRETA
-          centerTitle: false,
-          title: Align(
-            alignment: Alignment.centerRight,
-            child: track.recording
-                ? Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(
-                        0xFF00E676,
-                      ).withAlpha(30), // Fons verd neó molt tènue
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+          // DRETA: Info GPS i Settings (Ara tot junt aquí)
+          actions: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                const GpsAccuracyBars(),
+                const SizedBox(width: 4),
+                if (accuracy != 999)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 0),
                     child: Text(
-                      track.duration
-                          .toString()
-                          .split('.')
-                          .first
-                          .padLeft(8, "0"),
+                      "${accuracy.round()}m",
                       style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 9,
                         fontFamily: 'monospace',
-                        fontWeight: FontWeight.w800,
-                        fontSize: 14,
-                        color: Color(0xFFFFFFFF), // Verd Neó
                       ),
                     ),
-                  )
-                : const Text(
-                    'GPXLY',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 2,
-                      color: Colors.white12,
-                    ),
                   ),
-          ),
+              ],
+            ),
+            IconButton(
+              visualDensity: VisualDensity.compact,
+              icon: const Icon(
+                Icons.settings_outlined,
+                color: Colors.white,
+                size: 20,
+              ),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const GpsSettingsScreen()),
+              ),
+            ),
+            const SizedBox(width: 8),
+          ],
         ),
         body: Stack(
           children: [
@@ -429,44 +393,63 @@ class _MapScreenState extends ConsumerState<MapScreen>
               },
             ),
 
+            // 2. LA PÍNDOLA FLOTANT (CENTRAT DALT)
+            Positioned(
+              top: 10, // Una mica més amunt
+              left: 10, // Ancorat a l'esquerra
+              child: FloatingRoutePanel(
+                isRecording: track.recording,
+                duration: track.duration,
+                altitude: altitude,
+              ),
+            ),
+
             // -------------------------
             // COLUMNA DE BOTONS SUPERIOR DRETA
             // -------------------------
             Positioned(
-              top: 16,
-              right: 16,
+              top: 10,
+              right: 12,
               child: Column(
                 children: [
                   // BOTÓ DE DADES (ESTADÍSTIQUES)
-                  FloatingActionButton.small(
-                    heroTag: "btn_stats", // Tag únic per evitar errors de Hero
-                    backgroundColor: Colors.white.withAlpha(230),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const TrackStatsScreen(),
-                        ),
-                      );
-                    },
-                    child: const Icon(Icons.bar_chart, color: Colors.black87),
+                  GestureDetector(
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const TrackStatsScreen(),
+                      ),
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withAlpha(
+                          180,
+                        ), // Mateix fons que la píndola
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.white10),
+                      ),
+                      child: const Icon(
+                        Icons.bar_chart,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
                   ),
 
-                  const SizedBox(height: 12), // Espai entre botons
-                  // BOTÓ DE CENTRAR MAPA (Ja el tenies, el posem aquí sota)
+                  const SizedBox(height: 8),
+
+                  // BOTÓ DE CENTRAR MAPA
                   if (userMovedMap)
-                    FloatingActionButton.small(
-                      heroTag: "btn_recenter",
-                      backgroundColor: Colors.white.withAlpha(230),
-                      onPressed: () {
+                    GestureDetector(
+                      onTap: () {
                         final track = ref.read(trackProvider);
                         if (track.coordinates.isEmpty) return;
                         final last = track.coordinates.last;
 
                         setState(() {
-                          userMovedMap = false; // Amaguem la icona de centrar
-                          isProgrammaticMove =
-                              true; // Bloquegem la detecció de moviment manual
+                          userMovedMap = false;
+                          isProgrammaticMove = true;
                         });
 
                         mapController
@@ -474,7 +457,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
                               CameraUpdate.newLatLng(LatLng(last[1], last[0])),
                             )
                             .then((_) {
-                              // Donem marge perquè el mapa s'aturi del tot
                               Future.delayed(
                                 const Duration(milliseconds: 300),
                                 () {
@@ -484,10 +466,19 @@ class _MapScreenState extends ConsumerState<MapScreen>
                               );
                             });
                       },
-
-                      child: Icon(
-                        userMovedMap ? Icons.gps_fixed : Icons.my_location,
-                        color: userMovedMap ? Colors.blue : Colors.black87,
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withAlpha(180),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.white10),
+                        ),
+                        child: const Icon(
+                          Icons.gps_fixed, // O Icons.my_location
+                          color:
+                              Colors.white, // Blau per destacar que cal centrar
+                          size: 20,
+                        ),
                       ),
                     ),
                 ],
@@ -687,18 +678,26 @@ class _MapScreenState extends ConsumerState<MapScreen>
     print("GPXLY START RECORDING");
 
     final pos = await Geolocator.getCurrentPosition();
-    notifier.addCoordinate(pos.latitude, pos.longitude);
+    notifier.addCoordinate(
+      pos.latitude,
+      pos.longitude,
+      pos.accuracy,
+      pos.altitude,
+    );
     ref.read(gpsAccuracyProvider.notifier).state = pos.accuracy;
+    ref.read(gpsAltitudeProvider.notifier).state = pos.altitude;
 
     _gpsSub ??= NativeGpsChannel.positionStream().listen((data) {
       double lat = data['lat'] as double;
       double lon = data['lon'] as double;
       double acc = data['accuracy'] as double;
+      double altitude = data['altitude'] as double;
       // lat += randomOffset(50);
       // lon += randomOffset(50);
-      print("GPXLY ACCURACY CHANGED ${acc}");
-      notifier.addCoordinate(lat, lon);
+
+      notifier.addCoordinate(lat, lon, acc, altitude);
       ref.read(gpsAccuracyProvider.notifier).state = acc;
+      ref.read(gpsAltitudeProvider.notifier).state = altitude.toDouble();
     });
 
     final settings = ref.read(gpsSettingsProvider);
@@ -744,40 +743,41 @@ class _MapScreenState extends ConsumerState<MapScreen>
     _gpsSub ??= NativeGpsChannel.positionStream().listen((data) {
       double lat = data['lat'] as double;
       double lon = data['lon'] as double;
+      double acc = data['accuracy'] as double;
+      double altitude = data['altitude'] as double;
 
-      // lat += randomOffset(50);
-      // lon += randomOffset(50);
-
-      notifier.addCoordinate(lat, lon);
+      notifier.addCoordinate(lat, lon, acc, altitude);
+      ref.read(gpsAccuracyProvider.notifier).state = acc;
+      ref.read(gpsAltitudeProvider.notifier).state = altitude.toDouble();
     });
   }
 
-  Future<void> _stopRecording() async {
-    final notifier = ref.read(trackProvider.notifier);
+  // Future<void> _stopRecording() async {
+  //   final notifier = ref.read(trackProvider.notifier);
 
-    notifier.stopRecording();
-    await NativeGpsChannel.stop();
-    await _gpsSub?.cancel();
-    _gpsSub = null;
+  //   notifier.stopRecording();
+  //   await NativeGpsChannel.stop();
+  //   await _gpsSub?.cancel();
+  //   _gpsSub = null;
 
-    final export = await AppMessages.showExportDialog(context);
+  //   final export = await AppMessages.showExportDialog(context);
 
-    if (export == true) {
-      final filename = buildGpxFilename();
-      await exportGpx(filename, ref, context);
-    }
-  }
+  //   if (export == true) {
+  //     final filename = buildGpxFilename();
+  //     await exportGpx(filename, ref, context);
+  //   }
+  // }
 
-  // Funció amb filtre de 5 minuts
-  void _saveLastPosition(double lat, double lon) async {
-    final now = DateTime.now();
+  // // Funció amb filtre de 5 minuts
+  // void _saveLastPosition(double lat, double lon) async {
+  //   final now = DateTime.now();
 
-    // Filtre de 5 minuts (300 segons)
-    if (_lastSaveTime == null ||
-        now.difference(_lastSaveTime!) > const Duration(minutes: 5)) {
-      _forceSavePosition(lat, lon);
-    }
-  }
+  //   // Filtre de 5 minuts (300 segons)
+  //   if (_lastSaveTime == null ||
+  //       now.difference(_lastSaveTime!) > const Duration(minutes: 5)) {
+  //     _forceSavePosition(lat, lon);
+  //   }
+  // }
 
   Future<void> _forceSavePosition(double lat, double lon) async {
     _lastSaveTime = DateTime.now();
