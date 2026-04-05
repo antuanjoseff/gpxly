@@ -12,8 +12,6 @@ class ElevationProfileScreen extends ConsumerStatefulWidget {
       _ElevationProfileScreenState();
 }
 
-// ... imports ...
-
 class _ElevationProfileScreenState
     extends ConsumerState<ElevationProfileScreen> {
   int? selectedIndex;
@@ -26,10 +24,10 @@ class _ElevationProfileScreenState
 
     for (int i = 0; i < coordinates.length - 1; i++) {
       total += Geolocator.distanceBetween(
-        coordinates[i][1], // latitud origen
-        coordinates[i][0], // longitud origen
-        coordinates[i + 1][1], // latitud destí
-        coordinates[i + 1][0], // longitud destí
+        coordinates[i][1],
+        coordinates[i][0],
+        coordinates[i + 1][1],
+        coordinates[i + 1][0],
       );
       distances.add(total);
     }
@@ -44,21 +42,19 @@ class _ElevationProfileScreenState
   @override
   Widget build(BuildContext context) {
     final track = ref.watch(trackProvider);
+    final colors = Theme.of(context).colorScheme;
+
     final altitudes = track.altitudes;
     final coordinates = track.coordinates;
     final distances = _calculateDistances(coordinates);
 
     return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        title: const Text("Perfil d'elevació"),
-        backgroundColor: Colors.black,
-      ),
+      appBar: AppBar(title: const Text("Perfil d'elevació")),
       body: altitudes.isEmpty
-          ? const Center(
+          ? Center(
               child: Text(
                 "Sense dades",
-                style: TextStyle(color: Colors.white24),
+                style: TextStyle(color: colors.onSurface.withOpacity(0.4)),
               ),
             )
           : OrientationBuilder(
@@ -67,33 +63,28 @@ class _ElevationProfileScreenState
 
                 return Center(
                   child: SingleChildScrollView(
-                    // Evita errors de mida en pantalles petites
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // 1. INFO DINÀMICA (Sempre a sobre)
                         _buildSelectionHeader(
+                          context,
                           altitudes,
                           distances,
                           selectedIndex,
                         ),
 
-                        // Ajustem l'espai segons l'orientació
                         SizedBox(height: isLandscape ? 10 : 40),
 
-                        // 2. EL GRÀFIC
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 24),
                           child: AspectRatio(
-                            // MÉS PANORÀMIC EN HORITZONTAL (4.0 o 3.0)
                             aspectRatio: isLandscape ? 4.0 : 2.0,
                             child: LineChart(
-                              _buildChartData(altitudes, distances),
+                              _buildChartData(context, altitudes, distances),
                             ),
                           ),
                         ),
 
-                        // Espai extra a sota per estètica en horitzontal
                         if (isLandscape) const SizedBox(height: 20),
                       ],
                     ),
@@ -105,30 +96,34 @@ class _ElevationProfileScreenState
   }
 
   Widget _buildSelectionHeader(
+    BuildContext context,
     List<double> alts,
     List<double> dists,
     int? index,
   ) {
-    if (index == null)
-      return const Text(
+    final colors = Theme.of(context).colorScheme;
+
+    if (index == null) {
+      return Text(
         "Llisca sobre el gràfic",
-        style: TextStyle(color: Colors.white38),
+        style: TextStyle(color: colors.onSurface.withOpacity(0.4)),
       );
+    }
 
     return Column(
       children: [
         Text(
           "${alts[index].toStringAsFixed(1)} m",
-          style: const TextStyle(
-            color: Color(0xFF00E676),
+          style: TextStyle(
+            color: colors.primary,
             fontSize: 36,
             fontWeight: FontWeight.bold,
           ),
         ),
         Text(
           "Distància: ${_formatDistance(dists[index])}",
-          style: const TextStyle(
-            color: Colors.white70,
+          style: TextStyle(
+            color: colors.onSurface.withOpacity(0.7),
             fontSize: 16,
             fontFamily: 'monospace',
           ),
@@ -137,14 +132,20 @@ class _ElevationProfileScreenState
     );
   }
 
-  LineChartData _buildChartData(List<double> alts, List<double> dists) {
+  LineChartData _buildChartData(
+    BuildContext context,
+    List<double> alts,
+    List<double> dists,
+  ) {
+    final colors = Theme.of(context).colorScheme;
+
     final spots = List.generate(alts.length, (i) => FlSpot(dists[i], alts[i]));
     final maxDist = dists.last;
 
     return LineChartData(
       gridData: const FlGridData(show: false),
       borderData: FlBorderData(show: false),
-      // CONFIGURACIÓ DE LES ETIQUETES 25, 50, 75, 100%
+
       titlesData: FlTitlesData(
         topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
         rightTitles: const AxisTitles(
@@ -154,25 +155,22 @@ class _ElevationProfileScreenState
         bottomTitles: AxisTitles(
           sideTitles: SideTitles(
             showTitles: true,
-            reservedSize: 40, // Una mica més d'espai vertical per si de cas
+            reservedSize: 40,
             interval: maxDist > 0 ? maxDist / 2 : 1.0,
-
-            // AQUESTA ÉS LA PROPIETAT MÀGICA:
             getTitlesWidget: (value, meta) {
               if (value > maxDist + 0.1) return const SizedBox();
 
               return SideTitleWidget(
                 meta: meta,
                 space: 10,
-                // Força que el text de la punta dreta es mogui cap a l'esquerra per no sortir
                 fitInside: SideTitleFitInsideData.fromTitleMeta(
                   meta,
                   enabled: true,
                 ),
                 child: Text(
                   _formatDistance(value),
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: colors.onSurface,
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
                     fontFamily: 'monospace',
@@ -183,6 +181,7 @@ class _ElevationProfileScreenState
           ),
         ),
       ),
+
       lineTouchData: LineTouchData(
         handleBuiltInTouches: true,
         touchCallback: (event, response) {
@@ -193,10 +192,8 @@ class _ElevationProfileScreenState
             );
           }
         },
-        // TREU EL 'const' D'AQUÍ SOTA
         touchTooltipData: LineTouchTooltipData(
-          // En lloc de null, usem una funció que retorna transparent
-          getTooltipColor: (LineBarSpot spot) => Colors.transparent,
+          getTooltipColor: (spot) => Colors.transparent,
         ),
       ),
 
@@ -204,21 +201,19 @@ class _ElevationProfileScreenState
         LineChartBarData(
           spots: spots,
           isCurved: true,
-          color: const Color(0xFF00E676),
+          color: colors.primary, // línia = blau cel
           barWidth: 3,
           dotData: const FlDotData(show: false),
+
+          // GRADIENT OCRE A SOTA
           belowBarData: BarAreaData(
             show: true,
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                const Color(
-                  0xFF00E676,
-                ).withAlpha(150), // Verd neó a dalt (prop de la línia)
-                const Color(
-                  0xFF00E676,
-                ).withAlpha(10), // Gairebé negre a la base
+                colors.secondary.withOpacity(0.6), // ocre intens
+                colors.secondary.withOpacity(0.05), // ocre molt suau
               ],
             ),
           ),

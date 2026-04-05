@@ -45,43 +45,95 @@ class TrackSettingsTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(trackSettingsProvider);
+    final colors = Theme.of(context).colorScheme;
 
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("Color del track", style: TextStyle(fontSize: 18)),
+          // -------------------------
+          // COLOR PICKER
+          // -------------------------
+          Text(
+            "Color del track",
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: colors.onSurface,
+            ),
+          ),
           const SizedBox(height: 12),
-          ElevatedButton(
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (_) => AlertDialog(
-                  title: const Text("Selecciona color"),
-                  content: BlockPicker(
-                    pickerColor: settings.color,
-                    onColorChanged: (c) {
-                      ref.read(trackSettingsProvider.notifier).setColor(c);
-                      onPending();
-                    },
+
+          Row(
+            children: [
+              // Preview del color actual
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: settings.color,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: colors.onSurface.withOpacity(0.4),
+                    width: 1.5,
                   ),
                 ),
-              );
-            },
-            child: const Text("Canvia color"),
+              ),
+              const SizedBox(width: 16),
+
+              ElevatedButton(
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (_) => AlertDialog(
+                      backgroundColor: colors.surface,
+                      title: Text(
+                        "Selecciona color",
+                        style: TextStyle(color: colors.onSurface),
+                      ),
+                      content: BlockPicker(
+                        pickerColor: settings.color,
+                        onColorChanged: (c) {
+                          ref.read(trackSettingsProvider.notifier).setColor(c);
+                          onPending();
+                        },
+                      ),
+                    ),
+                  );
+                },
+                child: const Text("Canvia color"),
+              ),
+            ],
           ),
 
           const SizedBox(height: 32),
 
-          Text("Gruix: ${settings.width.toStringAsFixed(1)}"),
-          Slider(
-            value: settings.width,
-            min: 1,
-            max: 10,
-            onChanged: (v) {
-              ref.read(trackSettingsProvider.notifier).setWidth(v);
-              onPending();
-            },
+          // -------------------------
+          // SLIDER WIDTH
+          // -------------------------
+          Text(
+            "Gruix del track: ${settings.width.toStringAsFixed(1)}",
+            style: TextStyle(fontSize: 16, color: colors.onSurface),
+          ),
+
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              activeTrackColor: colors.primary,
+              inactiveTrackColor: colors.onSurface.withOpacity(0.2),
+              thumbColor: colors.primary,
+            ),
+            child: Slider(
+              value: settings.width,
+              min: 1,
+              max: 10,
+              divisions: 18,
+              label: settings.width.toStringAsFixed(1),
+              onChanged: (v) {
+                ref.read(trackSettingsProvider.notifier).setWidth(v);
+                onPending();
+              },
+            ),
           ),
         ],
       ),

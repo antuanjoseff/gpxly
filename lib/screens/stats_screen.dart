@@ -2,16 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gpxly/notifiers/track_notifier.dart';
 
-// ... els teus imports ...
-
 class TrackStatsScreen extends ConsumerWidget {
   const TrackStatsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final track = ref.watch(trackProvider);
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
 
-    // Comprovació de seguretat per a les elevacions inicials
     final hasData = track.coordinates.isNotEmpty;
     final maxElev = hasData
         ? "${track.maxElevation.toStringAsFixed(0)} m"
@@ -21,88 +20,100 @@ class TrackStatsScreen extends ConsumerWidget {
         : "---";
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Dades de la ruta"),
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
-      ),
+      appBar: AppBar(title: const Text("Dades de la ruta")),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // AFEGIM EL TEMPS
           _buildStatCard(
+            context,
             "Temps total",
             track.formattedDuration,
             Icons.timer,
-            Colors.orange,
+            colors.primary, // blau cel
           ),
 
           _buildStatCard(
+            context,
             "Distància",
             "${(track.distance / 1000).toStringAsFixed(2)} km",
             Icons.straighten,
-            Colors.blue,
+            colors.secondary, // ocre
           ),
+
           _buildStatCard(
+            context,
             "Velocitat Mitjana",
             "${track.averageSpeed.toStringAsFixed(1)} km/h",
             Icons.speed,
-            Colors.blue,
+            colors.primary,
           ),
+
           const Divider(height: 30),
+
           _buildStatCard(
+            context,
             "Elevació Màxima",
             maxElev,
             Icons.terrain,
-            Colors.brown,
+            colors.secondary,
           ),
+
           _buildStatCard(
+            context,
             "Elevació Mínima",
             minElev,
             Icons.south_east,
-            Colors.brown,
+            colors.secondary,
           ),
 
-          // COLORS PER ALS DESNIVELLS
           _buildStatCard(
+            context,
             "Desnivell Positiu (+)",
             "${track.ascent.toStringAsFixed(0)} m",
             Icons.unfold_less,
-            Colors.green,
+            colors.primary,
           ),
+
           _buildStatCard(
+            context,
             "Desnivell Negatiu (-)",
             "${track.descent.toStringAsFixed(0)} m",
             Icons.unfold_more,
-            Colors.red,
+            colors.primary,
           ),
         ],
       ),
     );
   }
 
-  // Hem afegit un paràmetre 'color' per a la icona
   Widget _buildStatCard(
+    BuildContext context,
     String label,
     String value,
     IconData icon,
-    Color color,
+    Color iconColor,
   ) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
     return Card(
-      elevation: 2,
       margin: const EdgeInsets.symmetric(vertical: 6),
       child: ListTile(
-        leading: Icon(icon, color: color),
+        leading: Icon(icon, color: iconColor),
         title: Text(
           label,
-          style: const TextStyle(fontSize: 14, color: Colors.grey),
+          style: TextStyle(
+            fontSize: 14,
+            color: colors.onSurface.withOpacity(0.6),
+          ),
         ),
         trailing: Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
             fontFamily: 'monospace',
+            color: colors.onSurface,
           ),
         ),
       ),

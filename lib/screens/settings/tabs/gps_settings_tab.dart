@@ -63,6 +63,8 @@ class _GpsSettingsTabState extends ConsumerState<GpsSettingsTab> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
     return Scaffold(
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -77,7 +79,9 @@ class _GpsSettingsTabState extends ConsumerState<GpsSettingsTab> {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: _useTime ? Colors.blueAccent : Colors.grey,
+                color: _useTime
+                    ? colors.primary
+                    : colors.onSurface.withOpacity(0.5),
               ),
             ),
             const SizedBox(height: 8),
@@ -86,18 +90,22 @@ class _GpsSettingsTabState extends ConsumerState<GpsSettingsTab> {
               "Cada $_seconds segons",
               style: TextStyle(
                 fontSize: 16,
-                color: _useTime ? Colors.black : Colors.grey,
+                color: _useTime
+                    ? colors.onSurface
+                    : colors.onSurface.withOpacity(0.5),
               ),
             ),
 
             SliderTheme(
               data: SliderTheme.of(context).copyWith(
                 activeTrackColor: _useTime
-                    ? Colors.blueAccent
-                    : Colors.grey.shade400,
-                inactiveTrackColor: Colors.grey.shade300,
+                    ? colors.primary
+                    : colors.onSurface.withOpacity(0.3),
+                inactiveTrackColor: colors.onSurface.withOpacity(0.2),
                 trackHeight: _useTime ? 6 : 3,
-                thumbColor: _useTime ? Colors.blueAccent : Colors.grey,
+                thumbColor: _useTime
+                    ? colors.primary
+                    : colors.onSurface.withOpacity(0.4),
               ),
               child: Slider(
                 value: _seconds.toDouble(),
@@ -108,8 +116,7 @@ class _GpsSettingsTabState extends ConsumerState<GpsSettingsTab> {
                 onChanged: (val) {
                   setState(() {
                     _seconds = val.round();
-                    _useTime =
-                        true; // ← aquest slider passa a ser el mode actiu
+                    _useTime = true;
                   });
                   _markPending();
                 },
@@ -126,7 +133,9 @@ class _GpsSettingsTabState extends ConsumerState<GpsSettingsTab> {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: !_useTime ? Colors.blueAccent : Colors.grey,
+                color: !_useTime
+                    ? colors.primary
+                    : colors.onSurface.withOpacity(0.5),
               ),
             ),
             const SizedBox(height: 8),
@@ -135,18 +144,22 @@ class _GpsSettingsTabState extends ConsumerState<GpsSettingsTab> {
               "Cada ${_meters.toInt()} metres",
               style: TextStyle(
                 fontSize: 16,
-                color: !_useTime ? Colors.black : Colors.grey,
+                color: !_useTime
+                    ? colors.onSurface
+                    : colors.onSurface.withOpacity(0.5),
               ),
             ),
 
             SliderTheme(
               data: SliderTheme.of(context).copyWith(
                 activeTrackColor: !_useTime
-                    ? Colors.blueAccent
-                    : Colors.grey.shade400,
-                inactiveTrackColor: Colors.grey.shade300,
+                    ? colors.primary
+                    : colors.onSurface.withOpacity(0.3),
+                inactiveTrackColor: colors.onSurface.withOpacity(0.2),
                 trackHeight: !_useTime ? 6 : 3,
-                thumbColor: !_useTime ? Colors.blueAccent : Colors.grey,
+                thumbColor: !_useTime
+                    ? colors.primary
+                    : colors.onSurface.withOpacity(0.4),
               ),
               child: Slider(
                 value: _meters,
@@ -157,8 +170,7 @@ class _GpsSettingsTabState extends ConsumerState<GpsSettingsTab> {
                 onChanged: (val) {
                   setState(() {
                     _meters = val.roundToDouble();
-                    _useTime =
-                        false; // ← aquest slider passa a ser el mode actiu
+                    _useTime = false;
                   });
                   _markPending();
                 },
@@ -170,29 +182,40 @@ class _GpsSettingsTabState extends ConsumerState<GpsSettingsTab> {
             // -------------------------
             // SLIDER ACCURACY
             // -------------------------
-            const Text(
+            Text(
               "Accuracy màxima",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: colors.onSurface,
+              ),
             ),
             const SizedBox(height: 8),
 
             Text(
               "${_accuracy.toInt()} metres",
-              style: const TextStyle(fontSize: 16),
+              style: TextStyle(fontSize: 16, color: colors.onSurface),
             ),
 
-            Slider(
-              value: _accuracy,
-              min: 5,
-              max: 100,
-              divisions: 19,
-              label: _accuracy.toInt().toString(),
-              onChanged: (val) {
-                setState(() {
-                  _accuracy = val;
-                });
-                _markPending();
-              },
+            SliderTheme(
+              data: SliderTheme.of(context).copyWith(
+                activeTrackColor: colors.secondary,
+                inactiveTrackColor: colors.onSurface.withOpacity(0.2),
+                thumbColor: colors.secondary,
+              ),
+              child: Slider(
+                value: _accuracy,
+                min: 5,
+                max: 100,
+                divisions: 19,
+                label: _accuracy.toInt().toString(),
+                onChanged: (val) {
+                  setState(() {
+                    _accuracy = val;
+                  });
+                  _markPending();
+                },
+              ),
             ),
 
             const SizedBox(height: 40),

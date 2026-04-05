@@ -17,30 +17,34 @@ class GPXlyApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
         brightness: Brightness.dark,
-        scaffoldBackgroundColor: Colors.black,
+
+        scaffoldBackgroundColor: const Color(0xFF121212),
 
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF00E676), // Verd Neó
+          seedColor: const Color(0xFF8EC9E6), // Blau cel
           brightness: Brightness.dark,
-          primary: const Color(0xFF00E676),
-          secondary: const Color(0xFF2979FF), // Blau Elèctric
-          surface: const Color(0xFF1A1A1A),
+
+          primary: const Color(0xFF8EC9E6), // Blau cel
+          secondary: const Color(0xFFE3B04B), // Ocre
+          surface: const Color(0xFF1A1A1A), // Fons fosc
+          onPrimary: Colors.black,
+          onSecondary: Colors.black,
         ),
 
         appBarTheme: const AppBarTheme(
           backgroundColor: Colors.black,
-          foregroundColor: Color(0xFF00E676),
+          foregroundColor: Color(0xFF8EC9E6), // Blau cel
           centerTitle: true,
           elevation: 0,
           titleTextStyle: TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w800,
             letterSpacing: 0.5,
-            fontFamily: 'monospace', // Per l'estil de cronòmetre
+            fontFamily: 'monospace',
+            color: Color(0xFF8EC9E6),
           ),
         ),
 
-        // CORRECCIÓ: Fem servir CardThemeData
         cardTheme: CardThemeData(
           color: const Color(0xFF1A1A1A),
           elevation: 0,
@@ -50,11 +54,10 @@ class GPXlyApp extends StatelessWidget {
           ),
         ),
 
-        // Estil per als botons Expanded
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF1A1A1A),
-            foregroundColor: Colors.white,
+            backgroundColor: const Color(0xFFE3B04B), // Ocre
+            foregroundColor: Colors.black,
             elevation: 0,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
@@ -69,12 +72,10 @@ class GPXlyApp extends StatelessWidget {
         snackBarTheme: SnackBarThemeData(
           behavior: SnackBarBehavior.floating,
           backgroundColor: const Color(0xFF1A1A1A),
-          contentTextStyle: TextStyle(
-            color: Colors.white,
-          ), // Text principal en blanc
+          contentTextStyle: const TextStyle(color: Colors.white),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
-            side: const BorderSide(color: Color(0xFF00E676), width: 0.5),
+            side: const BorderSide(color: Color(0xFF8EC9E6), width: 0.5),
           ),
         ),
       ),
