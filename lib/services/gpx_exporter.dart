@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:gpxly/notifiers/gpx_settings_provider.dart'
+    show gpxSettingsProvider;
 import 'package:gpxly/notifiers/track_notifier.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -130,6 +132,7 @@ Future<void> exportGpx(
   BuildContext context,
 ) async {
   final track = ref.read(trackProvider);
+  final settings = ref.read(gpxSettingsProvider);
 
   if (track.coordinates.isEmpty) {
     if (context.mounted) {
@@ -144,6 +147,9 @@ Future<void> exportGpx(
   final alts = track.altitudes;
   final times = track.timestamps;
   final accs = track.accuracies;
+  final headings = track.headings;
+  final sats = track.satellites;
+  final vAccs = track.vAccuracies;
 
   final bounds = computeBounds(coords);
 
@@ -152,6 +158,7 @@ Future<void> exportGpx(
   buffer.writeln('<?xml version="1.0" encoding="UTF-8"?>');
   buffer.writeln('<gpx version="1.1" creator="Gpxly">');
 
+  // 🔥 Mantenim els bounds
   buffer.writeln(
     '<bounds minlat="${bounds["minlat"]}" minlon="${bounds["minlon"]}" '
     'maxlat="${bounds["maxlat"]}" maxlon="${bounds["maxlon"]}" />',
@@ -165,10 +172,16 @@ Future<void> exportGpx(
 
     final ele = (i < alts.length) ? alts[i] : 0.0;
     final time = (i < times.length) ? times[i].toUtc().toIso8601String() : null;
-    final acc = (i < accs.length) ? accs[i] : null;
 
+    // Atributs GPS opcionals
+    final acc = (i < accs.length) ? accs[i] : null;
+    final heading = (i < headings.length) ? headings[i] : null;
+    final sat = (i < sats.length) ? sats[i] : null;
+    final vAcc = (i < vAccs.length) ? vAccs[i] : null;
+
+    // Speed només si activat
     double speed = 0;
-    if (i > 0 && i < times.length) {
+    if (settings.speeds && i > 0 && i < times.length) {
       speed = computeSpeed(
         coords[i - 1][1],
         coords[i - 1][0],
@@ -180,14 +193,44 @@ Future<void> exportGpx(
     }
 
     buffer.writeln('<trkpt lat="$lat" lon="$lon">');
-    buffer.writeln('<ele>$ele</ele>');
-    if (time != null) buffer.writeln('<time>$time</time>');
-    buffer.writeln('<speed>$speed</speed>');
 
-    // 🔥 Afegim accuracy dins extensions (només si existeix)
-    if (acc != null) {
+    // 🔥 Altitud sempre present
+    buffer.writeln('<ele>$ele</ele>');
+
+    // 🔥 Temps sempre present si existeix
+    if (time != null) buffer.writeln('<time>$time</time>');
+
+    // 🔥 Speed només si activat
+    if (settings.speeds) {
+      buffer.writeln('<speed>$speed</speed>');
+    }
+
+    // 🔥 Extensions GPS (només si algun camp està activat)
+    final hasExtensions =
+        (settings.accuracies && acc != null) ||
+        (settings.headings && heading != null) ||
+        (settings.satellites && sat != null) ||
+        (settings.vAccuracies && vAcc != null);
+
+    if (hasExtensions) {
       buffer.writeln('<extensions>');
-      buffer.writeln('<accuracy>$acc</accuracy>');
+
+      if (settings.accuracies && acc != null) {
+        buffer.writeln('<accuracy>$acc</accuracy>');
+      }
+
+      if (settings.headings && heading != null) {
+        buffer.writeln('<heading>$heading</heading>');
+      }
+
+      if (settings.satellites && sat != null) {
+        buffer.writeln('<satellites>$sat</satellites>');
+      }
+
+      if (settings.vAccuracies && vAcc != null) {
+        buffer.writeln('<vAccuracy>$vAcc</vAccuracy>');
+      }
+
       buffer.writeln('</extensions>');
     }
 

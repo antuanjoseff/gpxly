@@ -38,6 +38,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
   bool isProgrammaticMove = false;
   bool _isPanelExpanded = true;
   bool _fullScreen = false;
+  LatLng? _initialCameraTarget;
 
   Timer? _cameraMoveDebounce;
   DateTime? _lastBackPress;
@@ -48,58 +49,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
   LatLng? _lastPosition;
   Timer? _animationTimer;
 
-  // -------------------------------
-  // SIMULADOR PUNTS DE TRACK
-  // -------------------------------
-
-  Timer? _simulationTimer;
-  double _simLat = 41.3850;
-  double _simLon = 2.1734;
-  double _simAlt = 100.0;
-  int _tick = 0;
-
-  void _toggleSimulation() {
-    if (_simulationTimer != null && _simulationTimer!.isActive) {
-      _simulationTimer!.cancel();
-      return;
-    }
-
-    // Reiniciem variables per a una ruta neta
-    _simLat = 41.3850;
-    _simLon = 2.1734;
-    int tick = 0;
-
-    _simulationTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      tick++;
-
-      // Moviment lineal constant (diagonal) per evitar oscil·lacions
-      _simLat += 0.0002;
-      _simLon += 0.0001;
-
-      // Perfil d'alçada: Una pujada constant fins als 30 segons i després baixa
-      double simulatedAlt = 100 + (tick < 30 ? tick * 5 : (60 - tick) * 5);
-
-      // IMPORTANT: Enviem el timestamp com a quart element
-      final double timestamp = DateTime.now().millisecondsSinceEpoch.toDouble();
-
-      ref.read(gpsAltitudeProvider.notifier).state = simulatedAlt;
-
-      // Passem la llista completa al notifier
-      ref
-          .read(trackProvider.notifier)
-          .addCoordinate(
-            _simLat,
-            _simLon,
-            7.0,
-            simulatedAlt,
-            // <--- ASSEGURA'T QUE EL TEU addPoint ACCEPTA AIXÒ
-          );
-    });
-  }
-
-  // -------------------------------
-  // FI DEL SIMULADOR
-  // -------------------------------
   final ButtonStyle recordButtonStyle = ElevatedButton.styleFrom(
     backgroundColor: Colors.red,
     foregroundColor: Colors.white,
@@ -118,6 +67,22 @@ class _MapScreenState extends ConsumerState<MapScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+
+    _loadLastPosition();
+  }
+
+  Future<void> _loadLastPosition() async {
+    final prefs = await SharedPreferences.getInstance();
+    final lat = prefs.getDouble("last_lat");
+    final lon = prefs.getDouble("last_lon");
+
+    if (lat != null && lon != null) {
+      _initialCameraTarget = LatLng(lat, lon);
+    } else {
+      _initialCameraTarget = const LatLng(0, 0);
+    }
+
+    if (mounted) setState(() {});
   }
 
   @override
@@ -243,6 +208,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final track = ref.watch(trackProvider);
     final accuracy = ref.watch(gpsAccuracyProvider);
     final altitude = ref.watch(gpsAltitudeProvider);
+    print(">>>BUILD accuracy = $accuracy, altitude = $altitude");
 
     // Listener dins build (Riverpod obliga)
     ref.listen(trackProvider, (previous, next) {
@@ -295,6 +261,10 @@ class _MapScreenState extends ConsumerState<MapScreen>
       } catch (_) {}
     });
 
+    if (_initialCameraTarget == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
@@ -339,18 +309,23 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     children: [
                       const GpsAccuracyBars(),
                       const SizedBox(width: 4),
-                      if (accuracy != 999)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 0),
-                          child: Text(
-                            "${accuracy.round()}m",
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 9,
-                              fontFamily: 'monospace',
-                            ),
-                          ),
+
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 0),
+                        child: Consumer(
+                          builder: (context, ref, child) {
+                            final acc = ref.watch(gpsAccuracyProvider);
+                            if (acc == 999.0) return const SizedBox.shrink();
+                            return Text(
+                              "${acc.round()}m",
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 9,
+                              ),
+                            );
+                          },
                         ),
+                      ),
                     ],
                   ),
                   IconButton(
@@ -372,100 +347,67 @@ class _MapScreenState extends ConsumerState<MapScreen>
               ),
         body: Stack(
           children: [
-            FutureBuilder(
-              future: _getLastPosition(),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData)
-                  return const Center(child: CircularProgressIndicator());
+            RepaintBoundary(
+              child: MapLibreMap(
+                trackCameraPosition: true,
+                styleString: "assets/osm_style.json",
+                initialCameraPosition: CameraPosition(
+                  target: _initialCameraTarget!,
+                  zoom: 14,
+                ),
+                onMapLongClick: (point, latlng) {
+                  SystemChrome.setEnabledSystemUIMode(
+                    SystemUiMode.immersiveSticky,
+                  );
+                  setState(() => _fullScreen = true);
+                },
+                onMapClick: (point, latlng) {
+                  if (!_fullScreen) return;
+                  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+                  setState(() => _fullScreen = false);
+                },
+                onCameraMove: (position) {
+                  if (isProgrammaticMove) return;
+                  userMovedMap = true;
+                },
+                onMapCreated: (controller) {
+                  mapController = controller;
+                  controller.addListener(_onMapChanged);
+                },
+                onStyleLoadedCallback: () async {
+                  await setupUserLocationLayer(mapController!);
+                  styleInitialized = true;
 
-                return MapLibreMap(
-                  trackCameraPosition: true,
-                  styleString: "assets/osm_style.json",
-                  initialCameraPosition: const CameraPosition(
-                    target: LatLng(0, 0),
-                    zoom: 14,
-                  ),
-                  onMapLongClick: (point, latlng) {
-                    SystemChrome.setEnabledSystemUIMode(
-                      SystemUiMode.immersiveSticky,
-                    );
-                    setState(() => _fullScreen = true);
-                  },
-                  onMapClick: (point, latlng) {
-                    if (!_fullScreen) return;
-                    SystemChrome.setEnabledSystemUIMode(
-                      SystemUiMode.edgeToEdge,
-                    );
-                    setState(() => _fullScreen = false);
-                  },
+                  final track = ref.read(trackProvider);
 
-                  onCameraMove: (position) {
-                    if (isProgrammaticMove) return;
-                    userMovedMap = true;
-                  },
-                  onMapCreated: (controller) {
-                    mapController = controller;
-                    controller.addListener(_onMapChanged);
-                  },
-                  onStyleLoadedCallback: () async {
-                    await setupUserLocationLayer(mapController!);
-                    styleInitialized = true;
-
-                    final prefs = await SharedPreferences.getInstance();
-                    final lat = prefs.getDouble("last_lat");
-                    final lon = prefs.getDouble("last_lon");
-
-                    if (lat != null && lon != null) {
-                      print("PROGRAMMATIC MOVE → animateCamera()");
-                      isProgrammaticMove = true;
-                      mapController!
-                          .animateCamera(
-                            CameraUpdate.newLatLng(LatLng(lat, lon)),
-                          )
-                          .then((_) => isProgrammaticMove = false);
-                    }
+                  if (track.coordinates.isNotEmpty) {
+                    final last = track.coordinates.last;
 
                     updateMapPosition(
                       mapController!,
-                      lat ?? 0,
-                      lon ?? 0,
+                      last[1],
+                      last[0],
                       userMovedMap,
                       (val) {
                         if (mounted) setState(() => isProgrammaticMove = val);
                       },
                     );
 
-                    final track = ref.read(trackProvider);
-
-                    if (track.coordinates.isNotEmpty) {
-                      final last = track.coordinates.last;
-
-                      updateMapPosition(
-                        mapController!,
-                        last[1],
-                        last[0],
-                        userMovedMap,
-                        (val) {
-                          if (mounted) setState(() => isProgrammaticMove = val);
-                        },
-                      );
-
-                      mapController!.setGeoJsonSource("track_line", {
-                        "type": "FeatureCollection",
-                        "features": [
-                          {
-                            "type": "Feature",
-                            "geometry": {
-                              "type": "LineString",
-                              "coordinates": track.coordinates,
-                            },
+                    mapController!.setGeoJsonSource("track_line", {
+                      "type": "FeatureCollection",
+                      "features": [
+                        {
+                          "type": "Feature",
+                          "geometry": {
+                            "type": "LineString",
+                            "coordinates": track.coordinates,
                           },
-                        ],
-                      });
-                    }
-                  },
-                );
-              },
+                        },
+                      ],
+                    });
+                  }
+                },
+              ),
             ),
 
             if (!_fullScreen) ...[
@@ -478,7 +420,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 child: FloatingRoutePanel(
                   isRecording: track.recording,
                   duration: track.duration,
-                  altitude: altitude,
                 ),
               ),
 
@@ -828,8 +769,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
       pos.altitude,
     );
 
-    ref.read(gpsAccuracyProvider.notifier).state = pos.accuracy;
-    ref.read(gpsAltitudeProvider.notifier).state = pos.altitude;
+    // ref.read(gpsAccuracyProvider.notifier).state = pos.accuracy;
+    // ref.read(gpsAltitudeProvider.notifier).state = pos.altitude;
 
     // 4. Iniciar el listener del TrackNotifier
     notifier.startRecording(context);

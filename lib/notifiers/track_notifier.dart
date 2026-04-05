@@ -74,12 +74,6 @@ class TrackNotifier extends Notifier<Track> {
       final double correction = localAltitudeCorrection(lat, lon);
       final double correctedAlt = rawAlt - correction;
 
-      // Actualitzem el provider per a la UI
-      ref.read(gpsAccuracyProvider.notifier).update(accuracy);
-      ref.read(gpsAltitudeProvider.notifier).update(correctedAlt);
-      ref.read(gpsSpeedProvider.notifier).update(speed);
-      ref.read(gpsBearingProvider.notifier).update(heading);
-
       // 3. Afegir el punt amb tota la telemetria
       addPointFromPosition(
         Position(
@@ -128,6 +122,12 @@ class TrackNotifier extends Notifier<Track> {
 >>> sAccuracy: ${pos.speedAccuracy}
 >>> hAccuracy: ${pos.headingAccuracy}
     """);
+
+    // Actualitzem el provider per a la UI
+    ref.read(gpsAccuracyProvider.notifier).update(pos.accuracy);
+    ref.read(gpsAltitudeProvider.notifier).update(pos.altitude);
+    ref.read(gpsSpeedProvider.notifier).update(pos.speed);
+    ref.read(gpsBearingProvider.notifier).update(pos.heading);
 
     double newDistance = state.distance;
     double newAscent = state.ascent;

@@ -8,53 +8,42 @@ class GpsSettingsTab extends ConsumerStatefulWidget {
 
   const GpsSettingsTab({super.key, required this.onPending});
 
-  /// Cridat per la pantalla principal quan l’usuari prem “Apply”
   static void apply(WidgetRef ref) {
     final notifier = ref.read(gpsSettingsProvider.notifier);
-    final settings = ref.read(gpsSettingsProvider);
+    final s = ref.read(gpsSettingsProvider);
 
-    notifier.setUseTime(settings.useTime);
-    notifier.setSeconds(settings.seconds);
-    notifier.setMeters(settings.meters);
-    notifier.setAccuracy(settings.accuracy);
+    notifier.setUseTime(s.useTime);
+    notifier.setSeconds(s.seconds);
+    notifier.setMeters(s.meters);
+    notifier.setAccuracy(s.accuracy);
   }
 
   @override
   ConsumerState<GpsSettingsTab> createState() => _GpsSettingsTabState();
 }
 
-class _GpsSettingsTabState extends ConsumerState<GpsSettingsTab>
-    with SingleTickerProviderStateMixin {
+class _GpsSettingsTabState extends ConsumerState<GpsSettingsTab> {
   late bool _useTime;
   late int _seconds;
   late double _meters;
   late double _accuracy;
 
-  late TabController _tabController;
-  late bool _hasPendingChanges = false;
-  bool _pendingTime = false;
-  bool _pendingMeters = false;
-  bool _pendingAccuracy = false;
+  bool _pending = false;
 
   void _markPending() {
-    setState(() {
-      _hasPendingChanges = true;
-    });
-
-    widget.onPending(); // <- avisa la pantalla principal
+    setState(() => _pending = true);
+    widget.onPending();
   }
 
   @override
   void initState() {
     super.initState();
-    final gpsSettings = ref.read(gpsSettingsProvider);
+    final gps = ref.read(gpsSettingsProvider);
 
-    _useTime = gpsSettings.useTime;
-    _seconds = gpsSettings.seconds;
-    _meters = gpsSettings.meters;
-    _accuracy = gpsSettings.accuracy;
-
-    _tabController = TabController(length: 3, vsync: this);
+    _useTime = gps.useTime;
+    _seconds = gps.seconds;
+    _meters = gps.meters;
+    _accuracy = gps.accuracy;
   }
 
   void _applySettings() {
@@ -65,216 +54,156 @@ class _GpsSettingsTabState extends ConsumerState<GpsSettingsTab>
     notifier.setMeters(_meters);
     notifier.setAccuracy(_accuracy);
 
-    setState(() {
-      _hasPendingChanges = false;
-    });
+    setState(() => _pending = false);
 
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Configuració GPS aplicada!')));
+    ).showSnackBar(const SnackBar(content: Text("Configuració GPS aplicada!")));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: TabBar(
-        controller: _tabController,
-        tabs: const [
-          Tab(icon: Icon(Icons.timer), text: "Temps"),
-          Tab(icon: Icon(Icons.straighten), text: "Metres"),
-          Tab(icon: Icon(Icons.gps_fixed), text: "Accuracy"),
-        ],
-        indicator: BoxDecoration(
-          color: Colors.blueAccent.withValues(alpha: .15),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        indicatorSize: TabBarIndicatorSize.tab,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  // --- Pestanya Temps ---
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      ChoiceChip(
-                        label: const Icon(Icons.timer),
-                        selected: _useTime,
-                        onSelected: (val) {
-                          setState(() {
-                            _useTime = true;
-                            _meters = 1;
-                          });
-                          _markPending();
-                        },
-                      ),
-                      const SizedBox(height: 20),
-                      Column(
-                        children: [
-                          Text(
-                            "Cada $_seconds segons",
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Slider(
-                            value: _seconds.toDouble(),
-                            min: 1,
-                            max: 60,
-                            divisions: 59,
-                            label: _seconds.toString(),
-                            onChanged: (val) {
-                              setState(() {
-                                _seconds = val.round();
-                                _meters = 1;
-                                _pendingTime = true;
-                                _hasPendingChanges = true;
-                              });
-
-                              _markPending();
-                            },
-                          ),
-                        ],
-                      ),
-
-                      const Icon(Icons.timer),
-
-                      const SizedBox(height: 40),
-
-                      ElevatedButton(
-                        style: _pendingTime
-                            ? AppButtons.active
-                            : AppButtons.inactive,
-                        onPressed: () {
-                          _applySettings();
-                          setState(() => _pendingTime = false);
-                        },
-                        child: const Text("Aplica"),
-                      ),
-                    ],
-                  ),
-
-                  // --- Pestanya metres ---
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      ChoiceChip(
-                        label: const Icon(Icons.straighten),
-                        selected: !_useTime,
-                        onSelected: (val) {
-                          setState(() {
-                            _useTime = false;
-                            _seconds = 1;
-                          });
-                          _markPending();
-                        },
-                      ),
-                      const SizedBox(height: 20),
-                      Column(
-                        children: [
-                          Text(
-                            "Cada ${_meters.toInt()} metres",
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Slider(
-                            value: _meters,
-                            min: 1,
-                            max: 100,
-                            divisions: 99,
-                            label: _meters.toInt().toString(),
-                            onChanged: (val) {
-                              setState(() {
-                                _meters = val.roundToDouble();
-                                _seconds = 1;
-                                _pendingMeters = true;
-                                _hasPendingChanges = true;
-                              });
-
-                              _markPending();
-                            },
-                          ),
-                        ],
-                      ),
-
-                      const Icon(Icons.straighten),
-
-                      const SizedBox(height: 40),
-
-                      ElevatedButton(
-                        style: _pendingMeters
-                            ? AppButtons.active
-                            : AppButtons.inactive,
-                        onPressed: () {
-                          _applySettings();
-                          setState(() => _pendingMeters = false);
-                        },
-                        child: const Text("Aplica"),
-                      ),
-                    ],
-                  ),
-
-                  // -- pestanya accuracy
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        "Accuracy màxima: ${_accuracy.toInt()} m",
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Slider(
-                        value: _accuracy,
-                        min: 5,
-                        max: 100,
-                        divisions: 19,
-                        label: _accuracy.toInt().toString(),
-                        onChanged: (val) {
-                          setState(() {
-                            _accuracy = val;
-                            _pendingAccuracy = true;
-                            _hasPendingChanges = true;
-                          });
-
-                          _markPending();
-                        },
-                      ),
-
-                      const Icon(Icons.gps_fixed),
-
-                      const SizedBox(height: 40),
-
-                      ElevatedButton(
-                        style: _pendingAccuracy
-                            ? AppButtons.active
-                            : AppButtons.inactive,
-                        onPressed: () {
-                          _applySettings();
-                          setState(() => _pendingAccuracy = false);
-                        },
-                        child: const Text("Aplica"),
-                      ),
-                    ],
-                  ),
-                ],
+            // -------------------------
+            // SLIDER TEMPS
+            // -------------------------
+            Text(
+              "Gravació per temps",
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: _useTime ? Colors.blueAccent : Colors.grey,
               ),
             ),
+            const SizedBox(height: 8),
+
+            Text(
+              "Cada $_seconds segons",
+              style: TextStyle(
+                fontSize: 16,
+                color: _useTime ? Colors.black : Colors.grey,
+              ),
+            ),
+
+            SliderTheme(
+              data: SliderTheme.of(context).copyWith(
+                activeTrackColor: _useTime
+                    ? Colors.blueAccent
+                    : Colors.grey.shade400,
+                inactiveTrackColor: Colors.grey.shade300,
+                trackHeight: _useTime ? 6 : 3,
+                thumbColor: _useTime ? Colors.blueAccent : Colors.grey,
+              ),
+              child: Slider(
+                value: _seconds.toDouble(),
+                min: 1,
+                max: 60,
+                divisions: 59,
+                label: _seconds.toString(),
+                onChanged: (val) {
+                  setState(() {
+                    _seconds = val.round();
+                    _useTime =
+                        true; // ← aquest slider passa a ser el mode actiu
+                  });
+                  _markPending();
+                },
+              ),
+            ),
+
+            const SizedBox(height: 32),
+
+            // -------------------------
+            // SLIDER METRES
+            // -------------------------
+            Text(
+              "Gravació per distància",
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: !_useTime ? Colors.blueAccent : Colors.grey,
+              ),
+            ),
+            const SizedBox(height: 8),
+
+            Text(
+              "Cada ${_meters.toInt()} metres",
+              style: TextStyle(
+                fontSize: 16,
+                color: !_useTime ? Colors.black : Colors.grey,
+              ),
+            ),
+
+            SliderTheme(
+              data: SliderTheme.of(context).copyWith(
+                activeTrackColor: !_useTime
+                    ? Colors.blueAccent
+                    : Colors.grey.shade400,
+                inactiveTrackColor: Colors.grey.shade300,
+                trackHeight: !_useTime ? 6 : 3,
+                thumbColor: !_useTime ? Colors.blueAccent : Colors.grey,
+              ),
+              child: Slider(
+                value: _meters,
+                min: 1,
+                max: 100,
+                divisions: 99,
+                label: _meters.toInt().toString(),
+                onChanged: (val) {
+                  setState(() {
+                    _meters = val.roundToDouble();
+                    _useTime =
+                        false; // ← aquest slider passa a ser el mode actiu
+                  });
+                  _markPending();
+                },
+              ),
+            ),
+
+            const SizedBox(height: 32),
+
+            // -------------------------
+            // SLIDER ACCURACY
+            // -------------------------
+            const Text(
+              "Accuracy màxima",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+
+            Text(
+              "${_accuracy.toInt()} metres",
+              style: const TextStyle(fontSize: 16),
+            ),
+
+            Slider(
+              value: _accuracy,
+              min: 5,
+              max: 100,
+              divisions: 19,
+              label: _accuracy.toInt().toString(),
+              onChanged: (val) {
+                setState(() {
+                  _accuracy = val;
+                });
+                _markPending();
+              },
+            ),
+
+            const SizedBox(height: 40),
           ],
         ),
       ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(16.0),
+
+      bottomNavigationBar: SafeArea(
+        minimum: const EdgeInsets.all(16),
         child: ElevatedButton(
+          style: AppButtons.active,
           onPressed: _applySettings,
           child: const Text("Apply"),
         ),

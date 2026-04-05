@@ -1,29 +1,34 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gpxly/notifiers/gps_altitude_notifier.dart'; // Assegura't que el path sigui correcte
 
-class FloatingRoutePanel extends StatelessWidget {
+class FloatingRoutePanel extends ConsumerWidget {
+  // Canviem a ConsumerWidget
   final bool isRecording;
   final Duration duration;
-  final double? altitude;
 
   const FloatingRoutePanel({
     super.key,
     required this.isRecording,
     required this.duration,
-    this.altitude,
+    // Eliminem l'altitude dels paràmetres
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Afegim WidgetRef
+    // Llegim l'altitud directament del provider
+    final altitude = ref.watch(gpsAltitudeProvider);
+
     return Container(
-      // Reduïm padding per fer-lo mínim
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.black.withAlpha(180), // Una mica més transparent
+        color: Colors.black.withAlpha(180),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Colors.white10),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min, // Ocupa només l'espai dels fills
+        mainAxisSize: MainAxisSize.min,
         children: [
           // CRONÒMETRE COMPACTE
           Text(
@@ -33,7 +38,7 @@ class FloatingRoutePanel extends StatelessWidget {
             style: TextStyle(
               fontFamily: 'monospace',
               fontWeight: FontWeight.w800,
-              fontSize: 13, // Mida més petita
+              fontSize: 13,
               color: isRecording ? const Color(0xFF00E676) : Colors.white24,
             ),
           ),
@@ -50,7 +55,8 @@ class FloatingRoutePanel extends StatelessWidget {
           const Icon(Icons.terrain, color: Colors.white60, size: 12),
           const SizedBox(width: 3),
           Text(
-            altitude != null ? "${altitude!.toStringAsFixed(0)}m" : "?m",
+            // Ara usem la variable que ve del provider
+            altitude != 0.0 ? "${altitude.toStringAsFixed(0)}m" : "?m",
             style: const TextStyle(
               fontFamily: 'monospace',
               fontWeight: FontWeight.w800,
