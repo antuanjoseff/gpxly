@@ -33,6 +33,7 @@ dependencies:
   geolocator:
   xml:
   fl_chart:
+  flutter_colorpicker:
   intl:
   shared_preferences:
   share_plus:

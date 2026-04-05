@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:gpxly/notifiers/gps_settings_provider.dart';
+import 'package:gpxly/notifiers/gps_settings_notifier.dart';
 import 'package:gpxly/ui/app_styles.dart';
 
 class GpsSettingsScreen extends ConsumerStatefulWidget {

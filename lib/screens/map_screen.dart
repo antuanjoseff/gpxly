@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:gpxly/notifiers/gps_settings_provider.dart';
+import 'package:gpxly/notifiers/gps_settings_notifier.dart';
 import 'package:gpxly/notifiers/track_notifier.dart';
 import 'package:gpxly/screens/elevation_profile_screen.dart';
-import 'package:gpxly/screens/gps_settings_screen.dart';
+import 'package:gpxly/screens/settings/gps_settings_screen.dart';
 import 'package:gpxly/screens/stats_screen.dart';
 import 'package:gpxly/services/native_gps_channel.dart';
 import 'package:gpxly/services/permissions_service.dart';
@@ -18,7 +18,8 @@ import 'package:gpxly/utils/map_layers.dart';
 import 'package:gpxly/widgets/floating_route_panel.dart';
 import 'package:gpxly/widgets/gps_accuracy_bars.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
-import 'package:gpxly/notifiers/gps_accuracy_provider.dart';
+import 'package:gpxly/notifiers/gps_accuracy_notifier.dart';
+import 'package:gpxly/notifiers/gps_altitude_notifier.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -814,14 +815,16 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final ok = await PermissionsService.ensurePermissions(context);
     if (!context.mounted || !ok) return;
 
-    print("GPXLY START RECORDING");
-
     // 3. Primer punt immediat
     final pos = await Geolocator.getCurrentPosition();
+    final correctedAlt = ref
+        .read(trackProvider.notifier)
+        .localAltitudeCorrection(pos.latitude, pos.longitude);
+
     notifier.addCoordinate(
       pos.latitude,
       pos.longitude,
-      pos.accuracy,
+      correctedAlt,
       pos.altitude,
     );
 
@@ -902,16 +905,51 @@ class _MapScreenState extends ConsumerState<MapScreen>
   Future<void> _forceSavePosition(double lat, double lon) async {
     _lastSaveTime = DateTime.now();
     final prefs = await SharedPreferences.getInstance();
+
+    // Obtenim l'estat actual del track per guardar l'última telemetria coneguda
+    final track = ref.read(trackProvider);
+
     await prefs.setDouble('last_lat', lat);
     await prefs.setDouble('last_lon', lon);
-    print(">>> Posició guardada (Debounce 5 min)");
+
+    // 🔹 Guardem les noves propietats de l'últim punt registrat
+    if (track.altitudes.isNotEmpty) {
+      await prefs.setDouble('last_alt', track.altitudes.last);
+    }
+    if (track.speeds.isNotEmpty) {
+      await prefs.setDouble('last_speed', track.speeds.last);
+    }
+    if (track.headings.isNotEmpty) {
+      await prefs.setDouble('last_heading', track.headings.last);
+    }
+    if (track.satellites.isNotEmpty) {
+      await prefs.setInt('last_sat', track.satellites.last);
+    }
+    if (track.accuracies.isNotEmpty) {
+      await prefs.setDouble('last_acc', track.accuracies.last);
+    }
+    if (track.vAccuracies.isNotEmpty) {
+      await prefs.setDouble('last_vAcc', track.vAccuracies.last);
+    }
+
+    print(">>> Posició i telemetria completa guardada a SharedPreferences");
   }
 
   Future<LatLng> _getLastPosition() async {
     final prefs = await SharedPreferences.getInstance();
-    final lat =
-        prefs.getDouble('last_lat') ?? 41.3851; // Valor per defecte (ex: BCN)
+
+    final lat = prefs.getDouble('last_lat') ?? 41.3851;
     final lon = prefs.getDouble('last_lon') ?? 2.1734;
+
+    // 🔹 Recuperem la resta de valors per si vols inicialitzar els providers de la UI
+    final alt = prefs.getDouble('last_alt') ?? 0.0;
+    final acc = prefs.getDouble('last_acc') ?? 0.0;
+
+    // Opcional: Podries actualitzar els teus providers de la UI aquí
+    // per evitar que surtin a zero en obrir l'app:
+    ref.read(gpsAltitudeProvider.notifier).state = alt;
+    ref.read(gpsAccuracyProvider.notifier).state = acc;
+
     return LatLng(lat, lon);
   }
 

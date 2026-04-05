@@ -1,10 +1,14 @@
 package app.antuanjoseff.gpxgo
+
 import android.util.Log
 import android.app.*
+import android.content.Context
 import android.content.Intent
 import android.os.IBinder
 import android.os.Build
 import android.location.Location
+import android.location.LocationManager
+import android.location.GnssStatus
 import androidx.core.app.NotificationCompat
 import com.google.android.gms.location.*
 
@@ -12,144 +16,131 @@ class TrackingService : Service() {
 
     private lateinit var fused: FusedLocationProviderClient
     private lateinit var callback: LocationCallback
+    private lateinit var locationManager: LocationManager
+    
     private var lastLocation: Location? = null
     private var lastTime: Long = 0
+    private var satellitesUsed: Int = 0
+    private var satellitesInView: Int = 0
 
     private var useTime: Boolean = true
     private var seconds: Int = 5
     private var metersThreshold: Float = 10f
     private var accuracyThreshold: Float = 30f
 
+    // Callback per rebre l'estat dels satèl·lits
+    private val gnssStatusCallback = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+        object : GnssStatus.Callback() {
+            override fun onSatelliteStatusChanged(status: GnssStatus) {
+                var used = 0
+                val total = status.satelliteCount
+                for (i in 0 until total) {
+                    if (status.usedInFix(i)) used++
+                }
+                satellitesUsed = used
+                satellitesInView = total
+            }
+        }
+    } else null
+
     override fun onCreate() {
         super.onCreate()
-
         fused = LocationServices.getFusedLocationProviderClient(this)
+        locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+
+        // Registrar el seguiment de satèl·lits
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && gnssStatusCallback != null) {
+                locationManager.registerGnssStatusCallback(gnssStatusCallback, null)
+            }
+        } catch (e: SecurityException) { Log.e("GPXLY", "Error permisos GNSS") }
 
         callback = object : LocationCallback() {
             override fun onLocationResult(result: LocationResult) {
-                for (loc: Location in result.locations) {
-                    sendLocationToFlutter(loc)
-                }
+                for (loc in result.locations) sendLocationToFlutter(loc)
             }
         }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent == null) return START_NOT_STICKY
+        
         lastLocation = null
         lastTime = 0
-
-        // 🔹 Evitem NPE, però si és null, parem
-        if (intent == null) return START_NOT_STICKY
-
-        // 🔹 Llegim la configuració que ve de Flutter
         useTime = intent.getBooleanExtra("useTime", true)
         seconds = intent.getIntExtra("seconds", 5)
-        metersThreshold = intent.getDoubleExtra("meters", 10.0).toFloat()
-        accuracyThreshold = intent.getDoubleExtra("accuracy", 30.0).toFloat()
-
-        // 🔹 Print debug
-        Log.d("GPXLY", "TrackingService config: useTime=$useTime, seconds=$seconds, meters=$metersThreshold, accuracy=$accuracyThreshold")
-
+        metersThreshold = intent.getFloatExtra("meters", 10.0f)
+        accuracyThreshold = intent.getFloatExtra("accuracy", 30.0f)
 
         startForegroundServiceNotification()
-        startLocationUpdates(useTime, seconds, metersThreshold)
+        startLocationUpdates()
 
         return START_STICKY
     }
 
-    override fun onBind(intent: Intent?): IBinder? = null
-
-    override fun onDestroy() {
+    private fun startLocationUpdates() {
         fused.removeLocationUpdates(callback)
-        super.onDestroy()
-    }
-
-    private fun startForegroundServiceNotification() {
-        val channelId = "tracking_channel"
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                channelId,
-                "GPS Tracking",
-                NotificationManager.IMPORTANCE_LOW
-            )
-            val manager = getSystemService(NotificationManager::class.java)
-            manager.createNotificationChannel(channel)
-        }
-
-        val notification = NotificationCompat.Builder(this, channelId)
-            .setContentTitle("Gravant track")
-            .setContentText("El GPS està actiu")
-            .setSmallIcon(android.R.drawable.ic_menu_mylocation)
-            .build()
-
-        startForeground(1, notification)
-    }
-
-    private fun startLocationUpdates(
-        useTime: Boolean,
-        seconds: Int,
-        meters: Float
-    ) {
-        fused.removeLocationUpdates(callback)
-
-        val baseIntervalMs = (seconds.coerceAtLeast(1)) * 1000L
-        val baseDistanceM = meters.coerceAtLeast(1f) // ja és Float
-
-        val builder = LocationRequest.Builder(
-            Priority.PRIORITY_HIGH_ACCURACY,
-            baseIntervalMs
-        )
+        val intervalMs = (seconds.coerceAtLeast(1)) * 1000L
+        
+        val builder = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, intervalMs)
             .setGranularity(Granularity.GRANULARITY_FINE)
-            .setWaitForAccurateLocation(false)
-            .setMaxUpdateDelayMillis(baseIntervalMs)
+            .setMaxUpdateDelayMillis(intervalMs)
 
         if (useTime) {
-            builder
-                .setMinUpdateIntervalMillis(baseIntervalMs)
-                .setMinUpdateDistanceMeters(0f)
-            Log.d("GPXLY", "Mode TEMPS activat: interval=$seconds s, distància mínima=0 m")
+            builder.setMinUpdateIntervalMillis(intervalMs).setMinUpdateDistanceMeters(0f)
         } else {
-            builder
-                .setMinUpdateIntervalMillis(0)
-                .setMinUpdateDistanceMeters(baseDistanceM)
-            Log.d("GPXLY", "Mode DISTÀNCIA activat: interval=$seconds s, distància mínima=$metersThreshold m")
+            builder.setMinUpdateIntervalMillis(0).setMinUpdateDistanceMeters(metersThreshold)
         }
 
-        val request = builder.build()
-        fused.requestLocationUpdates(request, callback, mainLooper)
+        fused.requestLocationUpdates(builder.build(), callback, mainLooper)
     }
 
     private fun sendLocationToFlutter(loc: Location) {
         if (loc.accuracy > accuracyThreshold) return
     
         val now = System.currentTimeMillis()
-        val lastLoc = lastLocation
-        
-        // if (lastLoc != null && loc.distanceTo(lastLoc) < 1f) return
-        
         if (useTime) {
-            // 🔹 MODE TEMPS
             if (now - lastTime < seconds * 1000) return
         } else {
-            // 🔹 MODE DISTÀNCIA
-            if (lastLoc != null) {
-                val distance = lastLoc.distanceTo(loc)
-                if (distance < metersThreshold) return
-            }
+            if (lastLocation != null && lastLocation!!.distanceTo(loc) < metersThreshold) return
         }
 
         lastTime = now
         lastLocation = loc
-        Log.d(">>>GPXLY", "GPS → ${loc.latitude}, ${loc.longitude}, acc=${loc.accuracy}, alt=${loc.altitude}")
 
-        TrackingPlugin.sendEvent(
-            mapOf(
-                "lat" to loc.latitude,
-                "lon" to loc.longitude,
-                "accuracy" to loc.accuracy,
-                "altitude" to loc.altitude
-            )
-        )
+        TrackingPlugin.sendEvent(mapOf(
+            "lat" to loc.latitude,
+            "lon" to loc.longitude,
+            "accuracy" to loc.accuracy,
+            "altitude" to loc.altitude,
+            "speed" to loc.speed,
+            "heading" to loc.bearing,
+            "timestamp" to loc.time,
+            "sat_used" to satellitesUsed,
+            "sat_view" to satellitesInView,
+            "vAccuracy" to if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) loc.verticalAccuracyMeters else 0.0f
+        ))
     }
+
+    private fun startForegroundServiceNotification() {
+        val channelId = "tracking_channel"
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(channelId, "GPS Tracking", NotificationManager.IMPORTANCE_LOW)
+            (getSystemService(NotificationManager::class.java)).createNotificationChannel(channel)
+        }
+        val notification = NotificationCompat.Builder(this, channelId)
+            .setContentTitle("Gravant track").setContentText("GPS actiu")
+            .setSmallIcon(android.R.drawable.ic_menu_mylocation).build()
+        startForeground(1, notification)
+    }
+
+    override fun onDestroy() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && gnssStatusCallback != null) {
+            locationManager.unregisterGnssStatusCallback(gnssStatusCallback)
+        }
+        fused.removeLocationUpdates(callback)
+        super.onDestroy()
+    }
+
+    override fun onBind(intent: Intent?): IBinder? = null
 }

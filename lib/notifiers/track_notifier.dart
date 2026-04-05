@@ -2,6 +2,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:gpxly/notifiers/gps_accuracy_notifier.dart';
+import 'package:gpxly/notifiers/gps_altitude_notifier.dart';
+import 'package:gpxly/notifiers/gps_speed_notifier.dart';
+import 'package:gpxly/notifiers/gps_bearing_notifier.dart';
 
 import '../models/track.dart';
 import '../services/native_gps_channel.dart';
@@ -13,15 +17,23 @@ class TrackNotifier extends Notifier<Track> {
 
   @override
   Track build() {
-    print(">>> TrackNotifier.build() called");
     return _initialState ??= Track(
       coordinates: [],
       altitudes: [],
       timestamps: [],
       accuracies: [],
+      speeds: [],
+      headings: [],
+      satellites: [],
+      vAccuracies: [],
       recording: false,
       paused: false,
       duration: Duration.zero,
+      distance: 0.0,
+      ascent: 0.0,
+      descent: 0.0,
+      maxElevation: -9999.0,
+      minElevation: 9999.0,
     );
   }
 
@@ -41,25 +53,49 @@ class TrackNotifier extends Notifier<Track> {
     _subscription ??= NativeGpsChannel.locationStream.listen((data) {
       if (!state.recording || state.paused) return;
 
-      final lat = data["lat"] as double;
-      final lon = data["lon"] as double;
-      final accuracy = data["accuracy"] as double;
-      final alt = (data["alt"] ?? 0.0) as double;
+      // 1. Extreure totes les dades del TrackingService.kt
+      final double lat = data["lat"] as double;
+      final double lon = data["lon"] as double;
+      final double accuracy = data["accuracy"] as double;
+      final double rawAlt = (data["altitude"] ?? 0.0) as double;
+      final double speed = (data["speed"] ?? 0.0) as double;
+      final double heading = (data["heading"] ?? 0.0) as double;
+      final int satUsed = (data["sat_used"] ?? 0) as int;
 
+      // Precisions i temps real del satèl·lit
+      final double vAcc = (data["vAccuracy"] ?? 0.0) as double;
+      final double sAcc = (data["sAccuracy"] ?? 0.0) as double;
+      final double hAcc = (data["hAccuracy"] ?? 0.0) as double;
+      final DateTime gpsTimestamp = DateTime.fromMillisecondsSinceEpoch(
+        data["timestamp"] as int,
+      );
+
+      // 2. Aplicar correcció d'altitud (Recuperada)
+      final double correction = localAltitudeCorrection(lat, lon);
+      final double correctedAlt = rawAlt - correction;
+
+      // Actualitzem el provider per a la UI
+      ref.read(gpsAccuracyProvider.notifier).update(accuracy);
+      ref.read(gpsAltitudeProvider.notifier).update(correctedAlt);
+      ref.read(gpsSpeedProvider.notifier).update(speed);
+      ref.read(gpsBearingProvider.notifier).update(heading);
+
+      // 3. Afegir el punt amb tota la telemetria
       addPointFromPosition(
         Position(
           latitude: lat,
           longitude: lon,
-          altitude: alt,
-          timestamp: DateTime.now(),
+          altitude: correctedAlt,
+          timestamp: gpsTimestamp,
           accuracy: accuracy,
-          altitudeAccuracy: 0,
-          heading: 0,
-          headingAccuracy: 0,
-          speed: 0,
-          speedAccuracy: 0,
+          altitudeAccuracy: vAcc,
+          heading: heading,
+          headingAccuracy: hAcc,
+          speed: speed,
+          speedAccuracy: sAcc,
           isMocked: false,
         ),
+        satUsed,
       );
     });
   }
@@ -76,8 +112,22 @@ class TrackNotifier extends Notifier<Track> {
     state = state.copyWith(recording: false, paused: false);
   }
 
-  void addPointFromPosition(Position pos) {
-    print(">>> addPointFromPosition");
+  void addPointFromPosition(Position pos, [int sat_used = 0]) {
+    // Print complet per debug seguint el nom de les claus del Kotlin
+    print("""
+>>> GPS DATA RECEIVED:
+>>> lat: ${pos.latitude}
+>>> lon: ${pos.longitude}
+>>> accuracy: ${pos.accuracy}
+>>> altitude: ${pos.altitude}
+>>> speed: ${pos.speed}
+>>> heading: ${pos.heading}
+>>> timestamp: ${pos.timestamp}
+>>> sat_used: $sat_used
+>>> vAccuracy: ${pos.altitudeAccuracy}
+>>> sAccuracy: ${pos.speedAccuracy}
+>>> hAccuracy: ${pos.headingAccuracy}
+    """);
 
     double newDistance = state.distance;
     double newAscent = state.ascent;
@@ -85,12 +135,12 @@ class TrackNotifier extends Notifier<Track> {
     double newMax = state.maxElevation;
     double newMin = state.minElevation;
 
-    // Si ja hi ha punts, calculem la diferència només amb l'últim punt existent
+    // Lògica de càlcul incremental (Recuperada íntegrament)
     if (state.coordinates.isNotEmpty) {
       final lastCoords = state.coordinates.last; // [lon, lat]
       final lastAlt = state.altitudes.last;
 
-      // 1. Distància acumulada
+      // Distància acumulada
       newDistance += Geolocator.distanceBetween(
         lastCoords[1],
         lastCoords[0],
@@ -98,7 +148,7 @@ class TrackNotifier extends Notifier<Track> {
         pos.longitude,
       );
 
-      // 2. Desnivells (Només si hi ha canvi d'altitud significatiu)
+      // Desnivells acumulats
       double diffAlt = pos.altitude - lastAlt;
       if (diffAlt > 0) {
         newAscent += diffAlt;
@@ -107,7 +157,7 @@ class TrackNotifier extends Notifier<Track> {
       }
     }
 
-    // 3. Altituds extremes (Inicialitzem si és el primer punt)
+    // Altituds extremes
     if (state.altitudes.isEmpty) {
       newMax = pos.altitude;
       newMin = pos.altitude;
@@ -116,14 +166,19 @@ class TrackNotifier extends Notifier<Track> {
       if (pos.altitude < newMin) newMin = pos.altitude;
     }
 
+    // Actualització de l'estat amb totes les llistes
     state = state.copyWith(
       coordinates: [
         ...state.coordinates,
         [pos.longitude, pos.latitude],
       ],
       altitudes: [...state.altitudes, pos.altitude],
-      timestamps: [...state.timestamps, DateTime.now()],
+      timestamps: [...state.timestamps, pos.timestamp],
       accuracies: [...state.accuracies, pos.accuracy],
+      speeds: [...state.speeds, pos.speed],
+      headings: [...state.headings, pos.heading],
+      satellites: [...state.satellites, sat_used],
+      vAccuracies: [...state.vAccuracies, pos.altitudeAccuracy],
       distance: newDistance,
       ascent: newAscent,
       descent: newDescent,
@@ -132,10 +187,13 @@ class TrackNotifier extends Notifier<Track> {
     );
   }
 
-  // Afegeix això dins de la classe TrackNotifier (track_notifier.dart)
-
-  void addCoordinate(double lat, double lon, double acc, double altitude) {
-    // Fem servir Position amb altitud 0 per reutilitzar la lògica incremental
+  void addCoordinate(
+    double lat,
+    double lon,
+    double acc,
+    double altitude, [
+    int sat_used = 0,
+  ]) {
     addPointFromPosition(
       Position(
         latitude: lat,
@@ -150,6 +208,7 @@ class TrackNotifier extends Notifier<Track> {
         speedAccuracy: 0.0,
         isMocked: false,
       ),
+      sat_used,
     );
   }
 
@@ -159,6 +218,10 @@ class TrackNotifier extends Notifier<Track> {
       altitudes: [],
       timestamps: [],
       accuracies: [],
+      speeds: [],
+      headings: [],
+      satellites: [],
+      vAccuracies: [],
       recording: false,
       paused: false,
       duration: Duration.zero,
@@ -168,6 +231,12 @@ class TrackNotifier extends Notifier<Track> {
       maxElevation: -9999.0,
       minElevation: 9999.0,
     );
+  }
+
+  double localAltitudeCorrection(double lat, double lon) {
+    if (lat >= 40.0 && lat <= 43.0 && lon >= -1.0 && lon <= 4.0) return 50.0;
+    if (lat >= 38.0 && lat < 40.0 && lon >= -1.5 && lon <= 1.5) return 48.0;
+    return 0.0;
   }
 }
 
