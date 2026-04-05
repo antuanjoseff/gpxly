@@ -141,6 +141,7 @@ class TrackingService : Service() {
 
         lastTime = now
         lastLocation = loc
+        Log.d(">>>GPXLY", "GPS → ${loc.latitude}, ${loc.longitude}, acc=${loc.accuracy}, alt=${loc.altitude}")
 
         TrackingPlugin.sendEvent(
             mapOf(

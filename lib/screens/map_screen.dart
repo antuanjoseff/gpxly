@@ -795,10 +795,10 @@ class _MapScreenState extends ConsumerState<MapScreen>
   // -------------------------
   // FUNCIONS DE GRAVACIÓ
   // -------------------------
-
   Future<void> _startRecording() async {
     final notifier = ref.read(trackProvider.notifier);
 
+    // 1. Comprovar servei de localització
     final serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       if (!context.mounted) return;
@@ -810,10 +810,13 @@ class _MapScreenState extends ConsumerState<MapScreen>
       return;
     }
 
+    // 2. Comprovar permisos
     final ok = await PermissionsService.ensurePermissions(context);
     if (!context.mounted || !ok) return;
+
     print("GPXLY START RECORDING");
 
+    // 3. Primer punt immediat
     final pos = await Geolocator.getCurrentPosition();
     notifier.addCoordinate(
       pos.latitude,
@@ -821,22 +824,14 @@ class _MapScreenState extends ConsumerState<MapScreen>
       pos.accuracy,
       pos.altitude,
     );
+
     ref.read(gpsAccuracyProvider.notifier).state = pos.accuracy;
     ref.read(gpsAltitudeProvider.notifier).state = pos.altitude;
 
-    _gpsSub ??= NativeGpsChannel.positionStream().listen((data) {
-      double lat = data['lat'] as double;
-      double lon = data['lon'] as double;
-      double acc = data['accuracy'] as double;
-      double altitude = data['altitude'] as double;
-      // lat += randomOffset(50);
-      // lon += randomOffset(50);
+    // 4. Iniciar el listener del TrackNotifier
+    notifier.startRecording(context);
 
-      notifier.addCoordinate(lat, lon, acc, altitude);
-      ref.read(gpsAccuracyProvider.notifier).state = acc;
-      ref.read(gpsAltitudeProvider.notifier).state = altitude.toDouble();
-    });
-
+    // 5. Iniciar el servei natiu
     final settings = ref.read(gpsSettingsProvider);
     await NativeGpsChannel.start(
       useTime: settings.useTime,
@@ -845,6 +840,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
       accuracy: settings.accuracy,
     );
 
+    // 6. Centrar el mapa
     if (mapController != null) {
       isProgrammaticMove = true;
       mapController!
@@ -853,21 +849,19 @@ class _MapScreenState extends ConsumerState<MapScreen>
           )
           .then((_) => isProgrammaticMove = false);
     }
-
-    notifier.startRecording(context);
   }
 
   Future<void> _pauseRecording() async {
     final notifier = ref.read(trackProvider.notifier);
-    notifier.pauseRecording();
-    await NativeGpsChannel.stop();
-    await _gpsSub?.cancel();
-    _gpsSub = null;
+
+    notifier.pauseRecording(); // Només pausa la lògica interna
+    await NativeGpsChannel.stop(); // Atura el servei natiu
   }
 
   Future<void> _resumeRecording() async {
     final notifier = ref.read(trackProvider.notifier);
-    notifier.resumeRecording();
+
+    notifier.resumeRecording(); // Treu la pausa
 
     final settings = ref.read(gpsSettingsProvider);
     await NativeGpsChannel.start(
@@ -876,17 +870,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
       meters: settings.meters,
       accuracy: settings.accuracy,
     );
-
-    _gpsSub ??= NativeGpsChannel.positionStream().listen((data) {
-      double lat = data['lat'] as double;
-      double lon = data['lon'] as double;
-      double acc = data['accuracy'] as double;
-      double altitude = data['altitude'] as double;
-
-      notifier.addCoordinate(lat, lon, acc, altitude);
-      ref.read(gpsAccuracyProvider.notifier).state = acc;
-      ref.read(gpsAltitudeProvider.notifier).state = altitude.toDouble();
-    });
   }
 
   // Future<void> _stopRecording() async {
