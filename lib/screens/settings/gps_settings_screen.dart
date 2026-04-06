@@ -78,18 +78,19 @@ class _GpsSettingsScreenState extends ConsumerState<GpsSettingsScreen>
         }
       },
       child: Scaffold(
+        backgroundColor: AppColors.white,
         appBar: AppBar(
           title: const Text('Configuració'),
           bottom: PreferredSize(
             preferredSize: const Size.fromHeight(48),
             child: Container(
-              color: AppColors.mustardYellow, // 🟡 Fons només del TabBar
+              color: AppColors.white, // ✔ fons blanc
               child: TabBar(
                 controller: _tabController,
                 unselectedLabelColor:
-                    AppColors.deepGreen, // 🟨 Text i icona NO seleccionada
-                labelColor: AppColors.white,
-                indicatorColor: AppColors.white,
+                    AppColors.primary, // ✔ icones/text no seleccionats
+                labelColor: AppColors.primary, // ✔ icones/text seleccionats
+                indicatorColor: AppColors.secondary, // ✔ línia inferior del tab
                 tabs: const [
                   Tab(icon: Icon(Icons.gps_fixed), text: "GPS"),
                   Tab(icon: Icon(Icons.map), text: "GPX"),
@@ -102,10 +103,29 @@ class _GpsSettingsScreenState extends ConsumerState<GpsSettingsScreen>
         body: TabBarView(
           controller: _tabController,
           children: [
-            GpsSettingsTab(onPending: markPending),
-            GpxSettingsTab(onPending: markPending),
-            TrackSettingsTab(onPending: markPending),
+            GpsSettingsTab(onPending: markPending, onApplied: clearPending),
+            GpxSettingsTab(onPending: markPending, onApplied: clearPending),
+            TrackSettingsTab(onPending: markPending, onApplied: clearPending),
           ],
+        ),
+        bottomNavigationBar: SafeArea(
+          minimum: const EdgeInsets.all(16),
+          child: ElevatedButton(
+            onPressed: _hasPendingChanges
+                ? () {
+                    GpsSettingsTab.apply(ref);
+                    GpxSettingsTab.apply(ref);
+                    TrackSettingsTab.apply(ref);
+
+                    clearPending();
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Configuració aplicada!")),
+                    );
+                  }
+                : null, // desactivat si no hi ha canvis
+            child: const Text("APLICA"),
+          ),
         ),
       ),
     );

@@ -22,23 +22,27 @@ class GpsAccuracyBars extends ConsumerWidget {
     } else {
       switch (level) {
         case GpsAccuracyLevel.excellent:
-          color = Colors.greenAccent;
+          color = const Color(0xFF00FF66); // Verd neó
           activeBars = totalBars;
           break;
+
         case GpsAccuracyLevel.good:
-          color = Colors.green;
+          color = const Color(0xFF00E676); // Verd brillant
           activeBars = (totalBars * 0.8).ceil();
           break;
+
         case GpsAccuracyLevel.medium:
-          color = Colors.orange;
+          color = const Color(0xFFFFA726); // Taronja intens
           activeBars = (totalBars * 0.6).ceil();
           break;
+
         case GpsAccuracyLevel.poor:
-          color = Colors.deepOrange;
+          color = const Color(0xFFFF7043); // Taronja-vermell
           activeBars = (totalBars * 0.4).ceil();
           break;
+
         case GpsAccuracyLevel.bad:
-          color = Colors.red;
+          color = const Color(0xFFFF1744); // Vermell brillant
           activeBars = 1;
           break;
       }

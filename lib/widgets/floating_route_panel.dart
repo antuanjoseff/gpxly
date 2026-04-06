@@ -24,7 +24,7 @@ class FloatingRoutePanel extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.deepGreen,
+        color: AppColors.tertiary,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Colors.white10),
       ),

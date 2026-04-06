@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:gpxly/notifiers/track_notifier.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:gpxly/theme/app_colors.dart';
 
 class ElevationProfileScreen extends ConsumerStatefulWidget {
   const ElevationProfileScreen({super.key});
@@ -15,7 +16,11 @@ class ElevationProfileScreen extends ConsumerStatefulWidget {
 class _ElevationProfileScreenState
     extends ConsumerState<ElevationProfileScreen> {
   int? selectedIndex;
+  final chartKey = GlobalKey();
 
+  // -----------------------------
+  // DISTÀNCIES ACUMULADES
+  // -----------------------------
   List<double> _calculateDistances(List<List<double>> coordinates) {
     if (coordinates.isEmpty) return [];
 
@@ -39,6 +44,44 @@ class _ElevationProfileScreenState
     return "${(meters / 1000).toStringAsFixed(2)}km";
   }
 
+  // -----------------------------
+  // DRAG GLOBAL → PROJECTAR SOBRE EL GRÀFIC
+  // -----------------------------
+  void _handleGlobalTouch(
+    Offset globalPos,
+    List<double> distances,
+    List<double> altitudes,
+  ) {
+    if (chartKey.currentContext == null) return;
+
+    final box = chartKey.currentContext!.findRenderObject() as RenderBox;
+    final local = box.globalToLocal(globalPos);
+
+    // Fora del gràfic
+    if (local.dx < 0 || local.dx > box.size.width) return;
+
+    // Convertir píxels → distància
+    final maxDist = distances.last;
+    final xValue = (local.dx / box.size.width) * maxDist;
+
+    // Trobar el punt més proper
+    int index = 0;
+    double minDiff = double.infinity;
+
+    for (int i = 0; i < distances.length; i++) {
+      final diff = (distances[i] - xValue).abs();
+      if (diff < minDiff) {
+        minDiff = diff;
+        index = i;
+      }
+    }
+
+    setState(() => selectedIndex = index);
+  }
+
+  // -----------------------------
+  // BUILD
+  // -----------------------------
   @override
   Widget build(BuildContext context) {
     final track = ref.watch(trackProvider);
@@ -49,45 +92,76 @@ class _ElevationProfileScreenState
     final distances = _calculateDistances(coordinates);
 
     return Scaffold(
+      backgroundColor: AppColors.white,
       appBar: AppBar(title: const Text("Perfil d'elevació")),
       body: altitudes.isEmpty
           ? Center(
               child: Text(
                 "Sense dades",
-                style: TextStyle(color: colors.onSurface.withOpacity(0.4)),
+                style: TextStyle(color: colors.onSurface.withAlpha(100)),
               ),
             )
-          : OrientationBuilder(
-              builder: (context, orientation) {
-                final isLandscape = orientation == Orientation.landscape;
+          : LayoutBuilder(
+              builder: (context, constraints) {
+                return GestureDetector(
+                  behavior: HitTestBehavior.translucent,
+                  onPanDown: (d) => _handleGlobalTouch(
+                    d.globalPosition,
+                    distances,
+                    altitudes,
+                  ),
+                  onPanUpdate: (d) => _handleGlobalTouch(
+                    d.globalPosition,
+                    distances,
+                    altitudes,
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const SizedBox(height: 20),
 
-                return Center(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _buildSelectionHeader(
-                          context,
-                          altitudes,
-                          distances,
-                          selectedIndex,
-                        ),
+                      _buildHeader(context, altitudes, distances),
 
-                        SizedBox(height: isLandscape ? 10 : 40),
+                      const SizedBox(height: 30),
 
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24),
-                          child: AspectRatio(
-                            aspectRatio: isLandscape ? 4.0 : 2.0,
-                            child: LineChart(
-                              _buildChartData(context, altitudes, distances),
+                      SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.3,
+                        child: Stack(
+                          children: [
+                            // GRÀFIC
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                              ),
+                              child: LineChart(
+                                _buildChartData(context, altitudes, distances),
+                                key: chartKey,
+                              ),
                             ),
-                          ),
-                        ),
 
-                        if (isLandscape) const SizedBox(height: 20),
-                      ],
-                    ),
+                            // LÍNIA + PUNT DIBUIXATS A SOBRE
+                            if (selectedIndex != null)
+                              Positioned.fill(
+                                child: CustomPaint(
+                                  painter: _SelectionPainter(
+                                    chartKey: chartKey,
+                                    distances: distances,
+                                    altitudes: altitudes,
+                                    selectedIndex: selectedIndex!,
+                                    lineColor: Colors.black.withAlpha(80),
+                                    dotColor: Colors.white,
+                                    dotBorderColor: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+                    ],
                   ),
                 );
               },
@@ -95,25 +169,29 @@ class _ElevationProfileScreenState
     );
   }
 
-  Widget _buildSelectionHeader(
+  // -----------------------------
+  // HEADER SUPERIOR
+  // -----------------------------
+  Widget _buildHeader(
     BuildContext context,
     List<double> alts,
     List<double> dists,
-    int? index,
   ) {
     final colors = Theme.of(context).colorScheme;
 
-    if (index == null) {
+    if (selectedIndex == null) {
       return Text(
         "Llisca sobre el gràfic",
-        style: TextStyle(color: colors.onSurface.withOpacity(0.4)),
+        style: TextStyle(color: colors.onSurface.withAlpha(100)),
       );
     }
+
+    final i = selectedIndex!;
 
     return Column(
       children: [
         Text(
-          "${alts[index].toStringAsFixed(1)} m",
+          "${alts[i].toStringAsFixed(1)} m",
           style: TextStyle(
             color: colors.primary,
             fontSize: 36,
@@ -121,17 +199,20 @@ class _ElevationProfileScreenState
           ),
         ),
         Text(
-          "Distància: ${_formatDistance(dists[index])}",
+          _formatDistance(dists[i]),
           style: TextStyle(
-            color: colors.onSurface.withOpacity(0.7),
-            fontSize: 16,
-            fontFamily: 'monospace',
+            color: AppColors.primary,
+            fontSize: 26,
+            fontWeight: FontWeight.bold,
           ),
         ),
       ],
     );
   }
 
+  // -----------------------------
+  // GRÀFIC
+  // -----------------------------
   LineChartData _buildChartData(
     BuildContext context,
     List<double> alts,
@@ -159,14 +240,9 @@ class _ElevationProfileScreenState
             interval: maxDist > 0 ? maxDist / 2 : 1.0,
             getTitlesWidget: (value, meta) {
               if (value > maxDist + 0.1) return const SizedBox();
-
               return SideTitleWidget(
                 meta: meta,
                 space: 10,
-                fitInside: SideTitleFitInsideData.fromTitleMeta(
-                  meta,
-                  enabled: true,
-                ),
                 child: Text(
                   _formatDistance(value),
                   style: TextStyle(
@@ -182,43 +258,134 @@ class _ElevationProfileScreenState
         ),
       ),
 
+      // -----------------------------
+      // TOUCH: LÍNIA + DOT, SENSE TEXT
+      // -----------------------------
       lineTouchData: LineTouchData(
         handleBuiltInTouches: true,
-        touchCallback: (event, response) {
-          if (response?.lineBarSpots != null &&
-              response!.lineBarSpots!.isNotEmpty) {
-            setState(
-              () => selectedIndex = response.lineBarSpots!.first.spotIndex,
-            );
-          }
-        },
+        enabled: true,
         touchTooltipData: LineTouchTooltipData(
-          getTooltipColor: (spot) => Colors.transparent,
+          getTooltipItems: (_) => [], // ❌ elimina text
         ),
+        getTouchedSpotIndicator:
+            (LineChartBarData barData, List<int> indicators) {
+              return indicators.map((index) {
+                return TouchedSpotIndicatorData(
+                  FlLine(color: Colors.black.withAlpha(80), strokeWidth: 1),
+                  FlDotData(
+                    show: true,
+                    getDotPainter: (spot, percent, barData, index) {
+                      return FlDotCirclePainter(
+                        radius: 4,
+                        color: Colors.white,
+                        strokeWidth: 2,
+                        strokeColor: colors.primary,
+                      );
+                    },
+                  ),
+                );
+              }).toList();
+            },
       ),
 
+      // -----------------------------
+      // LÍNIA PRINCIPAL
+      // -----------------------------
       lineBarsData: [
         LineChartBarData(
           spots: spots,
           isCurved: true,
-          color: colors.primary, // línia = blau cel
+          color: colors.secondary,
           barWidth: 3,
           dotData: const FlDotData(show: false),
-
-          // GRADIENT OCRE A SOTA
           belowBarData: BarAreaData(
             show: true,
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                colors.secondary.withOpacity(0.6), // ocre intens
-                colors.secondary.withOpacity(0.05), // ocre molt suau
-              ],
-            ),
+            color: AppColors.secondary.withAlpha(120),
+            // gradient: LinearGradient(
+            //   begin: Alignment.topCenter,
+            //   end: Alignment.bottomCenter,
+            //   colors: [
+            //     colors.secondary.withAlpha(10),
+            //     colors.secondary.withAlpha(150),
+            //   ],
+            // ),
           ),
         ),
       ],
     );
   }
+}
+
+class _SelectionPainter extends CustomPainter {
+  final GlobalKey chartKey;
+  final List<double> distances;
+  final List<double> altitudes;
+  final int selectedIndex;
+  final Color lineColor;
+  final Color dotColor;
+  final Color dotBorderColor;
+
+  _SelectionPainter({
+    required this.chartKey,
+    required this.distances,
+    required this.altitudes,
+    required this.selectedIndex,
+    required this.lineColor,
+    required this.dotColor,
+    required this.dotBorderColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final box = chartKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box == null) return;
+
+    final chartSize = box.size;
+
+    // Convertim distància → posició X
+    final maxDist = distances.last;
+    final x = (distances[selectedIndex] / maxDist) * chartSize.width;
+
+    // Límits verticals del gràfic
+    final double topPadding = 0;
+    final double bottomPadding = 40; // espai de l’eix X
+
+    final linePaint = Paint()
+      ..color = lineColor
+      ..strokeWidth = 1;
+
+    final dotPaint = Paint()..color = dotColor;
+
+    final dotBorderPaint = Paint()
+      ..color = dotBorderColor
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke;
+
+    // Dibuixar línia vertical sense tallar l’eix X
+    canvas.drawLine(
+      Offset(x, topPadding),
+      Offset(x, chartSize.height - bottomPadding),
+      linePaint,
+    );
+
+    // Dibuixar punt
+    final y = _altitudeToY(
+      altitudes[selectedIndex],
+      altitudes,
+      chartSize.height - bottomPadding,
+    );
+
+    canvas.drawCircle(Offset(x, y), 4, dotPaint);
+    canvas.drawCircle(Offset(x, y), 4, dotBorderPaint);
+  }
+
+  double _altitudeToY(double alt, List<double> alts, double height) {
+    final minAlt = alts.reduce((a, b) => a < b ? a : b);
+    final maxAlt = alts.reduce((a, b) => a > b ? a : b);
+    final norm = (alt - minAlt) / (maxAlt - minAlt);
+    return height - (norm * height);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }

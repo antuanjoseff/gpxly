@@ -6,7 +6,7 @@ final ThemeData appTheme = ThemeData(
   brightness: Brightness.light,
 
   // Fons general
-  scaffoldBackgroundColor: AppColors.skyBlue,
+  scaffoldBackgroundColor: AppColors.white,
 
   // ColorScheme amb els teus colors nous
   colorScheme: ColorScheme.fromSeed(
@@ -25,7 +25,7 @@ final ThemeData appTheme = ThemeData(
 
   // AppBar
   appBarTheme: AppBarTheme(
-    backgroundColor: AppColors.deepGreen,
+    backgroundColor: AppColors.primary,
     foregroundColor: Colors.white,
     elevation: 0,
     centerTitle: true,
@@ -40,19 +40,19 @@ final ThemeData appTheme = ThemeData(
 
   // Cards
   cardTheme: CardThemeData(
-    color: AppColors.mustardYellow,
+    color: AppColors.white,
     elevation: 0,
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(12),
-      side: BorderSide(color: AppColors.deepGreen.withOpacity(0.25)),
+      side: BorderSide(color: AppColors.tertiary),
     ),
   ),
 
   // Botons
   elevatedButtonTheme: ElevatedButtonThemeData(
     style: ElevatedButton.styleFrom(
-      backgroundColor: AppColors.mustardYellow,
-      foregroundColor: Colors.white,
+      backgroundColor: AppColors.tertiary,
+      foregroundColor: AppColors.white,
       padding: const EdgeInsets.symmetric(vertical: 10),
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),

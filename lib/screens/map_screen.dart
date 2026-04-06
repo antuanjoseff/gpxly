@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as Math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,12 +7,14 @@ import 'package:gpxly/notifiers/gps_settings_notifier.dart';
 import 'package:gpxly/notifiers/track_notifier.dart';
 import 'package:gpxly/screens/elevation_profile_screen.dart';
 import 'package:gpxly/screens/settings/gps_settings_screen.dart';
+import 'package:gpxly/screens/settings/tabs/track_settings_tab.dart';
 import 'package:gpxly/screens/stats_screen.dart';
 import 'package:gpxly/services/native_gps_channel.dart';
 import 'package:gpxly/services/permissions_service.dart';
 import 'package:gpxly/theme/app_colors.dart';
 import 'package:gpxly/ui/app_messages.dart';
 import 'package:gpxly/services/gpx_exporter.dart';
+import 'package:gpxly/utils/color_extensions.dart';
 import 'package:gpxly/utils/map_animation.dart';
 import 'package:gpxly/utils/map_layers.dart';
 import 'package:gpxly/widgets/floating_route_panel.dart';
@@ -209,7 +210,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final track = ref.watch(trackProvider);
     final accuracy = ref.watch(gpsAccuracyProvider);
     final altitude = ref.watch(gpsAltitudeProvider);
-    print(">>>BUILD accuracy = $accuracy, altitude = $altitude");
+    final trackSettings = ref.watch(trackSettingsProvider);
 
     // Listener dins build (Riverpod obliga)
     ref.listen(trackProvider, (previous, next) {
@@ -260,6 +261,19 @@ class _MapScreenState extends ConsumerState<MapScreen>
           },
         );
       } catch (_) {}
+    });
+    ref.listen(trackSettingsProvider, (previous, next) {
+      if (mapController == null || !styleInitialized) return;
+
+      mapController!.setLayerProperties(
+        "track_line_layer", // 👈 el teu layer del JSON
+        LineLayerProperties(
+          lineColor: next.color.toMapLibreColor(),
+          lineWidth: next.width,
+          lineCap: "round",
+          lineJoin: "round",
+        ),
+      );
     });
 
     if (_initialCameraTarget == null) {
@@ -320,6 +334,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                               "${acc.round()}m",
                               style: const TextStyle(
                                 color: Colors.white,
+                                fontWeight: FontWeight.bold,
                                 fontSize: 9,
                               ),
                             );
@@ -377,6 +392,17 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 onStyleLoadedCallback: () async {
                   await setupUserLocationLayer(mapController!);
                   styleInitialized = true;
+
+                  // Apliquem color i gruix del track triats per l’usuari
+                  mapController!.setLayerProperties(
+                    "track_line_layer",
+                    LineLayerProperties(
+                      lineColor: trackSettings.color.toMapLibreColor(),
+                      lineWidth: trackSettings.width,
+                      lineCap: "round",
+                      lineJoin: "round",
+                    ),
+                  );
 
                   final track = ref.read(trackProvider);
 
@@ -442,7 +468,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                       child: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: AppColors.deepGreen,
+                          color: AppColors.tertiary,
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: Colors.white10),
                         ),
@@ -466,7 +492,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
                           color:
-                              AppColors.deepGreen, // Mateix fons que la píndola
+                              AppColors.tertiary, // Mateix fons que la píndola
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: Colors.white10),
                         ),
@@ -514,7 +540,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                         child: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: AppColors.deepGreen,
+                            color: AppColors.tertiary,
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(color: Colors.white10),
                           ),
@@ -547,7 +573,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   ),
                   decoration: BoxDecoration(
                     // Estil Gràfit amb transparència
-                    color: AppColors.deepGreen,
+                    color: AppColors.primary,
                     borderRadius: const BorderRadius.vertical(
                       top: Radius.circular(30),
                     ),
@@ -721,8 +747,10 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final ok = await PermissionsService.ensurePermissions(context);
     if (!context.mounted || !ok) return;
 
+    ref.read(trackProvider.notifier).reset();
     // 3. Primer punt immediat
     final pos = await Geolocator.getCurrentPosition();
+
     final correctedAlt = ref
         .read(trackProvider.notifier)
         .localAltitudeCorrection(pos.latitude, pos.longitude);
@@ -730,8 +758,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
     notifier.addCoordinate(
       pos.latitude,
       pos.longitude,
+      pos.accuracy,
       correctedAlt,
-      pos.altitude,
     );
 
     // ref.read(gpsAccuracyProvider.notifier).state = pos.accuracy;
@@ -848,7 +876,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final lon = prefs.getDouble('last_lon') ?? 2.1734;
 
     // 🔹 Recuperem la resta de valors per si vols inicialitzar els providers de la UI
-    final alt = prefs.getDouble('last_alt') ?? 0.0;
+    final alt = 0.0;
     final acc = prefs.getDouble('last_acc') ?? 0.0;
 
     // Opcional: Podries actualitzar els teus providers de la UI aquí
