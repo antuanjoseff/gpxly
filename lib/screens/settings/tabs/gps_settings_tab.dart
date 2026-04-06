@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gpxly/notifiers/gps_settings_notifier.dart';
+import 'package:gpxly/theme/app_colors.dart';
 import 'package:gpxly/ui/app_styles.dart';
 
 class GpsSettingsTab extends ConsumerStatefulWidget {
@@ -66,6 +67,7 @@ class _GpsSettingsTabState extends ConsumerState<GpsSettingsTab> {
     final colors = Theme.of(context).colorScheme;
 
     return Scaffold(
+      backgroundColor: AppColors.white,
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -80,8 +82,8 @@ class _GpsSettingsTabState extends ConsumerState<GpsSettingsTab> {
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: _useTime
-                    ? colors.primary
-                    : colors.onSurface.withOpacity(0.5),
+                    ? AppColors.deepGreen
+                    : colors.onSurface.withAlpha(40),
               ),
             ),
             const SizedBox(height: 8),
@@ -91,21 +93,21 @@ class _GpsSettingsTabState extends ConsumerState<GpsSettingsTab> {
               style: TextStyle(
                 fontSize: 16,
                 color: _useTime
-                    ? colors.onSurface
-                    : colors.onSurface.withOpacity(0.5),
+                    ? AppColors.deepGreen
+                    : colors.onSurface.withAlpha(40),
               ),
             ),
 
             SliderTheme(
               data: SliderTheme.of(context).copyWith(
                 activeTrackColor: _useTime
-                    ? colors.primary
-                    : colors.onSurface.withOpacity(0.3),
-                inactiveTrackColor: colors.onSurface.withOpacity(0.2),
+                    ? AppColors.deepGreen
+                    : colors.onSurface.withAlpha(40),
+                inactiveTrackColor: colors.onSurface.withAlpha(40),
                 trackHeight: _useTime ? 6 : 3,
                 thumbColor: _useTime
-                    ? colors.primary
-                    : colors.onSurface.withOpacity(0.4),
+                    ? AppColors.deepGreen
+                    : colors.onSurface.withAlpha(40),
               ),
               child: Slider(
                 value: _seconds.toDouble(),
@@ -134,8 +136,8 @@ class _GpsSettingsTabState extends ConsumerState<GpsSettingsTab> {
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: !_useTime
-                    ? colors.primary
-                    : colors.onSurface.withOpacity(0.5),
+                    ? AppColors.deepGreen
+                    : colors.onSurface.withAlpha(40),
               ),
             ),
             const SizedBox(height: 8),
@@ -145,21 +147,21 @@ class _GpsSettingsTabState extends ConsumerState<GpsSettingsTab> {
               style: TextStyle(
                 fontSize: 16,
                 color: !_useTime
-                    ? colors.onSurface
-                    : colors.onSurface.withOpacity(0.5),
+                    ? AppColors.deepGreen
+                    : colors.onSurface.withAlpha(40),
               ),
             ),
 
             SliderTheme(
               data: SliderTheme.of(context).copyWith(
                 activeTrackColor: !_useTime
-                    ? colors.primary
-                    : colors.onSurface.withOpacity(0.3),
-                inactiveTrackColor: colors.onSurface.withOpacity(0.2),
+                    ? AppColors.deepGreen
+                    : colors.onSurface.withAlpha(40),
+                inactiveTrackColor: colors.onSurface.withAlpha(40),
                 trackHeight: !_useTime ? 6 : 3,
                 thumbColor: !_useTime
-                    ? colors.primary
-                    : colors.onSurface.withOpacity(0.4),
+                    ? AppColors.deepGreen
+                    : colors.onSurface.withAlpha(40),
               ),
               child: Slider(
                 value: _meters,
@@ -187,7 +189,7 @@ class _GpsSettingsTabState extends ConsumerState<GpsSettingsTab> {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: colors.onSurface,
+                color: AppColors.deepGreen,
               ),
             ),
             const SizedBox(height: 8),
@@ -199,9 +201,9 @@ class _GpsSettingsTabState extends ConsumerState<GpsSettingsTab> {
 
             SliderTheme(
               data: SliderTheme.of(context).copyWith(
-                activeTrackColor: colors.secondary,
-                inactiveTrackColor: colors.onSurface.withOpacity(0.2),
-                thumbColor: colors.secondary,
+                activeTrackColor: AppColors.deepGreen,
+                inactiveTrackColor: colors.onSurface.withAlpha(51),
+                thumbColor: AppColors.deepGreen,
               ),
               child: Slider(
                 value: _accuracy,
@@ -226,7 +228,6 @@ class _GpsSettingsTabState extends ConsumerState<GpsSettingsTab> {
       bottomNavigationBar: SafeArea(
         minimum: const EdgeInsets.all(16),
         child: ElevatedButton(
-          style: AppButtons.active,
           onPressed: _applySettings,
           child: const Text("Apply"),
         ),

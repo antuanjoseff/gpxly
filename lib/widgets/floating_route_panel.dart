@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:gpxly/notifiers/gps_altitude_notifier.dart'; // Assegura't que el path sigui correcte
+import 'package:gpxly/notifiers/gps_altitude_notifier.dart';
+import 'package:gpxly/theme/app_colors.dart'; // Assegura't que el path sigui correcte
 
 class FloatingRoutePanel extends ConsumerWidget {
   // Canviem a ConsumerWidget
@@ -23,7 +24,7 @@ class FloatingRoutePanel extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.black.withAlpha(180),
+        color: AppColors.deepGreen,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Colors.white10),
       ),
@@ -39,7 +40,7 @@ class FloatingRoutePanel extends ConsumerWidget {
               fontFamily: 'monospace',
               fontWeight: FontWeight.w800,
               fontSize: 13,
-              color: isRecording ? const Color(0xFF00E676) : Colors.white24,
+              color: isRecording ? Colors.white : Colors.white,
             ),
           ),
 
@@ -52,7 +53,7 @@ class FloatingRoutePanel extends ConsumerWidget {
           ),
 
           // ALÇADA COMPACTA
-          const Icon(Icons.terrain, color: Colors.white60, size: 12),
+          const Icon(Icons.terrain, color: Colors.white, size: 12),
           const SizedBox(width: 3),
           Text(
             // Ara usem la variable que ve del provider
@@ -61,7 +62,7 @@ class FloatingRoutePanel extends ConsumerWidget {
               fontFamily: 'monospace',
               fontWeight: FontWeight.w800,
               fontSize: 13,
-              color: Colors.white70,
+              color: Colors.white,
             ),
           ),
         ],

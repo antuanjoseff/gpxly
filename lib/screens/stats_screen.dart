@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gpxly/notifiers/track_notifier.dart';
+import 'package:gpxly/theme/app_colors.dart';
 
 class TrackStatsScreen extends ConsumerWidget {
   const TrackStatsScreen({super.key});
@@ -20,6 +21,7 @@ class TrackStatsScreen extends ConsumerWidget {
         : "---";
 
     return Scaffold(
+      backgroundColor: AppColors.white,
       appBar: AppBar(title: const Text("Dades de la ruta")),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -29,7 +31,7 @@ class TrackStatsScreen extends ConsumerWidget {
             "Temps total",
             track.formattedDuration,
             Icons.timer,
-            colors.primary, // blau cel
+            AppColors.white,
           ),
 
           _buildStatCard(
@@ -37,7 +39,7 @@ class TrackStatsScreen extends ConsumerWidget {
             "Distància",
             "${(track.distance / 1000).toStringAsFixed(2)} km",
             Icons.straighten,
-            colors.secondary, // ocre
+            AppColors.white, // ocre
           ),
 
           _buildStatCard(
@@ -45,7 +47,7 @@ class TrackStatsScreen extends ConsumerWidget {
             "Velocitat Mitjana",
             "${track.averageSpeed.toStringAsFixed(1)} km/h",
             Icons.speed,
-            colors.primary,
+            AppColors.white,
           ),
 
           const Divider(height: 30),
@@ -55,7 +57,7 @@ class TrackStatsScreen extends ConsumerWidget {
             "Elevació Màxima",
             maxElev,
             Icons.terrain,
-            colors.secondary,
+            AppColors.white,
           ),
 
           _buildStatCard(
@@ -63,7 +65,7 @@ class TrackStatsScreen extends ConsumerWidget {
             "Elevació Mínima",
             minElev,
             Icons.south_east,
-            colors.secondary,
+            AppColors.white,
           ),
 
           _buildStatCard(
@@ -71,7 +73,7 @@ class TrackStatsScreen extends ConsumerWidget {
             "Desnivell Positiu (+)",
             "${track.ascent.toStringAsFixed(0)} m",
             Icons.unfold_less,
-            colors.primary,
+            AppColors.white,
           ),
 
           _buildStatCard(
@@ -79,7 +81,7 @@ class TrackStatsScreen extends ConsumerWidget {
             "Desnivell Negatiu (-)",
             "${track.descent.toStringAsFixed(0)} m",
             Icons.unfold_more,
-            colors.primary,
+            AppColors.white,
           ),
         ],
       ),
@@ -104,7 +106,8 @@ class TrackStatsScreen extends ConsumerWidget {
           label,
           style: TextStyle(
             fontSize: 14,
-            color: colors.onSurface.withOpacity(0.6),
+            color: AppColors.white,
+            fontWeight: FontWeight.bold,
           ),
         ),
         trailing: Text(
@@ -113,7 +116,7 @@ class TrackStatsScreen extends ConsumerWidget {
             fontSize: 18,
             fontWeight: FontWeight.bold,
             fontFamily: 'monospace',
-            color: colors.onSurface,
+            color: AppColors.white,
           ),
         ),
       ),

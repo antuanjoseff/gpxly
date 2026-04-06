@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gpxly/theme/app_colors.dart';
 
 import 'tabs/gps_settings_tab.dart';
 import 'tabs/gpx_settings_tab.dart';
@@ -79,13 +80,23 @@ class _GpsSettingsScreenState extends ConsumerState<GpsSettingsScreen>
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Configuració'),
-          bottom: TabBar(
-            controller: _tabController,
-            tabs: const [
-              Tab(icon: Icon(Icons.gps_fixed), text: "GPS"),
-              Tab(icon: Icon(Icons.map), text: "GPX"),
-              Tab(icon: Icon(Icons.timeline), text: "Track"),
-            ],
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(48),
+            child: Container(
+              color: AppColors.mustardYellow, // 🟡 Fons només del TabBar
+              child: TabBar(
+                controller: _tabController,
+                unselectedLabelColor:
+                    AppColors.deepGreen, // 🟨 Text i icona NO seleccionada
+                labelColor: AppColors.white,
+                indicatorColor: AppColors.white,
+                tabs: const [
+                  Tab(icon: Icon(Icons.gps_fixed), text: "GPS"),
+                  Tab(icon: Icon(Icons.map), text: "GPX"),
+                  Tab(icon: Icon(Icons.timeline), text: "Track"),
+                ],
+              ),
+            ),
           ),
         ),
         body: TabBarView(

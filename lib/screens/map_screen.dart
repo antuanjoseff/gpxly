@@ -11,6 +11,7 @@ import 'package:gpxly/screens/settings/gps_settings_screen.dart';
 import 'package:gpxly/screens/stats_screen.dart';
 import 'package:gpxly/services/native_gps_channel.dart';
 import 'package:gpxly/services/permissions_service.dart';
+import 'package:gpxly/theme/app_colors.dart';
 import 'package:gpxly/ui/app_messages.dart';
 import 'package:gpxly/services/gpx_exporter.dart';
 import 'package:gpxly/utils/map_animation.dart';
@@ -288,7 +289,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
             ? null
             : AppBar(
                 centerTitle: false,
-                backgroundColor: Colors.black,
                 automaticallyImplyLeading: false,
                 titleSpacing: 16,
 
@@ -431,26 +431,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 right: 12,
                 child: Column(
                   children: [
-                    // // BOTÓ DE TEST (SIMULACIÓ)
-                    // GestureDetector(
-                    //   onTap: _toggleSimulation,
-                    //   child: Container(
-                    //     padding: const EdgeInsets.all(8),
-                    //     decoration: BoxDecoration(
-                    //       color: Colors.red.withAlpha(
-                    //         150,
-                    //       ), // Vermell per saber que és de test
-                    //       borderRadius: BorderRadius.circular(8),
-                    //       border: Border.all(color: Colors.white24),
-                    //     ),
-                    //     child: const Icon(
-                    //       Icons
-                    //           .bug_report_outlined, // Icona de "bicho" per debug
-                    //       color: Colors.white,
-                    //       size: 20,
-                    //     ),
-                    //   ),
-                    // ),
                     // NOU: BOTÓ DE PERFIL D'ELEVACIÓ
                     GestureDetector(
                       onTap: () => Navigator.push(
@@ -462,7 +442,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                       child: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: Colors.black.withAlpha(180),
+                          color: AppColors.deepGreen,
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: Colors.white10),
                         ),
@@ -485,9 +465,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
                       child: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: Colors.black.withAlpha(
-                            180,
-                          ), // Mateix fons que la píndola
+                          color:
+                              AppColors.deepGreen, // Mateix fons que la píndola
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: Colors.white10),
                         ),
@@ -535,7 +514,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                         child: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Colors.black.withAlpha(180),
+                            color: AppColors.deepGreen,
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(color: Colors.white10),
                           ),
@@ -562,13 +541,13 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   curve: Curves.fastOutSlowIn,
                   padding: EdgeInsets.fromLTRB(
                     16,
-                    4,
+                    5,
                     16,
-                    MediaQuery.of(context).padding.bottom + 12,
+                    MediaQuery.of(context).padding.bottom + 5,
                   ),
                   decoration: BoxDecoration(
                     // Estil Gràfit amb transparència
-                    color: const Color(0xFF1A1A1A).withAlpha(200),
+                    color: AppColors.deepGreen,
                     borderRadius: const BorderRadius.vertical(
                       top: Radius.circular(30),
                     ),
@@ -583,15 +562,15 @@ class _MapScreenState extends ConsumerState<MapScreen>
                           () => _isPanelExpanded = !_isPanelExpanded,
                         ),
                         behavior: HitTestBehavior.opaque,
-                        child: Container(
-                          width: double.infinity,
+                        child: Padding(
                           padding: const EdgeInsets.symmetric(vertical: 12),
-                          child: Center(
+                          child: Align(
+                            alignment: Alignment.center,
                             child: Container(
                               width: 45,
                               height: 4,
                               decoration: BoxDecoration(
-                                color: Colors.white12,
+                                color: Colors.white,
                                 borderRadius: BorderRadius.circular(2),
                               ),
                             ),
@@ -607,20 +586,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
                             if (!track.recording)
                               Expanded(
                                 child: ElevatedButton.icon(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(
-                                      0xFF00E676,
-                                    ).withAlpha(180), // Verd Neó
-                                    foregroundColor: Colors
-                                        .black, // Contrast alt per al verd
-                                    minimumSize: const Size(
-                                      double.infinity,
-                                      58,
-                                    ), // Alçada fixa
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                  ),
                                   onPressed: () {
                                     _startRecording();
                                     setState(() => _isPanelExpanded = false);
