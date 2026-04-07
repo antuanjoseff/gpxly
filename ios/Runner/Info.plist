@@ -56,6 +56,8 @@
 		<key>NSLocationAlwaysUsageDescription</key>
 		<string>Necessitem la teva ubicació en tot moment per enregistrar rutes correctament.</string>
 		<key>UIStatusBarHidden</key>
+		<true/>
+		<key>UIViewControllerBasedStatusBarAppearance</key>
 		<false/>
 	</dict>
 </plist>
