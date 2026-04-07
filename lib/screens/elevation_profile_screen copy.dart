@@ -57,18 +57,8 @@ class _ElevationProfileScreenState
     final box = chartKey.currentContext!.findRenderObject() as RenderBox;
     final local = box.globalToLocal(globalPos);
 
-    // ACCEPTA EL DRAG SI ESTÀ EN UNA X ON HI HA GRÀFIC
-    const double horizontalPadding = 24.0;
-    final double left = horizontalPadding;
-    final double right = box.size.width - horizontalPadding;
-
-    // Si el dit està fora del rang X útil → NO mostrem tooltip
-    if (local.dx < left || local.dx > right) {
-      if (selectedIndex != null) {
-        setState(() => selectedIndex = null); // amaga tooltip
-      }
-      return;
-    }
+    // Fora del gràfic
+    if (local.dx < 0 || local.dx > box.size.width) return;
 
     // Convertir píxels → distància
     final maxDist = distances.last;

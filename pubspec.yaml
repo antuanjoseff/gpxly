@@ -50,15 +50,21 @@ dev_dependencies:
   flutter_launcher_icons: ^0.13.1
   change_app_package_name:
   flutter_lints: ^3.0.0
+  flutter_native_splash:
 
 flutter_launcher_icons:
   android: true
   ios: true
   image_path: "assets/icon/icon_sendak.png"
+
+flutter_native_splash:
+  color: "#FFFFFF"
+  image: assets/icon/icon_sendak.png
+  android: true
+  ios: true
   android_gravity: fill
   ios_content_mode: scaleAspectFill
-# For information on the generic Dart part of this file, see the
-# following page: https://dart.dev/tools/pub/pubspec
+
 
 # The following section is specific to Flutter packages.
 flutter:
