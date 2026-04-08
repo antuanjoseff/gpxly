@@ -67,7 +67,7 @@ class GpsSettingsTab extends ConsumerWidget {
               ),
               child: Slider(
                 value: gps.seconds.toDouble(),
-                min: 1,
+                min: 2,
                 max: 60,
                 divisions: 59,
                 label: gps.seconds.toString(),

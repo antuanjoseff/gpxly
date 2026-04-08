@@ -80,47 +80,74 @@ class TrackingService : Service() {
 
     private fun startLocationUpdates() {
         fused.removeLocationUpdates(callback)
-        val intervalMs = (seconds.coerceAtLeast(1)) * 1000L
+        val safeSeconds = if (seconds < 1) 1 else seconds
+        val intervalMs = safeSeconds * 1000L
         
-        val builder = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, intervalMs)
-            .setGranularity(Granularity.GRANULARITY_FINE)
-            .setMaxUpdateDelayMillis(intervalMs)
+        
+        // En lloc de 0L, posa un interval mínim d'1 o 2 segons quan vagis per metres
+        val realInterval = if (useTime) intervalMs else 2000L 
+        val minDistance = if (useTime) 0f else metersThreshold
 
+        val builder = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, realInterval)
+            .setGranularity(Granularity.GRANULARITY_FINE)
+            .setMinUpdateDistanceMeters(minDistance)
+            .setWaitForAccurateLocation(false)
+
+        // Si usem temps, definim el MinUpdateInterval una mica més curt que l'interval 
+        // nominal per evitar que petits retards descartin la lectura.
         if (useTime) {
-            builder.setMinUpdateIntervalMillis(intervalMs).setMinUpdateDistanceMeters(0f)
-        } else {
-            builder.setMinUpdateIntervalMillis(0).setMinUpdateDistanceMeters(metersThreshold)
+            builder.setMinUpdateIntervalMillis(intervalMs / 2)
         }
 
-        fused.requestLocationUpdates(builder.build(), callback, mainLooper)
+        try {
+            fused.requestLocationUpdates(builder.build(), callback, mainLooper)
+        } catch (e: SecurityException) {
+            Log.e("GPXLY", "Sense permisos per actualitzacions")
+        }
     }
 
     private fun sendLocationToFlutter(loc: Location) {
+        // 1. Filtre de precisió horitzontal
         if (loc.accuracy > accuracyThreshold) return
-    
+
         val now = System.currentTimeMillis()
+
+        // 2. Filtre de seguretat per evitar duplicats o micro-moviments si el Fused s'embala
         if (useTime) {
-            if (now - lastTime < seconds * 1000) return
+            // Deixem un marge del 10% del temps (p.ex. si demanes 5s, acceptem a partir de 4.5s)
+            if (now - lastTime < (seconds * 1000 * 0.9)) return
         } else {
+            // Només enviem si realment ens hem mogut la distància demanada respecte l'última
             if (lastLocation != null && lastLocation!!.distanceTo(loc) < metersThreshold) return
         }
 
         lastTime = now
         lastLocation = loc
 
+        // Recuperem la vAccuracy (Vertical Accuracy)
+        val vAcc = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && loc.hasVerticalAccuracy()) {
+            loc.verticalAccuracyMeters
+        } else {
+            0.0f
+        }
+
         TrackingPlugin.sendEvent(mapOf(
             "lat" to loc.latitude,
             "lon" to loc.longitude,
             "accuracy" to loc.accuracy,
+            "vAccuracy" to vAcc, // <-- Aquí la tens de nou!
             "altitude" to loc.altitude,
             "speed" to loc.speed,
             "heading" to loc.bearing,
             "timestamp" to loc.time,
             "sat_used" to satellitesUsed,
-            "sat_view" to satellitesInView,
-            "vAccuracy" to if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) loc.verticalAccuracyMeters else 0.0f
+            "sat_view" to satellitesInView
         ))
     }
+
+
+
+    
 
     private fun startForegroundServiceNotification() {
         val channelId = "tracking_channel"
