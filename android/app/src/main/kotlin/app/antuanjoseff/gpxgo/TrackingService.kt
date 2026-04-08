@@ -80,46 +80,43 @@ class TrackingService : Service() {
 
     private fun startLocationUpdates() {
         fused.removeLocationUpdates(callback)
-        val safeSeconds = if (seconds < 1) 1 else seconds
-        val intervalMs = safeSeconds * 1000L
         
+        val intervalMs = (if (seconds < 1) 1 else seconds) * 1000L
         
-        // En lloc de 0L, posa un interval mínim d'1 o 2 segons quan vagis per metres
-        val realInterval = if (useTime) intervalMs else 2000L 
+        // Si usem metres, demanem la ubicació cada segon (més freqüent) 
+        // però el filtre 'minDistance' farà que només ens avisi quan ens movem.
+        val realInterval = if (useTime) intervalMs else 1000L 
         val minDistance = if (useTime) 0f else metersThreshold
 
         val builder = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, realInterval)
             .setGranularity(Granularity.GRANULARITY_FINE)
             .setMinUpdateDistanceMeters(minDistance)
-            .setWaitForAccurateLocation(false)
-
-        // Si usem temps, definim el MinUpdateInterval una mica més curt que l'interval 
-        // nominal per evitar que petits retards descartin la lectura.
-        if (useTime) {
-            builder.setMinUpdateIntervalMillis(intervalMs / 2)
-        }
+            // Afegeix això: ajuda a que el primer punt arribi de seguida
+            .setMaxUpdateDelayMillis(0) 
+            .build()
 
         try {
-            fused.requestLocationUpdates(builder.build(), callback, mainLooper)
-        } catch (e: SecurityException) {
-            Log.e("GPXLY", "Sense permisos per actualitzacions")
-        }
+            fused.requestLocationUpdates(builder, callback, mainLooper)
+        } catch (e: SecurityException) { /*...*/ }
     }
 
     private fun sendLocationToFlutter(loc: Location) {
-        // 1. Filtre de precisió horitzontal
         if (loc.accuracy > accuracyThreshold) return
 
         val now = System.currentTimeMillis()
 
-        // 2. Filtre de seguretat per evitar duplicats o micro-moviments si el Fused s'embala
         if (useTime) {
-            // Deixem un marge del 10% del temps (p.ex. si demanes 5s, acceptem a partir de 4.5s)
             if (now - lastTime < (seconds * 1000 * 0.9)) return
         } else {
-            // Només enviem si realment ens hem mogut la distància demanada respecte l'última
-            if (lastLocation != null && lastLocation!!.distanceTo(loc) < metersThreshold) return
+            // Deixa que passi el primer punt sempre (lastLocation == null)
+            if (lastLocation != null) {
+                val dist = lastLocation!!.distanceTo(loc)
+                // Relaxem una mica el filtre manual (90% de la distància)
+                // perquè el GPS té petites variacions de precisió.
+                if (dist < (metersThreshold * 0.9)) return
+            }
         }
+        
 
         lastTime = now
         lastLocation = loc
