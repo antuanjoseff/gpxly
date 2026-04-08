@@ -22,90 +22,149 @@ class GpxSettingsTab extends ConsumerWidget {
     final settings = ref.watch(gpxSettingsProvider);
     final colors = Theme.of(context).colorScheme;
 
-    return Column(
-      children: [
-        // -------------------------
-        // CONTINGUT DELS SWITCHES
-        // -------------------------
-        Expanded(
-          child: ListView(
-            padding: const EdgeInsets.all(20),
-            children: [
-              _switch(
-                context,
-                ref,
-                settings.accuracies,
-                "accuracies",
-                "Accuracy per punt",
-                colors,
+    return Scaffold(
+      backgroundColor: const Color(
+        0xFFF5F5F7,
+      ), // Mateix fons gris de les altres tabs
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          // Títol de secció opcional per donar context
+          const Padding(
+            padding: EdgeInsets.only(left: 4, bottom: 12, top: 8),
+            child: Text(
+              "Incloure dades extres al fitxer GPX",
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey,
               ),
-              _switch(
-                context,
-                ref,
-                settings.speeds,
-                "speeds",
-                "Velocitat",
-                colors,
-              ),
-              _switch(
-                context,
-                ref,
-                settings.headings,
-                "headings",
-                "Heading",
-                colors,
-              ),
-              _switch(
-                context,
-                ref,
-                settings.satellites,
-                "satellites",
-                "Satèl·lits",
-                colors,
-              ),
-              _switch(
-                context,
-                ref,
-                settings.vAccuracies,
-                "vAccuracies",
-                "Vertical accuracy",
-                colors,
-              ),
-            ],
+            ),
           ),
-        ),
-      ],
+
+          _buildCustomSwitch(
+            context,
+            ref,
+            settings.accuracies,
+            "accuracies",
+            "Accuracy per punt",
+            Icons.gps_fixed,
+          ),
+          const SizedBox(height: 12),
+
+          _buildCustomSwitch(
+            context,
+            ref,
+            settings.speeds,
+            "speeds",
+            "Velocitat",
+            Icons.speed,
+          ),
+          const SizedBox(height: 12),
+
+          _buildCustomSwitch(
+            context,
+            ref,
+            settings.headings,
+            "headings",
+            "Heading (Rumb)",
+            Icons.explore_outlined,
+          ),
+          const SizedBox(height: 12),
+
+          _buildCustomSwitch(
+            context,
+            ref,
+            settings.satellites,
+            "satellites",
+            "Satèl·lits",
+            Icons.satellite_alt,
+          ),
+          const SizedBox(height: 12),
+
+          _buildCustomSwitch(
+            context,
+            ref,
+            settings.vAccuracies,
+            "vAccuracies",
+            "Vertical accuracy",
+            Icons.height,
+          ),
+
+          const SizedBox(height: 40),
+        ],
+      ),
     );
   }
 
-  Widget _switch(
+  Widget _buildCustomSwitch(
     BuildContext context,
     WidgetRef ref,
     bool value,
     String field,
     String title,
-    ColorScheme colors,
+    IconData icon,
   ) {
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      child: SwitchListTile(
-        title: Text(
-          title,
-          style: TextStyle(
-            fontSize: 16,
-            color: colors.onSurface,
-            fontWeight: FontWeight.w500,
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(10),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
-        ),
-        value: value,
-        activeThumbColor: AppColors.white,
-        activeTrackColor: AppColors.secondary,
-        inactiveThumbColor: AppColors.white,
-        inactiveTrackColor: AppColors.tertiary.withAlpha(120),
-        onChanged: (v) {
-          ref.read(gpxSettingsProvider.notifier).toggle(field, v);
+        ],
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () {
+          ref.read(gpxSettingsProvider.notifier).toggle(field, !value);
           onPending();
         },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          child: Row(
+            children: [
+              Icon(
+                icon,
+                color: value ? AppColors.primary : Colors.grey,
+                size: 24,
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: value ? AppColors.primary : Colors.grey,
+                  ),
+                ),
+              ),
+              // --- CÀPSULA BLAVA SÒLIDA AMB TEXT BLANC ---
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: value ? AppColors.primary : Colors.grey,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  value ? "ON" : "OFF",
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

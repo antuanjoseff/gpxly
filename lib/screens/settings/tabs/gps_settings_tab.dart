@@ -23,54 +23,23 @@ class GpsSettingsTab extends ConsumerWidget {
     final colors = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: AppColors.white,
+      backgroundColor: const Color(0xFFF5F5F7),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // -------------------------
-            // SLIDER TEMPS
-            // -------------------------
-            Text(
-              "Gravació per temps",
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: gps.useTime
-                    ? AppColors.primary
-                    : colors.onSurface.withAlpha(40),
-              ),
-            ),
-            const SizedBox(height: 8),
-
-            Text(
-              "Cada ${gps.seconds} segons",
-              style: TextStyle(
-                fontSize: 16,
-                color: gps.useTime
-                    ? AppColors.primary
-                    : colors.onSurface.withAlpha(40),
-              ),
-            ),
-
-            SliderTheme(
-              data: SliderTheme.of(context).copyWith(
-                activeTrackColor: gps.useTime
-                    ? AppColors.primary
-                    : colors.onSurface.withAlpha(40),
-                inactiveTrackColor: colors.onSurface.withAlpha(40),
-                trackHeight: gps.useTime ? 6 : 3,
-                thumbColor: gps.useTime
-                    ? AppColors.primary
-                    : colors.onSurface.withAlpha(40),
-              ),
-              child: Slider(
+            // --- BLOC TEMPS ---
+            _buildSettingsCard(
+              isActive: gps.useTime,
+              title: "Gravació per temps",
+              valueText: "${gps.seconds} s", // Text simplificat
+              sliderRow: _buildSliderRow(
+                context: context,
                 value: gps.seconds.toDouble(),
                 min: 2,
                 max: 60,
-                divisions: 59,
-                label: gps.seconds.toString(),
+                divisions: 58,
+                isActive: gps.useTime,
                 onChanged: (val) {
                   ref
                       .read(gpsSettingsProvider.notifier)
@@ -81,50 +50,20 @@ class GpsSettingsTab extends ConsumerWidget {
               ),
             ),
 
-            const SizedBox(height: 32),
+            const SizedBox(height: 16),
 
-            // -------------------------
-            // SLIDER METRES
-            // -------------------------
-            Text(
-              "Gravació per distància",
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: !gps.useTime
-                    ? AppColors.primary
-                    : colors.onSurface.withAlpha(40),
-              ),
-            ),
-            const SizedBox(height: 8),
-
-            Text(
-              "Cada ${gps.meters.toInt()} metres",
-              style: TextStyle(
-                fontSize: 16,
-                color: !gps.useTime
-                    ? AppColors.primary
-                    : colors.onSurface.withAlpha(40),
-              ),
-            ),
-
-            SliderTheme(
-              data: SliderTheme.of(context).copyWith(
-                activeTrackColor: !gps.useTime
-                    ? AppColors.primary
-                    : colors.onSurface.withAlpha(40),
-                inactiveTrackColor: colors.onSurface.withAlpha(40),
-                trackHeight: !gps.useTime ? 6 : 3,
-                thumbColor: !gps.useTime
-                    ? AppColors.primary
-                    : colors.onSurface.withAlpha(40),
-              ),
-              child: Slider(
+            // --- BLOC METRES ---
+            _buildSettingsCard(
+              isActive: !gps.useTime,
+              title: "Gravació per distància",
+              valueText: "${gps.meters.toInt()} m", // Text simplificat
+              sliderRow: _buildSliderRow(
+                context: context,
                 value: gps.meters,
                 min: 1,
                 max: 100,
                 divisions: 99,
-                label: gps.meters.toInt().toString(),
+                isActive: !gps.useTime,
                 onChanged: (val) {
                   ref.read(gpsSettingsProvider.notifier).setMeters(val);
                   ref.read(gpsSettingsProvider.notifier).setUseTime(false);
@@ -133,38 +72,20 @@ class GpsSettingsTab extends ConsumerWidget {
               ),
             ),
 
-            const SizedBox(height: 32),
+            const SizedBox(height: 16),
 
-            // -------------------------
-            // SLIDER ACCURACY
-            // -------------------------
-            Text(
-              "Accuracy màxima",
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppColors.primary,
-              ),
-            ),
-            const SizedBox(height: 8),
-
-            Text(
-              "${gps.accuracy.toInt()} metres",
-              style: TextStyle(fontSize: 16, color: colors.onSurface),
-            ),
-
-            SliderTheme(
-              data: SliderTheme.of(context).copyWith(
-                activeTrackColor: AppColors.primary,
-                inactiveTrackColor: colors.onSurface.withAlpha(51),
-                thumbColor: AppColors.primary,
-              ),
-              child: Slider(
+            // --- BLOC ACCURACY ---
+            _buildSettingsCard(
+              isActive: true,
+              title: "Accuracy màxima",
+              valueText: "${gps.accuracy.toInt()} m", // Text simplificat
+              sliderRow: _buildSliderRow(
+                context: context,
                 value: gps.accuracy,
                 min: 5,
                 max: 100,
                 divisions: 19,
-                label: gps.accuracy.toInt().toString(),
+                isActive: true,
                 onChanged: (val) {
                   ref.read(gpsSettingsProvider.notifier).setAccuracy(val);
                   onPending();
@@ -176,6 +97,129 @@ class GpsSettingsTab extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildSettingsCard({
+    required bool isActive,
+    required String title,
+    required String valueText,
+    required Widget sliderRow,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isActive
+              ? AppColors.primary.withAlpha(80)
+              : Colors.transparent,
+          width: 2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(10),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  // Gris més clar per al títol inactiu
+                  color: isActive ? AppColors.primary : Colors.grey[400],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  // Gris gairebé blanc per al fons de la càpsula inactiva
+                  color: isActive ? AppColors.primary : Colors.grey[100],
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  valueText,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    // Gris suau per al text de la càpsula inactiva
+                    color: isActive ? Colors.white : Colors.grey[400],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          sliderRow,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSliderRow({
+    required BuildContext context,
+    required double value,
+    required double min,
+    required double max,
+    required int divisions,
+    required bool isActive,
+    required ValueChanged<double> onChanged,
+  }) {
+    final colors = Theme.of(context).colorScheme;
+    final currentColor = isActive
+        ? AppColors.primary
+        : colors.onSurface.withAlpha(40);
+    final step = (max - min) / divisions;
+
+    return Row(
+      children: [
+        IconButton(
+          onPressed: value > min
+              ? () => onChanged((value - step).clamp(min, max))
+              : null,
+          icon: const Icon(Icons.remove_circle_outline, size: 28),
+          color: currentColor,
+        ),
+        Expanded(
+          child: SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              activeTrackColor: currentColor,
+              inactiveTrackColor: colors.onSurface.withAlpha(30),
+              trackHeight: isActive ? 6 : 4,
+              thumbColor: currentColor,
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10),
+            ),
+            child: Slider(
+              value: value.clamp(min, max),
+              min: min,
+              max: max,
+              divisions: divisions,
+              onChanged: onChanged,
+            ),
+          ),
+        ),
+        IconButton(
+          onPressed: value < max
+              ? () => onChanged((value + step).clamp(min, max))
+              : null,
+          icon: const Icon(Icons.add_circle_outline, size: 28),
+          color: currentColor,
+        ),
+      ],
     );
   }
 }

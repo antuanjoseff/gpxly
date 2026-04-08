@@ -1,20 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
-import 'package:flutter_riverpod/legacy.dart';
-import 'package:gpxly/models/track_settings.dart';
 import 'package:gpxly/notifiers/track_settings_notifier.dart';
-
-class TrackSettingsNotifier extends StateNotifier<TrackSettings> {
-  TrackSettingsNotifier() : super(const TrackSettings());
-
-  void setColor(Color c) => state = state.copyWith(color: c);
-  void setWidth(double w) => state = state.copyWith(width: w);
-
-  void apply() {
-    // guardar preferències
-  }
-}
+import 'package:gpxly/theme/app_colors.dart';
 
 class TrackSettingsTab extends ConsumerWidget {
   final VoidCallback onPending;
@@ -33,96 +21,246 @@ class TrackSettingsTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(trackSettingsProvider);
-    final colors = Theme.of(context).colorScheme;
 
-    return Column(
-      children: [
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Color del track",
-                  style: TextStyle(
-                    fontSize: 18,
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F5F7),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            // --- BLOC COLOR ---
+            _buildSettingsCard(
+              title: "Color del track",
+              // Previsualització d'un camí petit a la dreta del títol
+              rightWidget: CustomPaint(
+                size: const Size(100, 16), // Una mica més llarga i alta
+                painter: TrackPathPainter(
+                  color: settings.color,
+                  strokeWidth: 6, // Gruix fix per la miniatura
+                ),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.white,
+                        foregroundColor: AppColors.primary,
+                        side: const BorderSide(color: AppColors.primary),
+                        elevation: 0,
+                      ),
+                      icon: const Icon(Icons.palette_outlined),
+                      label: const Text("CANVIA EL COLOR DEL TRAÇ"),
+                      onPressed: () =>
+                          _openColorPicker(context, ref, settings.color),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // --- BLOC GRUIX ---
+            _buildSettingsCard(
+              title: "Gruix del traç",
+              rightWidget: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  "${settings.width.toStringAsFixed(1)} px",
+                  style: const TextStyle(
+                    fontSize: 13,
                     fontWeight: FontWeight.bold,
-                    color: colors.onSurface,
+                    color: Colors.white,
                   ),
                 ),
-                const SizedBox(height: 12),
-
-                Row(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(left: 16),
-                      child: Container(
-                        width: 80,
-                        height: settings.width,
-                        decoration: BoxDecoration(
-                          color: settings.color,
-                          borderRadius: BorderRadius.circular(
-                            settings.width / 2,
-                          ),
-                          border: Border.all(
-                            color: colors.onSurface.withAlpha(100),
-                            width: 1,
-                          ),
-                        ),
+              ),
+              child: Column(
+                children: [
+                  _buildSliderRow(
+                    context: context,
+                    value: settings.width,
+                    min: 1,
+                    max: 10,
+                    divisions: 18,
+                    onChanged: (v) {
+                      ref.read(trackSettingsProvider.notifier).setWidth(v);
+                      onPending();
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    "Previsualització del traç:",
+                    style: TextStyle(color: Colors.grey, fontSize: 11),
+                  ),
+                  const SizedBox(height: 16),
+                  // Camí gran que reacciona al color i al gruix real
+                  Container(
+                    width: double.infinity,
+                    height: 40,
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: CustomPaint(
+                      painter: TrackPathPainter(
+                        color: settings.color,
+                        strokeWidth: settings.width,
                       ),
                     ),
-                    const SizedBox(width: 16),
-                    ElevatedButton(
-                      onPressed: () {
-                        showDialog(
-                          context: context,
-                          builder: (_) => AlertDialog(
-                            backgroundColor: colors.surface,
-                            title: Text(
-                              "Selecciona color",
-                              style: TextStyle(color: colors.onSurface),
-                            ),
-                            content: BlockPicker(
-                              pickerColor: settings.color,
-                              onColorChanged: (c) {
-                                ref
-                                    .read(trackSettingsProvider.notifier)
-                                    .setColor(c);
-                                onPending();
-                              },
-                            ),
-                          ),
-                        );
-                      },
-                      child: const Text("Canvia color"),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-                const SizedBox(height: 32),
-
-                Text(
-                  "Gruix del track: ${settings.width.toStringAsFixed(1)}",
-                  style: TextStyle(fontSize: 16, color: colors.onSurface),
+  // Mètodes auxiliars (igual que abans, només cal afegir el Painter a sota)
+  Widget _buildSettingsCard({
+    required String title,
+    required Widget rightWidget,
+    required Widget child,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(10),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary,
                 ),
+              ),
+              rightWidget,
+            ],
+          ),
+          const SizedBox(height: 20),
+          child,
+        ],
+      ),
+    );
+  }
 
-                Slider(
-                  value: settings.width,
-                  min: 1,
-                  max: 10,
-                  divisions: 18,
-                  label: settings.width.toStringAsFixed(1),
-                  onChanged: (v) {
-                    ref.read(trackSettingsProvider.notifier).setWidth(v);
-                    onPending();
-                  },
-                ),
-              ],
+  Widget _buildSliderRow({
+    required BuildContext context,
+    required double value,
+    required double min,
+    required double max,
+    required int divisions,
+    required ValueChanged<double> onChanged,
+  }) {
+    final step = (max - min) / divisions;
+    return Row(
+      children: [
+        IconButton(
+          onPressed: value > min
+              ? () => onChanged((value - step).clamp(min, max))
+              : null,
+          icon: const Icon(Icons.remove_circle_outline, size: 28),
+          color: AppColors.primary,
+        ),
+        Expanded(
+          child: SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              activeTrackColor: AppColors.primary,
+              inactiveTrackColor: Colors.black12,
+              trackHeight: 6,
+              thumbColor: AppColors.primary,
+            ),
+            child: Slider(
+              value: value,
+              min: min,
+              max: max,
+              divisions: divisions,
+              onChanged: onChanged,
             ),
           ),
+        ),
+        IconButton(
+          onPressed: value < max
+              ? () => onChanged((value + step).clamp(min, max))
+              : null,
+          icon: const Icon(Icons.add_circle_outline, size: 28),
+          color: AppColors.primary,
         ),
       ],
     );
   }
+
+  void _openColorPicker(
+    BuildContext context,
+    WidgetRef ref,
+    Color currentColor,
+  ) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Tria un color"),
+        content: SingleChildScrollView(
+          child: BlockPicker(
+            pickerColor: currentColor,
+            onColorChanged: (c) {
+              ref.read(trackSettingsProvider.notifier).setColor(c);
+              onPending();
+              Navigator.pop(context);
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// --- PINTORES PERSONALITZATS PER SIMULAR EL CAMÍ ---
+class TrackPathPainter extends CustomPainter {
+  final Color color;
+  final double strokeWidth;
+
+  TrackPathPainter({required this.color, required this.strokeWidth});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = strokeWidth
+      ..style = PaintingStyle.stroke
+      ..strokeCap =
+          StrokeCap.round; // Extrems arrodonits per a un millor acabat
+
+    // Dibuixa una línia recta horitzontal centrada verticalment
+    canvas.drawLine(
+      Offset(0, size.height / 2),
+      Offset(size.width, size.height / 2),
+      paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant TrackPathPainter oldDelegate) =>
+      oldDelegate.color != color || oldDelegate.strokeWidth != strokeWidth;
 }

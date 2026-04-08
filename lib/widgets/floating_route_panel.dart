@@ -43,21 +43,23 @@ class FloatingRoutePanel extends ConsumerWidget {
           SizedBox(
             width: 14,
             height: 14,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 1000),
-              curve: Curves.easeInOut,
-              margin: const EdgeInsets.only(right: 6),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isRecording
-                    ? (blinking ? Colors.red : Colors.white)
-                    : Colors.red, // estable quan no grava
-                // border: Border.all(
-                //   color: Colors.red.withAlpha(180),
-                //   width: 1.5,
-                // ),
-              ),
-            ),
+            child: !isRecording
+                ? null
+                : AnimatedContainer(
+                    duration: const Duration(milliseconds: 1000),
+                    curve: Curves.easeInOut,
+                    margin: const EdgeInsets.only(right: 6),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: isRecording
+                          ? (blinking ? Colors.red : Colors.white)
+                          : Colors.red, // estable quan no grava
+                      // border: Border.all(
+                      //   color: Colors.red.withAlpha(180),
+                      //   width: 1.5,
+                      // ),
+                    ),
+                  ),
           ),
 
           // CRONÒMETRE

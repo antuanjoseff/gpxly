@@ -81,25 +81,48 @@ class _GpsSettingsScreenState extends ConsumerState<GpsSettingsScreen>
         backgroundColor: AppColors.white,
         appBar: AppBar(
           title: const Text('Configuració'),
+          toolbarHeight:
+              80, // 👈 Augmentem l'alçada del títol perquè sigui més ample
           bottom: PreferredSize(
             preferredSize: const Size.fromHeight(48),
             child: Container(
-              color: AppColors.white, // ✔ fons blanc
+              color: AppColors.white,
               child: TabBar(
                 controller: _tabController,
-                unselectedLabelColor:
-                    AppColors.primary, // ✔ icones/text no seleccionats
-                labelColor: AppColors.primary, // ✔ icones/text seleccionats
-                indicatorColor: AppColors.secondary, // ✔ línia inferior del tab
+                // Icones i text no seleccionats: Molt més transparents (opacitat baixa)
+                unselectedLabelColor: AppColors.primary.withAlpha(80),
+                labelColor: AppColors.primary,
+
+                // Estils de text per diferenciar per pes i mida
+                labelStyle: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
+                unselectedLabelStyle: const TextStyle(
+                  fontWeight: FontWeight.normal,
+                  fontSize: 12,
+                ),
+
+                // INDICADOR: Ocupa tot l'ample de la seva secció (1/3 de la pantalla cadascun)
+                indicator: UnderlineTabIndicator(
+                  borderSide: BorderSide(width: 4, color: AppColors.secondary),
+                  insets: EdgeInsets
+                      .zero, // 👈 Zero insets perquè arribi fins als extrems
+                ),
+
+                // Forçar que les pestanyes ocupin tot l'espai horitzontal disponible
+                indicatorSize: TabBarIndicatorSize.tab,
+
                 tabs: const [
-                  Tab(icon: Icon(Icons.gps_fixed), text: "GPS"),
-                  Tab(icon: Icon(Icons.map), text: "GPX"),
-                  Tab(icon: Icon(Icons.timeline), text: "Track"),
+                  Tab(icon: Icon(Icons.gps_fixed, size: 22), text: "GPS"),
+                  Tab(icon: Icon(Icons.map, size: 22), text: "GPX"),
+                  Tab(icon: Icon(Icons.timeline, size: 22), text: "Track"),
                 ],
               ),
             ),
           ),
         ),
+
         body: TabBarView(
           controller: _tabController,
           children: [
@@ -108,23 +131,26 @@ class _GpsSettingsScreenState extends ConsumerState<GpsSettingsScreen>
             TrackSettingsTab(onPending: markPending, onApplied: clearPending),
           ],
         ),
-        bottomNavigationBar: SafeArea(
-          minimum: const EdgeInsets.all(16),
-          child: ElevatedButton(
-            onPressed: _hasPendingChanges
-                ? () {
-                    GpsSettingsTab.apply(ref);
-                    GpxSettingsTab.apply(ref);
-                    TrackSettingsTab.apply(ref);
+        bottomNavigationBar: Container(
+          color: const Color(0xFFF5F5F7),
+          child: SafeArea(
+            minimum: const EdgeInsets.all(16),
+            child: ElevatedButton(
+              onPressed: _hasPendingChanges
+                  ? () {
+                      GpsSettingsTab.apply(ref);
+                      GpxSettingsTab.apply(ref);
+                      TrackSettingsTab.apply(ref);
 
-                    clearPending();
+                      clearPending();
 
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Configuració aplicada!")),
-                    );
-                  }
-                : null, // desactivat si no hi ha canvis
-            child: const Text("APLICA"),
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("Configuració aplicada!")),
+                      );
+                    }
+                  : null, // desactivat si no hi ha canvis
+              child: const Text("APLICA"),
+            ),
           ),
         ),
       ),
