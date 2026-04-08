@@ -2,25 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:flutter_riverpod/legacy.dart';
-
-final trackSettingsProvider =
-    StateNotifierProvider<TrackSettingsNotifier, TrackSettings>((ref) {
-      return TrackSettingsNotifier();
-    });
-
-class TrackSettings {
-  final Color color;
-  final double width;
-
-  const TrackSettings({this.color = Colors.blue, this.width = 4});
-
-  TrackSettings copyWith({Color? color, double? width}) {
-    return TrackSettings(
-      color: color ?? this.color,
-      width: width ?? this.width,
-    );
-  }
-}
+import 'package:gpxly/models/track_settings.dart';
+import 'package:gpxly/notifiers/track_settings_notifier.dart';
 
 class TrackSettingsNotifier extends StateNotifier<TrackSettings> {
   TrackSettingsNotifier() : super(const TrackSettings());

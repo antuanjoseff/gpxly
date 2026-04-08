@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gpxly/notifiers/gps_settings_notifier.dart';
 import 'package:gpxly/theme/app_colors.dart';
 
-class GpsSettingsTab extends ConsumerStatefulWidget {
+class GpsSettingsTab extends ConsumerWidget {
   final VoidCallback onPending;
   final VoidCallback onApplied;
 
@@ -14,60 +14,12 @@ class GpsSettingsTab extends ConsumerStatefulWidget {
   });
 
   static void apply(WidgetRef ref) {
-    final notifier = ref.read(gpsSettingsProvider.notifier);
-    final s = ref.read(gpsSettingsProvider);
-
-    notifier.setUseTime(s.useTime);
-    notifier.setSeconds(s.seconds);
-    notifier.setMeters(s.meters);
-    notifier.setAccuracy(s.accuracy);
+    ref.read(gpsSettingsProvider.notifier).apply();
   }
 
   @override
-  ConsumerState<GpsSettingsTab> createState() => _GpsSettingsTabState();
-}
-
-class _GpsSettingsTabState extends ConsumerState<GpsSettingsTab> {
-  late bool _useTime;
-  late int _seconds;
-  late double _meters;
-  late double _accuracy;
-
-  bool _pending = false;
-
-  void _markPending() {
-    setState(() => _pending = true);
-    widget.onPending();
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    final gps = ref.read(gpsSettingsProvider);
-
-    _useTime = gps.useTime;
-    _seconds = gps.seconds;
-    _meters = gps.meters;
-    _accuracy = gps.accuracy;
-  }
-
-  void _applySettings() {
-    final notifier = ref.read(gpsSettingsProvider.notifier);
-
-    notifier.setUseTime(_useTime);
-    notifier.setSeconds(_seconds);
-    notifier.setMeters(_meters);
-    notifier.setAccuracy(_accuracy);
-
-    setState(() => _pending = false);
-
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text("Configuració GPS aplicada!")));
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final gps = ref.watch(gpsSettingsProvider);
     final colors = Theme.of(context).colorScheme;
 
     return Scaffold(
@@ -85,7 +37,7 @@ class _GpsSettingsTabState extends ConsumerState<GpsSettingsTab> {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: _useTime
+                color: gps.useTime
                     ? AppColors.primary
                     : colors.onSurface.withAlpha(40),
               ),
@@ -93,10 +45,10 @@ class _GpsSettingsTabState extends ConsumerState<GpsSettingsTab> {
             const SizedBox(height: 8),
 
             Text(
-              "Cada $_seconds segons",
+              "Cada ${gps.seconds} segons",
               style: TextStyle(
                 fontSize: 16,
-                color: _useTime
+                color: gps.useTime
                     ? AppColors.primary
                     : colors.onSurface.withAlpha(40),
               ),
@@ -104,27 +56,27 @@ class _GpsSettingsTabState extends ConsumerState<GpsSettingsTab> {
 
             SliderTheme(
               data: SliderTheme.of(context).copyWith(
-                activeTrackColor: _useTime
+                activeTrackColor: gps.useTime
                     ? AppColors.primary
                     : colors.onSurface.withAlpha(40),
                 inactiveTrackColor: colors.onSurface.withAlpha(40),
-                trackHeight: _useTime ? 6 : 3,
-                thumbColor: _useTime
+                trackHeight: gps.useTime ? 6 : 3,
+                thumbColor: gps.useTime
                     ? AppColors.primary
                     : colors.onSurface.withAlpha(40),
               ),
               child: Slider(
-                value: _seconds.toDouble(),
+                value: gps.seconds.toDouble(),
                 min: 1,
                 max: 60,
                 divisions: 59,
-                label: _seconds.toString(),
+                label: gps.seconds.toString(),
                 onChanged: (val) {
-                  setState(() {
-                    _seconds = val.round();
-                    _useTime = true;
-                  });
-                  _markPending();
+                  ref
+                      .read(gpsSettingsProvider.notifier)
+                      .setSeconds(val.round());
+                  ref.read(gpsSettingsProvider.notifier).setUseTime(true);
+                  onPending();
                 },
               ),
             ),
@@ -139,7 +91,7 @@ class _GpsSettingsTabState extends ConsumerState<GpsSettingsTab> {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: !_useTime
+                color: !gps.useTime
                     ? AppColors.primary
                     : colors.onSurface.withAlpha(40),
               ),
@@ -147,10 +99,10 @@ class _GpsSettingsTabState extends ConsumerState<GpsSettingsTab> {
             const SizedBox(height: 8),
 
             Text(
-              "Cada ${_meters.toInt()} metres",
+              "Cada ${gps.meters.toInt()} metres",
               style: TextStyle(
                 fontSize: 16,
-                color: !_useTime
+                color: !gps.useTime
                     ? AppColors.primary
                     : colors.onSurface.withAlpha(40),
               ),
@@ -158,27 +110,25 @@ class _GpsSettingsTabState extends ConsumerState<GpsSettingsTab> {
 
             SliderTheme(
               data: SliderTheme.of(context).copyWith(
-                activeTrackColor: !_useTime
+                activeTrackColor: !gps.useTime
                     ? AppColors.primary
                     : colors.onSurface.withAlpha(40),
                 inactiveTrackColor: colors.onSurface.withAlpha(40),
-                trackHeight: !_useTime ? 6 : 3,
-                thumbColor: !_useTime
+                trackHeight: !gps.useTime ? 6 : 3,
+                thumbColor: !gps.useTime
                     ? AppColors.primary
                     : colors.onSurface.withAlpha(40),
               ),
               child: Slider(
-                value: _meters,
+                value: gps.meters,
                 min: 1,
                 max: 100,
                 divisions: 99,
-                label: _meters.toInt().toString(),
+                label: gps.meters.toInt().toString(),
                 onChanged: (val) {
-                  setState(() {
-                    _meters = val.roundToDouble();
-                    _useTime = false;
-                  });
-                  _markPending();
+                  ref.read(gpsSettingsProvider.notifier).setMeters(val);
+                  ref.read(gpsSettingsProvider.notifier).setUseTime(false);
+                  onPending();
                 },
               ),
             ),
@@ -199,7 +149,7 @@ class _GpsSettingsTabState extends ConsumerState<GpsSettingsTab> {
             const SizedBox(height: 8),
 
             Text(
-              "${_accuracy.toInt()} metres",
+              "${gps.accuracy.toInt()} metres",
               style: TextStyle(fontSize: 16, color: colors.onSurface),
             ),
 
@@ -210,16 +160,14 @@ class _GpsSettingsTabState extends ConsumerState<GpsSettingsTab> {
                 thumbColor: AppColors.primary,
               ),
               child: Slider(
-                value: _accuracy,
+                value: gps.accuracy,
                 min: 5,
                 max: 100,
                 divisions: 19,
-                label: _accuracy.toInt().toString(),
+                label: gps.accuracy.toInt().toString(),
                 onChanged: (val) {
-                  setState(() {
-                    _accuracy = val;
-                  });
-                  _markPending();
+                  ref.read(gpsSettingsProvider.notifier).setAccuracy(val);
+                  onPending();
                 },
               ),
             ),

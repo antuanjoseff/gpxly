@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:gpxly/models/track.dart';
 import 'package:gpxly/notifiers/gps_settings_notifier.dart';
 import 'package:gpxly/notifiers/track_notifier.dart';
+import 'package:gpxly/notifiers/track_settings_notifier.dart';
 import 'package:gpxly/screens/elevation_profile_screen.dart';
 import 'package:gpxly/screens/settings/gps_settings_screen.dart';
 import 'package:gpxly/screens/settings/tabs/track_settings_tab.dart';
@@ -14,6 +16,7 @@ import 'package:gpxly/services/permissions_service.dart';
 import 'package:gpxly/theme/app_colors.dart';
 import 'package:gpxly/ui/app_messages.dart';
 import 'package:gpxly/services/gpx_exporter.dart';
+import 'package:gpxly/ui/app_styles.dart';
 import 'package:gpxly/utils/color_extensions.dart';
 import 'package:gpxly/utils/map_animation.dart';
 import 'package:gpxly/utils/map_layers.dart';
@@ -125,17 +128,19 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final volAturar = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Aturar ruta?"),
-        content: const Text("Es deixarà de gravar la teva posició."),
+        title: const Text("Finalitzar gravació?"),
+        content: const Text(
+          "Aquesta acció tancarà la ruta actual i ja no s’hi afegiran més punts.",
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child: const Text("CANCEL·LA"),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: AppButtons.dialog(Colors.red),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text("ATURA", style: TextStyle(color: Colors.white)),
+            child: const Text("FINALITZA"),
           ),
         ],
       ),
@@ -154,7 +159,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
       builder: (context) => AlertDialog(
         title: const Text("Ruta finalitzada"),
         content: const Text(
-          "Vols compartir el fitxer GPX d'aquesta activitat?",
+          "Vols exportar o compartir el fitxer GPX d’aquesta activitat?",
         ),
         actions: [
           TextButton(
@@ -162,6 +167,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
             child: const Text("ARA NO"),
           ),
           ElevatedButton.icon(
+            style: AppButtons.dialog(AppColors.tertiary),
             onPressed: () => Navigator.pop(context, true),
             icon: const Icon(Icons.share),
             label: const Text("COMPARTIR"),
@@ -187,7 +193,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
       barrierDismissible: false,
       builder: (context) => AlertDialog(
         title: const Text("Gestió del track"),
-        content: const Text("Vols netejar el mapa per a una nova ruta?"),
+        content: const Text(
+          "Vols reiniciar el track per començar una nova gravació?",
+        ),
         actions: [
           TextButton(
             onPressed: () {
@@ -197,6 +205,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
             child: const Text("REINICIAR (NETEJA)"),
           ),
           ElevatedButton(
+            style: AppButtons.dialog(AppColors.primary),
             onPressed: () => Navigator.pop(context),
             child: const Text("MANTENIR DADES"),
           ),
@@ -444,7 +453,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 top: 10, // Una mica més amunt
                 left: 10, // Ancorat a l'esquerra
                 child: FloatingRoutePanel(
-                  isRecording: track.recording,
+                  isRecording: track.recordingState == RecordingState.recording,
                   duration: track.duration,
                 ),
               ),
@@ -608,8 +617,11 @@ class _MapScreenState extends ConsumerState<MapScreen>
                         const SizedBox(height: 8),
                         Row(
                           children: [
-                            // ESTAT 1: NO GRAVANT (Botó Únic d'Inici)
-                            if (!track.recording)
+                            // ───────────────────────────────────────────────
+                            // ESTAT 1 — IDLE → Botó INICIAR RUTA
+                            // ───────────────────────────────────────────────
+                            if (track.recordingState ==
+                                RecordingState.idle) ...[
                               Expanded(
                                 child: ElevatedButton.icon(
                                   onPressed: () {
@@ -624,41 +636,70 @@ class _MapScreenState extends ConsumerState<MapScreen>
                                     ),
                                   ),
                                 ),
-                              )
-                            // ESTAT 2: GRAVANT
-                            else ...[
-                              // Botó de Pausa o Reprèn
+                              ),
+                            ]
+                            // ───────────────────────────────────────────────
+                            // ESTAT 2 — RECORDING → Botó PAUSA (long press → menú)
+                            // ───────────────────────────────────────────────
+                            else if (track.recordingState ==
+                                RecordingState.recording) ...[
                               Expanded(
-                                flex: 2,
                                 child: ElevatedButton.icon(
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: track.paused
-                                        ? const Color(0xFF2979FF).withAlpha(
-                                            180,
-                                          ) // Blau Elèctric
-                                        : const Color(
-                                            0xFFFFA000,
-                                          ).withAlpha(180), // Ambre (Pausa)
+                                    backgroundColor: const Color(
+                                      0xFFFFA000,
+                                    ).withAlpha(180),
                                     foregroundColor: Colors.white,
                                     minimumSize: const Size(
                                       double.infinity,
                                       58,
-                                    ), // 👈 ALÇADA FIXA
+                                    ),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(16),
                                     ),
                                   ),
-                                  onPressed: () => track.paused
-                                      ? _resumeRecording()
-                                      : _pauseRecording(),
-                                  icon: Icon(
-                                    track.paused
-                                        ? Icons.play_arrow
-                                        : Icons.pause,
+                                  onPressed: _pauseRecording,
+                                  onLongPress: () {
+                                    // 🔥 Ja no fem servir cap variable
+                                    // Simplement passem a l’estat paused
+                                    _pauseRecording();
+                                  },
+                                  icon: const Icon(Icons.pause),
+                                  label: const Text(
+                                    "PAUSA",
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
-                                  label: Text(
-                                    track.paused ? "REPRÈN" : "PAUSA",
-                                    style: const TextStyle(
+                                ),
+                              ),
+                            ]
+                            // ───────────────────────────────────────────────
+                            // ESTAT 3 — PAUSED → Botons REPRENDRE + FINALITZAR
+                            // ───────────────────────────────────────────────
+                            else if (track.recordingState ==
+                                RecordingState.paused) ...[
+                              Expanded(
+                                flex: 2,
+                                child: ElevatedButton.icon(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(
+                                      0xFF2979FF,
+                                    ).withAlpha(180),
+                                    foregroundColor: Colors.white,
+                                    minimumSize: const Size(
+                                      double.infinity,
+                                      58,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                  ),
+                                  onPressed: _resumeRecording,
+                                  icon: const Icon(Icons.play_arrow),
+                                  label: const Text(
+                                    "REPRÈN",
+                                    style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -667,54 +708,31 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
                               const SizedBox(width: 12),
 
-                              // Botó d'Aturar o Compartir
                               Expanded(
                                 flex: 1,
                                 child: ElevatedButton(
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: track.paused
-                                        ? const Color(0xFF455A64).withAlpha(
-                                            180,
-                                          ) // Gris fosc (Compartir)
-                                        : const Color(
-                                            0xFFFF5252,
-                                          ).withAlpha(180), // Vermell (Aturar)
+                                    backgroundColor: const Color(
+                                      0xFFFF5252,
+                                    ).withAlpha(180),
                                     foregroundColor: Colors.white,
                                     minimumSize: const Size(
                                       double.infinity,
                                       58,
-                                    ), // 👈 MATEIXA ALÇADA FIXA
+                                    ),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(16),
                                     ),
                                   ),
-                                  onLongPress: () =>
+                                  onPressed: () =>
                                       _handleStopProcess(context, ref),
-                                  onPressed: () {
-                                    if (track.paused) {
-                                      _shareTrack();
-                                    } else {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                            "Mantén premut per ATURAR",
-                                          ),
-                                          duration: Duration(seconds: 1),
-                                        ),
-                                      );
-                                    }
-                                  },
-                                  child: Icon(
-                                    track.paused ? Icons.share : Icons.stop,
-                                    size: 26,
-                                  ),
+                                  child: const Icon(Icons.stop, size: 26),
                                 ),
                               ),
                             ],
                           ],
                         ),
+
                         const SizedBox(height: 12),
                       ],
                     ],
@@ -744,8 +762,34 @@ class _MapScreenState extends ConsumerState<MapScreen>
     }
 
     // 2. Comprovar permisos
+    final continuar = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Permís necessari"),
+        content: const Text(
+          "Per poder gravar la ruta correctament, cal permetre "
+          "l'accés a la ubicació en tot moment.\n\n"
+          "A la pantalla següent, selecciona:\n\n"
+          "👉  \"Permetre sempre\"",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("CANCEL·LA"),
+          ),
+          ElevatedButton(
+            style: AppButtons.dialog(Colors.blue), // o el color que vulguis
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("CONTINUA"),
+          ),
+        ],
+      ),
+    );
+    if (continuar != true) return;
     final ok = await PermissionsService.ensurePermissions(context);
     if (!context.mounted || !ok) return;
+
+    // 🔥 NOU DIÀLEG: Explicar que cal seleccionar "Permetre sempre"
 
     ref.read(trackProvider.notifier).reset();
     // 3. Primer punt immediat

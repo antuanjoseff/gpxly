@@ -1,45 +1,46 @@
-import 'package:flutter_riverpod/legacy.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../models/gpx_settings.dart';
 
-final gpxSettingsProvider =
-    StateNotifierProvider<GpxSettingsNotifier, GpxSettings>((ref) {
-      return GpxSettingsNotifier();
-    });
+class GpxSettingsNotifier extends Notifier<GpxSettings> {
+  @override
+  GpxSettings build() {
+    final initial = const GpxSettings();
+    _loadFromPrefs();
+    return initial;
+  }
 
-class GpxSettings {
-  final bool accuracies; // Horizontal accuracy
-  final bool speeds; // Speed
-  final bool headings; // Heading / bearing
-  final bool satellites; // Satellite count
-  final bool vAccuracies; // Vertical accuracy
+  // -----------------------------
+  // LOAD
+  // -----------------------------
+  Future<void> _loadFromPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
 
-  const GpxSettings({
-    this.accuracies = false,
-    this.speeds = false,
-    this.headings = false,
-    this.satellites = false,
-    this.vAccuracies = false,
-  });
-
-  GpxSettings copyWith({
-    bool? accuracies,
-    bool? speeds,
-    bool? headings,
-    bool? satellites,
-    bool? vAccuracies,
-  }) {
-    return GpxSettings(
-      accuracies: accuracies ?? this.accuracies,
-      speeds: speeds ?? this.speeds,
-      headings: headings ?? this.headings,
-      satellites: satellites ?? this.satellites,
-      vAccuracies: vAccuracies ?? this.vAccuracies,
+    state = state.copyWith(
+      accuracies: prefs.getBool('gpx_accuracies') ?? state.accuracies,
+      speeds: prefs.getBool('gpx_speeds') ?? state.speeds,
+      headings: prefs.getBool('gpx_headings') ?? state.headings,
+      satellites: prefs.getBool('gpx_satellites') ?? state.satellites,
+      vAccuracies: prefs.getBool('gpx_vAccuracies') ?? state.vAccuracies,
     );
   }
-}
 
-class GpxSettingsNotifier extends StateNotifier<GpxSettings> {
-  GpxSettingsNotifier() : super(const GpxSettings());
+  // -----------------------------
+  // SAVE
+  // -----------------------------
+  Future<void> _saveToPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
 
+    await prefs.setBool('gpx_accuracies', state.accuracies);
+    await prefs.setBool('gpx_speeds', state.speeds);
+    await prefs.setBool('gpx_headings', state.headings);
+    await prefs.setBool('gpx_satellites', state.satellites);
+    await prefs.setBool('gpx_vAccuracies', state.vAccuracies);
+  }
+
+  // -----------------------------
+  // UPDATE
+  // -----------------------------
   void toggle(String field, bool value) {
     switch (field) {
       case 'accuracies':
@@ -58,9 +59,15 @@ class GpxSettingsNotifier extends StateNotifier<GpxSettings> {
         state = state.copyWith(vAccuracies: value);
         break;
     }
+
+    _saveToPrefs();
   }
 
   void apply() {
-    // Aquí pots guardar-ho a SharedPreferences si vols
+    _saveToPrefs();
   }
 }
+
+final gpxSettingsProvider = NotifierProvider<GpxSettingsNotifier, GpxSettings>(
+  GpxSettingsNotifier.new,
+);

@@ -20,4 +20,21 @@ class AppButtons {
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
     textStyle: const TextStyle(fontWeight: FontWeight.normal),
   );
+
+  static final ButtonStyle dialogBase = ElevatedButton.styleFrom(
+    padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+    elevation: 0,
+    textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+  );
+
+  // ⭐ NOU: MÈTODE PER CREAR BOTONS DE DIÀLEG AMB COLOR PERSONALITZAT
+  static ButtonStyle dialog(Color background) {
+    return dialogBase.merge(
+      ElevatedButton.styleFrom(
+        backgroundColor: background,
+        foregroundColor: Colors.white,
+      ),
+    );
+  }
 }

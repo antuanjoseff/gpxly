@@ -1,10 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class GpsSettings {
   final bool useTime;
   final int seconds;
   final double meters;
   final double accuracy;
+
   GpsSettings({
     required this.useTime,
     required this.seconds,
@@ -33,32 +35,80 @@ class GpsSettingsNotifier extends Notifier<GpsSettings> {
 
   @override
   GpsSettings build() {
-    return GpsSettings(useTime: true, seconds: 5, meters: 10, accuracy: 30);
+    final initial = GpsSettings(
+      useTime: true,
+      seconds: 5,
+      meters: 10,
+      accuracy: 30,
+    );
+
+    _loadFromPrefs();
+    return initial;
   }
 
+  // -----------------------------
+  // LOAD
+  // -----------------------------
+  Future<void> _loadFromPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    final useTime = prefs.getBool('gps_useTime');
+    final seconds = prefs.getInt('gps_seconds');
+    final meters = prefs.getDouble('gps_meters');
+    final accuracy = prefs.getDouble('gps_accuracy');
+
+    state = state.copyWith(
+      useTime: useTime ?? state.useTime,
+      seconds: seconds ?? state.seconds,
+      meters: meters ?? state.meters,
+      accuracy: accuracy ?? state.accuracy,
+    );
+  }
+
+  // -----------------------------
+  // SAVE
+  // -----------------------------
+  Future<void> _saveToPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    await prefs.setBool('gps_useTime', state.useTime);
+    await prefs.setInt('gps_seconds', state.seconds);
+    await prefs.setDouble('gps_meters', state.meters);
+    await prefs.setDouble('gps_accuracy', state.accuracy);
+  }
+
+  // -----------------------------
+  // UPDATE METHODS
+  // -----------------------------
   void setUseTime(bool value) {
     if (value) {
-      // Si selecciona temps, els metres van al mínim
       state = state.copyWith(useTime: true, meters: minMeters);
     } else {
-      // Si selecciona metres, els segons van al mínim
       state = state.copyWith(useTime: false, seconds: minSeconds);
     }
+    _saveToPrefs();
   }
 
   void setSeconds(int value) {
     state = state.copyWith(seconds: value < minSeconds ? minSeconds : value);
+    _saveToPrefs();
   }
 
   void setMeters(double value) {
     state = state.copyWith(meters: value < minMeters ? minMeters : value);
+    _saveToPrefs();
   }
 
   void setAccuracy(double value) {
     state = state.copyWith(accuracy: value);
+    _saveToPrefs();
+  }
+
+  void apply() {
+    _saveToPrefs();
   }
 }
 
 final gpsSettingsProvider = NotifierProvider<GpsSettingsNotifier, GpsSettings>(
-  () => GpsSettingsNotifier(),
+  GpsSettingsNotifier.new,
 );

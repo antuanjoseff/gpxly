@@ -57,14 +57,14 @@ flutter_launcher_icons:
   ios: true
   image_path: "assets/icon/sendak_simple.png"
 
+
 flutter_native_splash:
-  color: "#4A90E2"
-  image: null
-  branding: assets/icon/sendak_simple.png 
-  branding_mode: center
-  fullscreen: true
+  color: "#FFFFFF"
+  image: assets/icon/sendak_simple.png
   android: true
   ios: true
+  android_gravity: center
+  ios_content_mode: scaleAspectFit
 
 
 # The following section is specific to Flutter packages.

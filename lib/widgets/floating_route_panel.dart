@@ -3,8 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gpxly/notifiers/gps_altitude_notifier.dart';
 import 'package:gpxly/theme/app_colors.dart'; // Assegura't que el path sigui correcte
 
+final blinkingProvider = StreamProvider<bool>((ref) async* {
+  bool visible = true;
+  while (true) {
+    await Future.delayed(const Duration(seconds: 1));
+    visible = !visible;
+    yield visible;
+  }
+});
+
 class FloatingRoutePanel extends ConsumerWidget {
-  // Canviem a ConsumerWidget
   final bool isRecording;
   final Duration duration;
 
@@ -12,14 +20,14 @@ class FloatingRoutePanel extends ConsumerWidget {
     super.key,
     required this.isRecording,
     required this.duration,
-    // Eliminem l'altitude dels paràmetres
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Afegim WidgetRef
-    // Llegim l'altitud directament del provider
     final altitude = ref.watch(gpsAltitudeProvider);
+
+    // 🔥 Llegim el parpelleig
+    final blinking = ref.watch(blinkingProvider).value ?? true;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -31,7 +39,28 @@ class FloatingRoutePanel extends ConsumerWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // CRONÒMETRE COMPACTE
+          // 🔴 Punt vermell que fa pampallugues
+          SizedBox(
+            width: 14,
+            height: 14,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 1000),
+              curve: Curves.easeInOut,
+              margin: const EdgeInsets.only(right: 6),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isRecording
+                    ? (blinking ? Colors.red : Colors.white)
+                    : Colors.red, // estable quan no grava
+                // border: Border.all(
+                //   color: Colors.red.withAlpha(180),
+                //   width: 1.5,
+                // ),
+              ),
+            ),
+          ),
+
+          // CRONÒMETRE
           Text(
             isRecording
                 ? duration.toString().split('.').first.padLeft(8, "0")
@@ -40,11 +69,11 @@ class FloatingRoutePanel extends ConsumerWidget {
               fontFamily: 'monospace',
               fontWeight: FontWeight.w800,
               fontSize: 13,
-              color: isRecording ? Colors.white : Colors.white,
+              color: Colors.white,
             ),
           ),
 
-          // SEPARADOR SUBTIL
+          // SEPARADOR
           Container(
             height: 10,
             width: 1,
@@ -52,11 +81,10 @@ class FloatingRoutePanel extends ConsumerWidget {
             color: Colors.white12,
           ),
 
-          // ALÇADA COMPACTA
+          // ALÇADA
           const Icon(Icons.terrain, color: Colors.white, size: 12),
           const SizedBox(width: 3),
           Text(
-            // Ara usem la variable que ve del provider
             altitude != 0.0 ? "${altitude.toStringAsFixed(0)}m" : "?m",
             style: const TextStyle(
               fontFamily: 'monospace',

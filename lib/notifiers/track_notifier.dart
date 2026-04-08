@@ -26,8 +26,7 @@ class TrackNotifier extends Notifier<Track> {
       headings: [],
       satellites: [],
       vAccuracies: [],
-      recording: false,
-      paused: false,
+      recordingState: RecordingState.idle,
       duration: Duration.zero,
       distance: 0.0,
       ascent: 0.0,
@@ -38,12 +37,12 @@ class TrackNotifier extends Notifier<Track> {
   }
 
   Future<void> startRecording(BuildContext context) async {
-    if (!state.recording) {
-      state = state.copyWith(recording: true, paused: false);
+    if (state.recordingState != RecordingState.recording) {
+      state = state.copyWith(recordingState: RecordingState.recording);
     }
 
     _timer ??= Timer.periodic(const Duration(seconds: 1), (_) {
-      if (state.recording && !state.paused) {
+      if (state.recordingState == RecordingState.recording) {
         state = state.copyWith(
           duration: state.duration + const Duration(seconds: 1),
         );
@@ -51,7 +50,7 @@ class TrackNotifier extends Notifier<Track> {
     });
 
     _subscription ??= NativeGpsChannel.locationStream.listen((data) {
-      if (!state.recording || state.paused) return;
+      if (state.recordingState != RecordingState.recording) return;
 
       // 1. Extreure totes les dades del TrackingService.kt
       final double lat = data["lat"] as double;
@@ -70,7 +69,7 @@ class TrackNotifier extends Notifier<Track> {
         data["timestamp"] as int,
       );
 
-      // 2. Aplicar correcció d'altitud (Recuperada)
+      // 2. Aplicar correcció d'altitud
       final double correction = localAltitudeCorrection(lat, lon);
       final double correctedAlt = rawAlt - correction;
 
@@ -94,8 +93,13 @@ class TrackNotifier extends Notifier<Track> {
     });
   }
 
-  void pauseRecording() => state = state.copyWith(paused: true);
-  void resumeRecording() => state = state.copyWith(paused: false);
+  void pauseRecording() {
+    state = state.copyWith(recordingState: RecordingState.paused);
+  }
+
+  void resumeRecording() {
+    state = state.copyWith(recordingState: RecordingState.recording);
+  }
 
   Future<void> stopRecording() async {
     await NativeGpsChannel.stop();
@@ -103,11 +107,11 @@ class TrackNotifier extends Notifier<Track> {
     _subscription = null;
     _timer?.cancel();
     _timer = null;
-    state = state.copyWith(recording: false, paused: false);
+
+    state = state.copyWith(recordingState: RecordingState.idle);
   }
 
   void addPointFromPosition(Position pos, [int sat_used = 0]) {
-    // Print complet per debug seguint el nom de les claus del Kotlin
     print("""
 >>> GPS DATA RECEIVED:
 >>> lat: ${pos.latitude}
@@ -123,7 +127,6 @@ class TrackNotifier extends Notifier<Track> {
 >>> hAccuracy: ${pos.headingAccuracy}
     """);
 
-    // Actualitzem el provider per a la UI
     ref.read(gpsAccuracyProvider.notifier).update(pos.accuracy);
     ref.read(gpsAltitudeProvider.notifier).update(pos.altitude);
     ref.read(gpsSpeedProvider.notifier).update(pos.speed);
@@ -135,12 +138,10 @@ class TrackNotifier extends Notifier<Track> {
     double newMax = state.maxElevation;
     double newMin = state.minElevation;
 
-    // Lògica de càlcul incremental (Recuperada íntegrament)
     if (state.coordinates.isNotEmpty) {
       final lastCoords = state.coordinates.last; // [lon, lat]
       final lastAlt = state.altitudes.last;
 
-      // Distància acumulada
       newDistance += Geolocator.distanceBetween(
         lastCoords[1],
         lastCoords[0],
@@ -148,8 +149,7 @@ class TrackNotifier extends Notifier<Track> {
         pos.longitude,
       );
 
-      // Desnivells acumulats
-      double diffAlt = pos.altitude - lastAlt;
+      final double diffAlt = pos.altitude - lastAlt;
       if (diffAlt > 0) {
         newAscent += diffAlt;
       } else if (diffAlt < 0) {
@@ -157,7 +157,6 @@ class TrackNotifier extends Notifier<Track> {
       }
     }
 
-    // Altituds extremes
     if (state.altitudes.isEmpty) {
       newMax = pos.altitude;
       newMin = pos.altitude;
@@ -166,7 +165,6 @@ class TrackNotifier extends Notifier<Track> {
       if (pos.altitude < newMin) newMin = pos.altitude;
     }
 
-    // Actualització de l'estat amb totes les llistes
     state = state.copyWith(
       coordinates: [
         ...state.coordinates,
@@ -222,8 +220,7 @@ class TrackNotifier extends Notifier<Track> {
       headings: [],
       satellites: [],
       vAccuracies: [],
-      recording: false,
-      paused: false,
+      recordingState: RecordingState.idle,
       duration: Duration.zero,
       distance: 0.0,
       ascent: 0.0,
