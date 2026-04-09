@@ -113,6 +113,8 @@ class _ElevationProfileScreenState
             )
           : LayoutBuilder(
               builder: (context, constraints) {
+                print("Bloc del gràfic executat");
+
                 return GestureDetector(
                   behavior: HitTestBehavior.translucent,
                   onPanDown: (d) => _handleGlobalTouch(

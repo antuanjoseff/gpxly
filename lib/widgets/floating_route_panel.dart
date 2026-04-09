@@ -86,16 +86,48 @@ class FloatingRoutePanel extends ConsumerWidget {
           // ALÇADA
           const Icon(Icons.terrain, color: Colors.white, size: 12),
           const SizedBox(width: 3),
-          Text(
-            altitude != 0.0 ? "${altitude.toStringAsFixed(0)}m" : "?m",
-            style: const TextStyle(
-              fontFamily: 'monospace',
-              fontWeight: FontWeight.w800,
-              fontSize: 13,
-              color: Colors.white,
-            ),
-          ),
+          AnimatedAltitudeText(altitude: altitude),
         ],
+      ),
+    );
+  }
+}
+
+class AnimatedAltitudeText extends StatelessWidget {
+  final double altitude;
+
+  const AnimatedAltitudeText({super.key, required this.altitude});
+
+  @override
+  Widget build(BuildContext context) {
+    final String altitudeStr = altitude != 0.0
+        ? "${altitude.toStringAsFixed(0)}m"
+        : "?m";
+
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 300),
+      transitionBuilder: (Widget child, Animation<double> animation) {
+        // Calculem si el número puja o baixa (opcional, aquí fem un lliscament estàndard)
+        final offsetAnimation = Tween<Offset>(
+          begin: const Offset(0.0, 0.5), // Ve de baix
+          end: Offset.zero,
+        ).animate(animation);
+
+        return FadeTransition(
+          opacity: animation,
+          child: SlideTransition(position: offsetAnimation, child: child),
+        );
+      },
+      // La "key" és el que diu a Flutter que el contingut ha canviat i cal animar
+      child: Text(
+        altitudeStr,
+        key: ValueKey<String>(altitudeStr),
+        style: const TextStyle(
+          fontFamily: 'monospace',
+          fontWeight: FontWeight.w800,
+          fontSize: 13,
+          color: Colors.white,
+        ),
       ),
     );
   }

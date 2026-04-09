@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 class SliderTooltip extends StatelessWidget {
   final String distance;
   final String altitude;
+  final Color color;
 
   const SliderTooltip({
     super.key,
     required this.distance,
     required this.altitude,
+    required this.color,
   });
 
   @override
@@ -15,7 +17,7 @@ class SliderTooltip extends StatelessWidget {
     return Material(
       elevation: 3,
       borderRadius: BorderRadius.circular(6),
-      color: Colors.black87,
+      color: color.withOpacity(0.9),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         child: Column(
