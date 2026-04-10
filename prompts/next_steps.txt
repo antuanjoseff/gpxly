@@ -1,12 +1,8 @@
-03.- Multi idioma
-04.- Grafic elevacions
+00.- Canviar comportament del grafic. El long press al gràfic mostra dos agulles d'indicació situades al gràfic al punt que sigui
+01.- Multi idioma
+02.- No mostrar dialog de permisos si ja s'han donat
+03.- Guardar dades del track als prefs cada minut
 
-ICONA
 
-1. Idees per a la icona de GpxGo
-Com que el nom és tecnològic i d'acció, la icona ha de ser neta i reconeixible:
-
-    L'Estil "Ruta Activa": Una lletra "G" majúscula estilitzada on el traç de la lletra és una línia de track (amb punts de coordenada) i acaba en una fletxa que apunta cap amunt (el "Go").
-    Minimalisme Flat: Un fons de color taronja potent o blau elèctric (colors d'esport) amb el símbol de "Play" (
-    ) i a dins les lletres "GPX" en blanc.
-    El Contrast: Un cercle negre amb una línia de track vermella fluorescent que dibuixa una "S" tombada (fent referència a un camí) i el text "GO" a sota en negreta.
+.- botó per mostrar posició actual quan no s'està gravant el track
+.- Obrir arxiu .gpx i seguir-lo¿?

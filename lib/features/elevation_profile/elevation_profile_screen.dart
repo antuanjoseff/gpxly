@@ -2,15 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:gpxly/features/elevation_profile/painters/selection_painter.dart';
-
+import 'package:gpxly/features/elevation_profile/utils/chart_utils.dart';
 import 'package:gpxly/notifiers/track_notifier.dart';
 import 'package:gpxly/theme/app_colors.dart';
-
 import 'package:gpxly/utils/distance_utils.dart';
 import 'package:gpxly/utils/decimation_utils.dart';
-
 import 'models/touch_data.dart';
-
 import 'painters/range_highlight_painter.dart';
 
 enum ActiveHandle { none, start, end }
@@ -37,6 +34,7 @@ class _ElevationProfileScreenState
 
   // --- Clau del gràfic ---
   final chartKey = GlobalKey();
+  int _draggingNeedle = 0;
 
   // --- Colors configurables ---
   final Color sliderStartNeedleColor = const Color(0xFF007BFF); // blau
@@ -62,17 +60,6 @@ class _ElevationProfileScreenState
     return TouchData(d2, a2);
   }
 
-  // --- Conversió rang [0–1] → índexs ---
-  (int, int) _rangeToIndexes(List<double> distances) {
-    if (distances.isEmpty) return (0, 0);
-    final maxIndex = distances.length - 1;
-
-    final start = (selectedRange.start * maxIndex).round().clamp(0, maxIndex);
-    final end = (selectedRange.end * maxIndex).round().clamp(0, maxIndex);
-
-    return (start <= end) ? (start, end) : (end, start);
-  }
-
   // --- Trobar índex més proper a una distància ---
   int _closestIndexForDistance(List<double> distances, double target) {
     if (distances.isEmpty) return 0;
@@ -86,37 +73,6 @@ class _ElevationProfileScreenState
       }
     }
     return index;
-  }
-
-  // --- Drag sobre el gràfic ---
-  void _handleGlobalTouch(
-    Offset globalPos,
-    List<double> distances,
-    List<double> altitudes,
-  ) {
-    if (chartKey.currentContext == null) return;
-
-    final box = chartKey.currentContext!.findRenderObject() as RenderBox;
-    final local = box.globalToLocal(globalPos);
-
-    const double horizontalPadding = 24.0;
-    final double left = horizontalPadding;
-    final double right = box.size.width - horizontalPadding;
-
-    if (local.dx < left || local.dx > right) return;
-
-    final maxDist = distances.last;
-    final xValue = (local.dx / box.size.width) * maxDist;
-
-    final index = _closestIndexForDistance(distances, xValue);
-
-    setState(() {
-      // Mode: agulla del gràfic → esborrem agulles del slider
-      activeHandle = ActiveHandle.none;
-      selectedIndexStart = null;
-      selectedIndexEnd = null;
-      selectedIndexGraph = index;
-    });
   }
 
   // --- Construcció del gràfic ---
@@ -134,15 +90,18 @@ class _ElevationProfileScreenState
     final spots = List.generate(alts.length, (i) => FlSpot(dists[i], alts[i]));
     final maxDist = dists.last;
 
-    // --- CÀLCUL DEL RANG VERTICAL (Mateixa lògica que al Painter) ---
+    // --- CÀLCUL DEL RANG VERTICAL AMB SEGURETAT PER A RUTES PLANES ---
     final minAlt = alts.reduce((a, b) => a < b ? a : b);
     final maxAlt = alts.reduce((a, b) => a > b ? a : b);
-    final range = maxAlt - minAlt;
 
-    // Forcem el 10% de marge dalt i baix per coincidir amb el SelectionPainter
-    final forcedMinY = minAlt - (range * 0.1);
-    final forcedMaxY = maxAlt + (range * 0.1);
+    double diff = maxAlt - minAlt;
 
+    // 🔥 Establim el rang mínim de 50m (com als Painters)
+    double effectiveRange = diff < 50 ? 50 : diff;
+
+    // Apliquem el 10% de marge (mateixa lògica per tot el projecte)
+    final forcedMinY = minAlt - (effectiveRange * 0.1);
+    final forcedMaxY = forcedMinY + (effectiveRange * 1.2);
     return LineChartData(
       minY: forcedMinY, // 🔥 Crucial per eliminar el "gap"
       maxY: forcedMaxY, // 🔥 Crucial per eliminar el "gap"
@@ -229,18 +188,16 @@ class _ElevationProfileScreenState
           return Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              _buildSegmentStatsBar(altitudes, distances, times),
               const SizedBox(height: 20),
 
               // HEADER
-              SizedBox(
-                height: MediaQuery.of(context).size.height * 0.08,
-                child: Center(
-                  child: _buildHeader(context, altitudes, distances),
-                ),
-              ),
-
-              _buildSegmentStatsBar(altitudes, distances, times),
-
+              // SizedBox(
+              //   height: MediaQuery.of(context).size.height * 0.08,
+              //   child: Center(
+              //     child: _buildHeader(context, altitudes, distances),
+              //   ),
+              // ),
               const SizedBox(height: 20),
 
               // GRÀFIC + HIGHLIGHT + AGULLES
@@ -248,28 +205,101 @@ class _ElevationProfileScreenState
                 height: chartHeight,
                 child: LayoutBuilder(
                   builder: (context, chartConstraints) {
-                    final touchData = _buildTouchData(
-                      distances,
-                      altitudes,
-                      chartConstraints.maxWidth,
-                    );
-
                     return GestureDetector(
                       behavior: HitTestBehavior.opaque,
-                      onPanDown: (d) {
-                        _handleGlobalTouch(
-                          d.globalPosition,
-                          touchData.distances,
-                          touchData.altitudes,
-                        );
+                      onLongPressStart: (details) {
+                        final double width = chartConstraints.maxWidth;
+                        setState(() {
+                          _draggingNeedle = 0;
+                          selectedIndexGraph = null;
+
+                          // Situem els punts al 25% i 75% com volies
+                          selectedIndexStart = ChartLogic.calculateIndexFromX(
+                            width * 0.25,
+                            width,
+                            distances,
+                          );
+                          selectedIndexEnd = ChartLogic.calculateIndexFromX(
+                            width * 0.75,
+                            width,
+                            distances,
+                          );
+                        });
                       },
-                      onPanUpdate: (d) {
-                        _handleGlobalTouch(
-                          d.globalPosition,
-                          touchData.distances,
-                          touchData.altitudes,
-                        );
+
+                      // 2. DETECCIÓ INICIAL DEL DIT (Calar quina agulla movem)
+                      onPanDown: (details) {
+                        final double x = details.localPosition.dx;
+                        final double width = chartConstraints.maxWidth;
+
+                        final double? xStart = selectedIndexStart != null
+                            ? ChartLogic.indexToX(
+                                selectedIndexStart!,
+                                width,
+                                distances,
+                              )
+                            : null;
+                        final double? xEnd = selectedIndexEnd != null
+                            ? ChartLogic.indexToX(
+                                selectedIndexEnd!,
+                                width,
+                                distances,
+                              )
+                            : null;
+
+                        setState(() {
+                          if (xStart != null && (x - xStart).abs() < 30) {
+                            _draggingNeedle = 1; // Inici
+                          } else if (xEnd != null && (x - xEnd).abs() < 30) {
+                            _draggingNeedle = 2; // Final
+                          } else {
+                            _draggingNeedle =
+                                3; // Puntual (esborra rang anterior)
+                            selectedIndexStart = null;
+                            selectedIndexEnd = null;
+                            selectedIndexGraph = ChartLogic.calculateIndexFromX(
+                              x,
+                              width,
+                              distances,
+                            );
+                          }
+                        });
                       },
+
+                      // 3. MOVIMENT (onScaleUpdate es converteix en onPanUpdate)
+                      onPanUpdate: (details) {
+                        if (_draggingNeedle != 0) {
+                          final double width = chartConstraints.maxWidth;
+                          final double x = details.localPosition.dx;
+
+                          setState(() {
+                            if (_draggingNeedle == 1) {
+                              selectedIndexStart =
+                                  ChartLogic.calculateIndexFromX(
+                                    x,
+                                    width,
+                                    distances,
+                                  );
+                            } else if (_draggingNeedle == 2) {
+                              selectedIndexEnd = ChartLogic.calculateIndexFromX(
+                                x,
+                                width,
+                                distances,
+                              );
+                            } else if (_draggingNeedle == 3) {
+                              selectedIndexGraph =
+                                  ChartLogic.calculateIndexFromX(
+                                    x,
+                                    width,
+                                    distances,
+                                  );
+                            }
+                          });
+                        }
+                      },
+
+                      onPanEnd: (_) => _draggingNeedle = 0,
+                      onPanCancel: () => _draggingNeedle = 0,
                       child: Stack(
                         children: [
                           // 1. ÀREA RESSALTADA (Resseguint el perfil de la muntanya)
@@ -365,72 +395,6 @@ class _ElevationProfileScreenState
               ),
 
               const SizedBox(height: 20),
-
-              // RANGE SLIDER + TOOLTIP
-              LayoutBuilder(
-                builder: (context, sliderConstraints) {
-                  final sliderWidth = sliderConstraints.maxWidth;
-                  final (startIndex, endIndex) = _rangeToIndexes(distances);
-
-                  final startX = selectedRange.start * sliderWidth;
-                  final endX = selectedRange.end * sliderWidth;
-                  final chartBox =
-                      chartKey.currentContext!.findRenderObject() as RenderBox;
-
-                  return Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: RangeSlider(
-                          values: selectedRange,
-                          onChanged: (values) {
-                            setState(() {
-                              // Detectem quin mànec canvia
-                              if (values.start != selectedRange.start &&
-                                  values.end == selectedRange.end) {
-                                activeHandle = ActiveHandle.start;
-                              } else if (values.end != selectedRange.end &&
-                                  values.start == selectedRange.start) {
-                                activeHandle = ActiveHandle.end;
-                              }
-
-                              selectedRange = values;
-
-                              // Quan es mou el slider, esborrem agulla del gràfic
-                              selectedIndexGraph = null;
-
-                              // Actualitzem índexs d’agulles del slider
-                              final maxDist = distances.last;
-                              if (activeHandle == ActiveHandle.start) {
-                                final distStart = values.start * maxDist;
-                                selectedIndexStart = _closestIndexForDistance(
-                                  distances,
-                                  distStart,
-                                );
-                              } else if (activeHandle == ActiveHandle.end) {
-                                final distEnd = values.end * maxDist;
-                                selectedIndexEnd = _closestIndexForDistance(
-                                  distances,
-                                  distEnd,
-                                );
-                              }
-                            });
-                          },
-                          onChangeEnd: (_) {
-                            setState(() {
-                              activeHandle = ActiveHandle.none;
-                            });
-                          },
-                          divisions: distances.length > 1
-                              ? distances.length - 1
-                              : null,
-                        ),
-                      ),
-                    ],
-                  );
-                },
-              ),
             ],
           );
         },
@@ -532,12 +496,10 @@ class _ElevationProfileScreenState
     List<double> dists,
     List<DateTime>? times,
   ) {
-    // Si no hi ha rang seleccionat, retornem un espai buit
     if (selectedIndexStart == null || selectedIndexEnd == null) {
-      return const SizedBox(height: 70);
+      return const SizedBox(height: 50); // Més compacte, estil panell flotant
     }
 
-    // Ordenem índexs per si l'usuari els mou al revés
     final start = selectedIndexStart! < selectedIndexEnd!
         ? selectedIndexStart!
         : selectedIndexEnd!;
@@ -546,21 +508,18 @@ class _ElevationProfileScreenState
         : selectedIndexStart!;
 
     final distMetres = dists[end] - dists[start];
-    final desnivell = alts[end] - alts[start];
+    double gain = 0;
+    for (int i = start; i < end; i++) {
+      double diff = alts[i + 1] - alts[i];
+      if (diff > 0) gain += diff;
+    }
 
-    String durationStr = "00:00";
+    String durationStr = "00:00:00";
     String speedStr = "0.0 km/h";
 
     if (times != null && times.length > end) {
       final duration = times[end].difference(times[start]);
-
-      // Format Temps (mm:ss o h:mm:ss)
-      String twoDigits(int n) => n.toString().padLeft(2, "0");
-      durationStr = duration.inHours > 0
-          ? "${duration.inHours}:${twoDigits(duration.inMinutes.remainder(60))}:${twoDigits(duration.inSeconds.remainder(60))}"
-          : "${twoDigits(duration.inMinutes)}:${twoDigits(duration.inSeconds.remainder(60))}";
-
-      // Velocitat mitjana
+      durationStr = duration.toString().split('.').first.padLeft(8, "0");
       final hores = duration.inSeconds / 3600;
       if (hores > 0) {
         speedStr = "${((distMetres / 1000) / hores).toStringAsFixed(1)} km/h";
@@ -568,63 +527,93 @@ class _ElevationProfileScreenState
     }
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.orange.withOpacity(0.3)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        color: AppColors.tertiary, // Deep Green professional
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.white10),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween, // Distribució neta
         children: [
-          _newStatItem("DISTÀNCIA", formatDistance(distMetres)),
-          _newDivider(),
-          _newStatItem("TEMPS", durationStr),
-          _newDivider(),
-          _newStatItem("VELOCITAT", speedStr),
-          _newDivider(),
-          _newStatItem(
-            "DESNIVELL",
-            "${desnivell >= 0 ? '+' : ''}${desnivell.toStringAsFixed(0)}m",
-          ),
+          // DISTÀNCIA
+          _buildDarkStat(Icons.straighten, formatDistance(distMetres)),
+          _buildVerticalDivider(),
+
+          // TEMPS
+          _buildDarkStat(Icons.timer, durationStr),
+          _buildVerticalDivider(),
+
+          // VELOCITAT
+          _buildDarkStat(Icons.speed, speedStr),
+          _buildVerticalDivider(),
+
+          // DESNIVELL ACUMULAT (Gain)
+          _buildDarkStat(Icons.terrain, "+${gain.toStringAsFixed(0)}m"),
         ],
       ),
     );
   }
 
-  Widget _newStatItem(String label, String value) {
-    return Column(
+  // Widget auxiliar per a cada dada estil "Panel"
+  Widget _buildDarkStat(IconData icon, String value) {
+    return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 8,
-            fontWeight: FontWeight.bold,
-            color: Colors.grey,
-          ),
-        ),
-        const SizedBox(height: 2),
+        Icon(icon, color: Colors.white70, size: 14),
+        const SizedBox(width: 6),
         Text(
           value,
           style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
+            fontFamily: 'monospace',
+            fontWeight: FontWeight.w800,
+            fontSize: 12,
+            color: Colors.white,
           ),
         ),
       ],
     );
   }
 
-  Widget _newDivider() =>
-      Container(width: 1, height: 20, color: Colors.black12);
+  // Separador vertical subtil estil GPS
+  Widget _buildVerticalDivider() {
+    return Container(height: 14, width: 1, color: Colors.white12);
+  }
+
+  // Mètodes auxiliars actualitzats amb colors
+  Widget _newStatItem(String label, String value, Color color) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 9,
+            fontWeight: FontWeight.bold,
+            color: AppColors.dark.withAlpha(120), // Etiqueta discreta
+            letterSpacing: 0.5,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w900,
+            color: color, // Valor amb el color temàtic passat
+            fontFamily: 'monospace',
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _newDivider() {
+    return Container(
+      height: 30,
+      width: 1,
+      color: AppColors.dark.withAlpha(30), // Divisor molt subtil
+    );
+  }
 }
