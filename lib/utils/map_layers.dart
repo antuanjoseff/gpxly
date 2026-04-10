@@ -9,6 +9,29 @@ import 'package:maplibre_gl/maplibre_gl.dart';
 /// - user_location (punt blau)
 Future<void> setupUserLocationLayer(MapLibreMapController controller) async {
   // -------------------------
+  // SOURCE: imported_track
+  // -------------------------
+  await controller.addSource(
+    "imported_track",
+    GeojsonSourceProperties(
+      data: {"type": "FeatureCollection", "features": []},
+    ),
+  );
+
+  // -------------------------
+  // LAYER: imported_track_layer
+  // -------------------------
+  await controller.addLayer(
+    "imported_track",
+    "imported_track_layer",
+    const LineLayerProperties(
+      lineColor: "#00A8E8", // blau clar
+      lineWidth: 4.0,
+      lineJoin: "round",
+      lineCap: "round",
+    ),
+  );
+  // -------------------------
   // SOURCE: track_line
   // -------------------------
   await controller.addSource(

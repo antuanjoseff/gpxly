@@ -218,4 +218,94 @@ class AppMessages {
       ),
     );
   }
+
+  // 6. Diàleg de confirmació d'importació GPX
+  static Future<bool?> showImportGpxConfirmDialog(BuildContext context) {
+    return showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.tertiary,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: const Row(
+          children: [
+            Icon(Icons.file_upload_outlined, color: AppColors.mustardYellow),
+            SizedBox(width: 10),
+            Text(
+              "Importar GPX",
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        content: const Text(
+          "Ja tens una ruta activa o dades carregades. Vols substituir-les pel fitxer GPX?",
+          style: TextStyle(color: Colors.white70),
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(
+              "CANCEL·LAR",
+              style: TextStyle(color: Colors.white.withAlpha(150)),
+            ),
+          ),
+          const SizedBox(width: 8),
+          ElevatedButton(
+            style: _buttonStyle(AppColors.skyBlue),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("IMPORTAR"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 7. Diàleg per entrar en Mode Visualització
+  static Future<bool?> showViewModeDialog(BuildContext context) {
+    return showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.tertiary,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: const Row(
+          children: [
+            Icon(Icons.visibility_outlined, color: AppColors.mustardYellow),
+            SizedBox(width: 10),
+            Text(
+              "Mode visualització",
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        content: const Text(
+          "Vols entrar en mode visualització? No s'afegiran punts nous i la gravació quedarà desactivada.",
+          style: TextStyle(color: Colors.white70),
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(
+              "NO",
+              style: TextStyle(color: Colors.white.withAlpha(150)),
+            ),
+          ),
+          const SizedBox(width: 8),
+          ElevatedButton(
+            style: _buttonStyle(AppColors.skyBlue),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("ACTIVAR"),
+          ),
+        ],
+      ),
+    );
+  }
 }

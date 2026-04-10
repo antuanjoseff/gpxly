@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:gpxly/notifiers/track_notifier.dart';
+import 'package:gpxly/providers/active_track_provider.dart';
 import 'package:gpxly/theme/app_colors.dart';
 
 class TrackStatsScreen extends ConsumerWidget {
@@ -8,17 +8,11 @@ class TrackStatsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final track = ref.watch(trackProvider);
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
-
-    final hasData = track.coordinates.isNotEmpty;
-    final maxElev = hasData
-        ? "${track.maxElevation.toStringAsFixed(0)} m"
-        : "---";
-    final minElev = hasData
-        ? "${track.minElevation.toStringAsFixed(0)} m"
-        : "---";
+    final track = ref.watch(activeTrackProvider);
+    final hasCoords = track.coordinates.isNotEmpty;
+    final hasElev = track.hasElevationData;
+    final hasTime = track.hasTimeData;
+    final hasAscDesc = track.hasAscentDescent;
 
     return Scaffold(
       appBar: AppBar(title: const Text("Dades de la ruta")),
@@ -28,7 +22,7 @@ class TrackStatsScreen extends ConsumerWidget {
           _buildStatCard(
             context,
             "Temps total",
-            track.formattedDuration,
+            hasTime ? track.formattedDuration : "---",
             Icons.timer,
             AppColors.dark,
           ),
@@ -36,15 +30,17 @@ class TrackStatsScreen extends ConsumerWidget {
           _buildStatCard(
             context,
             "Distància",
-            "${(track.distance / 1000).toStringAsFixed(2)} km",
+            hasCoords
+                ? "${(track.distance / 1000).toStringAsFixed(2)} km"
+                : "---",
             Icons.straighten,
-            AppColors.dark, // ocre
+            AppColors.dark,
           ),
 
           _buildStatCard(
             context,
             "Velocitat Mitjana",
-            "${track.averageSpeed.toStringAsFixed(1)} km/h",
+            hasTime ? "${track.averageSpeed.toStringAsFixed(1)} km/h" : "---",
             Icons.speed,
             AppColors.dark,
           ),
@@ -54,7 +50,7 @@ class TrackStatsScreen extends ConsumerWidget {
           _buildStatCard(
             context,
             "Elevació Màxima",
-            maxElev,
+            hasElev ? "${track.maxElevation.toStringAsFixed(0)} m" : "---",
             Icons.terrain,
             AppColors.dark,
           ),
@@ -62,7 +58,7 @@ class TrackStatsScreen extends ConsumerWidget {
           _buildStatCard(
             context,
             "Elevació Mínima",
-            minElev,
+            hasElev ? "${track.minElevation.toStringAsFixed(0)} m" : "---",
             Icons.south_east,
             AppColors.dark,
           ),
@@ -70,7 +66,7 @@ class TrackStatsScreen extends ConsumerWidget {
           _buildStatCard(
             context,
             "Desnivell Positiu (+)",
-            "${track.ascent.toStringAsFixed(0)} m",
+            hasAscDesc ? "${track.ascent.toStringAsFixed(0)} m" : "---",
             Icons.unfold_less,
             AppColors.dark,
           ),
@@ -78,7 +74,7 @@ class TrackStatsScreen extends ConsumerWidget {
           _buildStatCard(
             context,
             "Desnivell Negatiu (-)",
-            "${track.descent.toStringAsFixed(0)} m",
+            hasAscDesc ? "${track.descent.toStringAsFixed(0)} m" : "---",
             Icons.unfold_more,
             AppColors.dark,
           ),

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gpxly/features/elevation_profile/elevation_profile_screen.dart';
 import 'package:gpxly/models/track.dart';
+import 'package:gpxly/notifiers/imported_track_notifier.dart';
 import 'package:gpxly/notifiers/track_notifier.dart';
 import 'package:gpxly/notifiers/track_settings_notifier.dart';
 import 'package:gpxly/screens/settings/gps_settings_screen.dart';
@@ -18,6 +19,8 @@ import 'package:gpxly/utils/map_animation.dart';
 import 'package:gpxly/utils/map_layers.dart';
 import 'package:gpxly/widgets/floating_route_panel.dart';
 import 'package:gpxly/widgets/gps_accuracy_bars.dart';
+import 'package:gpxly/widgets/import_gpx_button.dart';
+import 'package:gpxly/widgets/track_selector_button.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:gpxly/notifiers/gps_accuracy_notifier.dart';
 import 'package:gpxly/notifiers/gps_altitude_notifier.dart';
@@ -211,8 +214,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
   @override
   Widget build(BuildContext context) {
     final track = ref.watch(trackProvider);
-    final accuracy = ref.watch(gpsAccuracyProvider);
-    final altitude = ref.watch(gpsAltitudeProvider);
     final trackSettings = ref.watch(trackSettingsProvider);
 
     // Listener dins build (Riverpod obliga)
@@ -279,6 +280,28 @@ class _MapScreenState extends ConsumerState<MapScreen>
       );
     });
 
+    ref.listen(importedTrackProvider, (prev, next) {
+      if (!styleInitialized || mapController == null) return;
+
+      if (next == null || next.coordinates.isEmpty) {
+        mapController!.setGeoJsonSource("imported_track", {
+          "type": "FeatureCollection",
+          "features": [],
+        });
+        return;
+      }
+
+      mapController!.setGeoJsonSource("imported_track", {
+        "type": "FeatureCollection",
+        "features": [
+          {
+            "type": "Feature",
+            "geometry": {"type": "LineString", "coordinates": next.coordinates},
+          },
+        ],
+      });
+    });
+
     if (_initialCameraTarget == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
@@ -324,6 +347,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
+                      TrackSourceSelectorAppBar(),
                       const GpsAccuracyBars(),
                       const SizedBox(width: 4),
 
@@ -346,6 +370,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                       ),
                     ],
                   ),
+                  ImportGpxButton(mapController: mapController),
                   IconButton(
                     visualDensity: VisualDensity.compact,
                     icon: const Icon(

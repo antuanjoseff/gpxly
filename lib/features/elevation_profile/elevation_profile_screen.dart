@@ -6,6 +6,7 @@ import 'package:gpxly/features/elevation_profile/painters/selection_painter.dart
 import 'package:gpxly/features/elevation_profile/utils/chart_utils.dart';
 import 'package:gpxly/notifiers/elevation_progress_notifier.dart';
 import 'package:gpxly/notifiers/track_notifier.dart';
+import 'package:gpxly/providers/active_track_provider.dart';
 import 'package:gpxly/theme/app_colors.dart';
 import 'package:gpxly/ui/app_messages.dart';
 import 'package:gpxly/utils/distance_utils.dart';
@@ -161,7 +162,8 @@ class _ElevationProfileScreenState
 
   @override
   Widget build(BuildContext context) {
-    final track = ref.watch(trackProvider);
+    final track = ref.watch(activeTrackProvider);
+
     final colors = Theme.of(context).colorScheme;
 
     final altitudes = track.altitudes;

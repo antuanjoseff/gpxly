@@ -95,4 +95,12 @@ class Track {
 
   bool get recording => recordingState == RecordingState.recording;
   bool get paused => recordingState == RecordingState.paused;
+
+  bool get hasElevationData =>
+      altitudes.isNotEmpty || minElevation != 0 || maxElevation != 0;
+
+  bool get hasTimeData =>
+      timestamps.isNotEmpty && timestamps.length == coordinates.length;
+
+  bool get hasAscentDescent => ascent != 0 || descent != 0;
 }
