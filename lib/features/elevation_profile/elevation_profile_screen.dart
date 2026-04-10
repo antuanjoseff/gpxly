@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:gpxly/features/elevation_profile/painters/selection_painter.dart';
 import 'package:gpxly/features/elevation_profile/utils/chart_utils.dart';
+import 'package:gpxly/notifiers/elevation_progress_notifier.dart';
 import 'package:gpxly/notifiers/track_notifier.dart';
 import 'package:gpxly/theme/app_colors.dart';
+import 'package:gpxly/ui/app_messages.dart';
 import 'package:gpxly/utils/distance_utils.dart';
 import 'package:gpxly/utils/decimation_utils.dart';
 import 'models/touch_data.dart';
@@ -190,6 +193,42 @@ class _ElevationProfileScreenState
             children: [
               _buildSegmentStatsBar(altitudes, distances, times),
               const SizedBox(height: 20),
+              // Exemple de botó a la UI
+              IconButton(
+                icon: const Icon(
+                  Icons.auto_fix_high,
+                  color: AppColors.mustardYellow,
+                ),
+                onPressed: () async {
+                  print("debug: Botó clicat!");
+
+                  // 1. Mostrem el diàleg
+                  AppMessages.showElevationProgressDialog(context);
+
+                  try {
+                    // 2. Executem la correcció
+                    await ref
+                        .read(trackProvider.notifier)
+                        .correctTrackAltitudes();
+
+                    // 3. SI TOT VA BÉ: Esperem un moment i tanquem el diàleg
+                    await Future.delayed(const Duration(milliseconds: 800));
+                    if (context.mounted) {
+                      Navigator.of(context, rootNavigator: true).pop();
+                      // Opcional: SnackBar d'èxit
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("Perfil corregit amb èxit"),
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    // 🔥 NO TANQUEM EL DIÀLEG AQUÍ!
+                    // L'error ja s'ha gestionat dins del Notifier i es mostra al diàleg.
+                    print("debug: Error capturat al botó: $e");
+                  }
+                },
+              ),
 
               // HEADER
               // SizedBox(
@@ -208,6 +247,7 @@ class _ElevationProfileScreenState
                     return GestureDetector(
                       behavior: HitTestBehavior.opaque,
                       onLongPressStart: (details) {
+                        HapticFeedback.mediumImpact(); // 📳 Petita vibració
                         final double width = chartConstraints.maxWidth;
                         setState(() {
                           _draggingNeedle = 0;
@@ -363,10 +403,11 @@ class _ElevationProfileScreenState
 
                                 // Posició agulla inici (slider)
                                 startX: selectedIndexStart != null
-                                    ? (distances[selectedIndexStart!] /
-                                                  distances.last) *
-                                              (chartConstraints.maxWidth - 48) +
-                                          24
+                                    ? ChartLogic.indexToX(
+                                        selectedIndexStart!,
+                                        chartConstraints.maxWidth,
+                                        distances,
+                                      )
                                     : null,
                                 startIndex: selectedIndexStart,
 

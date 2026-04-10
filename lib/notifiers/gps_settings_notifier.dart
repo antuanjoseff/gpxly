@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gpxly/services/native_gps_channel.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class GpsSettings {
@@ -75,6 +76,17 @@ class GpsSettingsNotifier extends Notifier<GpsSettings> {
     await prefs.setInt('gps_seconds', state.seconds);
     await prefs.setDouble('gps_meters', state.meters);
     await prefs.setDouble('gps_accuracy', state.accuracy);
+    final settings = ref.read(gpsSettingsProvider);
+    await NativeGpsChannel.start(
+      useTime: settings.useTime,
+      seconds: settings.seconds,
+      meters: settings.meters,
+      accuracy: settings.accuracy,
+    );
+    print(':::GPS settings useTime ${settings.useTime}');
+    print(':::GPS settings seconds ${settings.seconds}');
+    print(':::GPS settings meters ${settings.meters}');
+    print(':::GPS settings accuracy ${settings.accuracy}');
   }
 
   // -----------------------------

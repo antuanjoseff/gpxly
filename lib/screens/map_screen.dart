@@ -2,16 +2,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:gpxly/features/elevation_profile/elevation_profile_screen.dart';
 import 'package:gpxly/models/track.dart';
-import 'package:gpxly/notifiers/gps_settings_notifier.dart';
 import 'package:gpxly/notifiers/track_notifier.dart';
 import 'package:gpxly/notifiers/track_settings_notifier.dart';
 import 'package:gpxly/screens/settings/gps_settings_screen.dart';
 import 'package:gpxly/screens/stats_screen.dart';
-import 'package:gpxly/services/native_gps_channel.dart';
-import 'package:gpxly/services/permissions_service.dart';
+import 'package:gpxly/services/recording_handler.dart';
 import 'package:gpxly/theme/app_colors.dart';
 import 'package:gpxly/ui/app_messages.dart';
 import 'package:gpxly/services/gpx_exporter.dart';
@@ -24,7 +21,6 @@ import 'package:gpxly/widgets/gps_accuracy_bars.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:gpxly/notifiers/gps_accuracy_notifier.dart';
 import 'package:gpxly/notifiers/gps_altitude_notifier.dart';
-
 import 'package:shared_preferences/shared_preferences.dart';
 
 class MapScreen extends ConsumerStatefulWidget {
@@ -46,7 +42,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
   Timer? _cameraMoveDebounce;
   DateTime? _lastBackPress;
-  DateTime? _lastSaveTime;
 
   StreamSubscription<Map<String, dynamic>>? _gpsSub;
 
@@ -623,8 +618,12 @@ class _MapScreenState extends ConsumerState<MapScreen>
                                 RecordingState.idle) ...[
                               Expanded(
                                 child: ElevatedButton.icon(
-                                  onPressed: () {
-                                    _startRecording();
+                                  onPressed: () async {
+                                    await RecordingHandler.start(
+                                      context,
+                                      ref,
+                                      mapController,
+                                    );
                                     setState(() => _isPanelExpanded = false);
                                   },
                                   icon: const Icon(Icons.play_arrow, size: 28),
@@ -657,12 +656,11 @@ class _MapScreenState extends ConsumerState<MapScreen>
                                       borderRadius: BorderRadius.circular(16),
                                     ),
                                   ),
-                                  onPressed: _pauseRecording,
-                                  onLongPress: () {
-                                    // 🔥 Ja no fem servir cap variable
-                                    // Simplement passem a l’estat paused
-                                    _pauseRecording();
+                                  onPressed: () {
+                                    // 🔥 ARA SÍ: Cridem al handler per pausar GPS i Notifier
+                                    RecordingHandler.pause(ref);
                                   },
+
                                   icon: const Icon(Icons.pause),
                                   label: const Text(
                                     "PAUSA",
@@ -694,7 +692,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
                                       borderRadius: BorderRadius.circular(16),
                                     ),
                                   ),
-                                  onPressed: _resumeRecording,
+                                  onPressed: () {
+                                    RecordingHandler.resume(ref);
+                                  },
                                   icon: const Icon(Icons.play_arrow),
                                   label: const Text(
                                     "REPRÈN",
@@ -742,145 +742,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
     );
   }
 
-  // -------------------------
-  // FUNCIONS DE GRAVACIÓ
-  // -------------------------
-  Future<void> _startRecording() async {
-    final notifier = ref.read(trackProvider.notifier);
-
-    // 1. Comprovar servei de localització
-    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      if (!context.mounted) return;
-
-      final activate = await AppMessages.showGpsDisabledDialog(context);
-      if (activate == true) {
-        await Geolocator.openLocationSettings();
-      }
-      return;
-    }
-
-    // 2. Comprovar permisos
-    final continuar = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Permís necessari"),
-        content: const Text(
-          "Per poder gravar la ruta correctament, cal permetre "
-          "l'accés a la ubicació en tot moment.\n\n"
-          "A la pantalla següent, selecciona:\n\n"
-          "👉  \"Permetre sempre\"",
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text("CANCEL·LA"),
-          ),
-          ElevatedButton(
-            style: AppButtons.dialog(Colors.blue), // o el color que vulguis
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text("CONTINUA"),
-          ),
-        ],
-      ),
-    );
-    if (continuar != true) return;
-    final ok = await PermissionsService.ensurePermissions(context);
-    if (!context.mounted || !ok) return;
-
-    // 🔥 NOU DIÀLEG: Explicar que cal seleccionar "Permetre sempre"
-
-    ref.read(trackProvider.notifier).reset();
-    // 3. Primer punt immediat
-    final pos = await Geolocator.getCurrentPosition();
-
-    final correctedAlt = ref
-        .read(trackProvider.notifier)
-        .localAltitudeCorrection(pos.latitude, pos.longitude);
-
-    notifier.addCoordinate(
-      pos.latitude,
-      pos.longitude,
-      pos.accuracy,
-      correctedAlt,
-    );
-
-    // ref.read(gpsAccuracyProvider.notifier).state = pos.accuracy;
-    // ref.read(gpsAltitudeProvider.notifier).state = pos.altitude;
-
-    // 4. Iniciar el listener del TrackNotifier
-    notifier.startRecording(context);
-
-    // 5. Iniciar el servei natiu
-    final settings = ref.read(gpsSettingsProvider);
-    await NativeGpsChannel.start(
-      useTime: settings.useTime,
-      seconds: settings.seconds,
-      meters: settings.meters,
-      accuracy: settings.accuracy,
-    );
-
-    // 6. Centrar el mapa
-    if (mapController != null) {
-      isProgrammaticMove = true;
-      mapController!
-          .animateCamera(
-            CameraUpdate.newLatLng(LatLng(pos.latitude, pos.longitude)),
-          )
-          .then((_) => isProgrammaticMove = false);
-    }
-  }
-
-  Future<void> _pauseRecording() async {
-    final notifier = ref.read(trackProvider.notifier);
-
-    notifier.pauseRecording(); // Només pausa la lògica interna
-    await NativeGpsChannel.stop(); // Atura el servei natiu
-  }
-
-  Future<void> _resumeRecording() async {
-    final notifier = ref.read(trackProvider.notifier);
-
-    notifier.resumeRecording(); // Treu la pausa
-
-    final settings = ref.read(gpsSettingsProvider);
-    await NativeGpsChannel.start(
-      useTime: settings.useTime,
-      seconds: settings.seconds,
-      meters: settings.meters,
-      accuracy: settings.accuracy,
-    );
-  }
-
-  // Future<void> _stopRecording() async {
-  //   final notifier = ref.read(trackProvider.notifier);
-
-  //   notifier.stopRecording();
-  //   await NativeGpsChannel.stop();
-  //   await _gpsSub?.cancel();
-  //   _gpsSub = null;
-
-  //   final export = await AppMessages.showExportDialog(context);
-
-  //   if (export == true) {
-  //     final filename = buildGpxFilename();
-  //     await exportGpx(filename, ref, context);
-  //   }
-  // }
-
-  // // Funció amb filtre de 5 minuts
-  // void _saveLastPosition(double lat, double lon) async {
-  //   final now = DateTime.now();
-
-  //   // Filtre de 5 minuts (300 segons)
-  //   if (_lastSaveTime == null ||
-  //       now.difference(_lastSaveTime!) > const Duration(minutes: 5)) {
-  //     _forceSavePosition(lat, lon);
-  //   }
-  // }
-
   Future<void> _forceSavePosition(double lat, double lon) async {
-    _lastSaveTime = DateTime.now();
     final prefs = await SharedPreferences.getInstance();
 
     // Obtenim l'estat actual del track per guardar l'última telemetria coneguda
@@ -910,24 +772,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
     }
 
     print(">>> Posició i telemetria completa guardada a SharedPreferences");
-  }
-
-  Future<LatLng> _getLastPosition() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    final lat = prefs.getDouble('last_lat') ?? 41.3851;
-    final lon = prefs.getDouble('last_lon') ?? 2.1734;
-
-    // 🔹 Recuperem la resta de valors per si vols inicialitzar els providers de la UI
-    final alt = 0.0;
-    final acc = prefs.getDouble('last_acc') ?? 0.0;
-
-    // Opcional: Podries actualitzar els teus providers de la UI aquí
-    // per evitar que surtin a zero en obrir l'app:
-    ref.read(gpsAltitudeProvider.notifier).state = alt;
-    ref.read(gpsAccuracyProvider.notifier).state = acc;
-
-    return LatLng(lat, lon);
   }
 
   Future<void> _shareTrack() async {

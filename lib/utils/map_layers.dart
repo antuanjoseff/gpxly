@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:gpxly/theme/app_colors.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 
 /// Configura les capes del mapa:
@@ -89,12 +90,32 @@ void updateMapPosition(
 
 /// Crea un cercle blau com a icona del punt de l’usuari
 Future<Uint8List> _createBlueDot() async {
-  const int size = 64;
+  const int size = 120; // Espai suficient per l'ombra
+  const double center = size / 2;
+
   final pictureRecorder = PictureRecorder();
   final canvas = Canvas(pictureRecorder);
-  final paint = Paint()..color = Colors.blue;
 
-  canvas.drawCircle(const Offset(size / 2, size / 2), size / 2, paint);
+  // 1. L'OMBRA (Indispensable perquè el punt no es perdi en zones fosques del mapa)
+  final shadowPaint = Paint()
+    ..color = AppColors.dark.withAlpha(50)
+    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
+  canvas.drawCircle(const Offset(center, center + 3), 32, shadowPaint);
+
+  // 2. EL CERCLE DE REREFONS (Aura de precisió - Opcional)
+  // És aquest cercle blau molt clar que sol envoltar el punt
+  final auraPaint = Paint()..color = AppColors.skyBlue.withAlpha(40);
+  canvas.drawCircle(const Offset(center, center), 55, auraPaint);
+
+  // 3. LA VORA BLANCA (Dona molta claredat visual)
+  final borderPaint = Paint()..color = Colors.white;
+  canvas.drawCircle(const Offset(center, center), 34, borderPaint);
+
+  // 4. EL PUNT PRINCIPAL (Color sòlid)
+  final dotPaint = Paint()
+    ..color = AppColors.skyBlue
+    ..style = PaintingStyle.fill;
+  canvas.drawCircle(const Offset(center, center), 28, dotPaint);
 
   final picture = pictureRecorder.endRecording();
   final img = await picture.toImage(size, size);

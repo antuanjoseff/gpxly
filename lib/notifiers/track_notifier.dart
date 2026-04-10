@@ -1,14 +1,16 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:gpxly/notifiers/elevation_progress_notifier.dart';
 import 'package:gpxly/notifiers/gps_accuracy_notifier.dart';
 import 'package:gpxly/notifiers/gps_altitude_notifier.dart';
-import 'package:gpxly/notifiers/gps_speed_notifier.dart';
-import 'package:gpxly/notifiers/gps_bearing_notifier.dart';
-
+import 'package:gpxly/services/elevations_api_conf.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/track.dart';
 import '../services/native_gps_channel.dart';
+import 'package:http/http.dart' as http;
 
 class TrackNotifier extends Notifier<Track> {
   Timer? _timer;
@@ -112,25 +114,10 @@ class TrackNotifier extends Notifier<Track> {
   }
 
   void addPointFromPosition(Position pos, [int sat_used = 0]) {
-    print("""
->>> GPS DATA RECEIVED:
->>> lat: ${pos.latitude}
->>> lon: ${pos.longitude}
->>> accuracy: ${pos.accuracy}
->>> altitude: ${pos.altitude}
->>> speed: ${pos.speed}
->>> heading: ${pos.heading}
->>> timestamp: ${pos.timestamp}
->>> sat_used: $sat_used
->>> vAccuracy: ${pos.altitudeAccuracy}
->>> sAccuracy: ${pos.speedAccuracy}
->>> hAccuracy: ${pos.headingAccuracy}
-    """);
-
+    // 1. Actualitzem els micro-providers (opcional si la UI ja escolta Track)
     ref.read(gpsAccuracyProvider.notifier).update(pos.accuracy);
     ref.read(gpsAltitudeProvider.notifier).update(pos.altitude);
-    ref.read(gpsSpeedProvider.notifier).update(pos.speed);
-    ref.read(gpsBearingProvider.notifier).update(pos.heading);
+    // ... resta de ref.reads ...
 
     double newDistance = state.distance;
     double newAscent = state.ascent;
@@ -139,7 +126,7 @@ class TrackNotifier extends Notifier<Track> {
     double newMin = state.minElevation;
 
     if (state.coordinates.isNotEmpty) {
-      final lastCoords = state.coordinates.last; // [lon, lat]
+      final lastCoords = state.coordinates.last;
       final lastAlt = state.altitudes.last;
 
       newDistance += Geolocator.distanceBetween(
@@ -150,21 +137,19 @@ class TrackNotifier extends Notifier<Track> {
       );
 
       final double diffAlt = pos.altitude - lastAlt;
-      if (diffAlt > 0) {
+      // ⛰️ Filtre de soroll: només sumem si el canvi és > 0.5 metres
+      if (diffAlt > 0.5) {
         newAscent += diffAlt;
-      } else if (diffAlt < 0) {
+      } else if (diffAlt < -0.5) {
         newDescent += diffAlt.abs();
       }
     }
 
-    if (state.altitudes.isEmpty) {
-      newMax = pos.altitude;
-      newMin = pos.altitude;
-    } else {
-      if (pos.altitude > newMax) newMax = pos.altitude;
-      if (pos.altitude < newMin) newMin = pos.altitude;
-    }
+    // 📈 Actualitzem límits d'elevació
+    if (state.altitudes.isEmpty || pos.altitude > newMax) newMax = pos.altitude;
+    if (state.altitudes.isEmpty || pos.altitude < newMin) newMin = pos.altitude;
 
+    // 🚀 Actualitzem l'estat
     state = state.copyWith(
       coordinates: [
         ...state.coordinates,
@@ -183,6 +168,73 @@ class TrackNotifier extends Notifier<Track> {
       maxElevation: newMax,
       minElevation: newMin,
     );
+
+    // 💾 Auto-save cada 10 punts (Ara centralitzat aquí!)
+    if (state.coordinates.length % 10 == 0) {
+      _autoSaveToPrefs();
+    }
+  }
+
+  Future<void> _autoSaveToPrefs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final String rawData = jsonEncode({
+        'coordinates': state.coordinates,
+        'altitudes': state.altitudes,
+        'timestamps': state.timestamps.map((t) => t.toIso8601String()).toList(),
+        'accuracies': state.accuracies,
+        'speeds': state.speeds,
+        'headings': state.headings,
+        'satellites': state.satellites,
+        'vAccuracies': state.vAccuracies,
+        'recordingState': state.recordingState.index, // Guardem l'estat
+        'duration': state.duration.inSeconds,
+        'distance': state.distance,
+        'ascent': state.ascent,
+        'descent': state.descent,
+      });
+      await prefs.setString('temp_track_data', rawData);
+    } catch (e) {
+      debugPrint("Error en l'auto-save: $e");
+    }
+  }
+
+  Future<void> loadFromCache() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final String? rawData = prefs.getString('temp_track_data');
+      if (rawData == null) return;
+
+      final Map<String, dynamic> data = jsonDecode(rawData);
+
+      state = Track(
+        coordinates: (data['coordinates'] as List)
+            .map((e) => List<double>.from(e))
+            .toList(),
+        altitudes: List<double>.from(data['altitudes']),
+        timestamps: (data['timestamps'] as List)
+            .map((e) => DateTime.parse(e))
+            .toList(),
+        accuracies: List<double>.from(data['accuracies']),
+        speeds: List<double>.from(data['speeds']),
+        headings: List<double>.from(data['headings']),
+        satellites: List<int>.from(data['satellites']),
+        vAccuracies: List<double>.from(data['vAccuracies']),
+        recordingState: RecordingState.values[data['recordingState'] ?? 0],
+        duration: Duration(seconds: data['duration'] ?? 0),
+        distance: data['distance'] ?? 0.0,
+        ascent: data['ascent'] ?? 0.0,
+        descent: data['descent'] ?? 0.0,
+        maxElevation: (data['altitudes'] as List).cast<double>().reduce(
+          (a, b) => a > b ? a : b,
+        ),
+        minElevation: (data['altitudes'] as List).cast<double>().reduce(
+          (a, b) => a < b ? a : b,
+        ),
+      );
+    } catch (e) {
+      debugPrint("Error carregant el cache: $e");
+    }
   }
 
   void addCoordinate(
@@ -210,7 +262,17 @@ class TrackNotifier extends Notifier<Track> {
     );
   }
 
+  Future<void> clearCache() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('temp_track_data');
+  }
+
   void reset() {
+    _timer?.cancel();
+    _timer = null;
+    _subscription?.cancel();
+    _subscription = null;
+
     state = Track(
       coordinates: [],
       altitudes: [],
@@ -228,12 +290,196 @@ class TrackNotifier extends Notifier<Track> {
       maxElevation: -9999.0,
       minElevation: 9999.0,
     );
+    clearCache();
   }
 
   double localAltitudeCorrection(double lat, double lon) {
     if (lat >= 40.0 && lat <= 43.0 && lon >= -1.0 && lon <= 4.0) return 50.0;
     if (lat >= 38.0 && lat < 40.0 && lon >= -1.5 && lon <= 1.5) return 48.0;
     return 0.0;
+  }
+
+  // Future<void> correctTrackAltitudes() async {
+  //   final progressNotifier = ref.read(elevationProgressProvider.notifier);
+
+  //   print("debug: Iniciant correcció per a ${state.coordinates.length} punts");
+
+  //   if (state.coordinates.isEmpty) {
+  //     progressNotifier.setError("No hi ha dades per corregir");
+  //     return;
+  //   }
+
+  //   final List<List<double>> allCoords = state.coordinates;
+  //   final List<double> correctedAltitudes = [];
+
+  //   // 1. Resetegem l'estat del progrés al començar
+  //   progressNotifier.reset();
+
+  //   try {
+  //     for (int i = 0; i < allCoords.length; i += ApiConfig.elevationBatchSize) {
+  //       final end = (i + ApiConfig.elevationBatchSize < allCoords.length)
+  //           ? i + ApiConfig.elevationBatchSize
+  //           : allCoords.length;
+
+  //       final segment = allCoords.sublist(i, end);
+
+  //       // Open-Elevation format: c[1] és lat, c[0] és lon (segons el teu model [lon, lat])
+  //       final locations = segment
+  //           .map((c) => {"latitude": c[1], "longitude": c[0]})
+  //           .toList();
+
+  //       final response = await http
+  //           .post(
+  //             Uri.parse(ApiConfig.elevationApiUrl),
+  //             headers: {"Content-Type": "application/json"},
+  //             body: jsonEncode({"locations": locations}),
+  //           )
+  //           .timeout(const Duration(seconds: 15));
+
+  //       if (response.statusCode == 200) {
+  //         final data = jsonDecode(response.body);
+  //         final results = data['results'] as List;
+
+  //         correctedAltitudes.addAll(
+  //           results.map((r) => (r['elevation'] as num).toDouble()),
+  //         );
+
+  //         // 2. Actualitzem el progrés (0.0 a 1.0)
+  //         final progress = correctedAltitudes.length / allCoords.length;
+  //         progressNotifier.update(progress);
+  //       } else {
+  //         // Si l'API respon però amb error (ex: 500, 404)
+  //         progressNotifier.setError(
+  //           "Error del servidor (Codi: ${response.statusCode})",
+  //         );
+  //         throw Exception("Error API: ${response.statusCode}");
+  //       }
+
+  //       // Petit respir per no saturar l'API i permetre que la UI respiri
+  //       await Future.delayed(const Duration(milliseconds: 100));
+  //     }
+
+  //     // 3. Verificació final i càlcul d'estadístiques
+  //     if (correctedAltitudes.length == allCoords.length) {
+  //       double newAscent = 0;
+  //       double newDescent = 0;
+  //       for (int i = 0; i < correctedAltitudes.length - 1; i++) {
+  //         double diff = correctedAltitudes[i + 1] - correctedAltitudes[i];
+  //         if (diff > 0.5)
+  //           newAscent += diff;
+  //         else if (diff < -0.5)
+  //           newDescent += diff.abs();
+  //       }
+
+  //       // 4. Actualitzem l'estat del Track amb les dades netes
+  //       state = state.copyWith(
+  //         altitudes: correctedAltitudes,
+  //         ascent: newAscent,
+  //         descent: newDescent,
+  //         maxElevation: correctedAltitudes.reduce((a, b) => a > b ? a : b),
+  //         minElevation: correctedAltitudes.reduce((a, b) => a < b ? a : b),
+  //       );
+
+  //       // 🔥 Forcem el 100% visual abans de tancar
+  //       progressNotifier.update(1.0);
+
+  //       await _autoSaveToPrefs();
+  //     }
+  //   } catch (e) {
+  //     debugPrint("debug: Error corregint altituds: $e");
+
+  //     // 5. Informem de l'error al Notifier perquè el diàleg el mostri
+  //     String errorMsg = "Error de connexió. Revisa internet.";
+  //     if (e.toString().contains("TimeoutException")) {
+  //       errorMsg = "El servidor triga massa a respondre.";
+  //     }
+  //     progressNotifier.setError(errorMsg);
+
+  //     rethrow; // Re-llancem l'error per al 'catch' del botó a la UI
+  //   }
+  // }
+
+  Future<void> correctTrackAltitudes() async {
+    final progressNotifier = ref.read(elevationProgressProvider.notifier);
+    if (state.coordinates.isEmpty) return;
+
+    final allCoords = state.coordinates;
+    final List<double> correctedAltitudes = [];
+    progressNotifier.reset();
+
+    try {
+      for (int i = 0; i < allCoords.length; i += ApiConfig.elevationBatchSize) {
+        final end = (i + ApiConfig.elevationBatchSize < allCoords.length)
+            ? i + ApiConfig.elevationBatchSize
+            : allCoords.length;
+
+        final segment = allCoords.sublist(i, end);
+
+        // 1. Preparem les cadenes de text (c[1] lat, c[0] lon)
+        final String lats = segment.map((c) => c[1].toString()).join(",");
+        final String lons = segment.map((c) => c[0].toString()).join(",");
+
+        // 2. CONSTRUCCIÓ SEGURA (Uri.https gestiona el protocol i les barres)
+        final url = Uri.https(
+          ApiConfig.elevationApiHost,
+          ApiConfig.elevationApiPath,
+          {'latitude': lats, 'longitude': lons},
+        );
+
+        try {
+          final response = await http
+              .get(url)
+              .timeout(const Duration(seconds: 10));
+
+          if (response.statusCode == 200) {
+            final Map<String, dynamic> data = jsonDecode(response.body);
+
+            if (data.containsKey('elevation')) {
+              final List<dynamic> elevations = data['elevation'];
+              correctedAltitudes.addAll(
+                elevations.map((e) => (e as num).toDouble()),
+              );
+            }
+
+            final progress = correctedAltitudes.length / allCoords.length;
+            progressNotifier.update(progress);
+          } else {
+            throw Exception("Status ${response.statusCode}");
+          }
+        } catch (e) {
+          rethrow;
+        }
+      }
+
+      // --- FINALITZACIÓ ---
+      if (correctedAltitudes.length == allCoords.length) {
+        double newAscent = 0;
+        double newDescent = 0;
+
+        for (int i = 0; i < correctedAltitudes.length - 1; i++) {
+          double diff = correctedAltitudes[i + 1] - correctedAltitudes[i];
+          if (diff > 0.5) {
+            newAscent += diff;
+          } else if (diff < -0.5) {
+            newDescent += diff.abs();
+          }
+        }
+
+        state = state.copyWith(
+          altitudes: correctedAltitudes,
+          ascent: newAscent,
+          descent: newDescent,
+          maxElevation: correctedAltitudes.reduce((a, b) => a > b ? a : b),
+          minElevation: correctedAltitudes.reduce((a, b) => a < b ? a : b),
+        );
+
+        progressNotifier.update(1.0);
+        await _autoSaveToPrefs();
+      }
+    } catch (e, stackTrace) {
+      progressNotifier.setError("Error: $e");
+      rethrow;
+    }
   }
 }
 
