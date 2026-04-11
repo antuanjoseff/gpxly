@@ -64,7 +64,7 @@ class RecordingHandler {
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission != LocationPermission.always) {
       if (!context.mounted) return;
-      final continuar = await _showPermissionExplanation(context);
+      final continuar = await AppMessages.showPermissionExplanation(context);
       if (continuar != true) return;
 
       final ok = await PermissionsService.ensurePermissions(context);
@@ -135,29 +135,5 @@ class RecordingHandler {
     final notifier = ref.read(trackProvider.notifier);
     await notifier.stopRecording();
     await notifier.clearCache(); // Molt important esborrar el cache en acabar
-  }
-
-  // DIÀLEG PRIVAT D'EXPLICACIÓ DE PERMISOS
-  static Future<bool?> _showPermissionExplanation(BuildContext context) {
-    return showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Permís necessari"),
-        content: const Text(
-          "Per poder gravar la ruta correctament amb la pantalla apagada, "
-          "cal seleccionar: 👉 \"Permetre sempre\".",
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text("CANCEL·LA"),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text("CONTINUA"),
-          ),
-        ],
-      ),
-    );
   }
 }

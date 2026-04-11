@@ -20,10 +20,8 @@ import 'package:gpxly/utils/map_layers.dart';
 import 'package:gpxly/widgets/floating_route_panel.dart';
 import 'package:gpxly/widgets/gps_accuracy_bars.dart';
 import 'package:gpxly/widgets/import_gpx_button.dart';
-import 'package:gpxly/widgets/track_selector_button.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:gpxly/notifiers/gps_accuracy_notifier.dart';
-import 'package:gpxly/notifiers/gps_altitude_notifier.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class MapScreen extends ConsumerStatefulWidget {
@@ -347,7 +345,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      TrackSourceSelectorAppBar(),
                       const GpsAccuracyBars(),
                       const SizedBox(width: 4),
 

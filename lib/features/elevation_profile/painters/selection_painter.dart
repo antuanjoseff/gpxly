@@ -1,24 +1,31 @@
 import 'package:flutter/material.dart';
 
 class SelectionPainter extends CustomPainter {
+  // Agulla principal
   final double? graphX;
   final int? graphIndex;
 
+  // Rang
   final double? startX;
   final int? startIndex;
-
   final double? endX;
   final int? endIndex;
 
+  // Track primari
   final List<double> distances;
   final List<double> altitudes;
 
+  // Track secundari
+  final List<double>? secondaryDistances;
+  final List<double>? secondaryAltitudes;
+
+  // Colors
   final Color graphNeedleColor;
   final Color sliderStartNeedleColor;
   final Color sliderEndNeedleColor;
+  final Color? secondaryGraphNeedleColor;
 
-  static const double horizontalPadding = 24.0;
-  static const double bottomReserved = 40.0; // com els bottomTitles
+  static const double bottomReserved = 40.0;
   static const double dotRadius = 5.0;
 
   SelectionPainter({
@@ -33,63 +40,57 @@ class SelectionPainter extends CustomPainter {
     required this.graphNeedleColor,
     required this.sliderStartNeedleColor,
     required this.sliderEndNeedleColor,
+    this.secondaryDistances,
+    this.secondaryAltitudes,
+    this.secondaryGraphNeedleColor,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
     if (distances.isEmpty || altitudes.isEmpty) return;
 
-    // Alçada útil del gràfic (coherent amb FLChart + bottomTitles 40)
     final chartHeight = size.height - bottomReserved;
     final xAxisY = chartHeight;
 
-    // 1. Busquem els valors reals
-    final double actualMinAlt = altitudes.reduce((a, b) => a < b ? a : b);
-    final double actualMaxAlt = altitudes.reduce((a, b) => a > b ? a : b);
+    // Rang vertical combinat
+    final List<double> allAlts = [
+      ...altitudes,
+      if (secondaryAltitudes != null) ...secondaryAltitudes!,
+    ];
 
-    // 2. Calculem la diferència real
-    double diff = actualMaxAlt - actualMinAlt;
+    final double minAlt = allAlts.reduce((a, b) => a < b ? a : b);
+    final double maxAlt = allAlts.reduce((a, b) => a > b ? a : b);
 
-    // 3. 🔥 EL CANVI CLAU: Establim un rang mínim de seguretat
-    // Si la diferència és menor a 50m, forcem que el rang de treball sigui 50.
-    // Això farà que les petites variacions GPS semblin gairebé planes.
+    double diff = maxAlt - minAlt;
     double effectiveRange = diff < 50 ? 50 : diff;
 
-    // 4. Calculem el minY i maxY basant-nos en aquest rang efectiu
-    // Si el terreny és molt planer, centrem el rang perquè la línia quedi al mig
-    final double minY = actualMinAlt - (effectiveRange * 0.1);
-    final double maxY =
-        minY +
-        (effectiveRange * 1.2); // 1.2 per donar el 10% de marge dalt i baix
+    final double minY = minAlt - (effectiveRange * 0.1);
+    final double maxY = minY + (effectiveRange * 1.2);
     final double yRange = maxY - minY;
 
     bool showRangeText = true;
     if (startX != null && endX != null) {
-      // Si estan a menys de 60 píxels, no mostrem el text sobre el gràfic
-      // perquè ja el veurem a la barra de dades de sota.
       if ((endX! - startX!).abs() < 60) {
         showRangeText = false;
       }
     }
 
-    // AGULLA DE DRAG SIMPLE (Sempre amb text)
+    // --- AGULLA PRINCIPAL ---
     if (graphX != null && graphIndex != null) {
-      _paintNeedle(
-        canvas,
-        graphX!,
-        graphIndex!,
-        graphNeedleColor,
-        minY,
-        yRange,
-        chartHeight,
-        xAxisY,
-        showText: true,
+      _paintMainNeedle(
+        canvas: canvas,
+        x: graphX!,
+        index: graphIndex!,
+        minY: minY,
+        yRange: yRange,
+        chartHeight: chartHeight,
+        xAxisY: xAxisY,
       );
     }
 
-    // AGULLA INICI RANG
+    // --- AGULLA INICI RANG ---
     if (startX != null && startIndex != null) {
-      _paintNeedle(
+      _paintRangeNeedle(
         canvas,
         startX!,
         startIndex!,
@@ -102,9 +103,9 @@ class SelectionPainter extends CustomPainter {
       );
     }
 
-    // AGULLA FINAL RANG
+    // --- AGULLA FINAL RANG ---
     if (endX != null && endIndex != null) {
-      _paintNeedle(
+      _paintRangeNeedle(
         canvas,
         endX!,
         endIndex!,
@@ -118,46 +119,67 @@ class SelectionPainter extends CustomPainter {
     }
   }
 
-  // void _paintNeedle(
-  //   Canvas canvas,
-  //   double x,
-  //   int index,
-  //   Color color,
-  //   double minY,
-  //   double yRange,
-  //   double chartHeight,
-  //   double xAxisY,
-  // ) {
-  //   if (index < 0 || index >= altitudes.length) return;
+  // ------------------------------------------------------------
+  //  AGULLA PRINCIPAL: UNA LÍNIA + DUES RODONES
+  // ------------------------------------------------------------
+  void _paintMainNeedle({
+    required Canvas canvas,
+    required double x,
+    required int index,
+    required double minY,
+    required double yRange,
+    required double chartHeight,
+    required double xAxisY,
+  }) {
+    if (index < 0 || index >= altitudes.length) return;
 
-  //   final alt = altitudes[index];
+    final double dist = distances[index];
+    final double altPrimary = altitudes[index];
 
-  //   // 🔥 CANVI CLAU: Normalització exacta
-  //   // Multipliquem l'altitud per l'alçada real del gràfic
-  //   final double relativePos = (alt - minY) / yRange;
-  //   final double dy = chartHeight - (relativePos * chartHeight);
+    final double relPrimary = (altPrimary - minY) / yRange;
+    final double dyPrimary = chartHeight - (relPrimary * chartHeight);
 
-  //   final linePaint = Paint()
-  //     ..color = color.withAlpha(180)
-  //     ..strokeWidth = 2;
+    // Línia vertical comuna
+    final linePaint = Paint()
+      ..color = graphNeedleColor.withAlpha(150)
+      ..strokeWidth = 2;
+    canvas.drawLine(Offset(x, xAxisY), Offset(x, dyPrimary), linePaint);
 
-  //   final dotPaint = Paint()
-  //     ..color = color
-  //     ..style = PaintingStyle.fill;
+    // Rodona primària
+    final dotPaintPrimary = Paint()..color = graphNeedleColor;
+    final dotBorderPaint = Paint()
+      ..color = Colors.white
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke;
 
-  //   final dotBorderPaint = Paint()
-  //     ..color = Colors.white
-  //     ..strokeWidth = 2
-  //     ..style = PaintingStyle.stroke;
+    canvas.drawCircle(Offset(x, dyPrimary), dotRadius, dotPaintPrimary);
+    canvas.drawCircle(Offset(x, dyPrimary), dotRadius, dotBorderPaint);
 
-  //   canvas.drawLine(Offset(x, xAxisY), Offset(x, dy), linePaint);
+    // Rodona secundària (si existeix i té dades)
+    if (secondaryDistances != null &&
+        secondaryAltitudes != null &&
+        secondaryGraphNeedleColor != null) {
+      final double? altSecondary = _interpolateAltitude(
+        secondaryDistances!,
+        secondaryAltitudes!,
+        dist,
+      );
 
-  //   // El cercle exactament al final de la línia (dy)
-  //   canvas.drawCircle(Offset(x, dy), dotRadius, dotPaint);
-  //   canvas.drawCircle(Offset(x, dy), dotRadius, dotBorderPaint);
-  // }
+      if (altSecondary != null) {
+        final double relSec = (altSecondary - minY) / yRange;
+        final double dySec = chartHeight - (relSec * chartHeight);
 
-  void _paintNeedle(
+        final dotPaintSecondary = Paint()..color = secondaryGraphNeedleColor!;
+        canvas.drawCircle(Offset(x, dySec), dotRadius, dotPaintSecondary);
+        canvas.drawCircle(Offset(x, dySec), dotRadius, dotBorderPaint);
+      }
+    }
+  }
+
+  // ------------------------------------------------------------
+  //  AGULLES DE RANG (només track primari)
+  // ------------------------------------------------------------
+  void _paintRangeNeedle(
     Canvas canvas,
     double x,
     int index,
@@ -173,19 +195,18 @@ class SelectionPainter extends CustomPainter {
     final alt = altitudes[index];
     final dist = distances[index];
 
-    final double relativePos = (alt - minY) / yRange;
-    final double dy = chartHeight - (relativePos * chartHeight);
+    final double rel = (alt - minY) / yRange;
+    final double dy = chartHeight - (rel * chartHeight);
 
-    // 1. Dibuixar la línia vertical (Sempre es dibuixa)
     final linePaint = Paint()
       ..color = color.withAlpha(150)
       ..strokeWidth = 2;
     canvas.drawLine(Offset(x, xAxisY), Offset(x, dy), linePaint);
 
-    // 2. Dibuixar l'etiqueta de text (NOMÉS si showText és true)
     if (showText) {
       final String text =
           "${alt.toStringAsFixed(0)}m\n${dist.toStringAsFixed(1)}km";
+
       final textSpan = TextSpan(
         text: text,
         style: const TextStyle(
@@ -204,20 +225,19 @@ class SelectionPainter extends CustomPainter {
 
       final rectW = textPainter.width + 12;
       final rectH = textPainter.height + 8;
-      final rectX = x - (rectW / 2);
+      final rectX = x - rectW / 2;
       final rectY = dy - rectH - 12;
 
-      final backgroundPaint = Paint()..color = color.withAlpha(230);
+      final bgPaint = Paint()..color = color.withAlpha(230);
       final rRect = RRect.fromRectAndRadius(
         Rect.fromLTWH(rectX, rectY, rectW, rectH),
         const Radius.circular(6),
       );
 
-      canvas.drawRRect(rRect, backgroundPaint);
+      canvas.drawRRect(rRect, bgPaint);
       textPainter.paint(canvas, Offset(rectX + 6, rectY + 4));
     }
 
-    // 3. Dibuixar el punt (Sempre es dibuixa)
     final dotPaint = Paint()..color = color;
     final dotBorderPaint = Paint()
       ..color = Colors.white
@@ -226,6 +246,32 @@ class SelectionPainter extends CustomPainter {
 
     canvas.drawCircle(Offset(x, dy), dotRadius, dotPaint);
     canvas.drawCircle(Offset(x, dy), dotRadius, dotBorderPaint);
+  }
+
+  // ------------------------------------------------------------
+  //  INTERPOLACIÓ ALTITUD TRACK SECUNDARI
+  // ------------------------------------------------------------
+  double? _interpolateAltitude(
+    List<double> dists,
+    List<double> alts,
+    double target,
+  ) {
+    if (target < dists.first || target > dists.last) return null;
+
+    int i = 0;
+    while (i < dists.length - 1 && dists[i + 1] < target) {
+      i++;
+    }
+
+    final d1 = dists[i];
+    final d2 = dists[i + 1];
+    final a1 = alts[i];
+    final a2 = alts[i + 1];
+
+    if ((d2 - d1).abs() < 0.0001) return a1;
+
+    final t = (target - d1) / (d2 - d1);
+    return a1 + (a2 - a1) * t;
   }
 
   @override
@@ -238,8 +284,11 @@ class SelectionPainter extends CustomPainter {
         old.endIndex != endIndex ||
         old.distances != distances ||
         old.altitudes != altitudes ||
+        old.secondaryDistances != secondaryDistances ||
+        old.secondaryAltitudes != secondaryAltitudes ||
         old.graphNeedleColor != graphNeedleColor ||
         old.sliderStartNeedleColor != sliderStartNeedleColor ||
-        old.sliderEndNeedleColor != sliderEndNeedleColor;
+        old.sliderEndNeedleColor != sliderEndNeedleColor ||
+        old.secondaryGraphNeedleColor != secondaryGraphNeedleColor;
   }
 }

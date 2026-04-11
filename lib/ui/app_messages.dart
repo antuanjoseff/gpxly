@@ -308,4 +308,29 @@ class AppMessages {
       ),
     );
   }
+
+  // DIÀLEG PRIVAT D'EXPLICACIÓ DE PERMISOS
+  static Future<bool?> showPermissionExplanation(BuildContext context) {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Permís necessari"),
+        content: const Text(
+          "Per poder gravar la ruta correctament amb la pantalla apagada, "
+          "cal seleccionar: 👉 \"Permetre sempre\".",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("CANCEL·LA"),
+          ),
+          ElevatedButton(
+            style: _buttonStyle(AppColors.skyBlue),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("CONTINUA"),
+          ),
+        ],
+      ),
+    );
+  }
 }

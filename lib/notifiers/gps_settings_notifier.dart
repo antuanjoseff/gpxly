@@ -67,7 +67,7 @@ class GpsSettingsNotifier extends Notifier<GpsSettings> {
   }
 
   // -----------------------------
-  // SAVE
+  // SAVE (només guarda, NO envia al nadiu)
   // -----------------------------
   Future<void> _saveToPrefs() async {
     final prefs = await SharedPreferences.getInstance();
@@ -76,21 +76,10 @@ class GpsSettingsNotifier extends Notifier<GpsSettings> {
     await prefs.setInt('gps_seconds', state.seconds);
     await prefs.setDouble('gps_meters', state.meters);
     await prefs.setDouble('gps_accuracy', state.accuracy);
-    final settings = ref.read(gpsSettingsProvider);
-    await NativeGpsChannel.start(
-      useTime: settings.useTime,
-      seconds: settings.seconds,
-      meters: settings.meters,
-      accuracy: settings.accuracy,
-    );
-    print(':::GPS settings useTime ${settings.useTime}');
-    print(':::GPS settings seconds ${settings.seconds}');
-    print(':::GPS settings meters ${settings.meters}');
-    print(':::GPS settings accuracy ${settings.accuracy}');
   }
 
   // -----------------------------
-  // UPDATE METHODS
+  // UPDATE METHODS (només estat + prefs)
   // -----------------------------
   void setUseTime(bool value) {
     if (value) {
@@ -116,8 +105,18 @@ class GpsSettingsNotifier extends Notifier<GpsSettings> {
     _saveToPrefs();
   }
 
-  void apply() {
-    _saveToPrefs();
+  // -----------------------------
+  // APPLY (l’únic que envia al nadiu)
+  // -----------------------------
+  Future<void> apply() async {
+    await _saveToPrefs();
+
+    await NativeGpsChannel.start(
+      useTime: state.useTime,
+      seconds: state.seconds,
+      meters: state.meters,
+      accuracy: state.accuracy,
+    );
   }
 }
 
