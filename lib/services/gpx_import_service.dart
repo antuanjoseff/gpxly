@@ -1,5 +1,6 @@
 import 'package:gpx/gpx.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gpxly/utils/calculations.dart';
 import 'package:gpxly/utils/geo_utils.dart';
 import '../models/track.dart';
 import '../notifiers/imported_track_notifier.dart';
@@ -43,13 +44,8 @@ class GpxImportService {
     }
 
     // Calcular desnivells
-    double ascent = 0.0;
-    double descent = 0.0;
-    for (int i = 1; i < alts.length; i++) {
-      final diff = alts[i] - alts[i - 1];
-      if (diff > 0) ascent += diff;
-      if (diff < 0) descent += diff.abs();
-    }
+    final ascent = computeAscent(alts);
+    final descent = computeDescent(alts);
 
     final imported = Track(
       coordinates: coords,

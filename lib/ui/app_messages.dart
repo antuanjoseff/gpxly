@@ -333,4 +333,15 @@ class AppMessages {
       ),
     );
   }
+
+  static void showLongPressHint(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text("Mantén premut per finalitzar la gravació"),
+        backgroundColor: Colors.orange.shade700,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
 }

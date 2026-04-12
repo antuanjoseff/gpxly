@@ -17,24 +17,68 @@ class RecordingHandler {
     MapLibreMapController? mapController,
   ) async {
     final notifier = ref.read(trackProvider.notifier);
-
-    // 1. COMPROVAR CACHE (RECUPERACIÓ)
     final prefs = await SharedPreferences.getInstance();
+
+    // ───────────────────────────────────────────────
+    // 0. COMPROVAR SI L'USUARI VOL PRESERVAR EL TRACK
+    // ───────────────────────────────────────────────
+    final preserve = prefs.getBool("preserve_track_on_start") ?? false;
+
+    if (preserve) {
+      // Consumim el flag
+      prefs.setBool("preserve_track_on_start", false);
+
+      HapticFeedback.mediumImpact();
+
+      // 0.1 Afegir primer punt inicial (igual que en flux normal)
+      final pos = await Geolocator.getCurrentPosition();
+      final correctedAlt = notifier.localAltitudeCorrection(
+        pos.latitude,
+        pos.longitude,
+      );
+
+      notifier.addCoordinate(
+        pos.latitude,
+        pos.longitude,
+        pos.accuracy,
+        correctedAlt,
+      );
+
+      // 0.2 Iniciar gravació
+      notifier.startRecording(context);
+
+      // 0.3 Engegar GPS natiu
+      final settings = ref.read(gpsSettingsProvider);
+      await NativeGpsChannel.start(
+        useTime: settings.useTime,
+        seconds: settings.seconds,
+        meters: settings.meters,
+        accuracy: settings.accuracy,
+      );
+
+      // 0.4 Centrar mapa
+      if (mapController != null) {
+        mapController.animateCamera(
+          CameraUpdate.newLatLng(LatLng(pos.latitude, pos.longitude)),
+        );
+      }
+
+      return;
+    }
+
+    // ───────────────────────────────────────────────
+    // 1. COMPROVAR CACHE (RECUPERACIÓ NORMAL)
+    // ───────────────────────────────────────────────
     if (prefs.containsKey('temp_track_data')) {
       if (!context.mounted) return;
 
-      // Mostrem diàleg de recuperació des de AppMessages
       final recuperar = await AppMessages.showRecoverTrackDialog(context);
 
       if (recuperar == true) {
-        // 1. Carreguem les llistes de punts a la memòria
         await notifier.loadFromCache();
 
-        // 2. 🔥 CLAU: Engeguem el Listener del GPS i el Timer del cronòmetre
-        // Sense això, encara que el GPS natiu enviï dades, el Notifier no les "escolta"
         await notifier.startRecording(context);
 
-        // 3. Engeguem el servei natiu (Kotlin/Swift)
         final settings = ref.read(gpsSettingsProvider);
         await NativeGpsChannel.start(
           useTime: settings.useTime,
@@ -45,13 +89,14 @@ class RecordingHandler {
 
         return;
       } else {
-        // L'usuari vol una de nova: netegem tot
         await notifier.clearCache();
         notifier.reset();
       }
     }
 
+    // ───────────────────────────────────────────────
     // 2. COMPROVAR SERVEI GPS
+    // ───────────────────────────────────────────────
     final serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       if (!context.mounted) return;
@@ -60,7 +105,9 @@ class RecordingHandler {
       return;
     }
 
+    // ───────────────────────────────────────────────
     // 3. COMPROVAR PERMISOS "SEMPRE"
+    // ───────────────────────────────────────────────
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission != LocationPermission.always) {
       if (!context.mounted) return;
@@ -71,8 +118,10 @@ class RecordingHandler {
       if (!context.mounted || !ok) return;
     }
 
-    // 4. INICIALITZAR DADES I POSICIÓ INICIAL
-    HapticFeedback.mediumImpact(); // Vibració de confirmació
+    // ───────────────────────────────────────────────
+    // 4. INICIALITZAR DADES I POSICIÓ INICIAL (FLUX NORMAL)
+    // ───────────────────────────────────────────────
+    HapticFeedback.mediumImpact();
     notifier.reset();
 
     final pos = await Geolocator.getCurrentPosition();
@@ -88,8 +137,11 @@ class RecordingHandler {
       correctedAlt,
     );
 
+    // ───────────────────────────────────────────────
     // 5. INICIAR GRAVACIÓ I SERVEIS NATIUS
+    // ───────────────────────────────────────────────
     notifier.startRecording(context);
+
     final settings = ref.read(gpsSettingsProvider);
     await NativeGpsChannel.start(
       useTime: settings.useTime,
@@ -98,7 +150,9 @@ class RecordingHandler {
       accuracy: settings.accuracy,
     );
 
+    // ───────────────────────────────────────────────
     // 6. MOURE EL MAPA
+    // ───────────────────────────────────────────────
     if (mapController != null) {
       mapController.animateCamera(
         CameraUpdate.newLatLng(LatLng(pos.latitude, pos.longitude)),
@@ -134,6 +188,6 @@ class RecordingHandler {
     HapticFeedback.heavyImpact();
     final notifier = ref.read(trackProvider.notifier);
     await notifier.stopRecording();
-    await notifier.clearCache(); // Molt important esborrar el cache en acabar
+    await notifier.clearCache();
   }
 }

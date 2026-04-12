@@ -14,7 +14,6 @@ import 'package:gpxly/theme/app_colors.dart';
 import 'package:gpxly/ui/app_messages.dart';
 import 'package:gpxly/services/gpx_exporter.dart';
 import 'package:gpxly/ui/app_styles.dart';
-import 'package:gpxly/ui/bottom_bar/bottom_bar_container.dart';
 import 'package:gpxly/utils/color_extensions.dart';
 import 'package:gpxly/utils/map_animation.dart';
 import 'package:gpxly/utils/map_layers.dart';
@@ -638,25 +637,225 @@ class _MapScreenState extends ConsumerState<MapScreen>
         ),
         bottomNavigationBar: _fullScreen
             ? null
-            : BottomBarContainer(
-                isExpanded: _isPanelExpanded,
-                onToggle: () =>
-                    setState(() => _isPanelExpanded = !_isPanelExpanded),
+            : SafeArea(
+                bottom: false,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 400),
+                  curve: Curves.fastOutSlowIn,
+                  padding: EdgeInsets.fromLTRB(
+                    16,
+                    5,
+                    16,
+                    MediaQuery.of(context).padding.bottom + 5,
+                  ),
+                  decoration: BoxDecoration(
+                    // Estil Gràfit amb transparència
+                    color: AppColors.primary,
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(30),
+                    ),
+                    border: Border.all(color: Colors.white10),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Nansa per obrir/tancar (Més discreta)
+                      GestureDetector(
+                        onTap: () => setState(
+                          () => _isPanelExpanded = !_isPanelExpanded,
+                        ),
+                        behavior: HitTestBehavior.opaque,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          child: Align(
+                            alignment: Alignment.center,
+                            child: Container(
+                              width: 45,
+                              height: 4,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
 
-                state: track.recordingState,
+                      if (_isPanelExpanded) ...[
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            // ───────────────────────────────────────────────
+                            // ESTAT 1 — IDLE → Botó INICIAR RUTA
+                            // ───────────────────────────────────────────────
+                            if (track.recordingState ==
+                                RecordingState.idle) ...[
+                              Expanded(
+                                flex: 2,
+                                child: SizedBox(
+                                  height:
+                                      58, // 👈 mateixa alçada que PAUSA / REPREN / FINALITZA
+                                  child: ElevatedButton.icon(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppColors.tertiary,
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 24,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                    ),
+                                    onPressed: () async {
+                                      await RecordingHandler.start(
+                                        context,
+                                        ref,
+                                        mapController,
+                                      );
+                                      setState(() => _isPanelExpanded = false);
+                                    },
+                                    icon: const Icon(
+                                      Icons.play_arrow,
+                                      size: 28,
+                                    ),
+                                    label: const Text(
+                                      "INICIA RUTA",
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
 
-                onStart: () async {
-                  await RecordingHandler.start(context, ref, mapController);
-                  setState(() => _isPanelExpanded = false);
-                },
+                              const SizedBox(width: 12),
 
-                onPause: () => RecordingHandler.pause(ref),
+                              Expanded(
+                                flex: 1,
+                                child: ImportGpxButton(
+                                  mapController: mapController,
+                                ),
+                              ),
+                            ]
+                            // ───────────────────────────────────────────────
+                            // ESTAT 2 — RECORDING → Botó PAUSA (long press → menú)
+                            // ───────────────────────────────────────────────
+                            else if (track.recordingState ==
+                                RecordingState.recording) ...[
+                              Expanded(
+                                child: ElevatedButton.icon(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(
+                                      0xFFFFA000,
+                                    ).withAlpha(180),
+                                    foregroundColor: Colors.white,
+                                    minimumSize: const Size(
+                                      double.infinity,
+                                      58,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                  ),
+                                  onPressed: () {
+                                    // 🔥 ARA SÍ: Cridem al handler per pausar GPS i Notifier
+                                    RecordingHandler.pause(ref);
+                                  },
 
-                onResume: () => RecordingHandler.resume(ref),
+                                  icon: const Icon(Icons.pause),
+                                  label: const Text(
+                                    "PAUSA",
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ]
+                            // ───────────────────────────────────────────────
+                            // ESTAT 3 — PAUSED → Botons REPRENDRE + FINALITZAR
+                            // ───────────────────────────────────────────────
+                            else if (track.recordingState ==
+                                RecordingState.paused) ...[
+                              Expanded(
+                                flex: 2,
+                                child: ElevatedButton.icon(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(
+                                      0xFF2979FF,
+                                    ).withAlpha(180),
+                                    foregroundColor: Colors.white,
+                                    minimumSize: const Size(
+                                      double.infinity,
+                                      58,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                  ),
+                                  onPressed: () {
+                                    RecordingHandler.resume(ref);
+                                  },
+                                  icon: const Icon(Icons.play_arrow),
+                                  label: const Text(
+                                    "REPRÈN",
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
 
-                onStop: () => _handleStopProcess(context, ref),
+                              const SizedBox(width: 12),
 
-                importButton: ImportGpxButton(mapController: mapController),
+                              Expanded(
+                                flex: 1,
+                                child: GestureDetector(
+                                  onTap: () {
+                                    AppMessages.showLongPressHint(context);
+                                  },
+                                  onLongPress: () {
+                                    _handleStopProcess(context, ref);
+                                  },
+                                  child: ElevatedButton(
+                                    style: ButtonStyle(
+                                      backgroundColor: WidgetStateProperty.all(
+                                        Colors.red.shade700,
+                                      ),
+                                      foregroundColor: WidgetStateProperty.all(
+                                        Colors.white,
+                                      ),
+                                      minimumSize: WidgetStateProperty.all(
+                                        const Size(double.infinity, 58),
+                                      ),
+                                      padding: WidgetStateProperty.all(
+                                        const EdgeInsets.symmetric(
+                                          vertical: 14,
+                                        ),
+                                      ),
+                                      shape: WidgetStateProperty.all(
+                                        RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            16,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    onPressed:
+                                        null, // 👈 IMPORTANT: així el GestureDetector rep els taps
+                                    child: const Icon(Icons.stop, size: 26),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+
+                        const SizedBox(height: 12),
+                      ],
+                    ],
+                  ),
+                ),
               ),
       ),
     );

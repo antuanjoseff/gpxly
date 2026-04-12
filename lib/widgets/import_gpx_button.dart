@@ -14,59 +14,63 @@ class ImportGpxButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return IconButton(
-      visualDensity: VisualDensity.compact,
-      icon: const Icon(
-        Icons.file_upload_outlined,
-        color: Colors.white,
-        size: 20,
+    return SizedBox(
+      height: 56, // 👈 mateixa alçada que els altres botons
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFFF2C94C), // 👈 yellowMustard
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(
+            horizontal: 12, // 👈 padding lateral petit (com COMPARTIR)
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        onPressed: () async {
+          final result = await FilePicker.pickFiles(
+            type: FileType.custom,
+            allowedExtensions: ['gpx'],
+          );
+
+          if (result == null) return;
+
+          final path = result.files.single.path;
+          if (path == null) return;
+
+          final xml = await File(path).readAsString();
+
+          await GpxImportService.importGpx(ref, xml);
+
+          final track = ref.read(trackProvider);
+          if (track.coordinates.isNotEmpty && mapController != null) {
+            final lats = track.coordinates.map((c) => c[1]);
+            final lons = track.coordinates.map((c) => c[0]);
+
+            final bounds = LatLngBounds(
+              southwest: LatLng(
+                lats.reduce((a, b) => a < b ? a : b),
+                lons.reduce((a, b) => a < b ? a : b),
+              ),
+              northeast: LatLng(
+                lats.reduce((a, b) => a > b ? a : b),
+                lons.reduce((a, b) => a > b ? a : b),
+              ),
+            );
+
+            mapController!.animateCamera(
+              CameraUpdate.newLatLngBounds(
+                bounds,
+                left: 40,
+                right: 40,
+                top: 40,
+                bottom: 40,
+              ),
+            );
+          }
+        },
+        child: const Icon(Icons.file_upload_outlined, size: 26),
       ),
-      onPressed: () async {
-        // 1) Obrir selector de fitxers
-        final result = await FilePicker.pickFiles(
-          type: FileType.custom,
-          allowedExtensions: ['gpx'],
-        );
-
-        if (result == null) return;
-
-        final path = result.files.single.path;
-        if (path == null) return;
-
-        // 2) Llegir GPX
-        final xml = await File(path).readAsString();
-
-        // 3) Carregar GPX al TrackNotifier
-        await GpxImportService.importGpx(ref, xml);
-
-        // 4) Centrar mapa al track carregat
-        final track = ref.read(trackProvider);
-        if (track.coordinates.isNotEmpty && mapController != null) {
-          final lats = track.coordinates.map((c) => c[1]);
-          final lons = track.coordinates.map((c) => c[0]);
-
-          final bounds = LatLngBounds(
-            southwest: LatLng(
-              lats.reduce((a, b) => a < b ? a : b),
-              lons.reduce((a, b) => a < b ? a : b),
-            ),
-            northeast: LatLng(
-              lats.reduce((a, b) => a > b ? a : b),
-              lons.reduce((a, b) => a > b ? a : b),
-            ),
-          );
-
-          mapController!.animateCamera(
-            CameraUpdate.newLatLngBounds(
-              bounds,
-              left: 40,
-              right: 40,
-              top: 40,
-              bottom: 40,
-            ),
-          );
-        }
-      },
     );
   }
 }
