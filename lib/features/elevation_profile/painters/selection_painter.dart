@@ -25,7 +25,8 @@ class SelectionPainter extends CustomPainter {
   final Color sliderEndNeedleColor;
   final Color? secondaryGraphNeedleColor;
 
-  static const double bottomReserved = 40.0;
+  static const double bottomReserved = 40.0; // per labels X
+  static const double topReserved = 60.0; // espai per tooltips
   static const double dotRadius = 5.0;
 
   SelectionPainter({
@@ -49,8 +50,11 @@ class SelectionPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (distances.isEmpty || altitudes.isEmpty) return;
 
-    final chartHeight = size.height - bottomReserved;
-    final xAxisY = chartHeight;
+    // Alçada real del gràfic (sense tooltips ni labels)
+    final chartHeight = size.height - bottomReserved - topReserved;
+
+    // Posició de l’eix X (base del perfil)
+    final xAxisY = topReserved + chartHeight;
 
     // Rang vertical combinat
     final List<double> allAlts = [
@@ -120,7 +124,7 @@ class SelectionPainter extends CustomPainter {
   }
 
   // ------------------------------------------------------------
-  //  AGULLA PRINCIPAL: UNA LÍNIA + DUES RODONES
+  //  AGULLA PRINCIPAL
   // ------------------------------------------------------------
   void _paintMainNeedle({
     required Canvas canvas,
@@ -133,19 +137,21 @@ class SelectionPainter extends CustomPainter {
   }) {
     if (index < 0 || index >= altitudes.length) return;
 
-    final double dist = distances[index];
+    final double distMeters = distances[index];
+    final double distKm = distMeters / 1000.0;
     final double altPrimary = altitudes[index];
 
     final double relPrimary = (altPrimary - minY) / yRange;
-    final double dyPrimary = chartHeight - (relPrimary * chartHeight);
+    final double dyPrimary =
+        topReserved + (chartHeight - (relPrimary * chartHeight));
 
-    // Línia vertical comuna
+    // Línia vertical
     final linePaint = Paint()
       ..color = graphNeedleColor.withAlpha(150)
       ..strokeWidth = 2;
     canvas.drawLine(Offset(x, xAxisY), Offset(x, dyPrimary), linePaint);
 
-    // Rodona primària
+    // Punt principal
     final dotPaintPrimary = Paint()..color = graphNeedleColor;
     final dotBorderPaint = Paint()
       ..color = Colors.white
@@ -155,29 +161,66 @@ class SelectionPainter extends CustomPainter {
     canvas.drawCircle(Offset(x, dyPrimary), dotRadius, dotPaintPrimary);
     canvas.drawCircle(Offset(x, dyPrimary), dotRadius, dotBorderPaint);
 
-    // Rodona secundària (si existeix i té dades)
+    // Punt secundari
     if (secondaryDistances != null &&
         secondaryAltitudes != null &&
         secondaryGraphNeedleColor != null) {
       final double? altSecondary = _interpolateAltitude(
         secondaryDistances!,
         secondaryAltitudes!,
-        dist,
+        distMeters,
       );
 
       if (altSecondary != null) {
         final double relSec = (altSecondary - minY) / yRange;
-        final double dySec = chartHeight - (relSec * chartHeight);
+        final double dySec =
+            topReserved + (chartHeight - (relSec * chartHeight));
 
         final dotPaintSecondary = Paint()..color = secondaryGraphNeedleColor!;
         canvas.drawCircle(Offset(x, dySec), dotRadius, dotPaintSecondary);
         canvas.drawCircle(Offset(x, dySec), dotRadius, dotBorderPaint);
       }
     }
+
+    // TOOLTIP
+    final String text =
+        "${altPrimary.toStringAsFixed(0)} m\n${distKm.toStringAsFixed(2)} km";
+
+    final textSpan = TextSpan(
+      text: text,
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 12,
+        fontWeight: FontWeight.bold,
+        height: 1.2,
+      ),
+    );
+
+    final textPainter = TextPainter(
+      text: textSpan,
+      textAlign: TextAlign.center,
+      textDirection: TextDirection.ltr,
+    )..layout();
+
+    final rectW = textPainter.width + 14;
+    final rectH = textPainter.height + 10;
+    final rectX = x - rectW / 2;
+    double rectY = dyPrimary - rectH - 14;
+
+    if (rectY < 4) rectY = 4;
+
+    final bgPaint = Paint()..color = graphNeedleColor.withAlpha(230);
+    final rRect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(rectX, rectY, rectW, rectH),
+      const Radius.circular(6),
+    );
+
+    canvas.drawRRect(rRect, bgPaint);
+    textPainter.paint(canvas, Offset(rectX + 7, rectY + 5));
   }
 
   // ------------------------------------------------------------
-  //  AGULLES DE RANG (només track primari)
+  //  AGULLES DE RANG
   // ------------------------------------------------------------
   void _paintRangeNeedle(
     Canvas canvas,
@@ -193,10 +236,11 @@ class SelectionPainter extends CustomPainter {
     if (index < 0 || index >= altitudes.length) return;
 
     final alt = altitudes[index];
-    final dist = distances[index];
+    final distMeters = distances[index];
+    final distKm = distMeters / 1000.0;
 
     final double rel = (alt - minY) / yRange;
-    final double dy = chartHeight - (rel * chartHeight);
+    final double dy = topReserved + (chartHeight - (rel * chartHeight));
 
     final linePaint = Paint()
       ..color = color.withAlpha(150)
@@ -205,13 +249,13 @@ class SelectionPainter extends CustomPainter {
 
     if (showText) {
       final String text =
-          "${alt.toStringAsFixed(0)}m\n${dist.toStringAsFixed(1)}km";
+          "${alt.toStringAsFixed(0)} m\n${distKm.toStringAsFixed(2)} km";
 
       final textSpan = TextSpan(
         text: text,
         style: const TextStyle(
           color: Colors.white,
-          fontSize: 10,
+          fontSize: 12,
           fontWeight: FontWeight.bold,
           height: 1.2,
         ),
@@ -223,10 +267,12 @@ class SelectionPainter extends CustomPainter {
         textDirection: TextDirection.ltr,
       )..layout();
 
-      final rectW = textPainter.width + 12;
-      final rectH = textPainter.height + 8;
+      final rectW = textPainter.width + 14;
+      final rectH = textPainter.height + 10;
       final rectX = x - rectW / 2;
-      final rectY = dy - rectH - 12;
+      double rectY = dy - rectH - 14;
+
+      if (rectY < 4) rectY = 4;
 
       final bgPaint = Paint()..color = color.withAlpha(230);
       final rRect = RRect.fromRectAndRadius(
@@ -235,7 +281,7 @@ class SelectionPainter extends CustomPainter {
       );
 
       canvas.drawRRect(rRect, bgPaint);
-      textPainter.paint(canvas, Offset(rectX + 6, rectY + 4));
+      textPainter.paint(canvas, Offset(rectX + 7, rectY + 5));
     }
 
     final dotPaint = Paint()..color = color;

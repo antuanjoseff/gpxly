@@ -351,6 +351,18 @@ class _MapScreenState extends ConsumerState<MapScreen>
           },
         ],
       });
+      mapController!.animateCamera(
+        CameraUpdate.newLatLngBounds(
+          LatLngBounds(
+            southwest: LatLng(track.minLat!, track.minLon!),
+            northeast: LatLng(track.maxLat!, track.maxLon!),
+          ),
+          left: 40,
+          top: 40,
+          right: 40,
+          bottom: 40,
+        ),
+      );
     });
 
     if (_initialCameraTarget == null) {

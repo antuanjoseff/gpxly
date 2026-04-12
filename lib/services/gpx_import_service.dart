@@ -26,7 +26,20 @@ class GpxImportService {
       times.add(p.time ?? DateTime.now());
     }
 
-    // Calcular distància total
+    // -----------------------------
+    // Bounding box
+    // -----------------------------
+    final lats = coords.map((c) => c[1]).toList();
+    final lons = coords.map((c) => c[0]).toList();
+
+    final minLat = lats.reduce((a, b) => a < b ? a : b);
+    final maxLat = lats.reduce((a, b) => a > b ? a : b);
+    final minLon = lons.reduce((a, b) => a < b ? a : b);
+    final maxLon = lons.reduce((a, b) => a > b ? a : b);
+
+    // -----------------------------
+    // Distància total
+    // -----------------------------
     double totalDistance = 0.0;
     for (int i = 1; i < coords.length; i++) {
       totalDistance += haversineDistance(
@@ -37,16 +50,23 @@ class GpxImportService {
       );
     }
 
-    // Calcular durada
+    // -----------------------------
+    // Durada
+    // -----------------------------
     Duration totalDuration = Duration.zero;
     if (times.length > 1) {
       totalDuration = times.last.difference(times.first);
     }
 
-    // Calcular desnivells
+    // -----------------------------
+    // Desnivells
+    // -----------------------------
     final ascent = computeAscent(alts);
     final descent = computeDescent(alts);
 
+    // -----------------------------
+    // Crear Track importat
+    // -----------------------------
     final imported = Track(
       coordinates: coords,
       altitudes: alts,
@@ -63,8 +83,17 @@ class GpxImportService {
       descent: descent,
       maxElevation: alts.reduce((a, b) => a > b ? a : b),
       minElevation: alts.reduce((a, b) => a < b ? a : b),
+
+      // 👇 AFEGIT
+      minLat: minLat,
+      maxLat: maxLat,
+      minLon: minLon,
+      maxLon: maxLon,
     );
 
+    // -----------------------------
+    // Guardar al provider
+    // -----------------------------
     ref.read(importedTrackProvider.notifier).setTrack(imported);
   }
 }

@@ -15,7 +15,6 @@ class Track {
   final List<int> satellites;
   final List<double> vAccuracies;
 
-  // Abans: final RecordingState state;
   final RecordingState recordingState;
 
   final Duration duration;
@@ -25,6 +24,12 @@ class Track {
   final double descent;
   final double maxElevation;
   final double minElevation;
+
+  // 👇 AFEGIT: bounding box
+  final double? minLat;
+  final double? maxLat;
+  final double? minLon;
+  final double? maxLon;
 
   Track({
     required this.coordinates,
@@ -42,6 +47,12 @@ class Track {
     this.descent = 0.0,
     this.maxElevation = -9999.0,
     this.minElevation = 9999.0,
+
+    // 👇 AFEGIT
+    this.minLat,
+    this.maxLat,
+    this.minLon,
+    this.maxLon,
   });
 
   Track copyWith({
@@ -60,6 +71,12 @@ class Track {
     double? descent,
     double? maxElevation,
     double? minElevation,
+
+    // 👇 AFEGIT
+    double? minLat,
+    double? maxLat,
+    double? minLon,
+    double? maxLon,
   }) {
     return Track(
       coordinates: coordinates ?? this.coordinates,
@@ -77,6 +94,12 @@ class Track {
       descent: descent ?? this.descent,
       maxElevation: maxElevation ?? this.maxElevation,
       minElevation: minElevation ?? this.minElevation,
+
+      // 👇 AFEGIT
+      minLat: minLat ?? this.minLat,
+      maxLat: maxLat ?? this.maxLat,
+      minLon: minLon ?? this.minLon,
+      maxLon: maxLon ?? this.maxLon,
     );
   }
 

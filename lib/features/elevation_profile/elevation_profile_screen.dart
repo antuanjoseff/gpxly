@@ -297,29 +297,9 @@ class _ElevationProfileScreenState
 
           const SizedBox(height: 10),
 
-          // Botó de correcció d'altituds
-          IconButton(
-            icon: const Icon(
-              Icons.auto_fix_high,
-              color: AppColors.mustardYellow,
-            ),
-            onPressed: () async {
-              AppMessages.showElevationProgressDialog(context);
-              try {
-                await ref.read(trackProvider.notifier).correctTrackAltitudes();
-                await Future.delayed(const Duration(milliseconds: 800));
-                if (context.mounted) {
-                  Navigator.of(context, rootNavigator: true).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Perfil corregit amb èxit")),
-                  );
-                }
-              } catch (_) {}
-            },
-          ),
+          // Llegenda
+          _buildLegend(hasImported),
 
-          const SizedBox(height: 10),
-          _buildLegend(hasImported), // 👈 AFEGIT AQUÍ
           // GRÀFIC
           SizedBox(
             height: chartHeight,
@@ -425,29 +405,43 @@ class _ElevationProfileScreenState
                       if (selectedIndexStart != null &&
                           selectedIndexEnd != null)
                         Positioned.fill(
-                          child: CustomPaint(
-                            painter: RangeAreaPainter(
-                              startIndex: selectedIndexStart!,
-                              endIndex: selectedIndexEnd!,
-                              distances: primaryDists,
-                              altitudes: primaryAlts,
-                              minY: primaryAlts.reduce((a, b) => a < b ? a : b),
-                              maxY: primaryAlts.reduce((a, b) => a > b ? a : b),
-                              color: Colors.orange.withAlpha(50),
+                          child: Padding(
+                            padding: const EdgeInsets.only(
+                              top: SelectionPainter.topReserved,
+                            ),
+                            child: CustomPaint(
+                              painter: RangeAreaPainter(
+                                startIndex: selectedIndexStart!,
+                                endIndex: selectedIndexEnd!,
+                                distances: primaryDists,
+                                altitudes: primaryAlts,
+                                minY: primaryAlts.reduce(
+                                  (a, b) => a < b ? a : b,
+                                ),
+                                maxY: primaryAlts.reduce(
+                                  (a, b) => a > b ? a : b,
+                                ),
+                                color: Colors.orange.withAlpha(50),
+                              ),
                             ),
                           ),
                         ),
 
                       // Gràfic
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: LineChart(
-                          _buildChartDataTwoTracks(
-                            context,
-                            realAlts,
-                            realDists,
-                            importedAlts,
-                            importedDists,
+                      Padding(
+                        padding: const EdgeInsets.only(
+                          top: SelectionPainter.topReserved,
+                        ),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          child: LineChart(
+                            _buildChartDataTwoTracks(
+                              context,
+                              realAlts,
+                              realDists,
+                              importedAlts,
+                              importedDists,
+                            ),
                           ),
                         ),
                       ),
@@ -518,8 +512,8 @@ Widget _buildLegend(bool hasSecondary) {
             Container(
               width: 14,
               height: 14,
-              decoration: BoxDecoration(
-                color: const Color(0xFF4CAF50), // Verd primari
+              decoration: const BoxDecoration(
+                color: Color(0xFF4CAF50), // Verd primari
                 shape: BoxShape.circle,
               ),
             ),
@@ -544,7 +538,7 @@ Widget _buildLegend(bool hasSecondary) {
               Container(
                 width: 14,
                 height: 14,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   color: AppColors.mustardYellow, // Groc secundari
                   shape: BoxShape.circle,
                 ),
