@@ -29,7 +29,10 @@ class TrackStatsScreen extends ConsumerWidget {
     final hasAscImported = imported?.hasAscentDescent == true;
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Dades de la ruta")),
+      appBar: AppBar(
+        backgroundColor: AppColors.primary,
+        title: const Text("Dades de la ruta"),
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

@@ -393,6 +393,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
             ? null
             : AppBar(
                 centerTitle: false,
+                backgroundColor: AppColors.primary,
                 automaticallyImplyLeading: false,
                 titleSpacing: 16,
 
@@ -433,7 +434,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                       ),
                     ],
                   ),
-
+                  ImportGpxButton(mapController: mapController),
                   IconButton(
                     visualDensity: VisualDensity.compact,
                     icon: const Icon(

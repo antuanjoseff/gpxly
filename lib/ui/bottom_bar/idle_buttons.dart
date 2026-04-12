@@ -32,8 +32,6 @@ class IdleButtons extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(width: 12),
-        Expanded(flex: 1, child: importButton),
       ],
     );
   }

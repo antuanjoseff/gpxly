@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gpxly/theme/app_colors.dart';
+import 'package:gpxly/ui/bottom_bar/app_action_button.dart';
 
 import 'tabs/gps_settings_tab.dart';
 import 'tabs/gpx_settings_tab.dart';
@@ -80,6 +81,7 @@ class _GpsSettingsScreenState extends ConsumerState<GpsSettingsScreen>
       child: Scaffold(
         backgroundColor: AppColors.white,
         appBar: AppBar(
+          backgroundColor: AppColors.primary,
           title: const Text('Configuració'),
           toolbarHeight:
               80, // 👈 Augmentem l'alçada del títol perquè sigui més ample
@@ -131,25 +133,44 @@ class _GpsSettingsScreenState extends ConsumerState<GpsSettingsScreen>
             TrackSettingsTab(onPending: markPending, onApplied: clearPending),
           ],
         ),
-        bottomNavigationBar: Container(
-          color: const Color(0xFFF5F5F7),
-          child: SafeArea(
-            minimum: const EdgeInsets.all(16),
-            child: ElevatedButton(
-              onPressed: _hasPendingChanges
-                  ? () {
-                      GpsSettingsTab.apply(ref);
-                      GpxSettingsTab.apply(ref);
-                      TrackSettingsTab.apply(ref);
+        bottomNavigationBar: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Container(
+            color: const Color(0xFFF5F5F7),
+            child: SafeArea(
+              minimum: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  AppActionButton(
+                    flex: 1,
+                    onPressed: _hasPendingChanges
+                        ? () {
+                            GpsSettingsTab.apply(ref);
+                            GpxSettingsTab.apply(ref);
+                            TrackSettingsTab.apply(ref);
 
-                      clearPending();
+                            clearPending();
 
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Configuració aplicada!")),
-                      );
-                    }
-                  : null, // desactivat si no hi ha canvis
-              child: const Text("APLICA"),
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Configuració aplicada!"),
+                              ),
+                            );
+                          }
+                        : null,
+                    color: _hasPendingChanges
+                        ? AppColors.primary
+                        : AppColors.primary.withOpacity(0.35),
+                    child: const Text(
+                      "APLICA",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

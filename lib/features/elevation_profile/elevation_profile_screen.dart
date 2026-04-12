@@ -292,7 +292,10 @@ class _ElevationProfileScreenState
 
     if (!hasReal && !hasImported) {
       return Scaffold(
-        appBar: AppBar(title: const Text("Perfil d'elevació")),
+        appBar: AppBar(
+          backgroundColor: AppColors.primary,
+          title: const Text("Perfil d'elevació"),
+        ),
         body: const Center(child: Text("Sense dades")),
       );
     }
@@ -321,7 +324,7 @@ class _ElevationProfileScreenState
             primaryAlts,
             primaryDists,
             primaryTimes,
-            AppColors.tertiary,
+            AppColors.secondary,
           ),
 
           // Barra secundària (només si té dades dins del rang)

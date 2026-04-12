@@ -15,18 +15,9 @@ class ImportGpxButton extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return SizedBox(
-      height: 56, // 👈 mateixa alçada que els altres botons
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFF2C94C), // 👈 yellowMustard
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(
-            horizontal: 12, // 👈 padding lateral petit (com COMPARTIR)
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
+      // height: 56, // 👈 mateixa alçada que els altres botons
+      child: IconButton(
+        icon: const Icon(Icons.file_upload_outlined, size: 26),
         onPressed: () async {
           final result = await FilePicker.pickFiles(
             type: FileType.custom,
@@ -69,7 +60,6 @@ class ImportGpxButton extends ConsumerWidget {
             );
           }
         },
-        child: const Icon(Icons.file_upload_outlined, size: 26),
       ),
     );
   }

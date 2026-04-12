@@ -44,9 +44,9 @@ class TrackSettingsTab extends ConsumerWidget {
                   Expanded(
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.white,
-                        foregroundColor: AppColors.primary,
-                        side: const BorderSide(color: AppColors.primary),
+                        backgroundColor: AppColors.secondary,
+                        foregroundColor: AppColors.white,
+                        side: const BorderSide(color: AppColors.secondary),
                         elevation: 0,
                       ),
                       icon: const Icon(Icons.palette_outlined),
