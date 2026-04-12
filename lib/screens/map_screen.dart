@@ -351,11 +351,12 @@ class _MapScreenState extends ConsumerState<MapScreen>
           },
         ],
       });
+
       mapController!.animateCamera(
         CameraUpdate.newLatLngBounds(
           LatLngBounds(
-            southwest: LatLng(track.minLat!, track.minLon!),
-            northeast: LatLng(track.maxLat!, track.maxLon!),
+            southwest: LatLng(next.minLat!, next.minLon!),
+            northeast: LatLng(next.maxLat!, next.maxLon!),
           ),
           left: 40,
           top: 40,

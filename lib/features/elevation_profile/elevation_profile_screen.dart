@@ -9,12 +9,7 @@ import 'package:gpxly/features/elevation_profile/utils/chart_utils.dart';
 
 import 'package:gpxly/notifiers/track_notifier.dart';
 import 'package:gpxly/notifiers/imported_track_notifier.dart';
-import 'package:gpxly/notifiers/elevation_progress_notifier.dart';
-
 import 'package:gpxly/utils/distance_utils.dart';
-import 'package:gpxly/utils/decimation_utils.dart';
-
-import 'package:gpxly/ui/app_messages.dart';
 import 'package:gpxly/theme/app_colors.dart';
 
 enum ActiveHandle { none, start, end }
@@ -78,6 +73,20 @@ class _ElevationProfileScreenState
       if (importedDists.isNotEmpty) importedDists.last,
     ].fold<double>(0, (a, b) => a > b ? a : b);
 
+    final bool primaryIsReal =
+        realDists.isNotEmpty &&
+        (importedDists.isEmpty || realDists.last >= importedDists.last);
+
+    final List<double> primaryDists = primaryIsReal ? realDists : importedDists;
+
+    final List<double> primaryAlts = primaryIsReal ? realAlts : importedAlts;
+
+    final List<double> secondaryDists = primaryIsReal
+        ? importedDists
+        : realDists;
+
+    final List<double> secondaryAlts = primaryIsReal ? importedAlts : realAlts;
+
     return LineChartData(
       minY: forcedMinY,
       maxY: forcedMaxY,
@@ -85,6 +94,16 @@ class _ElevationProfileScreenState
       maxX: maxDist,
       gridData: const FlGridData(show: false),
       borderData: FlBorderData(show: false),
+      extraLinesData: ExtraLinesData(
+        horizontalLines: [
+          HorizontalLine(
+            y: forcedMinY, // 👈 línia a l’eix X
+            color: Colors.grey, // o el color que vulguis
+            strokeWidth: 1.5,
+          ),
+        ],
+      ),
+
       titlesData: FlTitlesData(
         topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
         rightTitles: const AxisTitles(
@@ -117,28 +136,39 @@ class _ElevationProfileScreenState
       ),
       lineTouchData: const LineTouchData(enabled: false),
       lineBarsData: [
-        // Track primari (real)
-        if (realDists.isNotEmpty)
-          LineChartBarData(
-            spots: List.generate(
-              realAlts.length,
-              (i) => FlSpot(realDists[i], realAlts[i]),
-            ),
-            isCurved: false,
-            color: colors.secondary,
-            barWidth: 3,
-            dotData: const FlDotData(show: false),
+        // TRACK PRIMARI (sempre amb fill)
+        LineChartBarData(
+          spots: List.generate(
+            primaryAlts.length,
+            (i) => FlSpot(primaryDists[i], primaryAlts[i]),
           ),
+          isCurved: false,
+          color: primaryIsReal ? colors.secondary : AppColors.mustardYellow,
+          barWidth: 3,
+          dotData: const FlDotData(show: false),
 
-        // Track secundari (importat)
-        if (importedDists.isNotEmpty)
+          // 👇 FILL SEMPRE AL TRACK PRIMARI
+          // 👇 FILL SEMPRE AL TRACK PRIMARI
+          belowBarData: BarAreaData(
+            show: true,
+            color: (primaryIsReal ? colors.secondary : AppColors.mustardYellow)
+                .withAlpha(64),
+            // 1. Definim que el tall sigui exactament on comença el teu eix X
+            cutOffY: forcedMinY,
+            // 2. Li diem que apliqui aquest tall
+            applyCutOffY: true,
+          ),
+        ),
+
+        // TRACK SECUNDARI (sense fill)
+        if (secondaryDists.isNotEmpty)
           LineChartBarData(
             spots: List.generate(
-              importedAlts.length,
-              (i) => FlSpot(importedDists[i], importedAlts[i]),
+              secondaryAlts.length,
+              (i) => FlSpot(secondaryDists[i], secondaryAlts[i]),
             ),
             isCurved: false,
-            color: AppColors.mustardYellow, // LC1
+            color: primaryIsReal ? AppColors.mustardYellow : colors.secondary,
             barWidth: 3,
             dotData: const FlDotData(show: false),
           ),
@@ -190,46 +220,56 @@ class _ElevationProfileScreenState
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Colors.white10),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _stat(Icons.straighten, formatDistance(distMetres)),
-          _divider(),
-          _stat(Icons.timer, durationStr),
-          _divider(),
-          _stat(Icons.speed, speedStr),
-          _divider(),
-          _stat(Icons.terrain, "+${gain.toStringAsFixed(0)}m"),
+          _tileStat(Icons.straighten, formatDistance(distMetres)),
+          _verticalDivider(),
+          _tileStat(Icons.timer, durationStr),
+          _verticalDivider(),
+          _tileStat(Icons.speed, speedStr),
+          _verticalDivider(),
+          _tileStat(Icons.terrain, "+${gain.toStringAsFixed(0)}m"),
         ],
       ),
     );
   }
 
-  Widget _stat(IconData icon, String value) {
-    return Row(
-      children: [
-        Icon(icon, color: Colors.white70, size: 14),
-        const SizedBox(width: 6),
-        Text(
-          value,
-          style: const TextStyle(
-            fontFamily: 'monospace',
-            fontWeight: FontWeight.w800,
-            fontSize: 12,
-            color: Colors.white,
+  Widget _tileStat(IconData icon, String value) {
+    return Expanded(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: Colors.white70, size: 18),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontFamily: 'monospace',
+              fontWeight: FontWeight.w800,
+              fontSize: 12,
+              color: Colors.white,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
-  Widget _divider() => Container(height: 14, width: 1, color: Colors.white12);
+  Widget _verticalDivider() {
+    return Container(
+      width: 1,
+      height: 32,
+      color: Colors.white24,
+      margin: const EdgeInsets.symmetric(horizontal: 6),
+    );
+  }
 
   // ------------------------------------------------------------
   //  BUILD
