@@ -17,13 +17,28 @@ class GpxImportService {
     final coords = <List<double>>[];
     final alts = <double>[];
     final times = <DateTime>[];
+    final distancesList = <double>[]; // <--- AFEGIT
 
-    for (final p in points) {
+    double accumulatedDistance = 0.0;
+
+    for (int i = 0; i < points.length; i++) {
+      final p = points[i];
       if (p.lat == null || p.lon == null) continue;
 
       coords.add([p.lon!, p.lat!]);
       alts.add(p.ele ?? 0.0);
       times.add(p.time ?? DateTime.now());
+
+      // Càlcul de la distància acumulada punt a punt
+      if (i > 0) {
+        accumulatedDistance += haversineDistance(
+          coords[i - 1][1],
+          coords[i - 1][0],
+          coords[i][1],
+          coords[i][0],
+        );
+      }
+      distancesList.add(accumulatedDistance);
     }
 
     // -----------------------------
@@ -36,19 +51,6 @@ class GpxImportService {
     final maxLat = lats.reduce((a, b) => a > b ? a : b);
     final minLon = lons.reduce((a, b) => a < b ? a : b);
     final maxLon = lons.reduce((a, b) => a > b ? a : b);
-
-    // -----------------------------
-    // Distància total
-    // -----------------------------
-    double totalDistance = 0.0;
-    for (int i = 1; i < coords.length; i++) {
-      totalDistance += haversineDistance(
-        coords[i - 1][1],
-        coords[i - 1][0],
-        coords[i][1],
-        coords[i][0],
-      );
-    }
 
     // -----------------------------
     // Durada
@@ -69,6 +71,7 @@ class GpxImportService {
     // -----------------------------
     final imported = Track(
       coordinates: coords,
+      distances: distancesList, // <--- ARA EL MODEL REB LA LLISTA
       altitudes: alts,
       timestamps: times,
       accuracies: [],
@@ -78,13 +81,11 @@ class GpxImportService {
       vAccuracies: [],
       recordingState: RecordingState.idle,
       duration: totalDuration,
-      distance: totalDistance,
+      distance: accumulatedDistance, // Fem servir la que hem calculat al bucle
       ascent: ascent,
       descent: descent,
       maxElevation: alts.reduce((a, b) => a > b ? a : b),
       minElevation: alts.reduce((a, b) => a < b ? a : b),
-
-      // 👇 AFEGIT
       minLat: minLat,
       maxLat: maxLat,
       minLon: minLon,

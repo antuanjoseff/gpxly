@@ -136,31 +136,27 @@ class _ElevationProfileScreenState
       ),
       lineTouchData: const LineTouchData(enabled: false),
       lineBarsData: [
-        // TRACK PRIMARI (sempre amb fill)
+        // TRACK PRIMARI (El que marca la longitud de l'eix X)
         LineChartBarData(
           spots: List.generate(
             primaryAlts.length,
             (i) => FlSpot(primaryDists[i], primaryAlts[i]),
           ),
           isCurved: false,
-          color: primaryIsReal ? colors.secondary : AppColors.mustardYellow,
+          // Si el primari és el real -> secondary. Si no (és l'importat) -> primary.
+          color: primaryIsReal ? AppColors.secondary : AppColors.primary,
           barWidth: 3,
           dotData: const FlDotData(show: false),
-
-          // 👇 FILL SEMPRE AL TRACK PRIMARI
-          // 👇 FILL SEMPRE AL TRACK PRIMARI
           belowBarData: BarAreaData(
             show: true,
-            color: (primaryIsReal ? colors.secondary : AppColors.mustardYellow)
-                .withAlpha(64),
-            // 1. Definim que el tall sigui exactament on comença el teu eix X
+            color: (primaryIsReal ? AppColors.secondary : AppColors.primary)
+                .withAlpha(primaryIsReal ? 64 : 32),
             cutOffY: forcedMinY,
-            // 2. Li diem que apliqui aquest tall
             applyCutOffY: true,
           ),
         ),
 
-        // TRACK SECUNDARI (sense fill)
+        // TRACK SECUNDARI (L'altre track, si existeix)
         if (secondaryDists.isNotEmpty)
           LineChartBarData(
             spots: List.generate(
@@ -168,9 +164,18 @@ class _ElevationProfileScreenState
               (i) => FlSpot(secondaryDists[i], secondaryAlts[i]),
             ),
             isCurved: false,
-            color: primaryIsReal ? AppColors.mustardYellow : colors.secondary,
+            // Si el primari era el real, el secundari és l'importat -> primary.
+            // Si el primari era l'importat, el secundari és el real -> secondary.
+            color: primaryIsReal ? AppColors.primary : AppColors.secondary,
             barWidth: 3,
             dotData: const FlDotData(show: false),
+            belowBarData: BarAreaData(
+              show: true,
+              color: (primaryIsReal ? AppColors.primary : AppColors.secondary)
+                  .withAlpha(primaryIsReal ? 32 : 64),
+              cutOffY: forcedMinY,
+              applyCutOffY: true,
+            ),
           ),
       ],
     );
@@ -314,29 +319,34 @@ class _ElevationProfileScreenState
     final secondaryTimes = primaryIsReal ? importedTimes : realTimes;
 
     final chartHeight = MediaQuery.of(context).size.height * 0.3;
+    final track = ref.watch(trackProvider);
+    final importedTrack = ref.watch(importedTrackProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text("Perfil d'elevació")),
       body: Column(
         children: [
-          // Barra primària
-          _buildSegmentStatsBar(
-            primaryAlts,
-            primaryDists,
-            primaryTimes,
-            AppColors.secondary,
-          ),
+          if (selectedIndexStart != null && selectedIndexEnd != null) ...[
+            // Barra del track real (AppColors.secondary)
+            if (track.distances.isNotEmpty)
+              _buildSegmentStatsBar(
+                track.altitudes,
+                track.distances,
+                track.timestamps,
+                AppColors.secondary,
+              ),
 
-          // Barra secundària (només si té dades dins del rang)
-          if (selectedIndexStart != null &&
-              selectedIndexEnd != null &&
-              selectedIndexEnd! < secondaryAlts.length)
-            _buildSegmentStatsBar(
-              secondaryAlts,
-              secondaryDists,
-              secondaryTimes,
-              AppColors.mustardYellow, // SC1
-            ),
+            const SizedBox(height: 8),
+
+            // Barra del track importat (AppColors.primary)
+            if (importedTrack!.distances.isNotEmpty)
+              _buildSegmentStatsBar(
+                importedTrack.altitudes,
+                importedTrack.distances,
+                null,
+                AppColors.primary,
+              ),
+          ],
 
           const SizedBox(height: 10),
 

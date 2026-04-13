@@ -3,6 +3,7 @@ import 'package:flutter/services.dart'; // Per al HapticFeedback
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:gpxly/notifiers/gps_settings_notifier.dart';
+import 'package:gpxly/notifiers/permissions_notifier.dart';
 import 'package:gpxly/notifiers/track_notifier.dart';
 import 'package:gpxly/services/native_gps_channel.dart';
 import 'package:gpxly/services/permissions_service.dart';
@@ -62,7 +63,7 @@ class RecordingHandler {
           CameraUpdate.newLatLng(LatLng(pos.latitude, pos.longitude)),
         );
       }
-
+      ref.read(permissionsProvider.notifier).checkPermissions();
       return;
     }
 
@@ -86,6 +87,7 @@ class RecordingHandler {
           meters: settings.meters,
           accuracy: settings.accuracy,
         );
+        ref.read(permissionsProvider.notifier).checkPermissions();
 
         return;
       } else {
@@ -158,6 +160,7 @@ class RecordingHandler {
         CameraUpdate.newLatLng(LatLng(pos.latitude, pos.longitude)),
       );
     }
+    ref.read(permissionsProvider.notifier).checkPermissions();
   }
 
   // --- PAUSAR ---

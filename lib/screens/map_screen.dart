@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gpxly/features/elevation_profile/elevation_profile_screen.dart';
 import 'package:gpxly/models/track.dart';
 import 'package:gpxly/notifiers/imported_track_notifier.dart';
+import 'package:gpxly/notifiers/permissions_notifier.dart';
 import 'package:gpxly/notifiers/track_notifier.dart';
 import 'package:gpxly/notifiers/track_settings_notifier.dart';
 import 'package:gpxly/screens/settings/gps_settings_screen.dart';
@@ -70,6 +71,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
     WidgetsBinding.instance.addObserver(this);
 
     _loadLastPosition();
+    Future.microtask(
+      () => ref.read(permissionsProvider.notifier).checkPermissions(),
+    );
   }
 
   Future<void> _loadLastPosition() async {
@@ -266,6 +270,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
   Widget build(BuildContext context) {
     final track = ref.watch(trackProvider);
     final trackSettings = ref.watch(trackSettingsProvider);
+    final permissions = ref.watch(permissionsProvider);
+    final hasPermissions = permissions.hasPermission;
+    final gpsEnabled = permissions.serviceEnabled;
 
     // Listener dins build (Riverpod obliga)
     ref.listen(trackProvider, (previous, next) {
@@ -352,18 +359,31 @@ class _MapScreenState extends ConsumerState<MapScreen>
         ],
       });
 
-      mapController!.animateCamera(
-        CameraUpdate.newLatLngBounds(
-          LatLngBounds(
-            southwest: LatLng(next.minLat!, next.minLon!),
-            northeast: LatLng(next.maxLat!, next.maxLon!),
-          ),
-          left: 40,
-          top: 40,
-          right: 40,
-          bottom: 40,
-        ),
-      );
+      setState(() {
+        userMovedMap = true;
+        isProgrammaticMove = true;
+      });
+
+      Future.delayed(const Duration(milliseconds: 200), () {
+        if (mapController != null) {
+          mapController!
+              .animateCamera(
+                CameraUpdate.newLatLngBounds(
+                  LatLngBounds(
+                    southwest: LatLng(next.minLat!, next.minLon!),
+                    northeast: LatLng(next.maxLat!, next.maxLon!),
+                  ),
+                  left: 50,
+                  top: 50,
+                  right: 50,
+                  bottom: 50,
+                ),
+              )
+              .then((_) {
+                if (mounted) setState(() => isProgrammaticMove = false);
+              });
+        }
+      });
     });
 
     if (_initialCameraTarget == null) {
@@ -434,7 +454,10 @@ class _MapScreenState extends ConsumerState<MapScreen>
                       ),
                     ],
                   ),
-                  ImportGpxButton(mapController: mapController),
+                  ImportGpxButton(
+                    mapController: mapController,
+                    enabled: hasPermissions && gpsEnabled,
+                  ),
                   IconButton(
                     visualDensity: VisualDensity.compact,
                     icon: const Icon(
@@ -442,12 +465,14 @@ class _MapScreenState extends ConsumerState<MapScreen>
                       color: Colors.white,
                       size: 20,
                     ),
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const GpsSettingsScreen(),
-                      ),
-                    ),
+                    onPressed: (!hasPermissions || !gpsEnabled)
+                        ? null
+                        : () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const GpsSettingsScreen(),
+                            ),
+                          ),
                   ),
                   const SizedBox(width: 8),
                 ],

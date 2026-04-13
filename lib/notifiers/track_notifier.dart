@@ -21,6 +21,7 @@ class TrackNotifier extends Notifier<Track> {
   Track build() {
     return _initialState ??= Track(
       coordinates: [],
+      distances: [],
       altitudes: [],
       timestamps: [],
       accuracies: [],
@@ -114,10 +115,9 @@ class TrackNotifier extends Notifier<Track> {
   }
 
   void addPointFromPosition(Position pos, [int sat_used = 0]) {
-    // 1. Actualitzem els micro-providers (opcional si la UI ja escolta Track)
+    // 1. Actualitzem els micro-providers (com ja feies)
     ref.read(gpsAccuracyProvider.notifier).update(pos.accuracy);
     ref.read(gpsAltitudeProvider.notifier).update(pos.altitude);
-    // ... resta de ref.reads ...
 
     double newDistance = state.distance;
     double newAscent = state.ascent;
@@ -125,19 +125,26 @@ class TrackNotifier extends Notifier<Track> {
     double newMax = state.maxElevation;
     double newMin = state.minElevation;
 
+    // Creem una còpia de la llista de distàncies actual per afegir-hi el nou valor
+    List<double> newDistancesList = [...state.distances];
+
     if (state.coordinates.isNotEmpty) {
       final lastCoords = state.coordinates.last;
       final lastAlt = state.altitudes.last;
 
-      newDistance += Geolocator.distanceBetween(
-        lastCoords[1],
-        lastCoords[0],
-        pos.latitude,
+      // Calculem els metres entre l'últim punt i el nou
+      double step = Geolocator.distanceBetween(
+        lastCoords[1], // lon
+        lastCoords[0], // lat
         pos.longitude,
+        pos.latitude,
       );
 
+      // Sumem al total acumulat
+      newDistance += step;
+
       final double diffAlt = pos.altitude - lastAlt;
-      // ⛰️ Filtre de soroll: només sumem si el canvi és > 0.5 metres
+      // ⛰️ Filtre de soroll (0.5m)
       if (diffAlt > 0.5) {
         newAscent += diffAlt;
       } else if (diffAlt < -0.5) {
@@ -145,17 +152,21 @@ class TrackNotifier extends Notifier<Track> {
       }
     }
 
+    // 2. Afegim la distància total acumulada en aquest punt a la llista
+    newDistancesList.add(newDistance);
+
     // 📈 Actualitzem límits d'elevació
     if (state.altitudes.isEmpty || pos.altitude > newMax) newMax = pos.altitude;
     if (state.altitudes.isEmpty || pos.altitude < newMin) newMin = pos.altitude;
 
-    // 🚀 Actualitzem l'estat
+    // 🚀 Actualitzem l'estat amb la nova llista 'distances'
     state = state.copyWith(
       coordinates: [
         ...state.coordinates,
         [pos.longitude, pos.latitude],
       ],
       altitudes: [...state.altitudes, pos.altitude],
+      distances: newDistancesList, // <--- LA NOVA LLISTA ACTUALITZADA
       timestamps: [...state.timestamps, pos.timestamp],
       accuracies: [...state.accuracies, pos.accuracy],
       speeds: [...state.speeds, pos.speed],
@@ -169,7 +180,7 @@ class TrackNotifier extends Notifier<Track> {
       minElevation: newMin,
     );
 
-    // 💾 Auto-save cada 10 punts (Ara centralitzat aquí!)
+    // 💾 Auto-save cada 10 punts
     if (state.coordinates.length % 10 == 0) {
       _autoSaveToPrefs();
     }
@@ -180,6 +191,7 @@ class TrackNotifier extends Notifier<Track> {
       final prefs = await SharedPreferences.getInstance();
       final String rawData = jsonEncode({
         'coordinates': state.coordinates,
+        'distances': state.distances,
         'altitudes': state.altitudes,
         'timestamps': state.timestamps.map((t) => t.toIso8601String()).toList(),
         'accuracies': state.accuracies,
@@ -211,6 +223,7 @@ class TrackNotifier extends Notifier<Track> {
         coordinates: (data['coordinates'] as List)
             .map((e) => List<double>.from(e))
             .toList(),
+        distances: List<double>.from(data['distances'] ?? []),
         altitudes: List<double>.from(data['altitudes']),
         timestamps: (data['timestamps'] as List)
             .map((e) => DateTime.parse(e))
@@ -275,6 +288,7 @@ class TrackNotifier extends Notifier<Track> {
 
     state = Track(
       coordinates: [],
+      distances: [],
       altitudes: [],
       timestamps: [],
       accuracies: [],

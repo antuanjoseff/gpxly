@@ -6,6 +6,7 @@ enum RecordingState {
 
 class Track {
   final List<List<double>> coordinates;
+  final List<double> distances;
   final List<double> altitudes;
   final List<DateTime> timestamps;
   final List<double> accuracies;
@@ -36,6 +37,7 @@ class Track {
     required this.altitudes,
     required this.timestamps,
     required this.accuracies,
+    this.distances = const [],
     this.speeds = const [],
     this.headings = const [],
     this.satellites = const [],
@@ -57,6 +59,7 @@ class Track {
 
   Track copyWith({
     List<List<double>>? coordinates,
+    List<double>? distances,
     List<double>? altitudes,
     List<DateTime>? timestamps,
     List<double>? accuracies,
@@ -80,6 +83,7 @@ class Track {
   }) {
     return Track(
       coordinates: coordinates ?? this.coordinates,
+      distances: distances ?? this.distances,
       altitudes: altitudes ?? this.altitudes,
       timestamps: timestamps ?? this.timestamps,
       accuracies: accuracies ?? this.accuracies,
