@@ -27,7 +27,9 @@ class GpxImportService {
 
       coords.add([p.lon!, p.lat!]);
       alts.add(p.ele ?? 0.0);
-      times.add(p.time ?? DateTime.now());
+
+      final rawTime = p.time ?? DateTime.now();
+      times.add(normalizeGpxTime(rawTime));
 
       // Càlcul de la distància acumulada punt a punt
       if (i > 0) {
@@ -96,5 +98,19 @@ class GpxImportService {
     // Guardar al provider
     // -----------------------------
     ref.read(importedTrackProvider.notifier).setTrack(imported);
+  }
+
+  static DateTime normalizeGpxTime(DateTime t) {
+    final local = t.toLocal();
+    return DateTime(
+      local.year,
+      local.month,
+      local.day,
+      local.hour,
+      local.minute,
+      local.second,
+      0,
+      0,
+    );
   }
 }

@@ -344,4 +344,28 @@ class AppMessages {
       ),
     );
   }
+
+  static Future<bool?> showLocationPermissionDialog(BuildContext context) {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Permís de localització'),
+        content: const Text(
+          'L’aplicació no té permisos per accedir a la ubicació. '
+          'Vols obrir la configuració per donar permisos?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('CANCEL·LAR'),
+          ),
+          ElevatedButton(
+            style: _buttonStyle(AppColors.skyBlue),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('CONFIGURACIÓ'),
+          ),
+        ],
+      ),
+    );
+  }
 }

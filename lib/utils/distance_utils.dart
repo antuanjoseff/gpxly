@@ -18,7 +18,11 @@ List<double> calculateDistances(List<List<double>> coordinates) {
   return distances;
 }
 
-String formatDistance(double meters) {
-  if (meters < 1000) return "${meters.toStringAsFixed(0)}m";
-  return "${(meters / 1000).toStringAsFixed(2)}km";
+String formatDistance(double metres) {
+  if (metres < 1000) {
+    return "${metres.toStringAsFixed(0)} m";
+  } else {
+    final km = metres / 1000;
+    return "${km.toStringAsFixed(km < 10 ? 2 : 1)} km";
+  }
 }

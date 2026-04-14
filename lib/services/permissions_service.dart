@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+enum GpsPermissionStatus { ok, gpsOff, permissionDenied }
+
 class PermissionsService {
   static Future<bool> _ensureLocationWhenInUse(BuildContext context) async {
     LocationPermission perm = await Geolocator.checkPermission();
@@ -18,6 +20,20 @@ class PermissionsService {
     }
 
     return true;
+  }
+
+  static Future<GpsPermissionStatus> checkGpsAndPermissions() async {
+    // GPS activat?
+    final gpsEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!gpsEnabled) return GpsPermissionStatus.gpsOff;
+
+    // Permisos?
+    final permission = await Geolocator.checkPermission();
+    if (permission != LocationPermission.always) {
+      return GpsPermissionStatus.permissionDenied;
+    }
+
+    return GpsPermissionStatus.ok;
   }
 
   static Future<bool> _ensureGpsEnabled(BuildContext context) async {

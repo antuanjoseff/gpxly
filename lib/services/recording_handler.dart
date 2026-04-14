@@ -96,26 +96,24 @@ class RecordingHandler {
       }
     }
 
-    // ───────────────────────────────────────────────
-    // 2. COMPROVAR SERVEI GPS
-    // ───────────────────────────────────────────────
-    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
+    // 2. COMPROVAR GPS + PERMISOS (nou flux centralitzat)
+    final status = await PermissionsService.checkGpsAndPermissions();
+
+    if (status == GpsPermissionStatus.gpsOff) {
       if (!context.mounted) return;
-      final activate = await AppMessages.showGpsDisabledDialog(context);
-      if (activate == true) await Geolocator.openLocationSettings();
+      final go = await AppMessages.showGpsDisabledDialog(context);
+      if (go == true) Geolocator.openLocationSettings();
       return;
     }
 
-    // ───────────────────────────────────────────────
-    // 3. COMPROVAR PERMISOS "SEMPRE"
-    // ───────────────────────────────────────────────
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission != LocationPermission.always) {
+    if (status == GpsPermissionStatus.permissionDenied) {
       if (!context.mounted) return;
+
+      // Explicació prèvia (ja la tens implementada)
       final continuar = await AppMessages.showPermissionExplanation(context);
       if (continuar != true) return;
 
+      // Flux complet de permisos
       final ok = await PermissionsService.ensurePermissions(context);
       if (!context.mounted || !ok) return;
     }

@@ -129,22 +129,26 @@ class TrackNotifier extends Notifier<Track> {
     List<double> newDistancesList = [...state.distances];
 
     if (state.coordinates.isNotEmpty) {
-      final lastCoords = state.coordinates.last;
+      final lastCoords = state.coordinates.last; // [lon, lat]
       final lastAlt = state.altitudes.last;
 
-      // Calculem els metres entre l'últim punt i el nou
-      double step = Geolocator.distanceBetween(
-        lastCoords[1], // lon
-        lastCoords[0], // lat
-        pos.longitude,
-        pos.latitude,
+      final lastLon = lastCoords[0];
+      final lastLat = lastCoords[1];
+
+      // Càlcul correcte
+      final double step = Geolocator.distanceBetween(
+        lastLat, // ✔️ lat
+        lastLon, // ✔️ lon
+        pos.latitude, // ✔️ lat
+        pos.longitude, // ✔️ lon
       );
 
-      // Sumem al total acumulat
-      newDistance += step;
+      // Filtre anti-bogeries
+      if (step.isFinite && step < 200) {
+        newDistance += step;
+      }
 
       final double diffAlt = pos.altitude - lastAlt;
-      // ⛰️ Filtre de soroll (0.5m)
       if (diffAlt > 0.5) {
         newAscent += diffAlt;
       } else if (diffAlt < -0.5) {

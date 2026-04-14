@@ -28,6 +28,7 @@ class _ElevationProfileScreenState
   int? selectedIndexGraph;
   int? selectedIndexStart;
   int? selectedIndexEnd;
+  double statsHeight = 120;
 
   ActiveHandle activeHandle = ActiveHandle.none;
   int _draggingNeedle = 0;
@@ -184,6 +185,24 @@ class _ElevationProfileScreenState
   // ------------------------------------------------------------
   //  Segment Stats (C1): dues barres si hi ha dos tracks
   // ------------------------------------------------------------
+  int mapIndexByDistance(
+    int primaryIndex,
+    List<double> primaryDists,
+    List<double> secondaryDists,
+  ) {
+    if (primaryIndex < 0 || primaryIndex >= primaryDists.length) {
+      return 0;
+    }
+
+    final dist = primaryDists[primaryIndex];
+
+    for (int i = 0; i < secondaryDists.length; i++) {
+      if (secondaryDists[i] >= dist) return i;
+    }
+
+    return secondaryDists.length - 1;
+  }
+
   Widget _buildSegmentStatsBar(
     List<double> alts,
     List<double> dists,
@@ -326,44 +345,90 @@ class _ElevationProfileScreenState
       appBar: AppBar(title: const Text("Perfil d'elevació")),
       body: Column(
         children: [
-          if (selectedIndexStart != null && selectedIndexEnd != null) ...[
-            // Barra del track real (AppColors.secondary)
-            if (track.distances.isNotEmpty)
-              _buildSegmentStatsBar(
-                track.altitudes,
-                track.distances,
-                track.timestamps,
-                AppColors.secondary,
-              ),
+          SizedBox(height: 20),
+          // ─────────────────────────────────────────────
+          // 1) BLOC D’ESTADÍSTIQUES AMB ALÇADA FIXA
+          // ─────────────────────────────────────────────
+          SizedBox(
+            height: 120, // ← ajusta si vols més o menys espai
+            child: Column(
+              children: [
+                if (selectedIndexStart != null && selectedIndexEnd != null) ...[
+                  // TRACK REAL
+                  if (track.distances.isNotEmpty)
+                    _buildSegmentStatsBar(
+                      track.altitudes,
+                      track.distances,
+                      track.timestamps,
+                      AppColors.secondary,
+                    ),
 
-            const SizedBox(height: 8),
+                  const SizedBox(height: 8),
 
-            // Barra del track importat (AppColors.primary)
-            if (importedTrack!.distances.isNotEmpty)
-              _buildSegmentStatsBar(
-                importedTrack.altitudes,
-                importedTrack.distances,
-                null,
-                AppColors.primary,
-              ),
-          ],
+                  // TRACK IMPORTAT
+                  if (importedTrack != null &&
+                      importedTrack.distances.isNotEmpty)
+                    Builder(
+                      builder: (_) {
+                        final bool primaryIsReal =
+                            realDists.isNotEmpty &&
+                            (importedDists.isEmpty ||
+                                realDists.last >= importedDists.last);
+
+                        int start = selectedIndexStart!;
+                        int end = selectedIndexEnd!;
+
+                        if (!primaryIsReal) {
+                          start = mapIndexByDistance(
+                            start,
+                            importedDists,
+                            realDists,
+                          );
+                          end = mapIndexByDistance(
+                            end,
+                            importedDists,
+                            realDists,
+                          );
+                        } else {
+                          start = mapIndexByDistance(
+                            start,
+                            realDists,
+                            importedDists,
+                          );
+                          end = mapIndexByDistance(
+                            end,
+                            realDists,
+                            importedDists,
+                          );
+                        }
+
+                        return _buildSegmentStatsBar(
+                          importedTrack.altitudes,
+                          importedTrack.distances,
+                          importedTrack.timestamps,
+                          AppColors.primary,
+                        );
+                      },
+                    ),
+                ],
+              ],
+            ),
+          ),
 
           const SizedBox(height: 10),
 
-          // Llegenda
-          _buildLegend(hasImported),
-
-          // GRÀFIC
+          // ─────────────────────────────────────────────
+          // 2) GRÀFIC
+          // ─────────────────────────────────────────────
           SizedBox(
             height: chartHeight,
             child: LayoutBuilder(
               builder: (context, chartConstraints) {
                 final width = chartConstraints.maxWidth;
 
+                // ⬇️ Aquí deixes EXACTAMENT el teu codi del gràfic
                 return GestureDetector(
                   behavior: HitTestBehavior.opaque,
-
-                  // Long press → crear rang
                   onLongPressStart: (_) {
                     HapticFeedback.mediumImpact();
                     setState(() {
@@ -381,8 +446,6 @@ class _ElevationProfileScreenState
                       _draggingNeedle = 0;
                     });
                   },
-
-                  // Pan down → decidir quina agulla movem
                   onPanDown: (details) {
                     final x = details.localPosition.dx;
 
@@ -419,8 +482,6 @@ class _ElevationProfileScreenState
                       }
                     });
                   },
-
-                  // Pan update → moure agulles
                   onPanUpdate: (details) {
                     if (_draggingNeedle == 0) return;
 
@@ -448,7 +509,6 @@ class _ElevationProfileScreenState
                       }
                     });
                   },
-
                   onPanEnd: (_) => _draggingNeedle = 0,
                   onPanCancel: () => _draggingNeedle = 0,
 
@@ -456,7 +516,11 @@ class _ElevationProfileScreenState
                     children: [
                       // Highlight del rang
                       if (selectedIndexStart != null &&
-                          selectedIndexEnd != null)
+                          selectedIndexEnd != null &&
+                          selectedIndexStart! >= 0 &&
+                          selectedIndexEnd! >= 0 &&
+                          selectedIndexStart! < primaryAlts.length &&
+                          selectedIndexEnd! < primaryAlts.length)
                         Positioned.fill(
                           child: Padding(
                             padding: const EdgeInsets.only(
@@ -548,6 +612,13 @@ class _ElevationProfileScreenState
               },
             ),
           ),
+
+          const SizedBox(height: 10),
+
+          // ─────────────────────────────────────────────
+          // 3) LLEGENDA
+          // ─────────────────────────────────────────────
+          _buildLegend(hasImported),
         ],
       ),
     );

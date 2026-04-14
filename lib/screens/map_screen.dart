@@ -14,7 +14,6 @@ import 'package:gpxly/services/recording_handler.dart';
 import 'package:gpxly/theme/app_colors.dart';
 import 'package:gpxly/ui/app_messages.dart';
 import 'package:gpxly/services/gpx_exporter.dart';
-import 'package:gpxly/ui/app_styles.dart';
 import 'package:gpxly/ui/bottom_bar/bottom_bar_container.dart';
 import 'package:gpxly/utils/color_extensions.dart';
 import 'package:gpxly/utils/map_animation.dart';
@@ -23,7 +22,6 @@ import 'package:gpxly/widgets/floating_route_panel.dart';
 import 'package:gpxly/widgets/gps_accuracy_bars.dart';
 import 'package:gpxly/widgets/import_gpx_button.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
-import 'package:gpxly/notifiers/gps_accuracy_notifier.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class MapScreen extends ConsumerStatefulWidget {
@@ -233,39 +231,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
     );
   }
 
-  void _preguntarNomesReset() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: const Text("Gestió del track"),
-        content: const Text(
-          "Vols mantenir els punts actuals o reiniciar per començar de zero?",
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              prefs.setBool("preserve_track_on_start", false);
-              ref.read(trackProvider.notifier).reset();
-              Navigator.pop(context);
-            },
-            child: const Text("REINICIAR"),
-          ),
-          ElevatedButton(
-            style: AppButtons.dialog(AppColors.primary),
-            onPressed: () {
-              prefs.setBool("preserve_track_on_start", true);
-              Navigator.pop(context);
-            },
-            child: const Text("MANTENIR"),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final track = ref.watch(trackProvider);
@@ -277,7 +242,14 @@ class _MapScreenState extends ConsumerState<MapScreen>
     // Listener dins build (Riverpod obliga)
     ref.listen(trackProvider, (previous, next) {
       if (!styleInitialized || mapController == null) return;
-      if (next.coordinates.isEmpty) return;
+      // 👉 Si el track s'ha resetejat, esborrem la línia del mapa
+      if (next.coordinates.isEmpty) {
+        mapController!.setGeoJsonSource("track_line", {
+          "type": "FeatureCollection",
+          "features": [],
+        });
+        return;
+      }
 
       final last = next.coordinates.last;
       final lon = last[0];
@@ -324,6 +296,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
         );
       } catch (_) {}
     });
+
     ref.listen(trackSettingsProvider, (previous, next) {
       if (mapController == null || !styleInitialized) return;
 
@@ -429,30 +402,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
                 // DRETA: Info GPS i Settings (Ara tot junt aquí)
                 actions: [
-                  Row(
+                  const Row(
                     crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      const GpsAccuracyBars(),
-                      const SizedBox(width: 4),
-
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 0),
-                        child: Consumer(
-                          builder: (context, ref, child) {
-                            final acc = ref.watch(gpsAccuracyProvider);
-                            if (acc == 999.0) return const SizedBox.shrink();
-                            return Text(
-                              "${acc.round()}m",
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 9,
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
+                    children: [GpsAccuracyBars()],
                   ),
                   ImportGpxButton(
                     mapController: mapController,
@@ -482,6 +434,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
             RepaintBoundary(
               child: MapLibreMap(
                 trackCameraPosition: true,
+                compassEnabled: false,
                 styleString: "assets/osm_style.json",
                 initialCameraPosition: CameraPosition(
                   target: _initialCameraTarget!,
@@ -646,10 +599,11 @@ class _MapScreenState extends ConsumerState<MapScreen>
                                 Future.delayed(
                                   const Duration(milliseconds: 300),
                                   () {
-                                    if (mounted)
+                                    if (mounted) {
                                       setState(
                                         () => isProgrammaticMove = false,
                                       );
+                                    }
                                   },
                                 );
                               });

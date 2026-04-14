@@ -4,6 +4,9 @@ import 'package:gpxly/notifiers/gps_accuracy_notifier.dart';
 import 'package:gpxly/notifiers/permissions_notifier.dart';
 import 'package:gpxly/notifiers/track_notifier.dart';
 import '../utils/gps_accuracy.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:gpxly/ui/app_messages.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class GpsAccuracyBars extends ConsumerWidget {
   final int totalBars;
@@ -14,29 +17,71 @@ class GpsAccuracyBars extends ConsumerWidget {
     final permissions = ref.watch(permissionsProvider);
     final level = ref.watch(gpsAccuracyLevelProvider);
     final track = ref.watch(trackProvider);
+    final accuracy = ref.watch(gpsAccuracyProvider);
 
-    // 1. Sense permisos
+    print(
+      "🔍 hasPermission=${permissions.hasPermission}, gpsEnabled=${permissions.serviceEnabled}",
+    );
+
+    // ───────────────────────────────────────────────
+    // 1. SENSE PERMISOS
+    // ───────────────────────────────────────────────
     if (!permissions.hasPermission) {
-      return const Tooltip(
-        message: "Cal acceptar permisos de localització",
-        child: GpsDisabledIcon(),
+      return GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () async {
+          print("🔥 TAP: SENSE PERMISOS");
+          final go = await AppMessages.showLocationPermissionDialog(context);
+          if (go == true) {
+            openAppSettings();
+          }
+        },
+        child: Container(
+          padding: const EdgeInsets.all(6),
+          child: const Tooltip(
+            message: "Cal acceptar permisos de localització",
+            child: GpsDisabledIcon(),
+          ),
+        ),
       );
     }
 
-    // 2. GPS desactivat
+    // ───────────────────────────────────────────────
+    // 2. GPS DESACTIVAT
+    // ───────────────────────────────────────────────
     if (!permissions.serviceEnabled) {
-      return const Tooltip(
-        message: "El GPS està desactivat",
-        child: GpsDisabledIcon(),
+      return GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () async {
+          print("🔥 TAP: GPS DESACTIVAT");
+          final go = await AppMessages.showGpsDisabledDialog(context);
+          if (go == true) {
+            Geolocator.openLocationSettings();
+          }
+        },
+        child: Container(
+          padding: const EdgeInsets.all(6),
+          child: const Tooltip(
+            message: "El GPS està desactivat",
+            child: GpsDisabledIcon(),
+          ),
+        ),
       );
     }
 
-    // 3. Gravació no activa
+    // ───────────────────────────────────────────────
+    // 3. NO S’ESTÀ GRAVANT → barres apagades sense text
+    // ───────────────────────────────────────────────
     if (!track.recording) {
-      return _buildBars(0, Colors.grey.shade400);
+      return _wrapWithAccuracyText(
+        bars: _buildBars(0, Colors.grey.shade400),
+        accuracy: null,
+      );
     }
 
-    // 4. Lògica normal d’accuracy
+    // ───────────────────────────────────────────────
+    // 4. LÒGICA NORMAL D’ACCURACY
+    // ───────────────────────────────────────────────
     late Color color;
     late int activeBars;
 
@@ -63,9 +108,39 @@ class GpsAccuracyBars extends ConsumerWidget {
         break;
     }
 
-    return _buildBars(activeBars, color);
+    return _wrapWithAccuracyText(
+      bars: _buildBars(activeBars, color),
+      accuracy: accuracy == 999.0 ? null : accuracy,
+    );
   }
 
+  // ───────────────────────────────────────────────
+  // COMBINA BARRES + TEXT
+  // ───────────────────────────────────────────────
+  Widget _wrapWithAccuracyText({required Widget bars, double? accuracy}) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        bars,
+        if (accuracy != null) ...[
+          const SizedBox(width: 4),
+          Text(
+            "${accuracy.round()}m",
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 9,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  // ───────────────────────────────────────────────
+  // BARRES
+  // ───────────────────────────────────────────────
   Widget _buildBars(int activeBars, Color color) {
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -74,7 +149,6 @@ class GpsAccuracyBars extends ConsumerWidget {
         final active = index < activeBars;
         final height = (index + 1) * 4.0;
 
-        // 0.3 opacity → alpha 77
         final inactiveColor = color.withAlpha(77);
 
         return Container(
@@ -99,10 +173,9 @@ class GpsDisabledIcon extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: Colors.white, // cercle blanc opac
+        color: Colors.white,
         shape: BoxShape.circle,
         boxShadow: [
-          // 0.15 opacity → alpha 38
           BoxShadow(
             color: Colors.black.withAlpha(38),
             blurRadius: 3,
