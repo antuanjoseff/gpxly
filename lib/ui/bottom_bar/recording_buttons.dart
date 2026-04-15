@@ -12,7 +12,7 @@ class RecordingButtons extends StatelessWidget {
     return Row(
       children: [
         AppActionButton(
-          color: AppColors.secondary.withAlpha(180),
+          color: AppColors.secondary,
           onPressed: onPause,
           child: const Row(
             mainAxisAlignment: MainAxisAlignment.center,

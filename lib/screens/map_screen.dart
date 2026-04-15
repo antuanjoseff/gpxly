@@ -16,6 +16,7 @@ import 'package:gpxly/ui/app_messages.dart';
 import 'package:gpxly/services/gpx_exporter.dart';
 import 'package:gpxly/ui/bottom_bar/bottom_bar_container.dart';
 import 'package:gpxly/utils/color_extensions.dart';
+import 'package:gpxly/utils/geo_utils.dart';
 import 'package:gpxly/utils/map_animation.dart';
 import 'package:gpxly/utils/map_layers.dart';
 import 'package:gpxly/widgets/floating_route_panel.dart';
@@ -48,6 +49,16 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
   LatLng? _lastPosition;
   Timer? _animationTimer;
+
+  // VARIABLES DE SEGUIMENT DEL TRACK IMPORTAT
+  List<double> _distanceHistory = [];
+  bool _wasNearTrack = false;
+  bool _isNearTrack = false;
+  bool _isDriftingAway = false;
+
+  static const double nearThreshold = 25; // metres
+  static const double farThreshold = 40; // metres
+  static const int trendWindow = 6; // últimes 6 posicions
 
   final ButtonStyle recordButtonStyle = ElevatedButton.styleFrom(
     backgroundColor: Colors.red,
@@ -231,11 +242,19 @@ class _MapScreenState extends ConsumerState<MapScreen>
     );
   }
 
+  bool isConsistentlyIncreasing(List<double> values) {
+    for (int i = 1; i < values.length; i++) {
+      if (values[i] < values[i - 1]) return false;
+    }
+    return true;
+  }
+
   @override
   Widget build(BuildContext context) {
     final track = ref.watch(trackProvider);
     final trackSettings = ref.watch(trackSettingsProvider);
     final permissions = ref.watch(permissionsProvider);
+    final importedTrack = ref.watch(importedTrackProvider);
     final hasPermissions = permissions.hasPermission;
     final gpsEnabled = permissions.serviceEnabled;
 
@@ -254,6 +273,54 @@ class _MapScreenState extends ConsumerState<MapScreen>
       final last = next.coordinates.last;
       final lon = last[0];
       final lat = last[1];
+
+      // -----------------------------
+      // SEGUIMENT DEL TRACK IMPORTAT
+      // -----------------------------
+      final importedTrack = ref.read(importedTrackProvider);
+
+      if (importedTrack != null && importedTrack.coordinates.isNotEmpty) {
+        final userPos = LatLng(lat, lon);
+
+        // 1. Distància mínima al track importat
+        final dist = distanceToTrack(userPos, importedTrack.coordinates);
+
+        // 2. Guardem la distància a l'historial
+        _distanceHistory.add(dist);
+        if (_distanceHistory.length > trendWindow) {
+          _distanceHistory.removeAt(0);
+        }
+
+        // 3. Determinar si està a prop del track
+        _isNearTrack = dist < nearThreshold;
+
+        // 4. Detectar tendència d'allunyament
+        if (_distanceHistory.length == trendWindow) {
+          final first = _distanceHistory.first;
+          final lastD = _distanceHistory.last;
+
+          final increasing = lastD > first + 5; // marge de 5m
+
+          final consistentlyIncreasing = isConsistentlyIncreasing(
+            _distanceHistory,
+          );
+
+          _isDriftingAway = increasing && consistentlyIncreasing;
+        }
+
+        // 5. Avisar si s'està allunyant
+        if (_wasNearTrack && !_isNearTrack && _isDriftingAway) {
+          AppMessages.showErrorSnackBar(context, "T'estàs allunyant del track");
+        }
+
+        // 6. Avisar si ha tornat al track
+        if (!_wasNearTrack && _isNearTrack) {
+          AppMessages.showSuccessSnackBar(context, "Has tornat al track");
+        }
+
+        // 7. Actualitzar estat intern
+        _wasNearTrack = _isNearTrack;
+      }
 
       // 🔵 PRIMERA COORDENADA → dibuix immediat
       if (next.coordinates.length == 1) {
@@ -644,12 +711,52 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 },
 
                 onPause: () => RecordingHandler.pause(ref),
-
                 onResume: () => RecordingHandler.resume(ref),
-
                 onStop: () => _handleStopProcess(context, ref),
 
                 importButton: ImportGpxButton(mapController: mapController),
+
+                // 👇👇👇 AFEGIT: BOTÓ SEGUIR NOMÉS SI HI HA importedTrack
+                followButton: importedTrack != null
+                    ? ElevatedButton(
+                        onPressed: () {
+                          final coords = importedTrack.coordinates;
+                          if (coords.isEmpty) return;
+
+                          final last = coords.last;
+
+                          setState(() {
+                            userMovedMap = false;
+                            isProgrammaticMove = true;
+                          });
+
+                          mapController
+                              ?.animateCamera(
+                                CameraUpdate.newLatLng(
+                                  LatLng(last[1], last[0]),
+                                ),
+                              )
+                              .then((_) {
+                                Future.delayed(
+                                  const Duration(milliseconds: 300),
+                                  () {
+                                    if (mounted) {
+                                      setState(
+                                        () => isProgrammaticMove = false,
+                                      );
+                                    }
+                                  },
+                                );
+                              });
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue.shade700,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                        ),
+                        child: const Text("Seguir"),
+                      )
+                    : null,
               ),
       ),
     );

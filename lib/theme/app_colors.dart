@@ -9,9 +9,9 @@ class AppColors {
   static const Color pureBlack = Color(0xFF000000);
 
   // Opcional: paleta temàtica
-  static const Color tertiary = deepGreen;
-  static const Color secondary = mustardYellow;
   static const Color primary = skyBlue;
+  static const Color secondary = mustardYellow;
+  static const Color tertiary = deepGreen;
   static const Color white = Colors.white;
   static const Color dark = Colors.black;
 }

@@ -618,33 +618,41 @@ class _ElevationProfileScreenState
           // ─────────────────────────────────────────────
           // 3) LLEGENDA
           // ─────────────────────────────────────────────
-          _buildLegend(hasImported),
+          _buildLegend(hasImported, hasReal, primaryIsReal),
         ],
       ),
     );
   }
 }
 
-Widget _buildLegend(bool hasSecondary) {
+Widget _buildLegend(bool hasSecondary, bool hasReal, bool primaryIsReal) {
+  // Si no hi ha track real, el primari és l'importat sí o sí
+  final effectivePrimaryIsReal = hasReal ? primaryIsReal : false;
+
+  final primaryLabel = effectivePrimaryIsReal ? "Track real" : "Track importat";
+  final secondaryLabel = effectivePrimaryIsReal
+      ? "Track importat"
+      : "Track real";
+
   return Padding(
     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
     child: Row(
       children: [
-        // Track primari
+        // Primari
         Row(
           children: [
             Container(
               width: 14,
               height: 14,
               decoration: const BoxDecoration(
-                color: Color(0xFF4CAF50), // Verd primari
+                color: Color(0xFF4CAF50),
                 shape: BoxShape.circle,
               ),
             ),
             const SizedBox(width: 6),
-            const Text(
-              "Track primari",
-              style: TextStyle(
+            Text(
+              primaryLabel,
+              style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
                 color: AppColors.dark,
@@ -655,7 +663,7 @@ Widget _buildLegend(bool hasSecondary) {
 
         const SizedBox(width: 20),
 
-        // Track secundari (només si existeix)
+        // Secundari només si existeix
         if (hasSecondary)
           Row(
             children: [
@@ -663,14 +671,14 @@ Widget _buildLegend(bool hasSecondary) {
                 width: 14,
                 height: 14,
                 decoration: const BoxDecoration(
-                  color: AppColors.mustardYellow, // Groc secundari
+                  color: AppColors.mustardYellow,
                   shape: BoxShape.circle,
                 ),
               ),
               const SizedBox(width: 6),
-              const Text(
-                "Track importat",
-                style: TextStyle(
+              Text(
+                secondaryLabel,
+                style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: AppColors.dark,

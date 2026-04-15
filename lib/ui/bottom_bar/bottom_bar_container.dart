@@ -12,6 +12,7 @@ class BottomBarContainer extends StatelessWidget {
   final VoidCallback onResume;
   final VoidCallback onStop;
   final Widget importButton;
+  final Widget? followButton;
 
   const BottomBarContainer({
     super.key,
@@ -23,6 +24,7 @@ class BottomBarContainer extends StatelessWidget {
     required this.onResume,
     required this.onStop,
     required this.importButton,
+    this.followButton,
   });
 
   @override
