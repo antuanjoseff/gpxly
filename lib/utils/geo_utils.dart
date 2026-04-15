@@ -96,3 +96,22 @@ double distanceInMeters(LatLng a, LatLng b) {
 
   return R * c;
 }
+
+double bearingBetween(LatLng a, LatLng b) {
+  final lat1 = _degToRad(a.latitude);
+  final lon1 = _degToRad(a.longitude);
+  final lat2 = _degToRad(b.latitude);
+  final lon2 = _degToRad(b.longitude);
+
+  final dLon = lon2 - lon1;
+
+  final y = sin(dLon) * cos(lat2);
+  final x = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(dLon);
+
+  var brng = _radToDeg(atan2(y, x));
+  brng = (brng + 360) % 360; // 0–360
+
+  return brng;
+}
+
+double _radToDeg(double rad) => rad * (180.0 / pi);
