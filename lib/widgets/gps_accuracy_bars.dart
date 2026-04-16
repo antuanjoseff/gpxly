@@ -4,11 +4,9 @@ import 'package:gpxly/notifiers/gps_accuracy_notifier.dart';
 import 'package:gpxly/notifiers/permissions_notifier.dart';
 import 'package:gpxly/notifiers/track_notifier.dart';
 import 'package:gpxly/services/location_permission_flow.dart';
-import 'package:gpxly/services/permissions_service.dart';
 import '../utils/gps_accuracy.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:gpxly/ui/app_messages.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 class GpsAccuracyBars extends ConsumerWidget {
   final int totalBars;
@@ -76,7 +74,7 @@ class GpsAccuracyBars extends ConsumerWidget {
     // ───────────────────────────────────────────────
     if (!track.recording) {
       return _wrapWithAccuracyText(
-        bars: _buildBars(0, Colors.grey.shade400),
+        bars: _buildBars(0, Colors.white), // 👈 barres blanques
         accuracy: null,
       );
     }
@@ -120,22 +118,29 @@ class GpsAccuracyBars extends ConsumerWidget {
   // COMBINA BARRES + TEXT
   // ───────────────────────────────────────────────
   Widget _wrapWithAccuracyText({required Widget bars, double? accuracy}) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.end,
+    return Stack(
+      clipBehavior: Clip.none,
       children: [
-        bars,
-        if (accuracy != null) ...[
-          const SizedBox(width: 4),
-          Text(
-            "${accuracy.round()}m",
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 9,
+        // 📌 Text "Xm" a la cantonada superior esquerra
+        if (accuracy != null)
+          Positioned(
+            top: -10, // 👈 ajusta segons t’agradi
+            left: 0,
+            child: Text(
+              "${accuracy.round()}m",
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 9,
+              ),
             ),
           ),
-        ],
+
+        // 📌 Barres a sota
+        Padding(
+          padding: const EdgeInsets.only(top: 4), // separació del text
+          child: bars,
+        ),
       ],
     );
   }
@@ -151,7 +156,9 @@ class GpsAccuracyBars extends ConsumerWidget {
         final active = index < activeBars;
         final height = (index + 1) * 4.0;
 
-        final inactiveColor = color.withAlpha(77);
+        final inactiveColor = color.withOpacity(
+          0.35,
+        ); // 👈 millor que withAlpha
 
         return Container(
           width: 3,

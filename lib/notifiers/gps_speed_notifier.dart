@@ -12,3 +12,11 @@ class GpsSpeedNotifier extends Notifier<double> {
 final gpsSpeedProvider = NotifierProvider<GpsSpeedNotifier, double>(
   GpsSpeedNotifier.new,
 );
+
+final mapZoomProvider = NotifierProvider<GpsSpeedNotifier, double>(
+  GpsSpeedNotifier.new,
+);
+
+final mapCenterLatProvider = NotifierProvider<GpsSpeedNotifier, double>(
+  GpsSpeedNotifier.new,
+);

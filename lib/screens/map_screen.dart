@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gpxly/features/elevation_profile/elevation_profile_screen.dart';
-import 'package:gpxly/models/track.dart';
+import 'package:gpxly/notifiers/gps_speed_notifier.dart';
 import 'package:gpxly/notifiers/imported_track_notifier.dart';
 import 'package:gpxly/notifiers/permissions_notifier.dart';
 import 'package:gpxly/notifiers/track_follow_notifier.dart';
@@ -21,9 +21,10 @@ import 'package:gpxly/utils/color_extensions.dart';
 import 'package:gpxly/utils/geo_utils.dart';
 import 'package:gpxly/utils/map_animation.dart';
 import 'package:gpxly/utils/map_layers.dart';
-import 'package:gpxly/widgets/floating_route_panel.dart';
+import 'package:gpxly/widgets/compass_widget.dart';
 import 'package:gpxly/widgets/gps_accuracy_bars.dart';
 import 'package:gpxly/widgets/import_gpx_button.dart';
+import 'package:gpxly/widgets/recording_status_bar.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -473,7 +474,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 automaticallyImplyLeading: false,
                 titleSpacing: 16,
 
-                // ESQUERRA: Identitat
                 title: const Text(
                   'GpxGo',
                   style: TextStyle(
@@ -483,16 +483,22 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   ),
                 ),
 
-                // DRETA: Info GPS i Settings (Ara tot junt aquí)
                 actions: [
-                  const Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [GpsAccuracyBars()],
+                  // 🔥 Píndola de gravació
+                  RecordingStatusBar(
+                    state: track.recordingState,
+                    duration: track.duration,
                   ),
+
+                  const SizedBox(width: 12),
+
+                  // Botó d'importació
                   ImportGpxButton(
                     mapController: mapController,
                     enabled: hasPermissions && gpsEnabled,
                   ),
+
+                  // Botó de settings
                   IconButton(
                     visualDensity: VisualDensity.compact,
                     icon: const Icon(
@@ -509,9 +515,16 @@ class _MapScreenState extends ConsumerState<MapScreen>
                             ),
                           ),
                   ),
+
+                  const SizedBox(width: 12),
+
+                  // 👉 Ara sí: GpsAccuracyBars a la dreta del tot
+                  const GpsAccuracyBars(),
+
                   const SizedBox(width: 8),
                 ],
               ),
+
         body: Stack(
           children: [
             RepaintBoundary(
@@ -538,6 +551,15 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   if (isProgrammaticMove) return;
                   userMovedMap = true;
                 },
+                onCameraIdle: () async {
+                  final pos = await mapController!.cameraPosition;
+
+                  ref.read(mapZoomProvider.notifier).update(pos!.zoom);
+                  ref
+                      .read(mapCenterLatProvider.notifier)
+                      .update(pos.target.latitude);
+                },
+
                 onMapCreated: (controller) {
                   mapController = controller;
                   controller.addListener(_onMapChanged);
@@ -593,13 +615,10 @@ class _MapScreenState extends ConsumerState<MapScreen>
               // -------------------------
               // PÍNDOLA FLOTANT (CENTRAT DALT)
               // -------------------------
-              Positioned(
-                top: 10, // Una mica més amunt
-                left: 10, // Ancorat a l'esquerra
-                child: FloatingRoutePanel(
-                  isRecording: track.recordingState == RecordingState.recording,
-                  duration: track.duration,
-                ),
+              const Positioned(
+                top: 10,
+                left: 10,
+                child: CompassAltitudeScaleRow(),
               ),
 
               // -------------------------
@@ -611,6 +630,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 child: Column(
                   children: [
                     // NOU: BOTÓ DE PERFIL D'ELEVACIÓ
+                    // FloatingAltitudePanel(),
+                    // const SizedBox(height: 8),
                     GestureDetector(
                       onTap: () => Navigator.push(
                         context,

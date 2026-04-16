@@ -502,3 +502,9 @@ class TrackNotifier extends Notifier<Track> {
 }
 
 final trackProvider = NotifierProvider<TrackNotifier, Track>(TrackNotifier.new);
+
+final compassHeadingProvider = Provider<double>((ref) {
+  final track = ref.watch(trackProvider);
+  if (track.headings.isEmpty) return 0.0;
+  return track.headings.last; // heading en graus
+});
