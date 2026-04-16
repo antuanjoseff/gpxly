@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gpxly/notifiers/elevation_progress_notifier.dart';
+import 'package:gpxly/notifiers/track_follow_notifier.dart';
 import '../theme/app_colors.dart';
 
 class AppMessages {
@@ -365,6 +366,80 @@ class AppMessages {
             child: const Text('CONFIGURACIÓ'),
           ),
         ],
+      ),
+    );
+  }
+
+  static void showOffTrackPersistentSnackbar(
+    BuildContext context,
+    WidgetRef ref,
+  ) {
+    final messenger = ScaffoldMessenger.of(context);
+
+    messenger.clearSnackBars();
+
+    messenger.showSnackBar(
+      SnackBar(
+        duration: const Duration(days: 1), // persistent
+        backgroundColor: Colors.red.shade700,
+        content: Row(
+          children: [
+            const Icon(Icons.warning, color: Colors.white),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text(
+                "T'estàs allunyant del track importat",
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+            GestureDetector(
+              onTap: () {
+                messenger.hideCurrentSnackBar();
+                ref
+                    .read(trackFollowNotifierProvider.notifier)
+                    .dismissOffTrackAlert();
+              },
+              child: const Icon(Icons.close, color: Colors.white),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static void showBackOnTrackPersistentSnackbar(
+    BuildContext context,
+    WidgetRef ref,
+  ) {
+    final messenger = ScaffoldMessenger.of(context);
+
+    messenger.clearSnackBars();
+
+    messenger.showSnackBar(
+      SnackBar(
+        duration: const Duration(days: 1),
+        backgroundColor: Colors.green.shade700,
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle, color: Colors.white),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text(
+                "Has tornat al track",
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+            GestureDetector(
+              onTap: () {
+                messenger.hideCurrentSnackBar();
+                ref
+                    .read(trackFollowNotifierProvider.notifier)
+                    .dismissOffTrackAlert();
+              },
+              child: const Icon(Icons.close, color: Colors.white),
+            ),
+          ],
+        ),
       ),
     );
   }

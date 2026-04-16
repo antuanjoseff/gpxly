@@ -6,10 +6,12 @@ import 'package:gpxly/features/elevation_profile/elevation_profile_screen.dart';
 import 'package:gpxly/models/track.dart';
 import 'package:gpxly/notifiers/imported_track_notifier.dart';
 import 'package:gpxly/notifiers/permissions_notifier.dart';
+import 'package:gpxly/notifiers/track_follow_notifier.dart';
 import 'package:gpxly/notifiers/track_notifier.dart';
 import 'package:gpxly/notifiers/track_settings_notifier.dart';
 import 'package:gpxly/screens/settings/gps_settings_screen.dart';
 import 'package:gpxly/screens/stats_screen.dart';
+import 'package:gpxly/services/location_permission_flow.dart';
 import 'package:gpxly/services/recording_handler.dart';
 import 'package:gpxly/theme/app_colors.dart';
 import 'package:gpxly/ui/app_messages.dart';
@@ -310,12 +312,14 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
         // 5. Avisar si s'està allunyant
         if (_wasNearTrack && !_isNearTrack && _isDriftingAway) {
-          AppMessages.showErrorSnackBar(context, "T'estàs allunyant del track");
+          // AppMessages.showErrorSnackBar(context, "T'estàs allunyant del track");
+          ref.read(trackFollowNotifierProvider.notifier).onUserDriftingAway();
         }
 
         // 6. Avisar si ha tornat al track
         if (!_wasNearTrack && _isNearTrack) {
-          AppMessages.showSuccessSnackBar(context, "Has tornat al track");
+          // AppMessages.showSuccessSnackBar(context, "Has tornat al track");
+          ref.read(trackFollowNotifierProvider.notifier).onUserBackOnTrack();
         }
 
         // 7. Actualitzar estat intern
@@ -424,6 +428,18 @@ class _MapScreenState extends ConsumerState<MapScreen>
               });
         }
       });
+    });
+
+    ref.listen(trackFollowNotifierProvider, (prev, next) {
+      if (next.showBackOnTrackSnackbar == true) {
+        AppMessages.showBackOnTrackPersistentSnackbar(context, ref);
+      }
+    });
+
+    ref.listen(trackFollowNotifierProvider, (prev, next) {
+      if (next.showOffTrackSnackbar == true) {
+        AppMessages.showOffTrackPersistentSnackbar(context, ref);
+      }
     });
 
     if (_initialCameraTarget == null) {
@@ -706,7 +722,16 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 state: track.recordingState,
 
                 onStart: () async {
+                  // 1) Flux unificat de permisos
+                  final ok = await requestLocationPermissionsUnified(
+                    context,
+                    ref,
+                  );
+                  if (!ok) return;
+
+                  // 2) Ara sí → flux complet de gravació
                   await RecordingHandler.start(context, ref, mapController);
+
                   setState(() => _isPanelExpanded = false);
                 },
 

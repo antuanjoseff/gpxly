@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gpxly/notifiers/gps_accuracy_notifier.dart';
 import 'package:gpxly/notifiers/permissions_notifier.dart';
 import 'package:gpxly/notifiers/track_notifier.dart';
+import 'package:gpxly/services/location_permission_flow.dart';
+import 'package:gpxly/services/permissions_service.dart';
 import '../utils/gps_accuracy.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:gpxly/ui/app_messages.dart';
@@ -30,12 +32,13 @@ class GpsAccuracyBars extends ConsumerWidget {
       return GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () async {
-          print("🔥 TAP: SENSE PERMISOS");
-          final go = await AppMessages.showLocationPermissionDialog(context);
-          if (go == true) {
-            openAppSettings();
-          }
+          final ok = await requestLocationPermissionsUnified(context, ref);
+          if (!ok) return;
+
+          // Si vols fer alguna acció extra quan ja hi ha permisos:
+          print("🎉 Permisos OK des de la icona!");
         },
+
         child: Container(
           padding: const EdgeInsets.all(6),
           child: const Tooltip(
