@@ -1,0 +1,88 @@
+{
+  "appTitle": "GpxGo",
+  "startRecording": "Inicia gravació",
+  "stopRecording": "Atura gravació",
+  "gpsDisabled": "El GPS està desactivat",
+  "locationPermissionRequired": "Cal acceptar permisos de localització",
+  
+  "exitWarning": "Prem enrere un altre cop per sortir",
+  "longPressToFinish": "Mantén premut per finalitzar la gravació",
+
+  "gpsDisabledTitle": "GPS desactivat",
+  "gpsDisabledMessage": "El GPS està desactivat. Vols activar-lo ara?",
+
+  "cancel": "CANCEL·LAR",
+  "close": "TANCAR",
+  "ok": "D'ACORD",
+  "settings": "CONFIGURACIÓ",
+
+  "recoverTrackTitle": "Ruta pendent",
+  "recoverTrackMessage": "S'ha detectat una gravació que no es va tancar correctament. Vols continuar-la o començar-ne una de nova?",
+  "discard": "DESCARTAR",
+  "recover": "RECUPERAR",
+
+  "exportTitle": "Exportar GPX",
+  "exportMessage": "Vols exportar el track ara?",
+  "export": "EXPORTAR",
+
+  "importGpxTitle": "Importar GPX",
+  "importGpxMessage": "Ja tens una ruta activa o dades carregades. Vols substituir-les pel fitxer GPX?",
+  "import": "IMPORTAR",
+
+  "viewModeTitle": "Mode visualització",
+  "viewModeMessage": "Vols entrar en mode visualització? No s'afegiran punts nous i la gravació quedarà desactivada.",
+  "no": "NO",
+  "activate": "ACTIVAR",
+
+  "permissionNeededTitle": "Permís necessari",
+  "permissionNeededMessage": "Per poder gravar la ruta correctament amb la pantalla apagada, cal seleccionar: 👉 \"Permetre sempre\".",
+  "continueLabel": "CONTINUA",
+
+  "locationPermissionTitle": "Permís de localització",
+  "locationPermissionMessage": "L’aplicació no té permisos per accedir a la ubicació. Vols obrir la configuració per donar permisos?",
+
+  "offTrack": "T'estàs allunyant del track importat",
+  "backOnTrack": "Has tornat al track",
+
+  "elevationFixing": "Corregint altituds",
+  "error": "Error",
+
+  "gpsRecordByTime": "Gravació per temps",
+  "gpsRecordByDistance": "Gravació per distància",
+  "gpsMaxAccuracy": "Accuracy màxima",
+
+  "gpxIncludeExtraData": "Incloure dades extres al fitxer GPX",
+  "gpxAccuracyPerPoint": "Accuracy per punt",
+  "gpxSpeed": "Velocitat",
+  "gpxHeading": "Heading (Rumb)",
+  "gpxSatellites": "Satèl·lits",
+  "gpxVerticalAccuracy": "Vertical accuracy",
+  "switchOn": "ON",
+  "switchOff": "OFF",
+
+"trackColor": "Color del track",
+"changeTrackColor": "CANVIA EL COLOR DEL TRAÇ",
+"trackWidth": "Gruix del traç",
+"trackPreview": "Previsualització del traç:",
+"pickColor": "Tria un color",
+
+"trackStatsTitle": "Dades de la ruta",
+"statTime": "TMP",
+"statDistance": "DIST",
+"statSpeed": "VEL",
+"statMaxElevation": "MAX",
+"statMinElevation": "MIN",
+"statAscent": "+ASC",
+"statDescent": "-DES",
+
+"elevationProfile": "Perfil d'elevació",
+"noData": "Sense dades",
+"realTrack": "Track real",
+"importedTrack": "Track importat",
+
+"resume": "REPRÈN",
+"stopFollowing": "ATURA",
+"follow": "SEGUIR",
+"pause": "PAUSA"
+  
+}

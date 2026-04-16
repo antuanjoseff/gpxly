@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'package:gpxly/l10n/app_localizations.dart';
 import 'package:gpxly/notifiers/track_settings_notifier.dart';
 import 'package:gpxly/theme/app_colors.dart';
 
@@ -21,6 +22,7 @@ class TrackSettingsTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(trackSettingsProvider);
+    final t = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F7),
@@ -30,13 +32,12 @@ class TrackSettingsTab extends ConsumerWidget {
           children: [
             // --- BLOC COLOR ---
             _buildSettingsCard(
-              title: "Color del track",
-              // Previsualització d'un camí petit a la dreta del títol
+              title: t.trackColor,
               rightWidget: CustomPaint(
-                size: const Size(100, 16), // Una mica més llarga i alta
+                size: const Size(100, 16),
                 painter: TrackPathPainter(
                   color: settings.color,
-                  strokeWidth: 6, // Gruix fix per la miniatura
+                  strokeWidth: 6,
                 ),
               ),
               child: Row(
@@ -50,7 +51,7 @@ class TrackSettingsTab extends ConsumerWidget {
                         elevation: 0,
                       ),
                       icon: const Icon(Icons.palette_outlined),
-                      label: const Text("CANVIA EL COLOR DEL TRAÇ"),
+                      label: Text(t.changeTrackColor),
                       onPressed: () =>
                           _openColorPicker(context, ref, settings.color),
                     ),
@@ -63,7 +64,7 @@ class TrackSettingsTab extends ConsumerWidget {
 
             // --- BLOC GRUIX ---
             _buildSettingsCard(
-              title: "Gruix del traç",
+              title: t.trackWidth,
               rightWidget: Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,
@@ -96,12 +97,11 @@ class TrackSettingsTab extends ConsumerWidget {
                     },
                   ),
                   const SizedBox(height: 20),
-                  const Text(
-                    "Previsualització del traç:",
-                    style: TextStyle(color: Colors.grey, fontSize: 11),
+                  Text(
+                    t.trackPreview,
+                    style: const TextStyle(color: Colors.grey, fontSize: 11),
                   ),
                   const SizedBox(height: 16),
-                  // Camí gran que reacciona al color i al gruix real
                   Container(
                     width: double.infinity,
                     height: 40,
@@ -122,7 +122,6 @@ class TrackSettingsTab extends ConsumerWidget {
     );
   }
 
-  // Mètodes auxiliars (igual que abans, només cal afegir el Painter a sota)
   Widget _buildSettingsCard({
     required String title,
     required Widget rightWidget,
@@ -217,10 +216,12 @@ class TrackSettingsTab extends ConsumerWidget {
     WidgetRef ref,
     Color currentColor,
   ) {
+    final t = AppLocalizations.of(context)!;
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Tria un color"),
+        title: Text(t.pickColor),
         content: SingleChildScrollView(
           child: BlockPicker(
             pickerColor: currentColor,
@@ -249,10 +250,8 @@ class TrackPathPainter extends CustomPainter {
       ..color = color
       ..strokeWidth = strokeWidth
       ..style = PaintingStyle.stroke
-      ..strokeCap =
-          StrokeCap.round; // Extrems arrodonits per a un millor acabat
+      ..strokeCap = StrokeCap.round;
 
-    // Dibuixa una línia recta horitzontal centrada verticalment
     canvas.drawLine(
       Offset(0, size.height / 2),
       Offset(size.width, size.height / 2),

@@ -56,7 +56,6 @@ class GpsAccuracyBars extends ConsumerWidget {
       return GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () async {
-          print("🔥 TAP: GPS DESACTIVAT");
           final go = await AppMessages.showGpsDisabledDialog(context);
           if (go == true) {
             Geolocator.openLocationSettings();

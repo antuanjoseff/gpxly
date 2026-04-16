@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gpxly/l10n/app_localizations.dart';
 import 'package:gpxly/notifiers/imported_track_notifier.dart';
 import 'package:gpxly/notifiers/track_follow_notifier.dart';
 import 'package:gpxly/theme/app_colors.dart';
@@ -12,6 +13,8 @@ class RecordingButtons extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final t = AppLocalizations.of(context)!;
+
     final followState = ref.watch(trackFollowNotifierProvider);
     final imported = ref.watch(importedTrackProvider);
     final hasImported = imported != null && imported.coordinates.isNotEmpty;
@@ -22,12 +25,15 @@ class RecordingButtons extends ConsumerWidget {
         AppActionButton(
           color: AppColors.secondary,
           onPressed: onPause,
-          child: const Row(
+          child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.pause),
-              SizedBox(width: 8),
-              Text("PAUSA", style: TextStyle(fontWeight: FontWeight.bold)),
+              const Icon(Icons.pause),
+              const SizedBox(width: 8),
+              Text(
+                t.pause, // ← traduït
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
             ],
           ),
         ),
@@ -51,7 +57,9 @@ class RecordingButtons extends ConsumerWidget {
                 Icon(followState.isFollowing ? Icons.close : Icons.navigation),
                 const SizedBox(width: 8),
                 Text(
-                  followState.isFollowing ? "ATURA" : "SEGUIR",
+                  followState.isFollowing
+                      ? t.stopFollowing
+                      : t.follow, // ← traduït
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
               ],

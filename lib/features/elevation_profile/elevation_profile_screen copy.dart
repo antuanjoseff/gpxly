@@ -6,7 +6,6 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:gpxly/features/elevation_profile/painters/selection_painter.dart';
 import 'package:gpxly/features/elevation_profile/painters/range_highlight_painter.dart';
 import 'package:gpxly/features/elevation_profile/utils/chart_utils.dart';
-import 'package:gpxly/l10n/app_localizations.dart';
 
 import 'package:gpxly/notifiers/track_notifier.dart';
 import 'package:gpxly/notifiers/imported_track_notifier.dart';
@@ -25,6 +24,7 @@ class ElevationProfileScreen extends ConsumerStatefulWidget {
 
 class _ElevationProfileScreenState
     extends ConsumerState<ElevationProfileScreen> {
+  // Agulles
   int? selectedIndexGraph;
   int? selectedIndexStart;
   int? selectedIndexEnd;
@@ -35,8 +35,9 @@ class _ElevationProfileScreenState
 
   final chartKey = GlobalKey();
 
-  final Color primaryNeedleColor = const Color(0xFF4CAF50);
-  final Color secondaryNeedleColor = AppColors.mustardYellow;
+  // Colors
+  final Color primaryNeedleColor = const Color(0xFF4CAF50); // Verd
+  final Color secondaryNeedleColor = AppColors.mustardYellow; // SC1
 
   final Color sliderStartNeedleColor = const Color(0xFF007BFF);
   final Color sliderEndNeedleColor = const Color(0xFFFF3B30);
@@ -78,11 +79,13 @@ class _ElevationProfileScreenState
         (importedDists.isEmpty || realDists.last >= importedDists.last);
 
     final List<double> primaryDists = primaryIsReal ? realDists : importedDists;
+
     final List<double> primaryAlts = primaryIsReal ? realAlts : importedAlts;
 
     final List<double> secondaryDists = primaryIsReal
         ? importedDists
         : realDists;
+
     final List<double> secondaryAlts = primaryIsReal ? importedAlts : realAlts;
 
     return LineChartData(
@@ -94,7 +97,11 @@ class _ElevationProfileScreenState
       borderData: FlBorderData(show: false),
       extraLinesData: ExtraLinesData(
         horizontalLines: [
-          HorizontalLine(y: forcedMinY, color: Colors.grey, strokeWidth: 1.5),
+          HorizontalLine(
+            y: forcedMinY, // 👈 línia a l’eix X
+            color: Colors.grey, // o el color que vulguis
+            strokeWidth: 1.5,
+          ),
         ],
       ),
 
@@ -130,12 +137,14 @@ class _ElevationProfileScreenState
       ),
       lineTouchData: const LineTouchData(enabled: false),
       lineBarsData: [
+        // TRACK PRIMARI (El que marca la longitud de l'eix X)
         LineChartBarData(
           spots: List.generate(
             primaryAlts.length,
             (i) => FlSpot(primaryDists[i], primaryAlts[i]),
           ),
           isCurved: false,
+          // Si el primari és el real -> secondary. Si no (és l'importat) -> primary.
           color: primaryIsReal ? AppColors.secondary : AppColors.primary,
           barWidth: 3,
           dotData: const FlDotData(show: false),
@@ -148,6 +157,7 @@ class _ElevationProfileScreenState
           ),
         ),
 
+        // TRACK SECUNDARI (L'altre track, si existeix)
         if (secondaryDists.isNotEmpty)
           LineChartBarData(
             spots: List.generate(
@@ -155,6 +165,8 @@ class _ElevationProfileScreenState
               (i) => FlSpot(secondaryDists[i], secondaryAlts[i]),
             ),
             isCurved: false,
+            // Si el primari era el real, el secundari és l'importat -> primary.
+            // Si el primari era l'importat, el secundari és el real -> secondary.
             color: primaryIsReal ? AppColors.primary : AppColors.secondary,
             barWidth: 3,
             dotData: const FlDotData(show: false),
@@ -171,7 +183,7 @@ class _ElevationProfileScreenState
   }
 
   // ------------------------------------------------------------
-  //  Segment Stats
+  //  Segment Stats (C1): dues barres si hi ha dos tracks
   // ------------------------------------------------------------
   int mapIndexByDistance(
     int primaryIndex,
@@ -288,8 +300,6 @@ class _ElevationProfileScreenState
   // ------------------------------------------------------------
   @override
   Widget build(BuildContext context) {
-    final t = AppLocalizations.of(context)!;
-
     final real = ref.watch(trackProvider);
     final imported = ref.watch(importedTrackProvider);
 
@@ -308,12 +318,13 @@ class _ElevationProfileScreenState
       return Scaffold(
         appBar: AppBar(
           backgroundColor: AppColors.primary,
-          title: Text(t.elevationProfile),
+          title: const Text("Perfil d'elevació"),
         ),
-        body: Center(child: Text(t.noData)),
+        body: const Center(child: Text("Sense dades")),
       );
     }
 
+    // Track primari = més llarg
     final bool primaryIsReal =
         realDists.isNotEmpty &&
         (importedDists.isEmpty || realDists.last >= importedDists.last);
@@ -331,19 +342,19 @@ class _ElevationProfileScreenState
     final importedTrack = ref.watch(importedTrackProvider);
 
     return Scaffold(
-      appBar: AppBar(title: Text(t.elevationProfile)),
+      appBar: AppBar(title: const Text("Perfil d'elevació")),
       body: Column(
         children: [
           SizedBox(height: 20),
-
           // ─────────────────────────────────────────────
           // 1) BLOC D’ESTADÍSTIQUES AMB ALÇADA FIXA
           // ─────────────────────────────────────────────
           SizedBox(
-            height: 120,
+            height: 120, // ← ajusta si vols més o menys espai
             child: Column(
               children: [
                 if (selectedIndexStart != null && selectedIndexEnd != null) ...[
+                  // TRACK REAL
                   if (track.distances.isNotEmpty)
                     _buildSegmentStatsBar(
                       track.altitudes,
@@ -354,6 +365,7 @@ class _ElevationProfileScreenState
 
                   const SizedBox(height: 8),
 
+                  // TRACK IMPORTAT
                   if (importedTrack != null &&
                       importedTrack.distances.isNotEmpty)
                     Builder(
@@ -404,6 +416,7 @@ class _ElevationProfileScreenState
           ),
 
           const SizedBox(height: 10),
+
           // ─────────────────────────────────────────────
           // 2) GRÀFIC
           // ─────────────────────────────────────────────
@@ -413,6 +426,7 @@ class _ElevationProfileScreenState
               builder: (context, chartConstraints) {
                 final width = chartConstraints.maxWidth;
 
+                // ⬇️ Aquí deixes EXACTAMENT el teu codi del gràfic
                 return GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onLongPressStart: (_) {
@@ -612,6 +626,7 @@ class _ElevationProfileScreenState
 }
 
 Widget _buildLegend(bool hasSecondary, bool hasReal, bool primaryIsReal) {
+  // Si no hi ha track real, el primari és l'importat sí o sí
   final effectivePrimaryIsReal = hasReal ? primaryIsReal : false;
 
   final primaryLabel = effectivePrimaryIsReal ? "Track real" : "Track importat";
@@ -623,6 +638,7 @@ Widget _buildLegend(bool hasSecondary, bool hasReal, bool primaryIsReal) {
     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
     child: Row(
       children: [
+        // Primari
         Row(
           children: [
             Container(
@@ -647,6 +663,7 @@ Widget _buildLegend(bool hasSecondary, bool hasReal, bool primaryIsReal) {
 
         const SizedBox(width: 20),
 
+        // Secundari només si existeix
         if (hasSecondary)
           Row(
             children: [

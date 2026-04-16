@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gpxly/l10n/app_localizations.dart';
 import 'package:gpxly/notifiers/elevation_progress_notifier.dart';
 import 'package:gpxly/notifiers/track_follow_notifier.dart';
 import '../theme/app_colors.dart';
@@ -9,40 +10,38 @@ class AppMessages {
   static ButtonStyle _buttonStyle(Color color) => ElevatedButton.styleFrom(
     backgroundColor: color,
     foregroundColor: Colors.white,
-    padding: const EdgeInsets.symmetric(
-      horizontal: 20,
-      vertical: 12,
-    ), // 👈 Padding lateral i vertical
+    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
   );
 
   // 1. Avís de sortida
   static void showExitWarning(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Prem enrere un altre cop per sortir")),
-    );
+    final t = AppLocalizations.of(context)!;
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(t.exitWarning)));
   }
 
   // 2. Diàleg de GPS desactivat
   static Future<bool?> showGpsDisabledDialog(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
+
     return showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('GPS desactivat'),
-        content: const Text('El GPS està desactivat. Vols activar-lo ara?'),
-        actionsPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 8,
-        ), // 👈 Espaiat del grup de botons
+        title: Text(t.gpsDisabledTitle),
+        content: Text(t.gpsDisabledMessage),
+        actionsPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('CANCEL·LAR'),
+            child: Text(t.cancel),
           ),
           ElevatedButton(
             style: _buttonStyle(AppColors.skyBlue),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('CONFIGURACIÓ'),
+            child: Text(t.settings),
           ),
         ],
       ),
@@ -51,48 +50,45 @@ class AppMessages {
 
   // 3. Diàleg de Recuperació de Ruta
   static Future<bool?> showRecoverTrackDialog(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
+
     return showDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.tertiary,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.history, color: AppColors.mustardYellow),
-            SizedBox(width: 10),
+            const Icon(Icons.history, color: AppColors.mustardYellow),
+            const SizedBox(width: 10),
             Text(
-              "Ruta pendent",
-              style: TextStyle(
+              t.recoverTrackTitle,
+              style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
               ),
             ),
           ],
         ),
-        content: const Text(
-          "S'ha detectat una gravació que no es va tancar correctament. Vols continuar-la o començar-ne una de nova?",
-          style: TextStyle(color: Colors.white70),
+        content: Text(
+          t.recoverTrackMessage,
+          style: const TextStyle(color: Colors.white70),
         ),
-        actionsPadding: const EdgeInsets.fromLTRB(
-          16,
-          0,
-          16,
-          16,
-        ), // 👈 Padding inferior per separar de la vora
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child: Text(
-              "DESCARTAR",
+              t.discard,
               style: TextStyle(color: Colors.white.withAlpha(150)),
             ),
           ),
-          const SizedBox(width: 8), // Separació extra entre botons
+          const SizedBox(width: 8),
           ElevatedButton(
             style: _buttonStyle(AppColors.skyBlue),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text("RECUPERAR"),
+            child: Text(t.recover),
           ),
         ],
       ),
@@ -101,21 +97,23 @@ class AppMessages {
 
   // 4. Diàleg d'exportació
   static Future<bool?> showExportDialog(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
+
     return showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Exportar GPX"),
-        content: const Text("Vols exportar el track ara?"),
+        title: Text(t.exportTitle),
+        content: Text(t.exportMessage),
         actionsPadding: const EdgeInsets.all(16),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text("CANCEL·LAR"),
+            child: Text(t.cancel),
           ),
           ElevatedButton(
             style: _buttonStyle(AppColors.skyBlue),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text("EXPORTAR"),
+            child: Text(t.export),
           ),
         ],
       ),
@@ -124,6 +122,8 @@ class AppMessages {
 
   // 5. Diàleg de Progrés d'Elevació
   static void showElevationProgressDialog(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -138,7 +138,7 @@ class AppMessages {
               borderRadius: BorderRadius.circular(12),
             ),
             title: Text(
-              hasError ? "Error" : "Corregint altituds",
+              hasError ? t.error : t.elevationFixing,
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
@@ -149,7 +149,6 @@ class AppMessages {
               children: [
                 if (!hasError) ...[
                   ClipRRect(
-                    // 👈 Arrodonim la barra de progrés
                     borderRadius: BorderRadius.circular(4),
                     child: LinearProgressIndicator(
                       value: progressState.progress,
@@ -186,11 +185,10 @@ class AppMessages {
             actions: [
               if (hasError)
                 ElevatedButton(
-                  // 👈 Canviat a ElevatedButton per consistència quan hi ha error
                   style: _buttonStyle(AppColors.skyBlue),
                   onPressed: () =>
                       Navigator.of(context, rootNavigator: true).pop(),
-                  child: const Text("TANCAR"),
+                  child: Text(t.close),
                 ),
             ],
           );
@@ -199,7 +197,7 @@ class AppMessages {
     );
   }
 
-  // --- Mètodes de missatgeria ràpida (SnackBars) ---
+  // --- SnackBars ---
   static void showSuccessSnackBar(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -222,35 +220,40 @@ class AppMessages {
 
   // 6. Diàleg de confirmació d'importació GPX
   static Future<bool?> showImportGpxConfirmDialog(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
+
     return showDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.tertiary,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.file_upload_outlined, color: AppColors.mustardYellow),
-            SizedBox(width: 10),
+            const Icon(
+              Icons.file_upload_outlined,
+              color: AppColors.mustardYellow,
+            ),
+            const SizedBox(width: 10),
             Text(
-              "Importar GPX",
-              style: TextStyle(
+              t.importGpxTitle,
+              style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
               ),
             ),
           ],
         ),
-        content: const Text(
-          "Ja tens una ruta activa o dades carregades. Vols substituir-les pel fitxer GPX?",
-          style: TextStyle(color: Colors.white70),
+        content: Text(
+          t.importGpxMessage,
+          style: const TextStyle(color: Colors.white70),
         ),
         actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child: Text(
-              "CANCEL·LAR",
+              t.cancel,
               style: TextStyle(color: Colors.white.withAlpha(150)),
             ),
           ),
@@ -258,44 +261,49 @@ class AppMessages {
           ElevatedButton(
             style: _buttonStyle(AppColors.skyBlue),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text("IMPORTAR"),
+            child: Text(t.import),
           ),
         ],
       ),
     );
   }
 
-  // 7. Diàleg per entrar en Mode Visualització
+  // 7. Diàleg Mode Visualització
   static Future<bool?> showViewModeDialog(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
+
     return showDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.tertiary,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.visibility_outlined, color: AppColors.mustardYellow),
-            SizedBox(width: 10),
+            const Icon(
+              Icons.visibility_outlined,
+              color: AppColors.mustardYellow,
+            ),
+            const SizedBox(width: 10),
             Text(
-              "Mode visualització",
-              style: TextStyle(
+              t.viewModeTitle,
+              style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
               ),
             ),
           ],
         ),
-        content: const Text(
-          "Vols entrar en mode visualització? No s'afegiran punts nous i la gravació quedarà desactivada.",
-          style: TextStyle(color: Colors.white70),
+        content: Text(
+          t.viewModeMessage,
+          style: const TextStyle(color: Colors.white70),
         ),
         actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child: Text(
-              "NO",
+              t.no,
               style: TextStyle(color: Colors.white.withAlpha(150)),
             ),
           ),
@@ -303,32 +311,31 @@ class AppMessages {
           ElevatedButton(
             style: _buttonStyle(AppColors.skyBlue),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text("ACTIVAR"),
+            child: Text(t.activate),
           ),
         ],
       ),
     );
   }
 
-  // DIÀLEG PRIVAT D'EXPLICACIÓ DE PERMISOS
+  // Diàleg explicació permisos
   static Future<bool?> showPermissionExplanation(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
+
     return showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Permís necessari"),
-        content: const Text(
-          "Per poder gravar la ruta correctament amb la pantalla apagada, "
-          "cal seleccionar: 👉 \"Permetre sempre\".",
-        ),
+        title: Text(t.permissionNeededTitle),
+        content: Text(t.permissionNeededMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text("CANCEL·LA"),
+            child: Text(t.cancel),
           ),
           ElevatedButton(
             style: _buttonStyle(AppColors.skyBlue),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text("CONTINUA"),
+            child: Text(t.continueLabel),
           ),
         ],
       ),
@@ -336,9 +343,11 @@ class AppMessages {
   }
 
   static void showLongPressHint(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text("Mantén premut per finalitzar la gravació"),
+        content: Text(t.longPressToFinish),
         backgroundColor: Colors.orange.shade700,
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 2),
@@ -347,23 +356,22 @@ class AppMessages {
   }
 
   static Future<bool?> showLocationPermissionDialog(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
+
     return showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Permís de localització'),
-        content: const Text(
-          'L’aplicació no té permisos per accedir a la ubicació. '
-          'Vols obrir la configuració per donar permisos?',
-        ),
+        title: Text(t.locationPermissionTitle),
+        content: Text(t.locationPermissionMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('CANCEL·LAR'),
+            child: Text(t.cancel),
           ),
           ElevatedButton(
             style: _buttonStyle(AppColors.skyBlue),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('CONFIGURACIÓ'),
+            child: Text(t.settings),
           ),
         ],
       ),
@@ -374,22 +382,23 @@ class AppMessages {
     BuildContext context,
     WidgetRef ref,
   ) {
+    final t = AppLocalizations.of(context)!;
     final messenger = ScaffoldMessenger.of(context);
 
     messenger.clearSnackBars();
 
     messenger.showSnackBar(
       SnackBar(
-        duration: const Duration(days: 1), // persistent
+        duration: const Duration(days: 1),
         backgroundColor: Colors.red.shade700,
         content: Row(
           children: [
             const Icon(Icons.warning, color: Colors.white),
             const SizedBox(width: 12),
-            const Expanded(
+            Expanded(
               child: Text(
-                "T'estàs allunyant del track importat",
-                style: TextStyle(color: Colors.white),
+                t.offTrack,
+                style: const TextStyle(color: Colors.white),
               ),
             ),
             GestureDetector(
@@ -411,6 +420,7 @@ class AppMessages {
     BuildContext context,
     WidgetRef ref,
   ) {
+    final t = AppLocalizations.of(context)!;
     final messenger = ScaffoldMessenger.of(context);
 
     messenger.clearSnackBars();
@@ -423,10 +433,10 @@ class AppMessages {
           children: [
             const Icon(Icons.check_circle, color: Colors.white),
             const SizedBox(width: 12),
-            const Expanded(
+            Expanded(
               child: Text(
-                "Has tornat al track",
-                style: TextStyle(color: Colors.white),
+                t.backOnTrack,
+                style: const TextStyle(color: Colors.white),
               ),
             ),
             GestureDetector(

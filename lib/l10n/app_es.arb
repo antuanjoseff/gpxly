@@ -1,0 +1,89 @@
+{
+  "appTitle": "GpxGo",
+  "startRecording": "Iniciar grabación",
+  "stopRecording": "Detener grabación",
+  "gpsDisabled": "El GPS está desactivado",
+  "locationPermissionRequired": "Se requieren permisos de ubicación",
+  
+  "exitWarning": "Pulsa atrás otra vez para salir",
+  "longPressToFinish": "Mantén pulsado para finalizar la grabación",
+
+  "gpsDisabledTitle": "GPS desactivado",
+  "gpsDisabledMessage": "El GPS está desactivado. ¿Quieres activarlo ahora?",
+
+  "cancel": "CANCELAR",
+  "close": "CERRAR",
+  "ok": "ACEPTAR",
+  "settings": "CONFIGURACIÓN",
+
+  "recoverTrackTitle": "Ruta pendiente",
+  "recoverTrackMessage": "Se ha detectado una grabación que no se cerró correctamente. ¿Quieres continuarla o empezar una nueva?",
+  "discard": "DESCARTAR",
+  "recover": "RECUPERAR",
+
+  "exportTitle": "Exportar GPX",
+  "exportMessage": "¿Quieres exportar el track ahora?",
+  "export": "EXPORTAR",
+
+  "importGpxTitle": "Importar GPX",
+  "importGpxMessage": "Ya tienes una ruta activa o datos cargados. ¿Quieres sustituirlos por el archivo GPX?",
+  "import": "IMPORTAR",
+
+  "viewModeTitle": "Modo visualización",
+  "viewModeMessage": "¿Quieres entrar en modo visualización? No se añadirán puntos nuevos y la grabación quedará desactivada.",
+  "no": "NO",
+  "activate": "ACTIVAR",
+
+  "permissionNeededTitle": "Permiso necesario",
+  "permissionNeededMessage": "Para grabar la ruta correctamente con la pantalla apagada, debes seleccionar: 👉 \"Permitir siempre\".",
+  "continueLabel": "CONTINUAR",
+
+  "locationPermissionTitle": "Permiso de ubicación",
+  "locationPermissionMessage": "La aplicación no tiene permisos para acceder a la ubicación. ¿Quieres abrir la configuración para concederlos?",
+
+  "offTrack": "Te estás alejando del track importado",
+  "backOnTrack": "Has vuelto al track",
+
+  "elevationFixing": "Corrigiendo altitudes",
+  "error": "Error",
+
+  "gpsRecordByTime": "Grabación por tiempo",
+  "gpsRecordByDistance": "Grabación por distancia",
+  "gpsMaxAccuracy": "Precisión máxima",
+
+  "gpxIncludeExtraData": "Incluir datos extra en el archivo GPX",
+  "gpxAccuracyPerPoint": "Precisión por punto",
+  "gpxSpeed": "Velocidad",
+  "gpxHeading": "Rumbo (Heading)",
+  "gpxSatellites": "Satélites",
+  "gpxVerticalAccuracy": "Precisión vertical",
+  "switchOn": "ON",
+  "switchOff": "OFF",
+
+"trackColor": "Color del track",
+"changeTrackColor": "CAMBIAR COLOR DEL TRAZO",
+"trackWidth": "Grosor del trazo",
+"trackPreview": "Previsualización del trazo:",
+"pickColor": "Elige un color",
+
+"trackStatsTitle": "Datos de la ruta",
+"statTime": "TMP",
+"statDistance": "DIST",
+"statSpeed": "VEL",
+"statMaxElevation": "MAX",
+"statMinElevation": "MIN",
+"statAscent": "+ASC",
+"statDescent": "-DES",
+
+"elevationProfile": "Perfil d'elevació",
+"noData": "Sense dades",
+"realTrack": "Track real",
+"importedTrack": "Track importat",
+
+"resume": "REANUDAR",
+"stopFollowing": "DETENER",
+"follow": "SEGUIR",
+"pause": "PAUSA"
+
+}
+

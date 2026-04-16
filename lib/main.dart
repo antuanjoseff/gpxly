@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gpxly/l10n/app_localizations.dart';
 import 'package:gpxly/screens/map_screen.dart';
 import 'package:gpxly/theme/app_theme.dart';
 
@@ -12,11 +14,19 @@ class GPXlyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'GPXly',
-      debugShowCheckedModeBanner: false,
-      theme: appTheme,
-      home: const MapScreen(),
+    return ProviderScope(
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [Locale('en'), Locale('ca'), Locale('es')],
+        theme: appTheme,
+        home: const MapScreen(),
+      ),
     );
   }
 }

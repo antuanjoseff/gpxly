@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:gpxly/notifiers/imported_track_notifier.dart';
-import 'package:gpxly/notifiers/track_follow_notifier.dart';
+import 'package:gpxly/l10n/app_localizations.dart';
 import 'package:gpxly/theme/app_colors.dart';
 
 class IdleButtons extends StatelessWidget {
@@ -13,9 +11,11 @@ class IdleButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
+
     return SizedBox(
       height: buttonHeight,
-      width: double.infinity, // ocupa tot l'espai disponible
+      width: double.infinity,
       child: ElevatedButton(
         onPressed: onStart,
         style: ElevatedButton.styleFrom(
@@ -23,9 +23,9 @@ class IdleButtons extends StatelessWidget {
           foregroundColor: Colors.white,
           padding: EdgeInsets.zero,
         ),
-        child: const Text(
-          "Inicia gravació",
-          style: TextStyle(fontWeight: FontWeight.bold),
+        child: Text(
+          t.startRecording,
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
     );

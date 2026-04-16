@@ -38,7 +38,6 @@ dependencies:
   xml:
   fl_chart:
   flutter_colorpicker:
-  intl:
   shared_preferences:
   share_plus:
   path_provider:
@@ -46,6 +45,10 @@ dependencies:
   android_intent_plus:
   flutter_foreground_task:
   cupertino_icons:
+  intl: any
+  flutter_localizations:
+    sdk: flutter
+
 
 
 dev_dependencies:
@@ -73,6 +76,7 @@ flutter_native_splash:
 
 # The following section is specific to Flutter packages.
 flutter:
+  generate: true
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

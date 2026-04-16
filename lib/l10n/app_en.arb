@@ -1,0 +1,88 @@
+{
+  "appTitle": "GpxGo",
+  "startRecording": "Start recording",
+  "stopRecording": "Stop recording",
+  "gpsDisabled": "GPS is disabled",
+  "locationPermissionRequired": "Location permission is required",
+
+  "exitWarning": "Press back again to exit",
+  "longPressToFinish": "Long press to finish recording",
+
+  "gpsDisabledTitle": "GPS disabled",
+  "gpsDisabledMessage": "GPS is disabled. Do you want to enable it now?",
+
+  "cancel": "CANCEL",
+  "close": "CLOSE",
+  "ok": "OK",
+  "settings": "SETTINGS",
+
+  "recoverTrackTitle": "Pending route",
+  "recoverTrackMessage": "A previous recording was not closed properly. Do you want to continue it or start a new one?",
+  "discard": "DISCARD",
+  "recover": "RECOVER",
+
+  "exportTitle": "Export GPX",
+  "exportMessage": "Do you want to export the track now?",
+  "export": "EXPORT",
+
+  "importGpxTitle": "Import GPX",
+  "importGpxMessage": "You already have an active route or loaded data. Do you want to replace it with the GPX file?",
+  "import": "IMPORT",
+
+  "viewModeTitle": "View mode",
+  "viewModeMessage": "Do you want to enter view mode? No new points will be added and recording will be disabled.",
+  "no": "NO",
+  "activate": "ACTIVATE",
+
+  "permissionNeededTitle": "Permission required",
+  "permissionNeededMessage": "To record the route correctly with the screen off, you must select: 👉 \"Allow always\".",
+  "continueLabel": "CONTINUE",
+
+  "locationPermissionTitle": "Location permission",
+  "locationPermissionMessage": "The app does not have permission to access location. Do you want to open settings to grant it?",
+
+  "offTrack": "You are drifting away from the imported track",
+  "backOnTrack": "You are back on the track",
+
+  "elevationFixing": "Fixing altitudes",
+  "error": "Error",
+
+  "gpsRecordByTime": "Time-based recording",
+  "gpsRecordByDistance": "Distance-based recording",
+  "gpsMaxAccuracy": "Maximum accuracy",
+
+  "gpxIncludeExtraData": "Include extra data in GPX file",
+  "gpxAccuracyPerPoint": "Accuracy per point",
+  "gpxSpeed": "Speed",
+  "gpxHeading": "Heading",
+  "gpxSatellites": "Satellites",
+  "gpxVerticalAccuracy": "Vertical accuracy",
+  "switchOn": "ON",
+  "switchOff": "OFF",
+
+"trackColor": "Track color",
+"changeTrackColor": "CHANGE TRACK COLOR",
+"trackWidth": "Track width",
+"trackPreview": "Track preview:",
+"pickColor": "Pick a color",
+
+"trackStatsTitle": "Route data",
+"statTime": "TIME",
+"statDistance": "DIST",
+"statSpeed": "SPEED",
+"statMaxElevation": "MAX",
+"statMinElevation": "MIN",
+"statAscent": "+ASC",
+"statDescent": "-DES",
+
+"elevationProfile": "Elevation profile",
+"noData": "No data",
+"realTrack": "Real track",
+"importedTrack": "Imported track",
+
+"resume": "RESUME",
+"stopFollowing": "STOP",
+"follow": "FOLLOW",
+"pause": "PAUSE"
+
+}

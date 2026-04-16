@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gpxly/l10n/app_localizations.dart';
 import 'package:gpxly/notifiers/gpx_settings_provider.dart';
 import 'package:gpxly/theme/app_colors.dart';
 
@@ -20,21 +21,19 @@ class GpxSettingsTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(gpxSettingsProvider);
-    final colors = Theme.of(context).colorScheme;
+    final t = AppLocalizations.of(context)!;
 
     return Scaffold(
-      backgroundColor: const Color(
-        0xFFF5F5F7,
-      ), // Mateix fons gris de les altres tabs
+      backgroundColor: const Color(0xFFF5F5F7),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // Títol de secció opcional per donar context
-          const Padding(
-            padding: EdgeInsets.only(left: 4, bottom: 12, top: 8),
+          // Títol de secció
+          Padding(
+            padding: const EdgeInsets.only(left: 4, bottom: 12, top: 8),
             child: Text(
-              "Incloure dades extres al fitxer GPX",
-              style: TextStyle(
+              t.gpxIncludeExtraData,
+              style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: Colors.grey,
@@ -47,7 +46,7 @@ class GpxSettingsTab extends ConsumerWidget {
             ref,
             settings.accuracies,
             "accuracies",
-            "Accuracy per punt",
+            t.gpxAccuracyPerPoint,
             Icons.gps_fixed,
           ),
           const SizedBox(height: 12),
@@ -57,7 +56,7 @@ class GpxSettingsTab extends ConsumerWidget {
             ref,
             settings.speeds,
             "speeds",
-            "Velocitat",
+            t.gpxSpeed,
             Icons.speed,
           ),
           const SizedBox(height: 12),
@@ -67,7 +66,7 @@ class GpxSettingsTab extends ConsumerWidget {
             ref,
             settings.headings,
             "headings",
-            "Heading (Rumb)",
+            t.gpxHeading,
             Icons.explore_outlined,
           ),
           const SizedBox(height: 12),
@@ -77,7 +76,7 @@ class GpxSettingsTab extends ConsumerWidget {
             ref,
             settings.satellites,
             "satellites",
-            "Satèl·lits",
+            t.gpxSatellites,
             Icons.satellite_alt,
           ),
           const SizedBox(height: 12),
@@ -87,7 +86,7 @@ class GpxSettingsTab extends ConsumerWidget {
             ref,
             settings.vAccuracies,
             "vAccuracies",
-            "Vertical accuracy",
+            t.gpxVerticalAccuracy,
             Icons.height,
           ),
 
@@ -105,6 +104,8 @@ class GpxSettingsTab extends ConsumerWidget {
     String title,
     IconData icon,
   ) {
+    final t = AppLocalizations.of(context)!;
+
     return Container(
       decoration: BoxDecoration(
         color: AppColors.white,
@@ -143,7 +144,8 @@ class GpxSettingsTab extends ConsumerWidget {
                   ),
                 ),
               ),
-              // --- CÀPSULA BLAVA SÒLIDA AMB TEXT BLANC ---
+
+              // Càpsula ON/OFF
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 14,
@@ -154,8 +156,8 @@ class GpxSettingsTab extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  value ? "ON" : "OFF",
-                  style: TextStyle(
+                  value ? t.switchOn : t.switchOff,
+                  style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,

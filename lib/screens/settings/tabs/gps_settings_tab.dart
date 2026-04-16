@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gpxly/l10n/app_localizations.dart';
 import 'package:gpxly/notifiers/gps_settings_notifier.dart';
 import 'package:gpxly/theme/app_colors.dart';
 
@@ -20,7 +21,7 @@ class GpsSettingsTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final gps = ref.watch(gpsSettingsProvider);
-    final colors = Theme.of(context).colorScheme;
+    final t = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F7),
@@ -31,8 +32,8 @@ class GpsSettingsTab extends ConsumerWidget {
             // --- BLOC TEMPS ---
             _buildSettingsCard(
               isActive: gps.useTime,
-              title: "Gravació per temps",
-              valueText: "${gps.seconds} s", // Text simplificat
+              title: t.gpsRecordByTime,
+              valueText: "${gps.seconds} s",
               sliderRow: _buildSliderRow(
                 context: context,
                 value: gps.seconds.toDouble(),
@@ -55,8 +56,8 @@ class GpsSettingsTab extends ConsumerWidget {
             // --- BLOC METRES ---
             _buildSettingsCard(
               isActive: !gps.useTime,
-              title: "Gravació per distància",
-              valueText: "${gps.meters.toInt()} m", // Text simplificat
+              title: t.gpsRecordByDistance,
+              valueText: "${gps.meters.toInt()} m",
               sliderRow: _buildSliderRow(
                 context: context,
                 value: gps.meters,
@@ -77,8 +78,8 @@ class GpsSettingsTab extends ConsumerWidget {
             // --- BLOC ACCURACY ---
             _buildSettingsCard(
               isActive: true,
-              title: "Accuracy màxima",
-              valueText: "${gps.accuracy.toInt()} m", // Text simplificat
+              title: t.gpsMaxAccuracy,
+              valueText: "${gps.accuracy.toInt()} m",
               sliderRow: _buildSliderRow(
                 context: context,
                 value: gps.accuracy,
@@ -137,7 +138,6 @@ class GpsSettingsTab extends ConsumerWidget {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  // Gris més clar per al títol inactiu
                   color: isActive ? AppColors.primary : Colors.grey[400],
                 ),
               ),
@@ -147,7 +147,6 @@ class GpsSettingsTab extends ConsumerWidget {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  // Gris gairebé blanc per al fons de la càpsula inactiva
                   color: isActive ? AppColors.primary : Colors.grey[100],
                   borderRadius: BorderRadius.circular(20),
                 ),
@@ -156,7 +155,6 @@ class GpsSettingsTab extends ConsumerWidget {
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
-                    // Gris suau per al text de la càpsula inactiva
                     color: isActive ? Colors.white : Colors.grey[400],
                   ),
                 ),

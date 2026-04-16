@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gpxly/l10n/app_localizations.dart';
 import 'package:gpxly/theme/app_colors.dart';
 import 'app_action_button.dart';
 
@@ -14,18 +15,23 @@ class PausedButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
+
     return Row(
       children: [
         AppActionButton(
           flex: 2,
           color: AppColors.primary.withAlpha(180),
           onPressed: onResume,
-          child: const Row(
+          child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.play_arrow),
-              SizedBox(width: 8),
-              Text("REPRÈN", style: TextStyle(fontWeight: FontWeight.bold)),
+              const Icon(Icons.play_arrow),
+              const SizedBox(width: 8),
+              Text(
+                t.resume, // ← traduït
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
             ],
           ),
         ),
