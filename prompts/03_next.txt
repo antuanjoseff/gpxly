@@ -1,3 +1,12 @@
+BUGS.
+
+- al iniicar gravació, si hi ha track importat, automàticament fa seguiment
+- Si està gravant i s'importa track automàticament fa seguiment
+
+----------------------------------------------------------------------
+----------------------------------------------------------------------
+----------------------------------------------------------------------
+
 Continuem exactament on ho havíem deixat amb el projecte de tracking en Flutter + servei natiu Android.
 
 Context actual:

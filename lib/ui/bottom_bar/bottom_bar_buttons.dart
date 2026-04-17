@@ -25,12 +25,17 @@ class BottomBarButtons extends StatelessWidget {
   Widget _buildForState() {
     switch (state) {
       case RecordingState.idle:
-        return IdleButtons(key: const ValueKey("idle"), onStart: onStart);
+        return IdleButtons(
+          key: const ValueKey("idle"),
+          onStart: onStart,
+          importButton: importButton, // 👈 AFEGIT
+        );
 
       case RecordingState.recording:
         return RecordingButtons(
           key: const ValueKey("recording"),
           onPause: onPause,
+          importButton: importButton, // 👈 AFEGIT
         );
 
       case RecordingState.paused:

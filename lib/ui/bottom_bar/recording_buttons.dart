@@ -8,8 +8,13 @@ import 'app_action_button.dart';
 
 class RecordingButtons extends ConsumerWidget {
   final VoidCallback onPause;
+  final Widget importButton; // 👈 AFEGIT
 
-  const RecordingButtons({super.key, required this.onPause});
+  const RecordingButtons({
+    super.key,
+    required this.onPause,
+    required this.importButton, // 👈 AFEGIT
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -31,7 +36,7 @@ class RecordingButtons extends ConsumerWidget {
               const Icon(Icons.pause),
               const SizedBox(width: 8),
               Text(
-                t.pause, // ← traduït
+                t.pause,
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
             ],
@@ -40,7 +45,13 @@ class RecordingButtons extends ConsumerWidget {
 
         const SizedBox(width: 12),
 
-        // SEGUIR / ATURA SEGUIMENT (només si hi ha track importat)
+        // SI NO HI HA TRACK IMPORTAT → MOSTRAR IMPORTAR
+        if (!hasImported)
+          Expanded(
+            child: importButton, // 👈 AFEGIT
+          ),
+
+        // SI HI HA TRACK IMPORTAT → MOSTRAR SEGUIR / ATURA SEGUIMENT
         if (hasImported)
           AppActionButton(
             color: followState.isFollowing
@@ -57,9 +68,7 @@ class RecordingButtons extends ConsumerWidget {
                 Icon(followState.isFollowing ? Icons.close : Icons.navigation),
                 const SizedBox(width: 8),
                 Text(
-                  followState.isFollowing
-                      ? t.stopFollowing
-                      : t.follow, // ← traduït
+                  followState.isFollowing ? t.stopFollowing : t.follow,
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
               ],

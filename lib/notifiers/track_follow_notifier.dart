@@ -2,22 +2,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gpxly/models/track_follow_state.dart';
-import 'package:gpxly/utils/geo_utils.dart';
-import 'package:maplibre_gl/maplibre_gl.dart';
-import 'package:flutter/services.dart';
-import 'package:audioplayers/audioplayers.dart';
-
-import 'dart:async';
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:gpxly/models/track_follow_state.dart';
+import 'package:gpxly/notifiers/imported_track_notifier.dart';
+import 'package:gpxly/notifiers/track_notifier.dart';
 import 'package:gpxly/utils/geo_utils.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:flutter/services.dart';
 import 'package:audioplayers/audioplayers.dart';
 
 class TrackFollowNotifier extends Notifier<TrackFollowState> {
-  List<LatLng> _importedTrack = [];
   StreamSubscription? _locationSub;
 
   // Història de distàncies per detectar tendència
@@ -107,13 +99,52 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
     }
   }
 
-  void setImportedTrack(List<LatLng> coords) {
-    _importedTrack = coords;
-  }
-
   void startFollowingWithRecording(BuildContext context) async {
-    // (el teu codi actual de permisos i gravació)
     state = state.copyWith(isFollowing: true);
+
+    // 🔥 1. Obtenir última posició del track (GPS real)
+    final track = ref.read(trackProvider);
+    final imported = ref.read(importedTrackProvider);
+
+    if (track.coordinates.isEmpty) {
+      return;
+    }
+
+    if (imported == null || imported.coordinates.isEmpty) {
+      return;
+    }
+
+    if (track.coordinates.isEmpty || imported.coordinates.isEmpty) return;
+
+    final last = track.coordinates.last;
+    final lastPos = LatLng(last[1], last[0]);
+
+    // Convertim coordinates (List<List<double>>) → List<LatLng>
+    final importedLatLng = imported.coordinates
+        .map((c) => LatLng(c[1], c[0]))
+        .toList();
+
+    final closest = _closestPointAndSegment(lastPos, importedLatLng);
+    final dist = closest.distance;
+
+    // 🔥 3. Decidir estat inicial
+    final isNear = dist < nearThreshold;
+
+    if (isNear) {
+      // Està sobre el track → sonar OK
+      HapticFeedback.lightImpact();
+      _playBackOnTrackSound();
+      state = state.copyWith(isOffTrack: false);
+    } else {
+      // Està fora → sonar alerta immediata
+      HapticFeedback.mediumImpact();
+      _playOffTrackSound();
+      state = state.copyWith(isOffTrack: true);
+    }
+
+    // 🔥 4. Inicialitzar històric
+    _lastDistances.clear();
+    _lastDistances.add(dist);
   }
 
   void stopFollowing() {
@@ -133,9 +164,17 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
   // Actualitzar posició de l’usuari
   // ------------------------------------------------------------
   void updateUserPosition(LatLng userPos) {
-    if (!state.isFollowing || _importedTrack.isEmpty) return;
+    if (!state.isFollowing) return;
 
-    final closest = _closestPointAndSegment(userPos, _importedTrack);
+    final imported = ref.read(importedTrackProvider);
+
+    if (imported == null || imported.coordinates.isEmpty) return;
+
+    final importedLatLng = imported.coordinates
+        .map((c) => LatLng(c[1], c[0]))
+        .toList();
+
+    final closest = _closestPointAndSegment(userPos, importedLatLng);
     final dist = closest.distance;
     final trackBearing = closest.bearing;
     final userBearing = closest.userBearing;
@@ -174,6 +213,11 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
     // Reinici d’avisos quan torna al track
     if (wasOffTrack && !offTrack) {
       _offTrackDismissed = false;
+
+      // 🔥 MILLORA NECESSÀRIA
+      _offTrackStart = null;
+      _lastDistances.clear();
+      _lastDistances.add(dist);
     }
 
     state = state.copyWith(distanceToTrack: dist, isOffTrack: offTrack);
@@ -191,11 +235,33 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
       final a = track[i];
       final b = track[i + 1];
 
+      // Vector AB
+      final abx = b.longitude - a.longitude;
+      final aby = b.latitude - a.latitude;
+
+      // Vector AP
+      final apx = p.longitude - a.longitude;
+      final apy = p.latitude - a.latitude;
+
+      // Projecció escalar de AP sobre AB
+      final ab2 = abx * abx + aby * aby;
+      double t = 0;
+      if (ab2 > 0) {
+        t = (apx * abx + apy * aby) / ab2;
+      }
+
+      // Clamp: si la projecció cau fora del segment, usem A o B
+      t = t.clamp(0.0, 1.0);
+
+      // Punt projectat sobre el segment
+      final proj = LatLng(a.latitude + aby * t, a.longitude + abx * t);
+
+      // Distància real punt–segment
       final d = distanceBetween(
         p.latitude,
         p.longitude,
-        a.latitude,
-        a.longitude,
+        proj.latitude,
+        proj.longitude,
       );
 
       if (d < minDist) {

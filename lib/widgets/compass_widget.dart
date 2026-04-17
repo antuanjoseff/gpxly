@@ -170,10 +170,34 @@ class CompassAltitudeScaleRow extends ConsumerWidget {
         156543.03392 * math.cos(latitude * math.pi / 180) / math.pow(2, zoom);
 
     const maxWidthPx = 50.0; // ample màxim de la línia
-    final niceScales = <double>[20, 50, 100, 200, 500, 1000, 2000];
+    final niceScales = <double>[
+      20,
+      50,
+      100,
+      200,
+      500,
+      1000,
+      2000,
+      5000,
+      10000,
+      100000,
+      1000000,
+      5000000,
+    ];
 
     double chosenMeters = niceScales.first;
     double chosenWidthPx = chosenMeters / metersPerPixel;
+
+    for (final m in niceScales) {
+      final w = m / metersPerPixel;
+      if (w <= maxWidthPx) {
+        chosenMeters = m;
+        chosenWidthPx = w;
+      }
+    }
+
+    // 🔥 LÍMIT REAL D’AMPLADA
+    chosenWidthPx = chosenWidthPx.clamp(0, maxWidthPx);
 
     for (final m in niceScales) {
       final w = m / metersPerPixel;

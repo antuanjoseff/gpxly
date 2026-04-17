@@ -40,11 +40,9 @@ Funcionalitats Implementades:
 
 Millores Pendents (Roadmap):
 
-    Snapping Intel·ligent: Efecte imant cap a pics o vèrtexs rellevants del track.
+    
     Zoom to Selection: Animació per ampliar el segment seleccionat a tot l'ample del gràfic.
-    Gradient Visual: Àrea ressaltada amb degradat vertical en lloc de color pla.
-    Haptic Feedback: Vibració en activar el Long Press.
-
+    
 
 -------------------------------------    
 -- PROMPT IMPORTAR GPS I FER SEGUIMENT    
@@ -52,30 +50,16 @@ Millores Pendents (Roadmap):
 
 PROMPT:
 
-    Vull implementar un sistema complet per carregar un GPX i ajudar l’usuari a seguir-lo mentre grava una ruta.
+Continuem amb el widget flotant de brúixola + altitud + escala.
+Ja el tinc arrossegable i persistent amb Riverpod.
+Ara vull afegir:
 
-    Necessito:
+    un efecte de snap quan deixo anar el widget (cap al marge més proper)
 
-    1) Un ImportedTrackNotifier separat del TrackNotifier actual, amb el seu estat Track, per poder carregar un GPX sense interferir amb la gravació.
+    que no pugui sortir de la pantalla i respecti uns marges mínims
 
-    2) Que el mapa dibuixi dos tracks:  
-    – el track importat (color diferent)
-    – el track real que s’està gravant
+    opcional: animació suau quan fa snap
 
-    3) Un càlcul robust de desviació, que tingui en compte:
-    – distància mínima a segments del track (no només punts)
-    – filtratge per precisió GPS
-    – suavitzat temporal (mitjana mòbil)
-    – llindar configurable (p. ex. 25 m)
-    – evitar falsos positius
+Recorda que el widget és CompassAltitudeScaleRow i està dins d’un Positioned controlat per un provider Offset.
 
-    4) Un DeviationNotifier que exposi la desviació actual i si cal avisar l’usuari.
-
-    5) Un sistema d’avisos a la UI coherent amb AppMessages (SnackBars, banners o similar).
-
-    6) Integració completa al MapScreen, incloent:
-    – dos layers per dibuixar els dos tracks
-    – listener de desviació
-    – centrat automàtic del mapa si cal
-
-    Dona’m el codi complet i col·locat exactament on toca, amb explicacions clares i pas a pas.
+Reprèn exactament on ho vam deixar i dona’m el codi complet del bloc Positioned + GestureDetector amb snap + marges + animació.    
