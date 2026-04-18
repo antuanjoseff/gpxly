@@ -6,8 +6,9 @@ class TrackFollowState {
   final double distanceToTrack;
   final bool showOffTrackSnackbar;
   final bool showBackOnTrackSnackbar;
-
-  final FollowMode mode; // 👈 NOU CAMP OBLIGATORI
+  final bool showEndOfTrackSnackbar; // 👈 NOU CAMP
+  final bool showReverseTrackDialog;
+  final FollowMode mode;
 
   const TrackFollowState({
     required this.isFollowing,
@@ -15,7 +16,9 @@ class TrackFollowState {
     required this.distanceToTrack,
     this.showOffTrackSnackbar = false,
     this.showBackOnTrackSnackbar = false,
-    this.mode = FollowMode.notFollowing, // 👈 VALOR PER DEFECTE
+    this.showEndOfTrackSnackbar = false, // 👈 VALOR PER DEFECTE
+    this.mode = FollowMode.notFollowing,
+    this.showReverseTrackDialog = false,
   });
 
   TrackFollowState copyWith({
@@ -24,6 +27,8 @@ class TrackFollowState {
     double? distanceToTrack,
     bool? showOffTrackSnackbar,
     bool? showBackOnTrackSnackbar,
+    bool? showEndOfTrackSnackbar,
+    bool? showReverseTrackDialog, // 👈 FALTAVA AQUI
     FollowMode? mode,
   }) {
     return TrackFollowState(
@@ -33,7 +38,11 @@ class TrackFollowState {
       showOffTrackSnackbar: showOffTrackSnackbar ?? this.showOffTrackSnackbar,
       showBackOnTrackSnackbar:
           showBackOnTrackSnackbar ?? this.showBackOnTrackSnackbar,
-      mode: mode ?? this.mode, // 👈 IMPORTANT
+      showEndOfTrackSnackbar:
+          showEndOfTrackSnackbar ?? this.showEndOfTrackSnackbar,
+      showReverseTrackDialog:
+          showReverseTrackDialog ?? this.showReverseTrackDialog, // 👈 ARA SÍ
+      mode: mode ?? this.mode,
     );
   }
 }

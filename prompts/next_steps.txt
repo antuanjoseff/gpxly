@@ -50,16 +50,63 @@ Millores Pendents (Roadmap):
 
 PROMPT:
 
-Continuem amb el widget flotant de brúixola + altitud + escala.
-Ja el tinc arrossegable i persistent amb Riverpod.
-Ara vull afegir:
+“Continuem amb la funcionalitat dels waypoints.
 
-    un efecte de snap quan deixo anar el widget (cap al marge més proper)
+Vull implementar tot això pas a pas:
 
-    que no pugui sortir de la pantalla i respecti uns marges mínims
+1) Provider de waypoints
 
-    opcional: animació suau quan fa snap
+    Cada waypoint ha de tenir: nom, lat, lon, trackIndex.
 
-Recorda que el widget és CompassAltitudeScaleRow i està dins d’un Positioned controlat per un provider Offset.
+    El trackIndex és l’índex del punt del track en el moment de crear-lo.
 
-Reprèn exactament on ho vam deixar i dona’m el codi complet del bloc Positioned + GestureDetector amb snap + marges + animació.    
+    Necessito un provider amb addWaypoint(), removeWaypoint(), clear().
+
+2) Botó al mapa per afegir waypoint
+
+    Un botó flotant o icona al mapa.
+
+    En prémer-lo → obrir un diàleg amb nom suggerit “Punt N”.
+
+    L’usuari pot canviar el nom.
+
+    Acceptar → afegir waypoint.
+
+    Cancel·lar → no fer res.
+
+3) Mostrar waypoints al mapa (MapLibre)
+
+    Afegir un SymbolLayer amb una icona (provisional).
+
+    Cada waypoint ha d’aparèixer al mapa immediatament.
+
+4) Exportació GPX
+
+    Abans del <trk> afegir:
+    <wpt lat="…" lon="…"><name>…</name></wpt>
+
+    Un per cada waypoint.
+
+5) Integració amb el gràfic d’elevacions
+
+    El gràfic NO es filtra.
+
+    Sempre mostra TOT el track.
+
+    Només vull dibuixar un puntet a l’eix X per cada waypoint.
+
+    El punt s’ha de dibuixar a la posició X corresponent al trackIndex.
+
+6) Selecció de rang amb waypoints
+
+    A la llista de waypoints, cada waypoint ha de tenir botó “Inici” i “Final”.
+
+    Quan selecciono un waypoint com a inici → startIndex = trackIndex.
+
+    Quan selecciono un waypoint com a final → endIndex = trackIndex.
+
+    El SelectionPainter ja dibuixa les agulles, així que només cal passar-li startIndex i endIndex.
+
+    NO vull redibuixar el gràfic ni fer subgràfics.
+
+Comencem pel punt 1: crea el provider de waypoints amb l’estructura de dades adequada i les funcions add/remove/clear.”

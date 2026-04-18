@@ -92,6 +92,13 @@
 "gpsTab": "GPS",
 "gpxTab": "GPX",
 "trackTab": "Track",
-"applyUpper": "APLICAR"
+"applyUpper": "APLICAR",
+
+"endOfTrack": "Has llegado al final del track",
+
+"reverseTrackTitle": "Dirección inversa",
+"reverseTrackMessage": "Parece que estás siguiendo el track en dirección inversa. ¿Quieres invertirlo para mejorar la navegación?",
+"reverseTrackConfirm": "Invertir"
+
 }
 

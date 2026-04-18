@@ -432,10 +432,30 @@ class _MapScreenState extends ConsumerState<MapScreen>
       if (next.showBackOnTrackSnackbar == true) {
         AppMessages.showBackOnTrackPersistentSnackbar(context, ref);
 
-        // 🔥 IMPORTANT: reset immediat
         ref
             .read(trackFollowNotifierProvider.notifier)
             .dismissBackOnTrackAlert();
+      }
+    });
+
+    ref.listen(trackFollowNotifierProvider, (prev, next) async {
+      if (next.showReverseTrackDialog == true) {
+        final accept = await AppMessages.showReverseTrackDialog(context);
+
+        if (accept == true) {
+          ref.read(trackFollowNotifierProvider.notifier).reverseImportedTrack();
+        } else {
+          ref
+              .read(trackFollowNotifierProvider.notifier)
+              .dismissReverseTrackDialog();
+        }
+      }
+    });
+    ref.listen(trackFollowNotifierProvider, (prev, next) {
+      if (next.showEndOfTrackSnackbar == true) {
+        AppMessages.showEndOfTrackSnackBar(context);
+
+        ref.read(trackFollowNotifierProvider.notifier).dismissEndOfTrackAlert();
       }
     });
 

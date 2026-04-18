@@ -235,4 +235,16 @@ class AppLocalizationsCa extends AppLocalizations {
 
   @override
   String get applyUpper => 'APLICA';
+
+  @override
+  String get endOfTrack => 'Has arribat al final del track';
+
+  @override
+  String get reverseTrackTitle => 'Direcció inversa';
+
+  @override
+  String get reverseTrackMessage => 'Sembla que estàs seguint el track en direcció inversa. Vols invertir-lo per millorar la navegació?';
+
+  @override
+  String get reverseTrackConfirm => 'Inverteix';
 }

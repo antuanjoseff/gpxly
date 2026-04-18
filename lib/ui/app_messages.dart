@@ -459,4 +459,63 @@ class AppMessages {
     // 🔥 Reset de flag
     ref.read(trackFollowNotifierProvider.notifier).dismissBackOnTrackAlert();
   }
+
+  static Future<bool?> showReverseTrackDialog(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
+
+    return showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.tertiary,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: Row(
+          children: [
+            const Icon(Icons.swap_vert, color: AppColors.mustardYellow),
+            const SizedBox(width: 10),
+            Text(
+              t.reverseTrackTitle,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          t.reverseTrackMessage,
+          style: const TextStyle(color: Colors.white70),
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(
+              t.cancel,
+              style: TextStyle(color: Colors.white.withAlpha(150)),
+            ),
+          ),
+          const SizedBox(width: 8),
+          ElevatedButton(
+            style: _buttonStyle(AppColors.skyBlue),
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(t.reverseTrackConfirm),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static void showEndOfTrackSnackBar(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(t.endOfTrack),
+        backgroundColor: Colors.green.shade700,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
 }

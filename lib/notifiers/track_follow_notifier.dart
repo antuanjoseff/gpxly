@@ -55,6 +55,8 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
       distanceToTrack: 0,
       showOffTrackSnackbar: false,
       showBackOnTrackSnackbar: false,
+      showEndOfTrackSnackbar: false,
+      showReverseTrackDialog: false,
       mode: FollowMode.notFollowing,
     );
   }
@@ -62,6 +64,26 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
   // ------------------------------------------------------------
   // API pública per la UI
   // ------------------------------------------------------------
+
+  void reverseImportedTrack() {
+    // 1. Invertir el track importat
+    ref.read(importedTrackProvider.notifier).reverseTrack();
+
+    // 2. Reiniciar estat intern del seguiment
+    _lastDistances.clear();
+    _hasEverBeenOnTrack = false;
+    _hasEverBeenOffTrack = false;
+    offTrackAlertsSent = 0;
+    _offTrackDismissed = false;
+
+    // 3. Tornar a l’estat d’inicialització
+    state = state.copyWith(
+      mode: FollowMode.initializing,
+      showReverseTrackDialog: false,
+      isOffTrack: false,
+      distanceToTrack: 0,
+    );
+  }
 
   void onUserDriftingAway() {
     if (_offTrackDismissed) return;
@@ -89,6 +111,18 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
     state = state.copyWith(showBackOnTrackSnackbar: true);
   }
 
+  void _askUserToReverseTrack() {
+    state = state.copyWith(showReverseTrackDialog: true);
+  }
+
+  void dismissReverseTrackDialog() {
+    state = state.copyWith(showReverseTrackDialog: false);
+  }
+
+  void dismissEndOfTrackAlert() {
+    state = state.copyWith(showEndOfTrackSnackbar: false);
+  }
+
   void dismissOffTrackAlert() {
     _offTrackDismissed = true;
   }
@@ -101,9 +135,10 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
     state = state.copyWith(showBackOnTrackSnackbar: false);
   }
 
-  // ------------------------------------------------------------
-  // Seguiment del track importat
-  // ------------------------------------------------------------
+  bool _isReverseDirection(_ClosestResult c) {
+    final diff = _headingDifference(c.bearing, c.userBearing);
+    return diff > 135; // 180° seria oposat perfecte, 135° és marge segur
+  }
 
   void toggleFollowing(BuildContext context) {
     if (state.isFollowing) {
@@ -171,6 +206,28 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
         .toList();
 
     final closest = _closestPointAndSegment(userPos, importedLatLng);
+
+    // --- Detectar seguiment invers ---
+    if (state.mode == FollowMode.onTrack && _isReverseDirection(closest)) {
+      _askUserToReverseTrack();
+      return;
+    }
+
+    // --- Detectar final del track ---
+    if (_isAtEndOfTrack(closest)) {
+      // So positiu (el mateix que ON_TRACK)
+      HapticFeedback.lightImpact();
+      _playBackOnTrackSound();
+
+      // Mostrar snackbar específic
+      state = state.copyWith(showEndOfTrackSnackbar: true);
+
+      // Finalitzar seguiment
+      stopFollowing();
+
+      return; // Evitem processar OFF_TRACK després del final
+    }
+
     final dist = closest.distance;
     final trackBearing = closest.bearing;
     final userBearing = closest.userBearing;
@@ -223,7 +280,7 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
     }
     // --- 2) ON_TRACK → OFF_TRACK ---
     else if (prevMode == FollowMode.onTrack) {
-      if (isFar && isTrendingAway && isHeadingWrong) {
+      if (isFar && (isTrendingAway || isHeadingWrong)) {
         if (_hasEverBeenOnTrack && _canSendOffTrackAlert()) {
           onUserDriftingAway(); // avis negatiu
         }
@@ -273,6 +330,8 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
     double minDist = double.infinity;
     double segmentBearing = 0;
     double userBearing = 0;
+    int bestSegmentIndex = 0;
+    double bestT = 0;
 
     for (int i = 0; i < track.length - 1; i++) {
       final a = track[i];
@@ -305,6 +364,8 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
         minDist = d;
         segmentBearing = bearingBetween(a, b);
         userBearing = bearingBetween(a, p);
+        bestSegmentIndex = i;
+        bestT = t;
       }
     }
 
@@ -312,7 +373,19 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
       distance: minDist,
       bearing: segmentBearing,
       userBearing: userBearing,
+      segmentIndex: bestSegmentIndex,
+      t: bestT,
     );
+  }
+
+  bool _isAtEndOfTrack(_ClosestResult c) {
+    final imported = ref.read(importedTrackProvider);
+    if (imported == null) return false;
+
+    final lastSegment = imported.coordinates.length - 2;
+
+    // Estàs al darrer segment i molt a prop del final
+    return c.segmentIndex == lastSegment && c.t > 0.95;
   }
 
   bool _isTrendingAway() {
@@ -352,11 +425,15 @@ class _ClosestResult {
   final double distance;
   final double bearing;
   final double userBearing;
+  final int segmentIndex; // <--- nou
+  final double t; // <--- nou (posició dins el segment 0..1)
 
   _ClosestResult({
     required this.distance,
     required this.bearing,
     required this.userBearing,
+    required this.segmentIndex,
+    required this.t,
   });
 }
 

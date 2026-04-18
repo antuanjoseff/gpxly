@@ -552,6 +552,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'APPLY'**
   String get applyUpper;
+
+  /// No description provided for @endOfTrack.
+  ///
+  /// In en, this message translates to:
+  /// **'You have reached the end of the track'**
+  String get endOfTrack;
+
+  /// No description provided for @reverseTrackTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reverse direction'**
+  String get reverseTrackTitle;
+
+  /// No description provided for @reverseTrackMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'It looks like you are following the track in reverse. Do you want to invert it for better navigation?'**
+  String get reverseTrackMessage;
+
+  /// No description provided for @reverseTrackConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Invert'**
+  String get reverseTrackConfirm;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
