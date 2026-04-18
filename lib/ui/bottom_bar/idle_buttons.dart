@@ -24,6 +24,7 @@ class IdleButtons extends StatelessWidget {
           child: TrackBaseButton(
             color: AppColors.tertiary,
             onPressed: onStart,
+            icon: Icons.play_arrow_rounded,
             text: t.startRecording,
           ),
         ),

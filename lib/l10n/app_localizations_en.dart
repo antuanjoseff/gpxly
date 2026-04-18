@@ -12,7 +12,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appTitle => 'GpxGo';
 
   @override
-  String get startRecording => 'Start recording';
+  String get startRecording => 'Record';
 
   @override
   String get stopRecording => 'Stop recording';
@@ -45,7 +45,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ok => 'OK';
 
   @override
-  String get settings => 'SETTINGS';
+  String get settings => 'Settings';
 
   @override
   String get recoverTrackTitle => 'Pending route';
@@ -211,4 +211,28 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pause => 'PAUSE';
+
+  @override
+  String get apply => 'APPLY';
+
+  @override
+  String get pendingChangesTitle => 'Pending changes';
+
+  @override
+  String get pendingChangesMessage => 'You have unsaved changes. Do you want to apply them before returning to the map?';
+
+  @override
+  String get settingsApplied => 'Settings applied!';
+
+  @override
+  String get gpsTab => 'GPS';
+
+  @override
+  String get gpxTab => 'GPX';
+
+  @override
+  String get trackTab => 'Track';
+
+  @override
+  String get applyUpper => 'APPLY';
 }

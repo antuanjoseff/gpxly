@@ -12,7 +12,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get appTitle => 'GpxGo';
 
   @override
-  String get startRecording => 'Iniciar grabación';
+  String get startRecording => 'Grabar';
 
   @override
   String get stopRecording => 'Detener grabación';
@@ -45,7 +45,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get ok => 'ACEPTAR';
 
   @override
-  String get settings => 'CONFIGURACIÓN';
+  String get settings => 'Configuración';
 
   @override
   String get recoverTrackTitle => 'Ruta pendiente';
@@ -189,16 +189,16 @@ class AppLocalizationsEs extends AppLocalizations {
   String get statDescent => '-DES';
 
   @override
-  String get elevationProfile => 'Perfil d\'elevació';
+  String get elevationProfile => 'Perfil de elevación';
 
   @override
-  String get noData => 'Sense dades';
+  String get noData => 'Sin datos';
 
   @override
   String get realTrack => 'Track real';
 
   @override
-  String get importedTrack => 'Track importat';
+  String get importedTrack => 'Track importado';
 
   @override
   String get resume => 'REANUDAR';
@@ -211,4 +211,28 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get pause => 'PAUSA';
+
+  @override
+  String get apply => 'APLICAR';
+
+  @override
+  String get pendingChangesTitle => 'Cambios pendientes';
+
+  @override
+  String get pendingChangesMessage => 'Has realizado cambios que no has aplicado. ¿Quieres aplicarlos antes de volver al mapa?';
+
+  @override
+  String get settingsApplied => '¡Configuración aplicada!';
+
+  @override
+  String get gpsTab => 'GPS';
+
+  @override
+  String get gpxTab => 'GPX';
+
+  @override
+  String get trackTab => 'Track';
+
+  @override
+  String get applyUpper => 'APLICAR';
 }

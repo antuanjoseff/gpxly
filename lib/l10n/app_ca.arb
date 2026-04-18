@@ -1,6 +1,6 @@
 {
   "appTitle": "GpxGo",
-  "startRecording": "Inicia gravació",
+  "startRecording": "Gravar",
   "stopRecording": "Atura gravació",
   "gpsDisabled": "El GPS està desactivat",
   "locationPermissionRequired": "Cal acceptar permisos de localització",
@@ -14,7 +14,7 @@
   "cancel": "CANCEL·LAR",
   "close": "TANCAR",
   "ok": "D'ACORD",
-  "settings": "CONFIGURACIÓ",
+  "settings": "Configuració",
 
   "recoverTrackTitle": "Ruta pendent",
   "recoverTrackMessage": "S'ha detectat una gravació que no es va tancar correctament. Vols continuar-la o començar-ne una de nova?",
@@ -83,6 +83,17 @@
 "resume": "REPRÈN",
 "stopFollowing": "ATURA",
 "follow": "SEGUIR",
-"pause": "PAUSA"
-  
+"pause": "PAUSA",
+
+
+"apply": "APLICA",
+"pendingChangesTitle": "Canvis pendents",
+"pendingChangesMessage": "Has fet canvis que no has aplicat. Vols aplicar-los abans de tornar al mapa?",
+"settingsApplied": "Configuració aplicada!",
+"gpsTab": "GPS",
+"gpxTab": "GPX",
+"trackTab": "Track",
+"applyUpper": "APLICA"
+
+
 }

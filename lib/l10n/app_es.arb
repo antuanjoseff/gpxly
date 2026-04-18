@@ -1,6 +1,6 @@
 {
   "appTitle": "GpxGo",
-  "startRecording": "Iniciar grabación",
+  "startRecording": "Grabar",
   "stopRecording": "Detener grabación",
   "gpsDisabled": "El GPS está desactivado",
   "locationPermissionRequired": "Se requieren permisos de ubicación",
@@ -14,7 +14,7 @@
   "cancel": "CANCELAR",
   "close": "CERRAR",
   "ok": "ACEPTAR",
-  "settings": "CONFIGURACIÓN",
+  "settings": "Configuración",
 
   "recoverTrackTitle": "Ruta pendiente",
   "recoverTrackMessage": "Se ha detectado una grabación que no se cerró correctamente. ¿Quieres continuarla o empezar una nueva?",
@@ -75,15 +75,23 @@
 "statAscent": "+ASC",
 "statDescent": "-DES",
 
-"elevationProfile": "Perfil d'elevació",
-"noData": "Sense dades",
+"elevationProfile": "Perfil de elevación",
+"noData": "Sin datos",
 "realTrack": "Track real",
-"importedTrack": "Track importat",
+"importedTrack": "Track importado",
 
 "resume": "REANUDAR",
 "stopFollowing": "DETENER",
 "follow": "SEGUIR",
-"pause": "PAUSA"
+"pause": "PAUSA",
 
+"apply": "APLICAR",
+"pendingChangesTitle": "Cambios pendientes",
+"pendingChangesMessage": "Has realizado cambios que no has aplicado. ¿Quieres aplicarlos antes de volver al mapa?",
+"settingsApplied": "¡Configuración aplicada!",
+"gpsTab": "GPS",
+"gpxTab": "GPX",
+"trackTab": "Track",
+"applyUpper": "APLICAR"
 }
 

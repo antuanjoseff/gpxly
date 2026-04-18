@@ -10,6 +10,7 @@ import 'package:gpxly/l10n/app_localizations.dart';
 
 import 'package:gpxly/notifiers/track_notifier.dart';
 import 'package:gpxly/notifiers/imported_track_notifier.dart';
+import 'package:gpxly/notifiers/track_settings_notifier.dart';
 import 'package:gpxly/utils/distance_utils.dart';
 import 'package:gpxly/theme/app_colors.dart';
 
@@ -38,7 +39,7 @@ class _ElevationProfileScreenState
   final Color primaryNeedleColor = const Color(0xFF4CAF50);
   final Color secondaryNeedleColor = AppColors.mustardYellow;
 
-  final Color sliderStartNeedleColor = const Color(0xFF007BFF);
+  final Color sliderStartNeedleColor = const Color(0xFF4CAF50);
   final Color sliderEndNeedleColor = const Color(0xFFFF3B30);
 
   // ------------------------------------------------------------
@@ -50,6 +51,7 @@ class _ElevationProfileScreenState
     List<double> realDists,
     List<double> importedAlts,
     List<double> importedDists,
+    Color trackColor,
   ) {
     final colors = Theme.of(context).colorScheme;
 
@@ -136,13 +138,14 @@ class _ElevationProfileScreenState
             (i) => FlSpot(primaryDists[i], primaryAlts[i]),
           ),
           isCurved: false,
-          color: primaryIsReal ? AppColors.secondary : AppColors.primary,
+          color: primaryIsReal ? trackColor : AppColors.tertiary,
           barWidth: 3,
           dotData: const FlDotData(show: false),
           belowBarData: BarAreaData(
             show: true,
-            color: (primaryIsReal ? AppColors.secondary : AppColors.primary)
-                .withAlpha(primaryIsReal ? 64 : 32),
+            color: (primaryIsReal ? trackColor : AppColors.primary).withAlpha(
+              primaryIsReal ? 64 : 32,
+            ),
             cutOffY: forcedMinY,
             applyCutOffY: true,
           ),
@@ -155,12 +158,12 @@ class _ElevationProfileScreenState
               (i) => FlSpot(secondaryDists[i], secondaryAlts[i]),
             ),
             isCurved: false,
-            color: primaryIsReal ? AppColors.primary : AppColors.secondary,
+            color: primaryIsReal ? trackColor : AppColors.secondary,
             barWidth: 3,
             dotData: const FlDotData(show: false),
             belowBarData: BarAreaData(
               show: true,
-              color: (primaryIsReal ? AppColors.primary : AppColors.secondary)
+              color: (primaryIsReal ? trackColor : AppColors.secondary)
                   .withAlpha(primaryIsReal ? 32 : 64),
               cutOffY: forcedMinY,
               applyCutOffY: true,
@@ -195,7 +198,7 @@ class _ElevationProfileScreenState
     List<double> alts,
     List<double> dists,
     List<DateTime>? times,
-    Color color,
+    Color trackColor,
   ) {
     if (selectedIndexStart == null || selectedIndexEnd == null) {
       return const SizedBox(height: 50);
@@ -234,7 +237,7 @@ class _ElevationProfileScreenState
       margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: color,
+        color: trackColor,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Colors.white10),
       ),
@@ -295,11 +298,9 @@ class _ElevationProfileScreenState
 
     final realAlts = real.altitudes;
     final realDists = calculateDistances(real.coordinates);
-    final realTimes = real.timestamps;
 
     final importedAlts = imported?.altitudes ?? <double>[];
     final importedDists = calculateDistances(imported?.coordinates ?? []);
-    final importedTimes = imported?.timestamps ?? <DateTime>[];
 
     final hasReal = realAlts.isNotEmpty;
     final hasImported = importedAlts.isNotEmpty;
@@ -320,15 +321,15 @@ class _ElevationProfileScreenState
 
     final primaryAlts = primaryIsReal ? realAlts : importedAlts;
     final primaryDists = primaryIsReal ? realDists : importedDists;
-    final primaryTimes = primaryIsReal ? realTimes : importedTimes;
 
     final secondaryAlts = primaryIsReal ? importedAlts : realAlts;
     final secondaryDists = primaryIsReal ? importedDists : realDists;
-    final secondaryTimes = primaryIsReal ? importedTimes : realTimes;
 
     final chartHeight = MediaQuery.of(context).size.height * 0.3;
-    final track = ref.watch(trackProvider);
     final importedTrack = ref.watch(importedTrackProvider);
+    final track = ref.watch(trackProvider);
+    final trackSettings = ref.watch(trackSettingsProvider);
+    final Color trackColor = trackSettings.color;
 
     return Scaffold(
       appBar: AppBar(title: Text(t.elevationProfile)),
@@ -340,7 +341,7 @@ class _ElevationProfileScreenState
           // 1) BLOC D’ESTADÍSTIQUES AMB ALÇADA FIXA
           // ─────────────────────────────────────────────
           SizedBox(
-            height: 120,
+            height: 135,
             child: Column(
               children: [
                 if (selectedIndexStart != null && selectedIndexEnd != null) ...[
@@ -349,7 +350,7 @@ class _ElevationProfileScreenState
                       track.altitudes,
                       track.distances,
                       track.timestamps,
-                      AppColors.secondary,
+                      trackColor,
                     ),
 
                   const SizedBox(height: 8),
@@ -544,6 +545,7 @@ class _ElevationProfileScreenState
                               realDists,
                               importedAlts,
                               importedDists,
+                              trackColor,
                             ),
                           ),
                         ),
@@ -604,14 +606,19 @@ class _ElevationProfileScreenState
           // ─────────────────────────────────────────────
           // 3) LLEGENDA
           // ─────────────────────────────────────────────
-          _buildLegend(hasImported, hasReal, primaryIsReal),
+          _buildLegend(hasImported, hasReal, primaryIsReal, trackColor),
         ],
       ),
     );
   }
 }
 
-Widget _buildLegend(bool hasSecondary, bool hasReal, bool primaryIsReal) {
+Widget _buildLegend(
+  bool hasSecondary,
+  bool hasReal,
+  bool primaryIsReal,
+  Color trackColor,
+) {
   final effectivePrimaryIsReal = hasReal ? primaryIsReal : false;
 
   final primaryLabel = effectivePrimaryIsReal ? "Track real" : "Track importat";
@@ -628,8 +635,8 @@ Widget _buildLegend(bool hasSecondary, bool hasReal, bool primaryIsReal) {
             Container(
               width: 14,
               height: 14,
-              decoration: const BoxDecoration(
-                color: Color(0xFF4CAF50),
+              decoration: BoxDecoration(
+                color: trackColor,
                 shape: BoxShape.circle,
               ),
             ),

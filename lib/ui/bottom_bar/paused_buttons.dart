@@ -23,7 +23,7 @@ class PausedButtons extends StatelessWidget {
         Expanded(
           flex: 2,
           child: TrackBaseButton(
-            color: AppColors.primary.withAlpha(180),
+            color: AppColors.tertiary,
             onPressed: onResume,
             icon: Icons.play_arrow,
             text: t.resume,

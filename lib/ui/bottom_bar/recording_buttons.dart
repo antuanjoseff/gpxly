@@ -56,8 +56,8 @@ class RecordingButtons extends ConsumerWidget {
           Expanded(
             child: TrackBaseButton(
               color: followState.isFollowing
-                  ? AppColors.tertiary
-                  : AppColors.secondary,
+                  ? AppColors.alert
+                  : AppColors.tertiary,
               onPressed: onFollowTrack,
               icon: followState.isFollowing ? Icons.close : Icons.navigation,
               text: followState.isFollowing ? t.stopFollowing : t.follow,

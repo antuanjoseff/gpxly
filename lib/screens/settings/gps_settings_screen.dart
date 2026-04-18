@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gpxly/l10n/app_localizations.dart';
 import 'package:gpxly/theme/app_colors.dart';
 import 'package:gpxly/ui/bottom_bar/app_action_button.dart';
 
@@ -36,6 +37,8 @@ class _GpsSettingsScreenState extends ConsumerState<GpsSettingsScreen>
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
@@ -49,18 +52,16 @@ class _GpsSettingsScreenState extends ConsumerState<GpsSettingsScreen>
         final apply = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text("Canvis pendents"),
-            content: const Text(
-              "Has fet canvis que no has aplicat. Vols aplicar-los abans de tornar al mapa?",
-            ),
+            title: Text(t.pendingChangesTitle),
+            content: Text(t.pendingChangesMessage),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text("Descarta"),
+                child: Text(t.discard),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(context, true),
-                child: const Text("Aplica"),
+                child: Text(t.apply),
               ),
             ],
           ),
@@ -82,7 +83,7 @@ class _GpsSettingsScreenState extends ConsumerState<GpsSettingsScreen>
         backgroundColor: AppColors.white,
         appBar: AppBar(
           backgroundColor: AppColors.primary,
-          title: const Text('Configuració'),
+          title: Text(t.settings),
           toolbarHeight:
               80, // 👈 Augmentem l'alçada del títol perquè sigui més ample
           bottom: PreferredSize(
@@ -92,7 +93,7 @@ class _GpsSettingsScreenState extends ConsumerState<GpsSettingsScreen>
               child: TabBar(
                 controller: _tabController,
                 // Icones i text no seleccionats: Molt més transparents (opacitat baixa)
-                unselectedLabelColor: AppColors.primary.withAlpha(80),
+                unselectedLabelColor: AppColors.primary.withAlpha(140),
                 labelColor: AppColors.primary,
 
                 // Estils de text per diferenciar per pes i mida

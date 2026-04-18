@@ -1,6 +1,6 @@
 {
   "appTitle": "GpxGo",
-  "startRecording": "Start recording",
+  "startRecording": "Record",
   "stopRecording": "Stop recording",
   "gpsDisabled": "GPS is disabled",
   "locationPermissionRequired": "Location permission is required",
@@ -14,7 +14,7 @@
   "cancel": "CANCEL",
   "close": "CLOSE",
   "ok": "OK",
-  "settings": "SETTINGS",
+  "settings": "Settings",
 
   "recoverTrackTitle": "Pending route",
   "recoverTrackMessage": "A previous recording was not closed properly. Do you want to continue it or start a new one?",
@@ -83,6 +83,14 @@
 "resume": "RESUME",
 "stopFollowing": "STOP",
 "follow": "FOLLOW",
-"pause": "PAUSE"
+"pause": "PAUSE",
 
+"apply": "APPLY",
+"pendingChangesTitle": "Pending changes",
+"pendingChangesMessage": "You have unsaved changes. Do you want to apply them before returning to the map?",
+"settingsApplied": "Settings applied!",
+"gpsTab": "GPS",
+"gpxTab": "GPX",
+"trackTab": "Track",
+"applyUpper": "APPLY"
 }

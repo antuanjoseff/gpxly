@@ -12,7 +12,7 @@ class AppLocalizationsCa extends AppLocalizations {
   String get appTitle => 'GpxGo';
 
   @override
-  String get startRecording => 'Inicia gravació';
+  String get startRecording => 'Gravar';
 
   @override
   String get stopRecording => 'Atura gravació';
@@ -45,7 +45,7 @@ class AppLocalizationsCa extends AppLocalizations {
   String get ok => 'D\'ACORD';
 
   @override
-  String get settings => 'CONFIGURACIÓ';
+  String get settings => 'Configuració';
 
   @override
   String get recoverTrackTitle => 'Ruta pendent';
@@ -211,4 +211,28 @@ class AppLocalizationsCa extends AppLocalizations {
 
   @override
   String get pause => 'PAUSA';
+
+  @override
+  String get apply => 'APLICA';
+
+  @override
+  String get pendingChangesTitle => 'Canvis pendents';
+
+  @override
+  String get pendingChangesMessage => 'Has fet canvis que no has aplicat. Vols aplicar-los abans de tornar al mapa?';
+
+  @override
+  String get settingsApplied => 'Configuració aplicada!';
+
+  @override
+  String get gpsTab => 'GPS';
+
+  @override
+  String get gpxTab => 'GPX';
+
+  @override
+  String get trackTab => 'Track';
+
+  @override
+  String get applyUpper => 'APLICA';
 }

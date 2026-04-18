@@ -106,7 +106,7 @@ abstract class AppLocalizations {
   /// No description provided for @startRecording.
   ///
   /// In en, this message translates to:
-  /// **'Start recording'**
+  /// **'Record'**
   String get startRecording;
 
   /// No description provided for @stopRecording.
@@ -172,7 +172,7 @@ abstract class AppLocalizations {
   /// No description provided for @settings.
   ///
   /// In en, this message translates to:
-  /// **'SETTINGS'**
+  /// **'Settings'**
   String get settings;
 
   /// No description provided for @recoverTrackTitle.
@@ -504,6 +504,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'PAUSE'**
   String get pause;
+
+  /// No description provided for @apply.
+  ///
+  /// In en, this message translates to:
+  /// **'APPLY'**
+  String get apply;
+
+  /// No description provided for @pendingChangesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending changes'**
+  String get pendingChangesTitle;
+
+  /// No description provided for @pendingChangesMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You have unsaved changes. Do you want to apply them before returning to the map?'**
+  String get pendingChangesMessage;
+
+  /// No description provided for @settingsApplied.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings applied!'**
+  String get settingsApplied;
+
+  /// No description provided for @gpsTab.
+  ///
+  /// In en, this message translates to:
+  /// **'GPS'**
+  String get gpsTab;
+
+  /// No description provided for @gpxTab.
+  ///
+  /// In en, this message translates to:
+  /// **'GPX'**
+  String get gpxTab;
+
+  /// No description provided for @trackTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Track'**
+  String get trackTab;
+
+  /// No description provided for @applyUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'APPLY'**
+  String get applyUpper;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
