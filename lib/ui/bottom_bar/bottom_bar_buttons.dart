@@ -10,7 +10,12 @@ class BottomBarButtons extends StatelessWidget {
   final VoidCallback onPause;
   final VoidCallback onResume;
   final VoidCallback onStop;
-  final Widget importButton;
+
+  // Callback per importar GPX
+  final VoidCallback onImportTrack;
+
+  // Nou: callback per seguir track
+  final VoidCallback onFollowTrack;
 
   const BottomBarButtons({
     super.key,
@@ -19,7 +24,8 @@ class BottomBarButtons extends StatelessWidget {
     required this.onPause,
     required this.onResume,
     required this.onStop,
-    required this.importButton,
+    required this.onImportTrack,
+    required this.onFollowTrack,
   });
 
   Widget _buildForState() {
@@ -28,14 +34,15 @@ class BottomBarButtons extends StatelessWidget {
         return IdleButtons(
           key: const ValueKey("idle"),
           onStart: onStart,
-          importButton: importButton, // 👈 AFEGIT
+          onImportTrack: onImportTrack,
         );
 
       case RecordingState.recording:
         return RecordingButtons(
           key: const ValueKey("recording"),
           onPause: onPause,
-          importButton: importButton, // 👈 AFEGIT
+          onImportTrack: onImportTrack,
+          onFollowTrack: onFollowTrack, // 👈 AFEGIT
         );
 
       case RecordingState.paused:

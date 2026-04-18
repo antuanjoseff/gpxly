@@ -23,7 +23,7 @@ class FloatingAltitudePanel extends ConsumerWidget {
         children: [
           const Icon(Icons.terrain, color: Colors.white, size: 12),
           const SizedBox(width: 3),
-          AnimatedAltitudeText(altitude: altitude),
+          AnimatedAltitudeText(altitude: altitude, textColor: AppColors.white),
         ],
       ),
     );

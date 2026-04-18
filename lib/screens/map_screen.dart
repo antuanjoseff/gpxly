@@ -11,6 +11,7 @@ import 'package:gpxly/notifiers/track_notifier.dart';
 import 'package:gpxly/notifiers/track_settings_notifier.dart';
 import 'package:gpxly/screens/settings/gps_settings_screen.dart';
 import 'package:gpxly/screens/stats_screen.dart';
+import 'package:gpxly/services/gpx_import_flow.dart';
 import 'package:gpxly/services/location_permission_flow.dart';
 import 'package:gpxly/services/recording_handler.dart';
 import 'package:gpxly/theme/app_colors.dart';
@@ -22,7 +23,6 @@ import 'package:gpxly/utils/map_animation.dart';
 import 'package:gpxly/utils/map_layers.dart';
 import 'package:gpxly/widgets/compass_widget.dart';
 import 'package:gpxly/widgets/gps_accuracy_bars.dart';
-import 'package:gpxly/widgets/import_gpx_button.dart';
 import 'package:gpxly/widgets/recording_status_bar.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -75,6 +75,44 @@ class _MapScreenState extends ConsumerState<MapScreen>
     Future.microtask(
       () => ref.read(permissionsProvider.notifier).checkPermissions(),
     );
+  }
+
+  void _onFollowTrack() {
+    final notifier = ref.read(trackFollowNotifierProvider.notifier);
+    final state = ref.read(trackFollowNotifierProvider);
+
+    if (state.isFollowing) {
+      // Si ja està seguint → ATURA SEGUIMENT
+      notifier.toggleFollowing(context);
+      return;
+    }
+
+    // Si NO està seguint → centra el mapa + activa seguiment
+    _handleFollowTrack(); // centra el mapa al final del track
+    notifier.toggleFollowing(context); // activa seguiment
+  }
+
+  void _handleFollowTrack() {
+    final importedTrack = ref.read(importedTrackProvider);
+    if (importedTrack == null || importedTrack.coordinates.isEmpty) return;
+
+    final coords = importedTrack.coordinates;
+    final last = coords.last;
+
+    setState(() {
+      userMovedMap = false;
+      isProgrammaticMove = true;
+    });
+
+    mapController
+        ?.animateCamera(CameraUpdate.newLatLng(LatLng(last[1], last[0])))
+        .then((_) {
+          Future.delayed(const Duration(milliseconds: 300), () {
+            if (mounted) {
+              setState(() => isProgrammaticMove = false);
+            }
+          });
+        });
   }
 
   Future<void> _loadLastPosition() async {
@@ -246,7 +284,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final track = ref.watch(trackProvider);
     final trackSettings = ref.watch(trackSettingsProvider);
     final permissions = ref.watch(permissionsProvider);
-    final importedTrack = ref.watch(importedTrackProvider);
     final hasPermissions = permissions.hasPermission;
     final gpsEnabled = permissions.serviceEnabled;
 
@@ -377,12 +414,20 @@ class _MapScreenState extends ConsumerState<MapScreen>
     ref.listen(trackFollowNotifierProvider, (prev, next) {
       if (next.showBackOnTrackSnackbar == true) {
         AppMessages.showBackOnTrackPersistentSnackbar(context, ref);
+
+        // 🔥 IMPORTANT: reset immediat
+        ref
+            .read(trackFollowNotifierProvider.notifier)
+            .dismissBackOnTrackAlert();
       }
     });
 
     ref.listen(trackFollowNotifierProvider, (prev, next) {
       if (next.showOffTrackSnackbar == true) {
         AppMessages.showOffTrackPersistentSnackbar(context, ref);
+
+        // 🔥 IMPORTANT: reset immediat
+        ref.read(trackFollowNotifierProvider.notifier).clearOffTrackSnackbar();
       }
     });
 
@@ -436,9 +481,15 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   const SizedBox(width: 12),
 
                   // Botó d'importació
-                  ImportGpxButton(
-                    mapController: mapController,
-                    enabled: hasPermissions && gpsEnabled,
+                  IconButton(
+                    icon: const Icon(Icons.file_upload_outlined, size: 26),
+                    onPressed: () {
+                      pickGpxAndImport(
+                        context: context,
+                        ref: ref,
+                        mapController: mapController,
+                      );
+                    },
                   ),
 
                   // Botó de settings
@@ -702,50 +753,15 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 onPause: () => RecordingHandler.pause(ref),
                 onResume: () => RecordingHandler.resume(ref),
                 onStop: () => _handleStopProcess(context, ref),
+                onImportTrack: () {
+                  pickGpxAndImport(
+                    context: context,
+                    ref: ref,
+                    mapController: mapController,
+                  );
+                },
 
-                importButton: ImportGpxButton(mapController: mapController),
-
-                // 👇👇👇 AFEGIT: BOTÓ SEGUIR NOMÉS SI HI HA importedTrack
-                followButton: importedTrack != null
-                    ? ElevatedButton(
-                        onPressed: () {
-                          final coords = importedTrack.coordinates;
-                          if (coords.isEmpty) return;
-
-                          final last = coords.last;
-
-                          setState(() {
-                            userMovedMap = false;
-                            isProgrammaticMove = true;
-                          });
-
-                          mapController
-                              ?.animateCamera(
-                                CameraUpdate.newLatLng(
-                                  LatLng(last[1], last[0]),
-                                ),
-                              )
-                              .then((_) {
-                                Future.delayed(
-                                  const Duration(milliseconds: 300),
-                                  () {
-                                    if (mounted) {
-                                      setState(
-                                        () => isProgrammaticMove = false,
-                                      );
-                                    }
-                                  },
-                                );
-                              });
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue.shade700,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                        ),
-                        child: const Text("Seguir"),
-                      )
-                    : null,
+                onFollowTrack: _onFollowTrack,
               ),
       ),
     );

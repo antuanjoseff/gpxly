@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gpxly/notifiers/gps_altitude_notifier.dart';
-import 'package:gpxly/theme/app_colors.dart'; // Assegura't que el path sigui correcte
 
 final blinkingProvider = StreamProvider<bool>((ref) async* {
   bool visible = true;
@@ -25,41 +24,47 @@ class FloatingRoutePanel extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final altitude = ref.watch(gpsAltitudeProvider);
-
-    // 🔥 Llegim el parpelleig
     final blinking = ref.watch(blinkingProvider).value ?? true;
+
+    // 🎨 Colors segons estat
+    final Color textColor = isRecording
+        ? Colors
+              .red // 🔴 gravant
+        : duration.inSeconds > 0
+        ? Colors
+              .green // 🟢 pausa
+        : Colors.black; // ⚫ estat inicial
+
+    final Color dotColor = isRecording
+        ? (blinking ? Colors.red : Colors.white) // 🔴 parpelleig
+        : duration.inSeconds > 0
+        ? Colors
+              .green // 🟢 pausa
+        : Colors.transparent; // sense punt
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.tertiary,
+        color: Colors.white, // 🔥 fons blanc
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.white10),
+        border: Border.all(color: Colors.black12),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // 🔴 Punt vermell que fa pampallugues
+          // 🔴🟢 Punt indicador d’estat
           SizedBox(
             width: 14,
             height: 14,
-            child: !isRecording
-                ? null
-                : AnimatedContainer(
-                    duration: const Duration(milliseconds: 1000),
-                    curve: Curves.easeInOut,
-                    margin: const EdgeInsets.only(right: 6),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: isRecording
-                          ? (blinking ? Colors.red : Colors.white)
-                          : Colors.red, // estable quan no grava
-                      // border: Border.all(
-                      //   color: Colors.red.withAlpha(180),
-                      //   width: 1.5,
-                      // ),
-                    ),
-                  ),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 600),
+              curve: Curves.easeInOut,
+              margin: const EdgeInsets.only(right: 6),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: dotColor,
+              ),
+            ),
           ),
 
           // CRONÒMETRE
@@ -71,7 +76,7 @@ class FloatingRoutePanel extends ConsumerWidget {
               fontFamily: 'monospace',
               fontWeight: FontWeight.w800,
               fontSize: 13,
-              color: Colors.white,
+              color: textColor,
             ),
           ),
 
@@ -80,13 +85,13 @@ class FloatingRoutePanel extends ConsumerWidget {
             height: 10,
             width: 1,
             margin: const EdgeInsets.symmetric(horizontal: 6),
-            color: Colors.white12,
+            color: Colors.black12,
           ),
 
           // ALÇADA
-          const Icon(Icons.terrain, color: Colors.white, size: 12),
+          Icon(Icons.terrain, color: textColor, size: 12),
           const SizedBox(width: 3),
-          AnimatedAltitudeText(altitude: altitude),
+          AnimatedAltitudeText(altitude: altitude, textColor: textColor),
         ],
       ),
     );
@@ -95,8 +100,13 @@ class FloatingRoutePanel extends ConsumerWidget {
 
 class AnimatedAltitudeText extends StatelessWidget {
   final double altitude;
+  final Color textColor;
 
-  const AnimatedAltitudeText({super.key, required this.altitude});
+  const AnimatedAltitudeText({
+    super.key,
+    required this.altitude,
+    required this.textColor,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -107,9 +117,8 @@ class AnimatedAltitudeText extends StatelessWidget {
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 300),
       transitionBuilder: (Widget child, Animation<double> animation) {
-        // Calculem si el número puja o baixa (opcional, aquí fem un lliscament estàndard)
         final offsetAnimation = Tween<Offset>(
-          begin: const Offset(0.0, 0.5), // Ve de baix
+          begin: const Offset(0.0, 0.5),
           end: Offset.zero,
         ).animate(animation);
 
@@ -118,15 +127,14 @@ class AnimatedAltitudeText extends StatelessWidget {
           child: SlideTransition(position: offsetAnimation, child: child),
         );
       },
-      // La "key" és el que diu a Flutter que el contingut ha canviat i cal animar
       child: Text(
         altitudeStr,
         key: ValueKey<String>(altitudeStr),
-        style: const TextStyle(
+        style: TextStyle(
           fontFamily: 'monospace',
           fontWeight: FontWeight.w800,
           fontSize: 13,
-          color: Colors.white,
+          color: textColor, // 🔥 ara segueix l’estat
         ),
       ),
     );

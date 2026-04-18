@@ -164,12 +164,12 @@ class CompassAltitudeScaleRow extends ConsumerWidget {
     final zoom = ref.watch(mapZoomProvider);
     final latitude = ref.watch(mapCenterLatProvider);
 
-    // Escala provisional (demà la vincularem al zoom real)
-    // --- CÀLCUL ESCALA REAL ---
+    // --- ESCALA REAL ---
     final metersPerPixel =
         156543.03392 * math.cos(latitude * math.pi / 180) / math.pow(2, zoom);
 
-    const maxWidthPx = 50.0; // ample màxim de la línia
+    const maxWidthPx = 50.0;
+
     final niceScales = <double>[
       20,
       50,
@@ -193,20 +193,13 @@ class CompassAltitudeScaleRow extends ConsumerWidget {
       if (w <= maxWidthPx) {
         chosenMeters = m;
         chosenWidthPx = w;
+      } else {
+        break;
       }
     }
 
-    // 🔥 LÍMIT REAL D’AMPLADA
+    // 🔥 LÍMIT REAL
     chosenWidthPx = chosenWidthPx.clamp(0, maxWidthPx);
-
-    for (final m in niceScales) {
-      final w = m / metersPerPixel;
-      if (w <= maxWidthPx) {
-        chosenMeters = m;
-        chosenWidthPx = w;
-      }
-    }
-    // --- FI CÀLCUL ESCALA ---
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -218,7 +211,7 @@ class CompassAltitudeScaleRow extends ConsumerWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // 🧭 Brúixola PRO compacta
+          // 🧭 Brúixola PRO
           SizedBox(
             width: 42,
             height: 42,
@@ -248,31 +241,21 @@ class CompassAltitudeScaleRow extends ConsumerWidget {
                 Positioned(left: 3, child: _label("W")),
                 Positioned(right: 3, child: _label("E")),
 
-                // AGULLA
-                TweenAnimationBuilder<double>(
-                  tween: Tween(begin: 0, end: heading),
+                // FLETXA (ara sí que gira)
+                AnimatedRotation(
+                  turns: heading / 360,
                   duration: const Duration(milliseconds: 250),
                   curve: Curves.easeOut,
-                  builder: (context, value, child) {
-                    return Transform.rotate(
-                      angle: value * 3.1415926535 / 180,
-                      child: child,
-                    );
-                  },
-                  child: Container(
-                    width: 4,
-                    height: 20,
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
+                  child: CustomPaint(
+                    size: const Size(14, 14), // 🔥 més petit i centrat
+                    painter: _CompassArrowPainter(),
                   ),
                 ),
 
-                // CENTRE
+                // CENTRE (molt petit)
                 Container(
-                  width: 8,
-                  height: 8,
+                  width: 3,
+                  height: 3,
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
                     color: Colors.black,
@@ -284,23 +267,21 @@ class CompassAltitudeScaleRow extends ConsumerWidget {
 
           const SizedBox(width: 14),
 
-          // 📦 Bloc vertical: Altitud + Escala
+          // 📦 Altitud + Escala
           Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ⛰️ Altitud
+              // ⛰️ Altitud (blanc)
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(
-                    Icons.terrain,
-                    size: 12,
-                    color: AppColors.secondary,
-                  ),
+                  const Icon(Icons.terrain, size: 12, color: Colors.white),
                   const SizedBox(width: 4),
                   AnimatedSwitcher(
                     duration: const Duration(milliseconds: 250),
+                    transitionBuilder: (child, anim) =>
+                        FadeTransition(opacity: anim, child: child),
                     child: Text(
                       "${altitude.toStringAsFixed(0)}m",
                       key: ValueKey(altitude),
@@ -308,7 +289,7 @@ class CompassAltitudeScaleRow extends ConsumerWidget {
                         fontFamily: 'monospace',
                         fontWeight: FontWeight.w800,
                         fontSize: 12,
-                        color: AppColors.secondary,
+                        color: Colors.white, // 🔥 blanc
                       ),
                     ),
                   ),
@@ -317,27 +298,29 @@ class CompassAltitudeScaleRow extends ConsumerWidget {
 
               const SizedBox(height: 6),
 
-              // 📏 Escala real
-              // 📏 Escala real (text a sobre i centrat)
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text(
-                    _formatMeters(chosenMeters),
-                    style: const TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
+              // 📏 Escala
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      _formatMeters(chosenMeters),
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Container(
+                      width: chosenWidthPx,
+                      height: 2,
                       color: Colors.white,
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Container(
-                    width: chosenWidthPx,
-                    height: 2,
-                    color: Colors.white,
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),
@@ -356,4 +339,28 @@ class CompassAltitudeScaleRow extends ConsumerWidget {
       ),
     );
   }
+}
+
+// 🎯 Fletxa triangular centrada i rotant correctament
+class _CompassArrowPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.red
+      ..style = PaintingStyle.fill;
+
+    final w = size.width;
+    final h = size.height;
+
+    final path = Path()
+      ..moveTo(w / 2, 0) // punta
+      ..lineTo(w * 0.8, h) // base dreta
+      ..lineTo(w * 0.2, h) // base esquerra
+      ..close();
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(_) => false;
 }

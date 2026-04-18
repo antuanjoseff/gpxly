@@ -9,6 +9,8 @@ import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:flutter/services.dart';
 import 'package:audioplayers/audioplayers.dart';
 
+enum FollowMode { notFollowing, initializing, onTrack, offTrack }
+
 class TrackFollowNotifier extends Notifier<TrackFollowState> {
   StreamSubscription? _locationSub;
 
@@ -24,9 +26,20 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
   static const Duration offTrackDelay = Duration(seconds: 5);
 
   // Avisos offtrack
+  int maxOffTrackAlerts = 1; // quantes vegades avisar
+  Duration offTrackCooldown = Duration(seconds: 20); // temps entre avisos
+  int offTrackAlertsSent = 0; // comptador
+
   DateTime? _lastOffTrackAlert;
-  Duration offTrackCooldown = const Duration(seconds: 20);
   bool _offTrackDismissed = false;
+
+  // Flags d’autòmat
+  bool _isCurrentlyOffTrack = false; // Per saber si venim d'estar fora
+  bool _backOnTrackAlertSent = false; // Per no repetir l'avís de "tornada"
+
+  bool _hasEverBeenOnTrack = false;
+  bool _hasEverBeenOffTrack = false;
+  bool _hasShownBackOnTrackOnce = false;
 
   final AudioPlayer _player = AudioPlayer();
 
@@ -42,16 +55,16 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
       distanceToTrack: 0,
       showOffTrackSnackbar: false,
       showBackOnTrackSnackbar: false,
+      mode: FollowMode.notFollowing,
     );
   }
 
   // ------------------------------------------------------------
-  // API pública per la UI (cridades des del map_screen)
+  // API pública per la UI
   // ------------------------------------------------------------
 
-  /// L’usuari s’està allunyant segons la detecció del map_screen
   void onUserDriftingAway() {
-    if (_offTrackDismissed) return; // L’usuari ha tancat el snackbar
+    if (_offTrackDismissed) return;
 
     final now = DateTime.now();
     final canAlert =
@@ -63,28 +76,29 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
       _playOffTrackSound();
       _lastOffTrackAlert = now;
 
-      // Notifiquem la UI perquè mostri el snackbar
       state = state.copyWith(showOffTrackSnackbar: true);
     }
   }
 
-  /// L’usuari ha tornat al track → reiniciem avisos
   void onUserBackOnTrack() {
     _offTrackDismissed = false;
 
-    // Vibració suau
     HapticFeedback.lightImpact();
-
-    // So positiu
     _playBackOnTrackSound();
 
-    // Notifiquem la UI
     state = state.copyWith(showBackOnTrackSnackbar: true);
   }
 
-  /// La UI ha tancat el snackbar
   void dismissOffTrackAlert() {
     _offTrackDismissed = true;
+  }
+
+  void clearOffTrackSnackbar() {
+    state = state.copyWith(showOffTrackSnackbar: false);
+  }
+
+  void dismissBackOnTrackAlert() {
+    state = state.copyWith(showBackOnTrackSnackbar: false);
   }
 
   // ------------------------------------------------------------
@@ -100,26 +114,23 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
   }
 
   void startFollowingWithRecording(BuildContext context) async {
-    state = state.copyWith(isFollowing: true);
+    state = state.copyWith(isFollowing: true, mode: FollowMode.initializing);
 
-    // 🔥 1. Obtenir última posició del track (GPS real)
+    // Reiniciem flags
+    _hasEverBeenOnTrack = false;
+    _hasEverBeenOffTrack = false;
+    offTrackAlertsSent = 0;
+
+    // Obtenir última posició
     final track = ref.read(trackProvider);
     final imported = ref.read(importedTrackProvider);
 
-    if (track.coordinates.isEmpty) {
-      return;
-    }
-
-    if (imported == null || imported.coordinates.isEmpty) {
-      return;
-    }
-
-    if (track.coordinates.isEmpty || imported.coordinates.isEmpty) return;
+    if (track.coordinates.isEmpty) return;
+    if (imported == null || imported.coordinates.isEmpty) return;
 
     final last = track.coordinates.last;
     final lastPos = LatLng(last[1], last[0]);
 
-    // Convertim coordinates (List<List<double>>) → List<LatLng>
     final importedLatLng = imported.coordinates
         .map((c) => LatLng(c[1], c[0]))
         .toList();
@@ -127,22 +138,7 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
     final closest = _closestPointAndSegment(lastPos, importedLatLng);
     final dist = closest.distance;
 
-    // 🔥 3. Decidir estat inicial
-    final isNear = dist < nearThreshold;
-
-    if (isNear) {
-      // Està sobre el track → sonar OK
-      HapticFeedback.lightImpact();
-      _playBackOnTrackSound();
-      state = state.copyWith(isOffTrack: false);
-    } else {
-      // Està fora → sonar alerta immediata
-      HapticFeedback.mediumImpact();
-      _playOffTrackSound();
-      state = state.copyWith(isOffTrack: true);
-    }
-
-    // 🔥 4. Inicialitzar històric
+    // Inicialitzar històric
     _lastDistances.clear();
     _lastDistances.add(dist);
   }
@@ -153,6 +149,7 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
       isOffTrack: false,
       distanceToTrack: 0,
       showOffTrackSnackbar: false,
+      mode: FollowMode.notFollowing,
     );
 
     _lastDistances.clear();
@@ -167,7 +164,6 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
     if (!state.isFollowing) return;
 
     final imported = ref.read(importedTrackProvider);
-
     if (imported == null || imported.coordinates.isEmpty) return;
 
     final importedLatLng = imported.coordinates
@@ -191,36 +187,83 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
     final isFar = dist > farThreshold;
     final isNear = dist < nearThreshold;
 
-    final wasOffTrack = state.isOffTrack;
-    bool offTrack = state.isOffTrack;
+    // Deleguem tota la lògica d’estats
+    _handleFollowState(
+      dist: dist,
+      isNear: isNear,
+      isFar: isFar,
+      isTrendingAway: isTrendingAway,
+      isHeadingWrong: isHeadingWrong,
+    );
 
-    if (isFar && isTrendingAway && isHeadingWrong) {
-      _offTrackStart ??= DateTime.now();
+    state = state.copyWith(distanceToTrack: dist);
+  }
 
-      if (DateTime.now().difference(_offTrackStart!) > offTrackDelay) {
-        offTrack = true;
+  // ------------------------------------------------------------
+  // AUTÒMAT D’ESTATS
+  // ------------------------------------------------------------
+  void _handleFollowState({
+    required double dist,
+    required bool isNear,
+    required bool isFar,
+    required bool isTrendingAway,
+    required bool isHeadingWrong,
+  }) {
+    final prevMode = state.mode;
+    var newMode = prevMode;
+    var newIsOffTrack = state.isOffTrack;
+
+    // --- 1) INITIALIZING → ON_TRACK ---
+    if (prevMode == FollowMode.initializing) {
+      if (isNear) {
+        newMode = FollowMode.onTrack;
+        newIsOffTrack = false;
+        _hasEverBeenOnTrack = true;
       }
-    } else {
-      _offTrackStart = null;
-      if (isNear) offTrack = false;
+    }
+    // --- 2) ON_TRACK → OFF_TRACK ---
+    else if (prevMode == FollowMode.onTrack) {
+      if (isFar && isTrendingAway && isHeadingWrong) {
+        if (_hasEverBeenOnTrack && _canSendOffTrackAlert()) {
+          onUserDriftingAway(); // avis negatiu
+        }
+        _hasEverBeenOffTrack = true;
+        newMode = FollowMode.offTrack;
+        newIsOffTrack = true;
+      }
+    }
+    // --- 3) OFF_TRACK → ON_TRACK ---
+    else if (prevMode == FollowMode.offTrack) {
+      if (isNear) {
+        newMode = FollowMode.onTrack;
+        newIsOffTrack = false;
+      }
     }
 
-    // Vibració immediata quan entra en offtrack (però no snackbar)
-    if (!wasOffTrack && offTrack) {
-      HapticFeedback.mediumImpact();
+    // --- Apliquem el nou estat ---
+    state = state.copyWith(mode: newMode, isOffTrack: newIsOffTrack);
+
+    // --- 🔥 AVÍS ON_TRACK NOMÉS EN TRANSICIÓ ---
+    final hasEnteredOnTrack =
+        prevMode != FollowMode.onTrack && newMode == FollowMode.onTrack;
+
+    if (hasEnteredOnTrack) {
+      onUserBackOnTrack(); // avis positiu
+    }
+  }
+
+  bool _canSendOffTrackAlert() {
+    if (offTrackAlertsSent >= maxOffTrackAlerts) return false;
+
+    final now = DateTime.now();
+    if (_lastOffTrackAlert == null ||
+        now.difference(_lastOffTrackAlert!) > offTrackCooldown) {
+      _lastOffTrackAlert = now;
+      offTrackAlertsSent++;
+      return true;
     }
 
-    // Reinici d’avisos quan torna al track
-    if (wasOffTrack && !offTrack) {
-      _offTrackDismissed = false;
-
-      // 🔥 MILLORA NECESSÀRIA
-      _offTrackStart = null;
-      _lastDistances.clear();
-      _lastDistances.add(dist);
-    }
-
-    state = state.copyWith(distanceToTrack: dist, isOffTrack: offTrack);
+    return false;
   }
 
   // ------------------------------------------------------------
@@ -235,28 +278,22 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
       final a = track[i];
       final b = track[i + 1];
 
-      // Vector AB
       final abx = b.longitude - a.longitude;
       final aby = b.latitude - a.latitude;
 
-      // Vector AP
       final apx = p.longitude - a.longitude;
       final apy = p.latitude - a.latitude;
 
-      // Projecció escalar de AP sobre AB
       final ab2 = abx * abx + aby * aby;
       double t = 0;
       if (ab2 > 0) {
         t = (apx * abx + apy * aby) / ab2;
       }
 
-      // Clamp: si la projecció cau fora del segment, usem A o B
       t = t.clamp(0.0, 1.0);
 
-      // Punt projectat sobre el segment
       final proj = LatLng(a.latitude + aby * t, a.longitude + abx * t);
 
-      // Distància real punt–segment
       final d = distanceBetween(
         p.latitude,
         p.longitude,
@@ -278,9 +315,6 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
     );
   }
 
-  // ------------------------------------------------------------
-  // Tendència creixent
-  // ------------------------------------------------------------
   bool _isTrendingAway() {
     if (_lastDistances.length < trendWindow) return false;
 
@@ -292,17 +326,11 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
     return true;
   }
 
-  // ------------------------------------------------------------
-  // Diferència de heading (0–180)
-  // ------------------------------------------------------------
   double _headingDifference(double h1, double h2) {
     final diff = (h1 - h2).abs();
     return diff > 180 ? 360 - diff : diff;
   }
 
-  // ------------------------------------------------------------
-  // REPRODUIR SO
-  // ------------------------------------------------------------
   Future<void> _playOffTrackSound() async {
     try {
       await _player.play(AssetSource('sound/off_track.mp3'), volume: 1.0);

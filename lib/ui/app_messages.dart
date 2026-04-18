@@ -414,6 +414,9 @@ class AppMessages {
         ),
       ),
     );
+
+    // 🔥 Reset de flag
+    ref.read(trackFollowNotifierProvider.notifier).clearOffTrackSnackbar();
   }
 
   static void showBackOnTrackPersistentSnackbar(
@@ -427,7 +430,7 @@ class AppMessages {
 
     messenger.showSnackBar(
       SnackBar(
-        duration: const Duration(days: 1),
+        duration: const Duration(seconds: 2),
         backgroundColor: Colors.green.shade700,
         content: Row(
           children: [
@@ -444,7 +447,7 @@ class AppMessages {
                 messenger.hideCurrentSnackBar();
                 ref
                     .read(trackFollowNotifierProvider.notifier)
-                    .dismissOffTrackAlert();
+                    .dismissBackOnTrackAlert(); // ✔ CORRECTE
               },
               child: const Icon(Icons.close, color: Colors.white),
             ),
@@ -452,5 +455,8 @@ class AppMessages {
         ),
       ),
     );
+
+    // 🔥 Reset de flag
+    ref.read(trackFollowNotifierProvider.notifier).dismissBackOnTrackAlert();
   }
 }
