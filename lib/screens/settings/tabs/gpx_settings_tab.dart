@@ -2,17 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gpxly/l10n/app_localizations.dart';
 import 'package:gpxly/notifiers/gpx_settings_provider.dart';
+import 'package:gpxly/notifiers/settings_pending_notifier.dart';
 import 'package:gpxly/theme/app_colors.dart';
 
 class GpxSettingsTab extends ConsumerWidget {
-  final VoidCallback onPending;
-  final VoidCallback onApplied;
-
-  const GpxSettingsTab({
-    super.key,
-    required this.onPending,
-    required this.onApplied,
-  });
+  const GpxSettingsTab({super.key});
 
   static void apply(WidgetRef ref) {
     ref.read(gpxSettingsProvider.notifier).apply();
@@ -23,12 +17,17 @@ class GpxSettingsTab extends ConsumerWidget {
     final settings = ref.watch(gpxSettingsProvider);
     final t = AppLocalizations.of(context)!;
 
+    void markPending() {
+      ref.read(settingsPendingProvider.notifier).mark();
+      ref.read(gpxPendingProvider.notifier).mark();
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F7),
+      appBar: AppBar(backgroundColor: AppColors.primary, title: Text(t.gpxTab)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // Títol de secció
           Padding(
             padding: const EdgeInsets.only(left: 4, bottom: 12, top: 8),
             child: Text(
@@ -48,6 +47,7 @@ class GpxSettingsTab extends ConsumerWidget {
             "accuracies",
             t.gpxAccuracyPerPoint,
             Icons.gps_fixed,
+            markPending,
           ),
           const SizedBox(height: 12),
 
@@ -58,6 +58,7 @@ class GpxSettingsTab extends ConsumerWidget {
             "speeds",
             t.gpxSpeed,
             Icons.speed,
+            markPending,
           ),
           const SizedBox(height: 12),
 
@@ -68,6 +69,7 @@ class GpxSettingsTab extends ConsumerWidget {
             "headings",
             t.gpxHeading,
             Icons.explore_outlined,
+            markPending,
           ),
           const SizedBox(height: 12),
 
@@ -78,6 +80,7 @@ class GpxSettingsTab extends ConsumerWidget {
             "satellites",
             t.gpxSatellites,
             Icons.satellite_alt,
+            markPending,
           ),
           const SizedBox(height: 12),
 
@@ -88,6 +91,7 @@ class GpxSettingsTab extends ConsumerWidget {
             "vAccuracies",
             t.gpxVerticalAccuracy,
             Icons.height,
+            markPending,
           ),
 
           const SizedBox(height: 40),
@@ -103,6 +107,7 @@ class GpxSettingsTab extends ConsumerWidget {
     String field,
     String title,
     IconData icon,
+    VoidCallback markPending,
   ) {
     final t = AppLocalizations.of(context)!;
 
@@ -122,7 +127,7 @@ class GpxSettingsTab extends ConsumerWidget {
         borderRadius: BorderRadius.circular(16),
         onTap: () {
           ref.read(gpxSettingsProvider.notifier).toggle(field, !value);
-          onPending();
+          markPending();
         },
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
@@ -145,7 +150,6 @@ class GpxSettingsTab extends ConsumerWidget {
                 ),
               ),
 
-              // Càpsula ON/OFF
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 14,

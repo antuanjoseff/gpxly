@@ -5,11 +5,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gpxly/features/elevation_profile/elevation_profile_screen.dart';
 import 'package:gpxly/notifiers/gps_speed_notifier.dart';
 import 'package:gpxly/notifiers/imported_track_notifier.dart';
+import 'package:gpxly/notifiers/imported_track_settings_notifier.dart';
 import 'package:gpxly/notifiers/permissions_notifier.dart';
 import 'package:gpxly/notifiers/track_follow_notifier.dart';
 import 'package:gpxly/notifiers/track_notifier.dart';
 import 'package:gpxly/notifiers/track_settings_notifier.dart';
-import 'package:gpxly/screens/settings/gps_settings_screen.dart';
+import 'package:gpxly/screens/settings/settings_screen.dart';
 import 'package:gpxly/screens/stats_screen.dart';
 import 'package:gpxly/services/gpx_import_flow.dart';
 import 'package:gpxly/services/location_permission_flow.dart';
@@ -43,6 +44,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
   bool _isPanelExpanded = true;
   bool _fullScreen = false;
   LatLng? _initialCameraTarget;
+  double _initialZoom = 14;
 
   Timer? _cameraMoveDebounce;
   DateTime? _lastBackPress;
@@ -124,6 +126,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
       _initialCameraTarget = LatLng(lat, lon);
     } else {
       _initialCameraTarget = const LatLng(0, 0);
+      _initialZoom = 1.0;
     }
 
     if (mounted) setState(() {});
@@ -411,6 +414,20 @@ class _MapScreenState extends ConsumerState<MapScreen>
       });
     });
 
+    ref.listen(importedTrackSettingsProvider, (previous, next) {
+      if (!styleInitialized || mapController == null) return;
+
+      mapController!.setLayerProperties(
+        "imported_track_layer",
+        LineLayerProperties(
+          lineColor: next.color.toMapLibreColor(),
+          lineWidth: next.width,
+          lineCap: "round",
+          lineJoin: "round",
+        ),
+      );
+    });
+
     ref.listen(trackFollowNotifierProvider, (prev, next) {
       if (next.showBackOnTrackSnackbar == true) {
         AppMessages.showBackOnTrackPersistentSnackbar(context, ref);
@@ -505,7 +522,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                         : () => Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => const GpsSettingsScreen(),
+                              builder: (_) => const SettingsScreen(),
                             ),
                           ),
                   ),
@@ -528,7 +545,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 styleString: "assets/osm_style.json",
                 initialCameraPosition: CameraPosition(
                   target: _initialCameraTarget!,
-                  zoom: 14,
+                  zoom: _initialZoom,
                 ),
                 onMapLongClick: (point, latlng) {
                   SystemChrome.setEnabledSystemUIMode(

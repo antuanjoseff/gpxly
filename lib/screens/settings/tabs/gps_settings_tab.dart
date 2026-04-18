@@ -2,17 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gpxly/l10n/app_localizations.dart';
 import 'package:gpxly/notifiers/gps_settings_notifier.dart';
+import 'package:gpxly/notifiers/settings_pending_notifier.dart';
 import 'package:gpxly/theme/app_colors.dart';
 
 class GpsSettingsTab extends ConsumerWidget {
-  final VoidCallback onPending;
-  final VoidCallback onApplied;
-
-  const GpsSettingsTab({
-    super.key,
-    required this.onPending,
-    required this.onApplied,
-  });
+  const GpsSettingsTab({super.key});
 
   static void apply(WidgetRef ref) {
     ref.read(gpsSettingsProvider.notifier).apply();
@@ -23,13 +17,19 @@ class GpsSettingsTab extends ConsumerWidget {
     final gps = ref.watch(gpsSettingsProvider);
     final t = AppLocalizations.of(context)!;
 
+    void markPending() {
+      ref.read(settingsPendingProvider.notifier).mark();
+      ref.read(gpsPendingProvider.notifier).mark();
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F7),
+      appBar: AppBar(backgroundColor: AppColors.primary, title: Text(t.gpsTab)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // --- BLOC TEMPS ---
+            // --- TEMPS ---
             _buildSettingsCard(
               isActive: gps.useTime,
               title: t.gpsRecordByTime,
@@ -46,14 +46,14 @@ class GpsSettingsTab extends ConsumerWidget {
                       .read(gpsSettingsProvider.notifier)
                       .setSeconds(val.round());
                   ref.read(gpsSettingsProvider.notifier).setUseTime(true);
-                  onPending();
+                  markPending();
                 },
               ),
             ),
 
             const SizedBox(height: 16),
 
-            // --- BLOC METRES ---
+            // --- METRES ---
             _buildSettingsCard(
               isActive: !gps.useTime,
               title: t.gpsRecordByDistance,
@@ -68,14 +68,14 @@ class GpsSettingsTab extends ConsumerWidget {
                 onChanged: (val) {
                   ref.read(gpsSettingsProvider.notifier).setMeters(val);
                   ref.read(gpsSettingsProvider.notifier).setUseTime(false);
-                  onPending();
+                  markPending();
                 },
               ),
             ),
 
             const SizedBox(height: 16),
 
-            // --- BLOC ACCURACY ---
+            // --- ACCURACY ---
             _buildSettingsCard(
               isActive: true,
               title: t.gpsMaxAccuracy,
@@ -89,7 +89,7 @@ class GpsSettingsTab extends ConsumerWidget {
                 isActive: true,
                 onChanged: (val) {
                   ref.read(gpsSettingsProvider.notifier).setAccuracy(val);
-                  onPending();
+                  markPending();
                 },
               ),
             ),
@@ -100,6 +100,10 @@ class GpsSettingsTab extends ConsumerWidget {
       ),
     );
   }
+
+  // ------------------------------
+  // UI HELPERS
+  // ------------------------------
 
   Widget _buildSettingsCard({
     required bool isActive,

@@ -7,6 +7,7 @@ import 'package:gpxly/features/elevation_profile/painters/selection_painter.dart
 import 'package:gpxly/features/elevation_profile/painters/range_highlight_painter.dart';
 import 'package:gpxly/features/elevation_profile/utils/chart_utils.dart';
 import 'package:gpxly/l10n/app_localizations.dart';
+import 'package:gpxly/notifiers/imported_track_settings_notifier.dart';
 
 import 'package:gpxly/notifiers/track_notifier.dart';
 import 'package:gpxly/notifiers/imported_track_notifier.dart';
@@ -52,6 +53,7 @@ class _ElevationProfileScreenState
     List<double> importedAlts,
     List<double> importedDists,
     Color trackColor,
+    Color importedTrackColor,
   ) {
     final colors = Theme.of(context).colorScheme;
 
@@ -138,7 +140,7 @@ class _ElevationProfileScreenState
             (i) => FlSpot(primaryDists[i], primaryAlts[i]),
           ),
           isCurved: false,
-          color: primaryIsReal ? trackColor : AppColors.tertiary,
+          color: primaryIsReal ? trackColor : importedTrackColor,
           barWidth: 3,
           dotData: const FlDotData(show: false),
           belowBarData: BarAreaData(
@@ -158,12 +160,12 @@ class _ElevationProfileScreenState
               (i) => FlSpot(secondaryDists[i], secondaryAlts[i]),
             ),
             isCurved: false,
-            color: primaryIsReal ? trackColor : AppColors.secondary,
+            color: primaryIsReal ? trackColor : importedTrackColor,
             barWidth: 3,
             dotData: const FlDotData(show: false),
             belowBarData: BarAreaData(
               show: true,
-              color: (primaryIsReal ? trackColor : AppColors.secondary)
+              color: (primaryIsReal ? trackColor : importedTrackColor)
                   .withAlpha(primaryIsReal ? 32 : 64),
               cutOffY: forcedMinY,
               applyCutOffY: true,
@@ -327,9 +329,13 @@ class _ElevationProfileScreenState
 
     final chartHeight = MediaQuery.of(context).size.height * 0.3;
     final importedTrack = ref.watch(importedTrackProvider);
+
     final track = ref.watch(trackProvider);
     final trackSettings = ref.watch(trackSettingsProvider);
     final Color trackColor = trackSettings.color;
+
+    final importedTrackSettings = ref.watch(importedTrackSettingsProvider);
+    final importedTrackColor = importedTrackSettings.color;
 
     return Scaffold(
       appBar: AppBar(title: Text(t.elevationProfile)),
@@ -546,6 +552,7 @@ class _ElevationProfileScreenState
                               importedAlts,
                               importedDists,
                               trackColor,
+                              importedTrackColor,
                             ),
                           ),
                         ),
@@ -606,7 +613,13 @@ class _ElevationProfileScreenState
           // ─────────────────────────────────────────────
           // 3) LLEGENDA
           // ─────────────────────────────────────────────
-          _buildLegend(hasImported, hasReal, primaryIsReal, trackColor),
+          _buildLegend(
+            hasImported,
+            hasReal,
+            primaryIsReal,
+            trackColor,
+            importedTrackColor,
+          ),
         ],
       ),
     );
@@ -618,6 +631,7 @@ Widget _buildLegend(
   bool hasReal,
   bool primaryIsReal,
   Color trackColor,
+  Color importedTrackColor,
 ) {
   final effectivePrimaryIsReal = hasReal ? primaryIsReal : false;
 
@@ -660,8 +674,8 @@ Widget _buildLegend(
               Container(
                 width: 14,
                 height: 14,
-                decoration: const BoxDecoration(
-                  color: AppColors.mustardYellow,
+                decoration: BoxDecoration(
+                  color: importedTrackColor,
                   shape: BoxShape.circle,
                 ),
               ),

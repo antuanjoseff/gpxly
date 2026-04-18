@@ -2,32 +2,33 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:gpxly/l10n/app_localizations.dart';
-import 'package:gpxly/notifiers/settings_pending_notifier.dart';
-import 'package:gpxly/notifiers/track_settings_notifier.dart';
 import 'package:gpxly/theme/app_colors.dart';
 
-class TrackSettingsTab extends ConsumerWidget {
-  const TrackSettingsTab({super.key});
+import 'package:gpxly/notifiers/imported_track_settings_notifier.dart';
+import 'package:gpxly/notifiers/settings_pending_notifier.dart';
+
+class ImportedTrackSettingsTab extends ConsumerWidget {
+  const ImportedTrackSettingsTab({super.key});
 
   static void apply(WidgetRef ref) {
-    ref.read(trackSettingsProvider.notifier).apply();
+    ref.read(importedTrackSettingsProvider.notifier).apply();
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final settings = ref.watch(trackSettingsProvider);
+    final settings = ref.watch(importedTrackSettingsProvider);
     final t = AppLocalizations.of(context)!;
 
     void markPending() {
       ref.read(settingsPendingProvider.notifier).mark();
-      ref.read(trackPendingProvider.notifier).mark();
+      ref.read(importedTrackPendingProvider.notifier).mark();
     }
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F7),
       appBar: AppBar(
         backgroundColor: AppColors.primary,
-        title: Text(t.trackTab),
+        title: Text(t.importedTrack),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -38,7 +39,7 @@ class TrackSettingsTab extends ConsumerWidget {
               title: t.trackColor,
               rightWidget: CustomPaint(
                 size: const Size(100, 16),
-                painter: TrackPathPainter(
+                painter: _TrackPreviewPainter(
                   color: settings.color,
                   strokeWidth: 6,
                 ),
@@ -99,7 +100,9 @@ class TrackSettingsTab extends ConsumerWidget {
                     max: 10,
                     divisions: 18,
                     onChanged: (v) {
-                      ref.read(trackSettingsProvider.notifier).setWidth(v);
+                      ref
+                          .read(importedTrackSettingsProvider.notifier)
+                          .setWidth(v);
                       markPending();
                     },
                   ),
@@ -113,7 +116,7 @@ class TrackSettingsTab extends ConsumerWidget {
                     width: double.infinity,
                     height: 40,
                     child: CustomPaint(
-                      painter: TrackPathPainter(
+                      painter: _TrackPreviewPainter(
                         color: settings.color,
                         strokeWidth: settings.width,
                       ),
@@ -127,6 +130,10 @@ class TrackSettingsTab extends ConsumerWidget {
       ),
     );
   }
+
+  // ------------------------------
+  // UI HELPERS
+  // ------------------------------
 
   Widget _buildSettingsCard({
     required String title,
@@ -234,7 +241,7 @@ class TrackSettingsTab extends ConsumerWidget {
           child: BlockPicker(
             pickerColor: currentColor,
             onColorChanged: (c) {
-              ref.read(trackSettingsProvider.notifier).setColor(c);
+              ref.read(importedTrackSettingsProvider.notifier).setColor(c);
               markPending();
               Navigator.pop(context);
             },
@@ -245,12 +252,15 @@ class TrackSettingsTab extends ConsumerWidget {
   }
 }
 
-// --- Painter ---
-class TrackPathPainter extends CustomPainter {
+// ------------------------------
+// PAINTER
+// ------------------------------
+
+class _TrackPreviewPainter extends CustomPainter {
   final Color color;
   final double strokeWidth;
 
-  TrackPathPainter({required this.color, required this.strokeWidth});
+  _TrackPreviewPainter({required this.color, required this.strokeWidth});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -268,6 +278,6 @@ class TrackPathPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant TrackPathPainter oldDelegate) =>
+  bool shouldRepaint(covariant _TrackPreviewPainter oldDelegate) =>
       oldDelegate.color != color || oldDelegate.strokeWidth != strokeWidth;
 }
