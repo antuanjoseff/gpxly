@@ -1,0 +1,163 @@
+1. Inici sobre el track
+
+Objectiu: validar ONTRACK i absència de falsos positius.
+
+    Situa’t exactament sobre el track.
+
+    Activa “Seguir track”.
+
+    Comprova:
+
+        ONTRACK (vibració + so positiu)
+
+        No apareix OFFTRACK
+
+        No apareix REVERSED
+
+        No apareix END OF TRACK
+
+        Distància estable (0–5 m)
+
+2. Avanç real sobre el track (100–150 m)
+
+Objectiu: validar distància mínima abans del final.
+
+    Camina 100–150 m seguint el track.
+
+    Comprova:
+
+        _distanceProgressOnTrack augmenta
+
+        No apareix END OF TRACK
+
+        ONTRACK estable
+
+3. Sortida lenta del track (OFFTRACK progressiu)
+
+Objectiu: validar trending away + snackbar + cooldown.
+
+    Allunya’t 10–20 m del track.
+
+    Comprova:
+
+        OFFTRACK quan superes 35 m
+
+        Vibració forta
+
+        So negatiu
+
+        Snackbar OFFTRACK (només un)
+
+        No es repeteix fins passat el cooldown
+
+        Tornar al track → ONTRACK
+
+4. Sortida brusca del track (gir sobtat)
+
+Objectiu: validar heading wrong.
+
+    Gira 90° o 180° de cop.
+
+    Comprova:
+
+        OFFTRACK immediat
+
+        Snackbar únic
+
+        Tornar al track → ONTRACK
+
+5. Moviment en direcció contrària (REVERSED)
+
+Objectiu: validar detecció de sentit i diàleg únic.
+
+    Camina en direcció contrària al track.
+
+    Comprova:
+
+        Apareix un sol diàleg REVERSED
+
+        No apareixen múltiples diàlegs
+
+        L’app no es congela
+
+        Cancel·lar → segueix ONTRACK
+
+        Acceptar → track invertit + ONTRACK
+
+6. Estar quiet sobre el track
+
+Objectiu: evitar falsos positius.
+
+    Para’t 10–20 segons.
+
+    Comprova:
+
+        No apareix REVERSED
+
+        No apareix OFFTRACK
+
+        Distància estable
+
+7. Final del track (ruta lineal)
+
+Objectiu: validar final real.
+
+    Camina fins al final del track.
+
+    Comprova:
+
+        Quan estàs a <20 m i has recorregut >100 m → END OF TRACK
+
+        Vibració lleu
+
+        Seguiment s’atura
+
+8. Ruta circular — inici sobre el punt final
+
+Objectiu: evitar falsos finals.
+
+    Situa’t sobre el punt final d’una ruta circular.
+
+    Activa seguiment.
+
+    Comprova:
+
+        ONTRACK
+
+        No END OF TRACK
+
+        No REVERSED
+
+        _distanceProgressOnTrack < 100 evita falsos finals
+
+9. Ruta circular — final real
+
+Objectiu: validar final després de fer la volta.
+
+    Fes tota la volta.
+
+    Torna al punt inicial/final.
+
+    Comprova:
+
+        END OF TRACK correcte
+
+        No es dispara abans d’hora
+
+        Seguiment s’atura
+
+10. Zona amb mala cobertura GPS
+
+Objectiu: validar robustesa.
+
+    Entra en zona amb arbres, edificis o túnels.
+
+    Comprova:
+
+        No hi ha falsos REVERSED
+
+        No hi ha falsos OFFTRACK
+
+        trending away funciona
+
+        heading wrong no es dispara per soroll

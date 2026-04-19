@@ -78,11 +78,11 @@
 "elevationProfile": "Elevation profile",
 "noData": "No data",
 "realTrack": "Real track",
-"importedTrack": "Imported track",
+"importedTrack": "Route",
 
 "resume": "RESUME",
 "stopFollowing": "STOP",
-"follow": "FOLLOW",
+"follow": "FOLLOW ROUTE",
 "pause": "PAUSE",
 
 "apply": "APPLY",

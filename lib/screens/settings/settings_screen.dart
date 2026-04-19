@@ -10,7 +10,7 @@ import 'tabs/track_settings_tab.dart';
 import 'tabs/imported_track_settings_tab.dart';
 
 import 'package:gpxly/notifiers/gps_settings_notifier.dart';
-import 'package:gpxly/notifiers/gpx_settings_provider.dart';
+import 'package:gpxly/notifiers/gpx_settings_notifier.dart';
 import 'package:gpxly/notifiers/track_settings_notifier.dart';
 import 'package:gpxly/notifiers/imported_track_settings_notifier.dart';
 

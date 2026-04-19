@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:gpxly/notifiers/gpx_settings_provider.dart'
+import 'package:gpxly/notifiers/gpx_settings_notifier.dart'
     show gpxSettingsProvider;
 import 'package:gpxly/notifiers/track_notifier.dart';
 import 'package:path_provider/path_provider.dart';

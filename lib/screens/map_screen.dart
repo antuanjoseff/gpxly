@@ -387,6 +387,18 @@ class _MapScreenState extends ConsumerState<MapScreen>
         ],
       });
 
+      final importedSettings = ref.read(importedTrackSettingsProvider);
+
+      mapController!.setLayerProperties(
+        "imported_track_layer",
+        LineLayerProperties(
+          lineColor: importedSettings.color.toMapLibreColor(),
+          lineWidth: importedSettings.width,
+          lineCap: "round",
+          lineJoin: "round",
+        ),
+      );
+
       setState(() {
         userMovedMap = true;
         isProgrammaticMove = true;
@@ -439,18 +451,23 @@ class _MapScreenState extends ConsumerState<MapScreen>
     });
 
     ref.listen(trackFollowNotifierProvider, (prev, next) async {
-      if (next.showReverseTrackDialog == true) {
+      final wasFalse = prev?.showReverseTrackDialog == false;
+      final isTrue = next.showReverseTrackDialog == true;
+
+      if (wasFalse && isTrue) {
+        // 🔥 Primer resetejar el flag al notifier
+        ref
+            .read(trackFollowNotifierProvider.notifier)
+            .dismissReverseTrackDialog();
+
         final accept = await AppMessages.showReverseTrackDialog(context);
 
         if (accept == true) {
           ref.read(trackFollowNotifierProvider.notifier).reverseImportedTrack();
-        } else {
-          ref
-              .read(trackFollowNotifierProvider.notifier)
-              .dismissReverseTrackDialog();
         }
       }
     });
+
     ref.listen(trackFollowNotifierProvider, (prev, next) {
       if (next.showEndOfTrackSnackbar == true) {
         AppMessages.showEndOfTrackSnackBar(context);

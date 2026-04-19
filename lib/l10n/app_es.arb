@@ -78,11 +78,11 @@
 "elevationProfile": "Perfil de elevación",
 "noData": "Sin datos",
 "realTrack": "Track real",
-"importedTrack": "Track importado",
+"importedTrack": "Ruta",
 
 "resume": "REANUDAR",
 "stopFollowing": "DETENER",
-"follow": "SEGUIR",
+"follow": "SEGUIR RUTA",
 "pause": "PAUSA",
 
 "apply": "APLICAR",

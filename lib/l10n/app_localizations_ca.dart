@@ -198,7 +198,7 @@ class AppLocalizationsCa extends AppLocalizations {
   String get realTrack => 'Track real';
 
   @override
-  String get importedTrack => 'Track importat';
+  String get importedTrack => 'Ruta';
 
   @override
   String get resume => 'REPRÈN';
@@ -207,7 +207,7 @@ class AppLocalizationsCa extends AppLocalizations {
   String get stopFollowing => 'ATURA';
 
   @override
-  String get follow => 'SEGUIR';
+  String get follow => 'SEGUIR RUTA';
 
   @override
   String get pause => 'PAUSA';

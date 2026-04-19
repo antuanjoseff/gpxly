@@ -37,7 +37,7 @@ class IdleButtons extends StatelessWidget {
             color: AppColors.tertiary,
             onPressed: onImportTrack,
             icon: Icons.route,
-            text: "Track",
+            text: t.importedTrack,
           ),
         ),
       ],

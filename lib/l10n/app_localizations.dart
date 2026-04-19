@@ -478,7 +478,7 @@ abstract class AppLocalizations {
   /// No description provided for @importedTrack.
   ///
   /// In en, this message translates to:
-  /// **'Imported track'**
+  /// **'Route'**
   String get importedTrack;
 
   /// No description provided for @resume.
@@ -496,7 +496,7 @@ abstract class AppLocalizations {
   /// No description provided for @follow.
   ///
   /// In en, this message translates to:
-  /// **'FOLLOW'**
+  /// **'FOLLOW ROUTE'**
   String get follow;
 
   /// No description provided for @pause.
