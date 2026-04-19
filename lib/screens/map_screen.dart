@@ -10,6 +10,7 @@ import 'package:gpxly/notifiers/permissions_notifier.dart';
 import 'package:gpxly/notifiers/track_follow_notifier.dart';
 import 'package:gpxly/notifiers/track_notifier.dart';
 import 'package:gpxly/notifiers/track_settings_notifier.dart';
+import 'package:gpxly/screens/debug_screen.dart';
 import 'package:gpxly/screens/settings/settings_screen.dart';
 import 'package:gpxly/screens/stats_screen.dart';
 import 'package:gpxly/services/gpx_import_flow.dart';
@@ -680,6 +681,15 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     // NOU: BOTÓ DE PERFIL D'ELEVACIÓ
                     // FloatingAltitudePanel(),
                     // const SizedBox(height: 8),
+                    ElevatedButton(
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const DebugSimulator(),
+                        ),
+                      ),
+                      child: Text('Debug'),
+                    ),
                     GestureDetector(
                       onTap: () => Navigator.push(
                         context,
