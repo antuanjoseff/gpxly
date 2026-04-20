@@ -161,6 +161,54 @@ class RecordingHandler {
     ref.read(permissionsProvider.notifier).checkPermissions();
   }
 
+  static Future<void> startGpsOnly(
+    BuildContext context,
+    WidgetRef ref,
+    MapLibreMapController? mapController,
+  ) async {
+    // 1. Comprovar permisos i GPS
+    final status = await PermissionsService.checkGpsAndPermissions();
+
+    if (status == GpsPermissionStatus.gpsOff) {
+      if (!context.mounted) return;
+      final go = await AppMessages.showGpsDisabledDialog(context);
+      if (go == true) Geolocator.openLocationSettings();
+      return;
+    }
+
+    if (status == GpsPermissionStatus.permissionDenied) {
+      if (!context.mounted) return;
+
+      final continuar = await AppMessages.showPermissionExplanation(context);
+      if (continuar != true) return;
+
+      final ok = await PermissionsService.ensurePermissions(context);
+      if (!context.mounted || !ok) return;
+    }
+
+    // 2. Obtenir posició inicial
+    final pos = await Geolocator.getCurrentPosition();
+
+    // 3. Activar GPS natiu
+    final settings = ref.read(gpsSettingsProvider);
+    await NativeGpsChannel.start(
+      useTime: settings.useTime,
+      seconds: settings.seconds,
+      meters: settings.meters,
+      accuracy: settings.accuracy,
+    );
+
+    // 4. Centrar mapa
+    if (mapController != null) {
+      mapController.animateCamera(
+        CameraUpdate.newLatLng(LatLng(pos.latitude, pos.longitude)),
+      );
+    }
+
+    // 5. Actualitzar estat de permisos
+    ref.read(permissionsProvider.notifier).checkPermissions();
+  }
+
   // --- PAUSAR ---
   static Future<void> pause(WidgetRef ref) async {
     HapticFeedback.lightImpact();

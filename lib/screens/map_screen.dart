@@ -80,19 +80,18 @@ class _MapScreenState extends ConsumerState<MapScreen>
     );
   }
 
-  void _onFollowTrack() {
+  Future<void> _onFollowTrack() async {
     final notifier = ref.read(trackFollowNotifierProvider.notifier);
     final state = ref.read(trackFollowNotifierProvider);
 
     if (state.isFollowing) {
       // Si ja està seguint → ATURA SEGUIMENT
-      notifier.toggleFollowing(context);
+      notifier.stopFollowing();
       return;
     }
 
-    // Si NO està seguint → centra el mapa + activa seguiment
-    _handleFollowTrack(); // centra el mapa al final del track
-    notifier.toggleFollowing(context); // activa seguiment
+    // Si NO està seguint → activar GPS + centrar mapa + iniciar seguiment
+    await notifier.startFollowingWithoutRecording(context, ref, mapController);
   }
 
   void _handleFollowTrack() {
@@ -288,8 +287,12 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final track = ref.watch(trackProvider);
     final trackSettings = ref.watch(trackSettingsProvider);
     final permissions = ref.watch(permissionsProvider);
+    final importedTrack = ref.watch(importedTrackProvider);
+    final hasImportedTrack =
+        importedTrack != null && importedTrack.coordinates.isNotEmpty;
     final hasPermissions = permissions.hasPermission;
     final gpsEnabled = permissions.serviceEnabled;
+    final trackFollowState = ref.watch(trackFollowNotifierProvider);
 
     // Listener dins build (Riverpod obliga)
     ref.listen(trackProvider, (previous, next) {
@@ -817,6 +820,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 onPause: () => RecordingHandler.pause(ref),
                 onResume: () => RecordingHandler.resume(ref),
                 onStop: () => _handleStopProcess(context, ref),
+                hasImportedTrack: hasImportedTrack,
+
+                isFollowingTrack: trackFollowState.isFollowing,
                 onImportTrack: () {
                   pickGpxAndImport(
                     context: context,

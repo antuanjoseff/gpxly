@@ -5,6 +5,7 @@ import 'package:gpxly/models/track_follow_state.dart';
 import 'package:gpxly/notifiers/imported_track_notifier.dart';
 import 'package:gpxly/notifiers/track_notifier.dart';
 import 'package:gpxly/services/native_gps_channel.dart';
+import 'package:gpxly/services/recording_handler.dart';
 import 'package:gpxly/utils/geo_utils.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:flutter/services.dart';
@@ -145,15 +146,28 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
   // ------------------------------------------------------------
   // Seguiment sense enregistrament
   // ------------------------------------------------------------
-  void startFollowingWithoutRecording() {
+  Future<void> startFollowingWithoutRecording(
+    BuildContext context,
+    WidgetRef ref,
+    MapLibreMapController? mapController,
+  ) async {
+    // 1. Activar GPS + permisos (sense gravar)
+    await RecordingHandler.startGpsOnly(context, ref, mapController);
+
+    // 2. Subscriure’ns al flux de GPS
+    _gpsSub?.cancel();
+    _gpsSub = NativeGpsChannel.locationStream.listen((data) {
+      final double lat = data["lat"];
+      final double lon = data["lon"];
+      updateUserPosition(LatLng(lat, lon));
+    });
+
+    // 3. Estat intern de seguiment
     state = state.copyWith(isFollowing: true, mode: FollowMode.initializing);
 
     _hasEverBeenOnTrack = false;
     _hasEverBeenOffTrack = false;
     offTrackAlertsSent = 0;
-
-    _gpsSub?.cancel();
-    _gpsSub = null;
 
     final imported = ref.read(importedTrackProvider);
     if (imported == null || imported.coordinates.isEmpty) return;

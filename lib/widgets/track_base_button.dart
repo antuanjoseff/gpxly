@@ -7,6 +7,7 @@ class TrackBaseButton extends StatelessWidget {
   // Icona i text opcionals
   final IconData? icon;
   final String? text;
+  final Color? iconColor;
 
   const TrackBaseButton({
     super.key,
@@ -14,6 +15,7 @@ class TrackBaseButton extends StatelessWidget {
     required this.onPressed,
     this.icon,
     this.text,
+    this.iconColor,
   });
 
   @override
@@ -51,14 +53,20 @@ class TrackBaseButton extends StatelessWidget {
 
     // Només icona
     if (text == null) {
-      return Icon(icon, color: Colors.white);
+      return Icon(
+        icon,
+        color: iconColor ?? Colors.white, // 👈 ara sí que funciona
+      );
     }
 
     // Icona + text
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(icon, color: Colors.white),
+        Icon(
+          icon,
+          color: iconColor ?? Colors.white, // 👈 aplicat aquí també
+        ),
         const SizedBox(width: 8),
         Text(
           text!,

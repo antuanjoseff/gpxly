@@ -77,24 +77,28 @@ class _DebugSimulatorState extends ConsumerState<DebugSimulator> {
         children: [
           // 🔵 ACTIVAR DEBUG
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               final notifier = ref.read(trackFollowNotifierProvider.notifier);
 
               notifier.debugMode = true;
               print(">>> DEBUG MODE ACTIVAT");
 
-              notifier.startFollowingWithoutRecording();
-              print(">>> FOLLOW sense gravar activat");
-
-              // 🔥 IMPORTANT: carregar track al notifier
               final imported = ref.read(importedTrackProvider);
               if (imported == null || imported.coordinates.isEmpty) {
                 print(">>> ERROR: No hi ha track importat!");
-              } else {
-                print(
-                  ">>> TRACK IMPORTAT: ${imported.coordinates.length} punts",
-                );
+                return;
               }
+
+              print(">>> TRACK IMPORTAT: ${imported.coordinates.length} punts");
+
+              // IMPORTANT: cridar la nova funció amb els paràmetres correctes
+              await notifier.startFollowingWithoutRecording(
+                context,
+                ref,
+                null, // No tenim mapController al DebugSimulator
+              );
+
+              print(">>> FOLLOW sense gravar activat");
             },
             child: const Text("🔵 Activar FOLLOW sense gravar"),
           ),

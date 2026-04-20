@@ -11,12 +11,13 @@ class BottomBarContainer extends StatelessWidget {
   final VoidCallback onPause;
   final VoidCallback onResume;
   final VoidCallback onStop;
+  final bool hasImportedTrack;
 
-  // Callback per importar GPX
   final VoidCallback onImportTrack;
-
-  // Nou: callback per seguir track
   final VoidCallback onFollowTrack;
+
+  // 👇 NECESSARI PER FER EL TOGGLE DEL BOTÓ DE NAV
+  final bool isFollowingTrack;
 
   const BottomBarContainer({
     super.key,
@@ -29,6 +30,8 @@ class BottomBarContainer extends StatelessWidget {
     required this.onStop,
     required this.onImportTrack,
     required this.onFollowTrack,
+    required this.hasImportedTrack,
+    required this.isFollowingTrack, // 👈 AFEGIT
   });
 
   @override
@@ -81,6 +84,8 @@ class BottomBarContainer extends StatelessWidget {
                 onStop: onStop,
                 onImportTrack: onImportTrack,
                 onFollowTrack: onFollowTrack,
+                hasImportedTrack: hasImportedTrack,
+                isFollowingTrack: isFollowingTrack, // 👈 AFEGIT
               ),
 
               const SizedBox(height: 12),
