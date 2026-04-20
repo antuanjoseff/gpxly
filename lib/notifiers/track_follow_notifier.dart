@@ -10,47 +10,68 @@ import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:flutter/services.dart';
 import 'package:audioplayers/audioplayers.dart';
 
+// Helpers
+import 'helpers/geometry_utils.dart';
+import 'helpers/reverse_detector.dart';
+import 'helpers/offtrack_logic.dart';
+import 'helpers/progress_tracker.dart';
+import 'helpers/track_sounds.dart';
+import 'helpers/track_debug.dart';
+import 'helpers/closest_result.dart';
+import 'helpers/thresholds.dart';
+
 enum FollowMode { notFollowing, initializing, onTrack, offTrack }
 
 class TrackFollowNotifier extends Notifier<TrackFollowState> {
+  // ------------------------------------------------------------
+  // Helpers (Opció A)
+  // ------------------------------------------------------------
+  final geometry = TrackGeometryUtils();
+  final reverseDetector = ReverseDetector();
+  final offtrackLogic = OffTrackLogic();
+  final progress = ProgressTracker();
+  final sounds = TrackSounds();
+  final debug = TrackDebug();
+
+  // ------------------------------------------------------------
+  // Subscripcions
+  // ------------------------------------------------------------
   StreamSubscription? _locationSub;
   StreamSubscription<Map<String, dynamic>>? _gpsSub;
 
-  // Història de distàncies per detectar tendència
+  // ------------------------------------------------------------
+  // Estat intern
+  // ------------------------------------------------------------
   final List<double> _lastDistances = [];
+  final List<LatLng> _lastUserPositions = [];
 
-  // Control de temps fora del track
   DateTime? _offTrackStart;
-
-  static const double nearThreshold = 20; // torna al track
-  static const double farThreshold = 35; // possible desviació
-  static const int trendWindow = 6; // últims punts
-  static const Duration offTrackDelay = Duration(seconds: 30);
-
-  // Avisos offtrack
-  int maxOffTrackAlerts = 1; // quantes vegades avisar
-  Duration offTrackCooldown = Duration(seconds: 20); // temps entre avisos
-  int offTrackAlertsSent = 0; // comptador
-
   DateTime? _lastOffTrackAlert;
-  bool _offTrackDismissed = false;
 
-  // Flags d’autòmat
-  bool _isCurrentlyOffTrack = false; // Per saber si venim d'estar fora
-  bool _backOnTrackAlertSent = false; // Per no repetir l'avís de "tornada"
+  int maxOffTrackAlerts = 1;
+  Duration offTrackCooldown = Duration(seconds: 20);
+  int offTrackAlertsSent = 0;
+
+  bool _offTrackDismissed = false;
+  bool _isCurrentlyOffTrack = false;
+  bool _backOnTrackAlertSent = false;
 
   bool _hasEverBeenOnTrack = false;
   bool _hasEverBeenOffTrack = false;
   bool _hasShownBackOnTrackOnce = false;
+
   bool _reverseDetectionLocked = false;
-  final AudioPlayer _player = AudioPlayer();
-  final List<LatLng> _lastUserPositions = [];
-  double _distanceProgressOnTrack = 0.0;
-  LatLng? _lastProjectedPoint;
   bool _reverseDialogShown = false;
   bool _offTrackSnackbarShown = false;
+
   bool debugMode = false;
 
+  LatLng? _lastProjectedPoint;
+  double _distanceProgressOnTrack = 0.0;
+
+  // ------------------------------------------------------------
+  // Build
+  // ------------------------------------------------------------
   @override
   TrackFollowState build() {
     ref.onDispose(() {
@@ -70,8 +91,15 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
   }
 
   // ------------------------------------------------------------
-  // API pública per la UI
+  // API pública
   // ------------------------------------------------------------
+  void toggleFollowing(BuildContext context) {
+    if (state.isFollowing) {
+      stopFollowing();
+    } else {
+      startFollowingWithRecording();
+    }
+  }
 
   void reverseImportedTrack() {
     ref.read(importedTrackProvider.notifier).reverseTrack();
@@ -90,39 +118,6 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
       isOffTrack: false,
       distanceToTrack: 0,
     );
-  }
-
-  void onUserDriftingAway() {
-    if (_offTrackDismissed) return;
-
-    if (_canSendOffTrackAlert()) {
-      _lastOffTrackAlert = DateTime.now();
-      offTrackAlertsSent++;
-
-      HapticFeedback.heavyImpact();
-      _playOffTrackSound();
-
-      if (_offTrackSnackbarShown) return;
-
-      _offTrackSnackbarShown = true;
-      state = state.copyWith(showOffTrackSnackbar: true);
-    }
-  }
-
-  void onUserBackOnTrack() {
-    _offTrackDismissed = false;
-
-    HapticFeedback.lightImpact();
-    _playBackOnTrackSound();
-
-    state = state.copyWith(showBackOnTrackSnackbar: true);
-  }
-
-  void _askUserToReverseTrack() {
-    if (_reverseDialogShown) return;
-
-    _reverseDialogShown = true;
-    state = state.copyWith(showReverseTrackDialog: true);
   }
 
   void dismissReverseTrackDialog() {
@@ -147,48 +142,19 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
     state = state.copyWith(showBackOnTrackSnackbar: false);
   }
 
-  bool _isReverseDirection(_ClosestResult c) {
-    if (_lastUserPositions.length < 2) return false;
-
-    final prev = _lastUserPositions[_lastUserPositions.length - 2];
-    final curr = _lastUserPositions[_lastUserPositions.length - 1];
-
-    final movement = distanceBetween(
-      prev.latitude,
-      prev.longitude,
-      curr.latitude,
-      curr.longitude,
-    );
-
-    if (movement < 3) return false;
-
-    final movementBearing = bearingBetween(prev, curr);
-    final diff = _headingDifference(c.bearing, movementBearing);
-    return diff > 135;
-  }
-
-  void toggleFollowing(BuildContext context) {
-    if (state.isFollowing) {
-      stopFollowing();
-    } else {
-      startFollowingWithRecording();
-    }
-  }
-
+  // ------------------------------------------------------------
+  // Seguiment sense enregistrament
+  // ------------------------------------------------------------
   void startFollowingWithoutRecording() {
-    // Activem seguiment però sense subscripció al GPS real
     state = state.copyWith(isFollowing: true, mode: FollowMode.initializing);
 
-    // Reiniciem flags
     _hasEverBeenOnTrack = false;
     _hasEverBeenOffTrack = false;
     offTrackAlertsSent = 0;
 
-    // NO subscrivim al GPS real
     _gpsSub?.cancel();
     _gpsSub = null;
 
-    // Inicialitzem distància amb el primer punt del track importat
     final imported = ref.read(importedTrackProvider);
     if (imported == null || imported.coordinates.isEmpty) return;
 
@@ -199,13 +165,20 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
         .map((c) => LatLng(c[1], c[0]))
         .toList();
 
-    final closest = _closestPointAndSegment(firstPos, importedLatLng);
+    final closest = geometry.closestPointAndSegment(
+      firstPos,
+      importedLatLng,
+      _lastUserPositions,
+    );
     final dist = closest.distance;
 
     _lastDistances.clear();
     _lastDistances.add(dist);
   }
 
+  // ------------------------------------------------------------
+  // Seguiment amb enregistrament
+  // ------------------------------------------------------------
   void startFollowingWithRecording() async {
     state = state.copyWith(isFollowing: true, mode: FollowMode.initializing);
 
@@ -215,12 +188,10 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
       updateUserPosition(LatLng(lat, lon));
     });
 
-    // Reiniciem flags
     _hasEverBeenOnTrack = false;
     _hasEverBeenOffTrack = false;
     offTrackAlertsSent = 0;
 
-    // Obtenir última posició
     final track = ref.read(trackProvider);
     final imported = ref.read(importedTrackProvider);
 
@@ -234,14 +205,20 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
         .map((c) => LatLng(c[1], c[0]))
         .toList();
 
-    final closest = _closestPointAndSegment(lastPos, importedLatLng);
+    final closest = geometry.closestPointAndSegment(
+      lastPos,
+      importedLatLng,
+      _lastUserPositions,
+    );
     final dist = closest.distance;
 
-    // Inicialitzar històric
     _lastDistances.clear();
     _lastDistances.add(dist);
   }
 
+  // ------------------------------------------------------------
+  // Aturar seguiment
+  // ------------------------------------------------------------
   void stopFollowing() {
     _gpsSub?.cancel();
     _gpsSub = null;
@@ -260,24 +237,14 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
   }
 
   // ------------------------------------------------------------
-  // Actualitzar posició de l’usuari
+  // Actualitzar posició
   // ------------------------------------------------------------
-  // 1. Fora de la funció, defineix el mètode de suport
-  bool _checkIfFinished(_ClosestResult closest, double totalPoints) {
-    final bool isNearEnd = closest.distance < 15;
-    final bool isLastSegment = closest.segmentIndex >= totalPoints - 2;
-    const double minProgressRequired = 100.0;
-    final bool hasMinimumProgress =
-        _distanceProgressOnTrack >= minProgressRequired;
-
-    return isNearEnd && isLastSegment && hasMinimumProgress;
-  }
-
   void updateUserPosition(LatLng userPos) {
     if (debugMode) {
       _processDebugPosition(userPos);
       return;
     }
+
     _lastUserPositions.add(userPos);
     if (_lastUserPositions.length > 10) _lastUserPositions.removeAt(0);
 
@@ -290,9 +257,15 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
         .map((c) => LatLng(c[1], c[0]))
         .toList();
 
-    final closest = _closestPointAndSegment(userPos, importedLatLng);
+    final closest = geometry.closestPointAndSegment(
+      userPos,
+      importedLatLng,
+      _lastUserPositions,
+    );
+
     final proj = closest.projectedPoint;
 
+    // Progressió
     if (_lastProjectedPoint != null) {
       final step = distanceBetween(
         _lastProjectedPoint!.latitude,
@@ -306,44 +279,56 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
     }
     _lastProjectedPoint = proj;
 
+    // Final del track
     if (_checkIfFinished(closest, imported.coordinates.length.toDouble())) {
       HapticFeedback.lightImpact();
-      _playBackOnTrackSound();
+      sounds.playEndTrackSound();
       state = state.copyWith(showEndOfTrackSnackbar: true);
       stopFollowing();
       return;
     }
 
+    // Distància
     final dist = closest.distance;
     _lastDistances.add(dist);
-    if (_lastDistances.length > trendWindow) _lastDistances.removeAt(0);
-    final isFar = dist > farThreshold;
+    if (_lastDistances.length > TrackThresholds.trendWindow) {
+      _lastDistances.removeAt(0);
+    }
 
-    // 🔥 reversed detection segura
+    final isFar = dist > TrackThresholds.farThreshold;
+
+    // Reversed detection
+    // Hem afegit la comprovació de 'dist < TrackThresholds.nearThreshold'
+    // i un filtre d'angle estricte per evitar falsos positius en desviaments laterals.
     if (state.mode == FollowMode.onTrack &&
         !_reverseDialogShown &&
         !_reverseDetectionLocked &&
-        !isFar &&
-        _isReverseDirection(closest)) {
+        dist <
+            TrackThresholds
+                .nearThreshold && // Només si estem realment a prop del track
+        geometry.headingDifference(closest.bearing, closest.userBearing) >
+            140 && // Angle clarament oposat
+        reverseDetector.isReverseDirection(closest, _lastUserPositions)) {
       _reverseDetectionLocked = true;
       _askUserToReverseTrack();
       return;
     }
 
+    // Autòmat
     _handleFollowState(
       dist: dist,
-      isNear: dist < nearThreshold,
+      isNear: dist < TrackThresholds.nearThreshold,
       isFar: isFar,
-      isTrendingAway: _isTrendingAway(),
+      isTrendingAway: offtrackLogic.isTrendingAway(_lastDistances),
       isHeadingWrong:
-          _headingDifference(closest.bearing, closest.userBearing) > 45,
+          geometry.headingDifference(closest.bearing, closest.userBearing) > 45,
     );
 
     state = state.copyWith(distanceToTrack: dist);
   }
 
   // ------------------------------------------------------------
-  // AUTÒMAT D’ESTATS
+  // Autòmat d’estats
   // ------------------------------------------------------------
   void _handleFollowState({
     required double dist,
@@ -375,12 +360,13 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
 
       final timeExceeded =
           _offTrackStart != null &&
-          DateTime.now().difference(_offTrackStart!) > offTrackDelay;
+          DateTime.now().difference(_offTrackStart!) >
+              TrackThresholds.offTrackDelay;
 
       if (isFar && (isTrendingAway || isHeadingWrong || timeExceeded)) {
         if (!_isCurrentlyOffTrack) {
           _isCurrentlyOffTrack = true;
-          _offTrackDismissed = false; // 🔥 REINICIAR AQUÍ
+          _offTrackDismissed = false;
 
           if (_hasEverBeenOnTrack) {
             onUserDriftingAway();
@@ -411,146 +397,78 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
     }
   }
 
-  bool _canSendOffTrackAlert() {
-    if (offTrackAlertsSent >= maxOffTrackAlerts) return false;
+  // ------------------------------------------------------------
+  // Off-track alerts
+  // ------------------------------------------------------------
+  void onUserDriftingAway() {
+    if (_offTrackDismissed) return;
 
-    final now = DateTime.now();
-    return _lastOffTrackAlert == null ||
-        now.difference(_lastOffTrackAlert!) > offTrackCooldown;
+    if (offtrackLogic.canSendOffTrackAlert(
+      offTrackAlertsSent,
+      maxOffTrackAlerts,
+      _lastOffTrackAlert,
+      offTrackCooldown,
+    )) {
+      _lastOffTrackAlert = DateTime.now();
+      offTrackAlertsSent++;
+
+      HapticFeedback.heavyImpact();
+      sounds.playOffTrackSound();
+
+      if (_offTrackSnackbarShown) return;
+
+      _offTrackSnackbarShown = true;
+      state = state.copyWith(showOffTrackSnackbar: true);
+    }
+  }
+
+  void onUserBackOnTrack() {
+    _offTrackDismissed = false;
+
+    HapticFeedback.lightImpact();
+    sounds.playBackOnTrackSound();
+
+    state = state.copyWith(showBackOnTrackSnackbar: true);
   }
 
   // ------------------------------------------------------------
-  // Distància + bearing del segment més proper
+  // Reverse dialog
   // ------------------------------------------------------------
-  _ClosestResult _closestPointAndSegment(LatLng p, List<LatLng> track) {
-    double minDist = double.infinity;
-    double segmentBearing = 0;
-    double userBearing = 0;
-    int bestSegmentIndex = 0;
-    double bestT = 0;
+  void _askUserToReverseTrack() {
+    if (_reverseDialogShown) return;
 
-    LatLng? bestProj; // 🔥 necessari per evitar l’error "proj undefined"
-
-    for (int i = 0; i < track.length - 1; i++) {
-      final a = track[i];
-      final b = track[i + 1];
-
-      final abx = b.longitude - a.longitude;
-      final aby = b.latitude - a.latitude;
-
-      final apx = p.longitude - a.longitude;
-      final apy = p.latitude - a.latitude;
-
-      final ab2 = abx * abx + aby * aby;
-      double t = 0;
-      if (ab2 > 0) {
-        t = (apx * abx + apy * aby) / ab2;
-      }
-
-      t = t.clamp(0.0, 1.0);
-
-      final proj = LatLng(a.latitude + aby * t, a.longitude + abx * t);
-
-      final d = distanceBetween(
-        p.latitude,
-        p.longitude,
-        proj.latitude,
-        proj.longitude,
-      );
-
-      if (d < minDist) {
-        minDist = d;
-        segmentBearing = bearingBetween(a, b);
-
-        if (_lastUserPositions.length >= 2) {
-          final prev = _lastUserPositions[_lastUserPositions.length - 2];
-          final curr = _lastUserPositions[_lastUserPositions.length - 1];
-          userBearing = bearingBetween(prev, curr);
-        } else {
-          userBearing = bearingBetween(a, p); // fallback
-        }
-
-        bestSegmentIndex = i;
-        bestT = t;
-        bestProj = proj; // 🔥 guardem el millor punt projectat
-      }
-    }
-
-    return _ClosestResult(
-      distance: minDist,
-      bearing: segmentBearing,
-      userBearing: userBearing,
-      segmentIndex: bestSegmentIndex,
-      t: bestT,
-      projectedPoint: bestProj!, // 🔥 ara sí, sempre definit
-    );
+    _reverseDialogShown = true;
+    state = state.copyWith(showReverseTrackDialog: true);
   }
 
-  bool _isAtEndOfTrack(_ClosestResult c) {
-    if (_distanceProgressOnTrack < 100) return false;
+  // ------------------------------------------------------------
+  // Final del track
+  // ------------------------------------------------------------
+  bool _checkIfFinished(ClosestResult closest, double totalPoints) {
+    final bool isNearEnd = closest.distance < 15;
+    final bool isLastSegment = closest.segmentIndex >= totalPoints - 2;
+    const double minProgressRequired = 100.0;
+    final bool hasMinimumProgress =
+        _distanceProgressOnTrack >= minProgressRequired;
 
-    final imported = ref.read(importedTrackProvider);
-    if (imported == null) return false;
-
-    final lastSegment = imported.coordinates.length - 2;
-
-    final isLastSegment = c.segmentIndex == lastSegment;
-    final isNearEnd = c.t > 0.95;
-    final isCloseEnough = c.distance < 20;
-
-    return isLastSegment && isNearEnd && isCloseEnough;
+    return isNearEnd && isLastSegment && hasMinimumProgress;
   }
 
-  bool _isTrendingAway() {
-    if (_lastDistances.length < trendWindow) return false;
-
-    int increases = 0;
-
-    for (int i = 1; i < _lastDistances.length; i++) {
-      if (_lastDistances[i] > _lastDistances[i - 1]) {
-        increases++;
-      }
-    }
-
-    return increases >= trendWindow - 2;
-  }
-
-  double _headingDifference(double h1, double h2) {
-    final diff = (h1 - h2).abs();
-    return diff > 180 ? 360 - diff : diff;
-  }
-
-  Future<void> _playOffTrackSound() async {
-    try {
-      await _player.play(AssetSource('sound/off_track.mp3'), volume: 1.0);
-    } catch (e) {
-      debugPrint("Error playing off-track sound: $e");
-    }
-  }
-
-  Future<void> _playBackOnTrackSound() async {
-    try {
-      await _player.play(AssetSource('sound/back_on_track.mp3'), volume: 1.0);
-    } catch (e) {
-      debugPrint("Error playing back-on-track sound: $e");
-    }
-  }
-
+  // ------------------------------------------------------------
+  // Debug (NO MODIFICAT)
+  // ------------------------------------------------------------
   void _processDebugPosition(LatLng userPos) {
     print("--------------------------------------------------");
     print("📍 _processDebugPosition()");
     print("UserPos = $userPos");
 
-    // 🔥 1) Guardem prevMode ABANS de fer res
     final prevMode = state.mode;
     print("prevMode = $prevMode");
 
-    // 🔥 2) Guardem posicions per reversed
     _lastUserPositions.add(userPos);
     if (_lastUserPositions.length > 10) _lastUserPositions.removeAt(0);
     print("_lastUserPositions = $_lastUserPositions");
 
-    // 🔥 3) Carregar track importat
     final imported = ref.read(importedTrackProvider);
     if (imported == null || imported.coordinates.isEmpty) {
       print("❌ importedTrack buit — no puc processar");
@@ -563,15 +481,17 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
 
     print("Track length = ${importedLatLng.length}");
 
-    // 🔥 4) Punt més proper
-    final closest = _closestPointAndSegment(userPos, importedLatLng);
+    final closest = geometry.closestPointAndSegment(
+      userPos,
+      importedLatLng,
+      _lastUserPositions,
+    );
     print("closest.distance = ${closest.distance}");
     print("closest.segmentIndex = ${closest.segmentIndex}");
     print("closest.bearing = ${closest.bearing}");
     print("closest.userBearing = ${closest.userBearing}");
     print("closest.projectedPoint = ${closest.projectedPoint}");
 
-    // 🔥 5) Progressió sobre el track
     if (_lastProjectedPoint != null) {
       final step = distanceBetween(
         _lastProjectedPoint!.latitude,
@@ -589,7 +509,6 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
 
     print("_distanceProgressOnTrack = $_distanceProgressOnTrack");
 
-    // 🔥 6) Final del track
     final finished = _checkIfFinished(
       closest,
       imported.coordinates.length.toDouble(),
@@ -599,13 +518,15 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
     if (finished) {
       print("🏁 END OF TRACK DETECTAT");
       HapticFeedback.lightImpact();
-      _playBackOnTrackSound();
+      sounds.playBackOnTrackSound();
       state = state.copyWith(showEndOfTrackSnackbar: true);
       return;
     }
 
-    // 🔥 7) Reversed detection
-    final reversed = _isReverseDirection(closest);
+    final reversed = reverseDetector.isReverseDirection(
+      closest,
+      _lastUserPositions,
+    );
     print("isReversed = $reversed");
     print("_reverseDialogShown = $_reverseDialogShown");
     print("_reverseDetectionLocked = $_reverseDetectionLocked");
@@ -620,32 +541,31 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
       return;
     }
 
-    // 🔥 8) Distància i tendència
     final dist = closest.distance;
     _lastDistances.add(dist);
-    if (_lastDistances.length > trendWindow) _lastDistances.removeAt(0);
+    if (_lastDistances.length > TrackThresholds.trendWindow) {
+      _lastDistances.removeAt(0);
+    }
 
     print("_lastDistances = $_lastDistances");
-    print("isNear = ${dist < nearThreshold}");
-    print("isFar = ${dist > farThreshold}");
-    print("isTrendingAway = ${_isTrendingAway()}");
+    print("isNear = ${dist < TrackThresholds.nearThreshold}");
+    print("isFar = ${dist > TrackThresholds.farThreshold}");
+    print("isTrendingAway = ${offtrackLogic.isTrendingAway(_lastDistances)}");
     print(
-      "isHeadingWrong = ${_headingDifference(closest.bearing, closest.userBearing) > 45}",
+      "isHeadingWrong = ${geometry.headingDifference(closest.bearing, closest.userBearing) > 45}",
     );
 
-    // 🔥 9) AUTÒMAT
     _handleFollowState(
       dist: dist,
-      isNear: dist < nearThreshold,
-      isFar: dist > farThreshold,
-      isTrendingAway: _isTrendingAway(),
+      isNear: dist < TrackThresholds.nearThreshold,
+      isFar: dist > TrackThresholds.farThreshold,
+      isTrendingAway: offtrackLogic.isTrendingAway(_lastDistances),
       isHeadingWrong:
-          _headingDifference(closest.bearing, closest.userBearing) > 45,
+          geometry.headingDifference(closest.bearing, closest.userBearing) > 45,
     );
 
     print("newMode = ${state.mode}");
 
-    // 🔥 10) Només actualitzar distància si no hi ha canvi de mode
     if (state.mode == prevMode) {
       state = state.copyWith(distanceToTrack: dist);
       print("distanceToTrack actualitzat = $dist");
@@ -657,24 +577,9 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
   }
 }
 
-class _ClosestResult {
-  final double distance;
-  final double bearing;
-  final double userBearing;
-  final int segmentIndex;
-  final double t;
-  final LatLng projectedPoint;
-
-  _ClosestResult({
-    required this.distance,
-    required this.bearing,
-    required this.userBearing,
-    required this.segmentIndex,
-    required this.t,
-    required this.projectedPoint,
-  });
-}
-
+// ------------------------------------------------------------
+// Provider
+// ------------------------------------------------------------
 final trackFollowNotifierProvider =
     NotifierProvider<TrackFollowNotifier, TrackFollowState>(
       TrackFollowNotifier.new,
