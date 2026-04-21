@@ -488,14 +488,6 @@ class AppMessages {
         ),
         actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(
-              t.cancel,
-              style: TextStyle(color: Colors.white.withAlpha(150)),
-            ),
-          ),
-          const SizedBox(width: 8),
           ElevatedButton(
             style: _buttonStyle(AppColors.skyBlue),
             onPressed: () => Navigator.pop(context, true),
@@ -515,6 +507,45 @@ class AppMessages {
         backgroundColor: Colors.green.shade700,
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  static Future<String?> askGpxFilename(
+    BuildContext context,
+    String suggestedName,
+  ) {
+    final controller = TextEditingController(text: suggestedName);
+
+    return showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Nom del fitxer GPX"),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(
+            labelText: "Nom del fitxer",
+            hintText: "Introdueix el nom del fitxer",
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, null),
+            child: const Text("Cancel·lar"),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final value = controller.text.trim();
+              if (value.isEmpty) {
+                Navigator.pop(context, null);
+              } else {
+                Navigator.pop(context, value);
+              }
+            },
+            child: const Text("Exportar"),
+          ),
+        ],
       ),
     );
   }

@@ -873,13 +873,18 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final track = ref.read(trackProvider);
     if (track.coordinates.isEmpty) return;
 
-    // 1. Exportar i compartir
-    final filename = buildGpxFilename();
-    await exportGpx(filename, ref, context);
+    // 1. Proposar nom editable
+    final suggested = buildGpxFilename().replaceAll(".gpx", "");
+    final name = await AppMessages.askGpxFilename(context, suggested);
+
+    if (name == null || name.isEmpty) return;
+
+    // 2. Exportar i compartir
+    await exportGpx(name, ref, context);
 
     if (!mounted) return;
 
-    // 2. Preguntar si vol eliminar o mantenir
+    // 3. Preguntar si vol eliminar o mantenir
     final prefs = await SharedPreferences.getInstance();
     final eliminar = await _askDeleteTrack();
 

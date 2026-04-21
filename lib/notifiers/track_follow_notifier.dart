@@ -105,21 +105,32 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
   void reverseImportedTrack() {
     ref.read(importedTrackProvider.notifier).reverseTrack();
 
-    _lastDistances.clear();
-    _hasEverBeenOnTrack = false;
-    _hasEverBeenOffTrack = false;
-    _offTrackDismissed = false;
+    // Només reiniciem la detecció de reversed
     _reverseDialogShown = false;
     _reverseDetectionLocked = false;
-    offTrackAlertsSent = 0;
 
-    state = state.copyWith(
-      mode: FollowMode.initializing,
-      showReverseTrackDialog: false,
-      isOffTrack: false,
-      distanceToTrack: 0,
-    );
+    // Tanquem el diàleg
+    state = state.copyWith(showReverseTrackDialog: false);
   }
+
+  // void _reverseImportedTrack() {
+  //   ref.read(importedTrackProvider.notifier).reverseTrack();
+
+  //   _lastDistances.clear();
+  //   _hasEverBeenOnTrack = false;
+  //   _hasEverBeenOffTrack = false;
+  //   _offTrackDismissed = false;
+  //   _reverseDialogShown = false;
+  //   _reverseDetectionLocked = false;
+  //   offTrackAlertsSent = 0;
+
+  //   state = state.copyWith(
+  //     mode: FollowMode.initializing,
+  //     showReverseTrackDialog: false,
+  //     isOffTrack: false,
+  //     distanceToTrack: 0,
+  //   );
+  // }
 
   void dismissReverseTrackDialog() {
     _reverseDialogShown = false;

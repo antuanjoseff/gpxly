@@ -4,7 +4,6 @@ import 'package:maplibre_gl/maplibre_gl.dart';
 
 import 'package:gpxly/notifiers/track_follow_notifier.dart';
 import 'package:gpxly/notifiers/imported_track_notifier.dart';
-import 'package:gpxly/models/track_follow_state.dart';
 import 'package:gpxly/notifiers/track_notifier.dart';
 
 void main() {
