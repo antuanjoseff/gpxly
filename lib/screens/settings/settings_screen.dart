@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gpxly/l10n/app_localizations.dart';
 import 'package:gpxly/notifiers/settings_pending_notifier.dart';
 import 'package:gpxly/theme/app_colors.dart';
+import 'package:gpxly/widgets/navigation_pause_icon.dart';
 
 import 'tabs/gps_settings_tab.dart';
 import 'tabs/gpx_settings_tab.dart';

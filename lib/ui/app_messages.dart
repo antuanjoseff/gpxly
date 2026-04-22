@@ -516,34 +516,32 @@ class AppMessages {
     String suggestedName,
   ) {
     final controller = TextEditingController(text: suggestedName);
+    final loc = AppLocalizations.of(context)!;
 
     return showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Nom del fitxer GPX"),
+        title: Text(loc.gpxFilenameTitle),
         content: TextField(
           controller: controller,
           autofocus: true,
-          decoration: const InputDecoration(
-            labelText: "Nom del fitxer",
-            hintText: "Introdueix el nom del fitxer",
+          decoration: InputDecoration(
+            labelText: loc.gpxFilenameLabel,
+            hintText: loc.gpxFilenameHint,
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, null),
-            child: const Text("Cancel·lar"),
+            child: Text(loc.cancel),
           ),
           ElevatedButton(
+            style: _buttonStyle(AppColors.skyBlue),
             onPressed: () {
               final value = controller.text.trim();
-              if (value.isEmpty) {
-                Navigator.pop(context, null);
-              } else {
-                Navigator.pop(context, value);
-              }
+              Navigator.pop(context, value.isEmpty ? null : value);
             },
-            child: const Text("Exportar"),
+            child: Text(loc.export),
           ),
         ],
       ),

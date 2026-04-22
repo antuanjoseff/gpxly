@@ -42,7 +42,7 @@
   "locationPermissionMessage": "L’aplicació no té permisos per accedir a la ubicació. Vols obrir la configuració per donar permisos?",
 
   "offTrack": "T'estàs allunyant del track importat",
-  "backOnTrack": "Has tornat al track",
+  "backOnTrack": "Estàs sobre el track",
 
   "elevationFixing": "Corregint altituds",
   "error": "Error",
@@ -99,6 +99,10 @@
 
 "reverseTrackTitle": "Direcció inversa",
 "reverseTrackMessage": "Sembla que estàs seguint el track en direcció inversa. Vols invertir-lo per millorar la navegació?",
-"reverseTrackConfirm": "Inverteix"
+"reverseTrackConfirm": "Inverteix",
+
+"gpxFilenameTitle": "Nom del fitxer GPX",
+"gpxFilenameLabel": "Nom del fitxer",
+"gpxFilenameHint": "Introdueix el nom del fitxer"
 
 }

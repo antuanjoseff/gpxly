@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:gpxly/ui/app_messages.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 enum GpsPermissionStatus { ok, gpsOff, permissionDenied }
@@ -81,6 +82,47 @@ class PermissionsService {
     // 4) Notificacions (Android 13+)
     final notif = await _ensureNotifications(context);
     if (!notif) return false;
+
+    return true;
+  }
+
+  static Future<bool> ensureGpsReady(BuildContext context) async {
+    // 1) GPS activat?
+    final gpsEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!gpsEnabled) {
+      final go = await AppMessages.showGpsDisabledDialog(context);
+      if (go == true) Geolocator.openLocationSettings();
+      return false;
+    }
+
+    // 2) Permisos while-in-use
+    LocationPermission perm = await Geolocator.checkPermission();
+    if (perm == LocationPermission.denied ||
+        perm == LocationPermission.deniedForever) {
+      perm = await Geolocator.requestPermission();
+    }
+    if (perm == LocationPermission.denied ||
+        perm == LocationPermission.deniedForever) {
+      return false;
+    }
+
+    // 3) Permís de background (Android)
+    if (Platform.isAndroid) {
+      final bg = await Permission.locationAlways.status;
+      if (!bg.isGranted) {
+        final res = await Permission.locationAlways.request();
+        if (!res.isGranted) return false;
+      }
+    }
+
+    // 4) Permís de notificacions (Android 13+)
+    if (Platform.isAndroid) {
+      final notif = await Permission.notification.status;
+      if (!notif.isGranted) {
+        final res = await Permission.notification.request();
+        if (!res.isGranted) return false;
+      }
+    }
 
     return true;
   }

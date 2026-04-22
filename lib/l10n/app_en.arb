@@ -42,7 +42,7 @@
   "locationPermissionMessage": "The app does not have permission to access location. Do you want to open settings to grant it?",
 
   "offTrack": "You are drifting away from the imported track",
-  "backOnTrack": "You are back on the track",
+  "backOnTrack": "You are on the track",
 
   "elevationFixing": "Fixing altitudes",
   "error": "Error",
@@ -98,5 +98,9 @@
 
 "reverseTrackTitle": "Reverse direction",
 "reverseTrackMessage": "It looks like you are following the track in reverse. Do you want to invert it for better navigation?",
-"reverseTrackConfirm": "Invert"
+"reverseTrackConfirm": "Invert",
+
+"gpxFilenameTitle": "GPX file name",
+"gpxFilenameLabel": "File name",
+"gpxFilenameHint": "Enter the file name"
 }

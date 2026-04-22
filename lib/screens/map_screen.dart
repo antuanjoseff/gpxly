@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gpxly/features/elevation_profile/elevation_profile_screen.dart';
+import 'package:gpxly/models/track.dart';
 import 'package:gpxly/notifiers/gps_speed_notifier.dart';
 import 'package:gpxly/notifiers/imported_track_notifier.dart';
 import 'package:gpxly/notifiers/imported_track_settings_notifier.dart';
@@ -13,6 +14,7 @@ import 'package:gpxly/notifiers/track_settings_notifier.dart';
 import 'package:gpxly/screens/debug_screen.dart';
 import 'package:gpxly/screens/settings/settings_screen.dart';
 import 'package:gpxly/screens/stats_screen.dart';
+import 'package:gpxly/services/gps_manager.dart';
 import 'package:gpxly/services/gpx_import_flow.dart';
 import 'package:gpxly/services/location_permission_flow.dart';
 import 'package:gpxly/services/recording_handler.dart';
@@ -25,6 +27,7 @@ import 'package:gpxly/utils/map_animation.dart';
 import 'package:gpxly/utils/map_layers.dart';
 import 'package:gpxly/widgets/compass_widget.dart';
 import 'package:gpxly/widgets/gps_accuracy_bars.dart';
+
 import 'package:gpxly/widgets/recording_status_bar.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -49,8 +52,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
   Timer? _cameraMoveDebounce;
   DateTime? _lastBackPress;
-
-  StreamSubscription<Map<String, dynamic>>? _gpsSub;
 
   LatLng? _lastPosition;
   Timer? _animationTimer;
@@ -135,7 +136,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
   @override
   void dispose() {
     _animationTimer?.cancel();
-    _gpsSub?.cancel();
     super.dispose();
   }
 
@@ -282,22 +282,81 @@ class _MapScreenState extends ConsumerState<MapScreen>
     return true;
   }
 
+  void _animateGpsPosition(LatLng newPos) {
+    animateLastSegment(
+      lat: newPos.latitude,
+      lon: newPos.longitude,
+      allCoordinates: [
+        if (_lastPosition != null)
+          [_lastPosition!.longitude, _lastPosition!.latitude],
+        [newPos.longitude, newPos.latitude],
+      ],
+      controller: mapController!,
+      userMovedMap: userMovedMap,
+      currentLastPosition: _lastPosition,
+      currentTimer: _animationTimer,
+      setLastPosition: (p) => _lastPosition = p,
+      setTimer: (t) => _animationTimer = t,
+      onAnimate: (val) {
+        if (mounted) setState(() => isProgrammaticMove = val);
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final track = ref.watch(trackProvider);
     final trackSettings = ref.watch(trackSettingsProvider);
-    final permissions = ref.watch(permissionsProvider);
     final importedTrack = ref.watch(importedTrackProvider);
     final hasImportedTrack =
         importedTrack != null && importedTrack.coordinates.isNotEmpty;
-    final hasPermissions = permissions.hasPermission;
-    final gpsEnabled = permissions.serviceEnabled;
     final trackFollowState = ref.watch(trackFollowNotifierProvider);
 
     // Listener dins build (Riverpod obliga)
+    ref.listen(gpsManagerProvider, (prev, next) {
+      if (!styleInitialized || mapController == null) return;
+      if (next.position == null) return;
+
+      final pos = next.position!;
+
+      // 🔵 Actualitzar punt blau
+      final isRecording =
+          ref.read(trackProvider).recordingState == RecordingState.recording;
+
+      // Si NO estàs gravant → animem el punt blau amb smooth movement
+      if (!isRecording) {
+        _animateGpsPosition(pos);
+      } else {
+        // Si estàs gravant → el punt blau ja s’anima via trackProvider
+        mapController!.setGeoJsonSource("user_location", {
+          "type": "FeatureCollection",
+          "features": [
+            {
+              "type": "Feature",
+              "geometry": {
+                "type": "Point",
+                "coordinates": [pos.longitude, pos.latitude],
+              },
+            },
+          ],
+        });
+      }
+
+      // 🔄 Centrar mapa si l’usuari no l’ha mogut
+      if (!userMovedMap) {
+        isProgrammaticMove = true;
+        mapController!.animateCamera(CameraUpdate.newLatLng(pos)).then((_) {
+          Future.delayed(const Duration(milliseconds: 300), () {
+            if (mounted) setState(() => isProgrammaticMove = false);
+          });
+        });
+      }
+    });
+
     ref.listen(trackProvider, (previous, next) {
       if (!styleInitialized || mapController == null) return;
-      // 👉 Si el track s'ha resetejat, esborrem la línia del mapa
+
+      // 1) Si el track s'ha resetejat → esborrem la línia
       if (next.coordinates.isEmpty) {
         mapController!.setGeoJsonSource("track_line", {
           "type": "FeatureCollection",
@@ -306,54 +365,46 @@ class _MapScreenState extends ConsumerState<MapScreen>
         return;
       }
 
-      final last = next.coordinates.last;
-      final lon = last[0];
-      final lat = last[1];
-
-      ref
-          .read(trackFollowNotifierProvider.notifier)
-          .updateUserPosition(LatLng(lat, lon));
-
-      // 🔵 PRIMERA COORDENADA → dibuix immediat
-      if (next.coordinates.length == 1) {
-        updateMapPosition(mapController!, lat, lon, userMovedMap, (val) {
-          if (mounted) setState(() => isProgrammaticMove = val);
-        });
-
-        // També cal dibuixar la línia (buida o amb 1 punt)
-        mapController!.setGeoJsonSource("track_line", {
-          "type": "FeatureCollection",
-          "features": [
-            {
-              "type": "Feature",
-              "geometry": {
-                "type": "LineString",
-                "coordinates": next.coordinates,
-              },
-            },
-          ],
-        });
-
-        return;
-      }
-
-      try {
-        animateLastSegment(
-          lat: lat,
-          lon: lon,
-          allCoordinates: next.coordinates,
-          controller: mapController!,
-          userMovedMap: userMovedMap,
-          currentLastPosition: _lastPosition,
-          currentTimer: _animationTimer,
-          setLastPosition: (p) => _lastPosition = p,
-          setTimer: (t) => _animationTimer = t,
-          onAnimate: (val) {
-            // <--- AFEGEIX AIXÒ
-            if (mounted) setState(() => isProgrammaticMove = val);
+      // 2) Dibuixar la línia del track gravat (sempre)
+      mapController!.setGeoJsonSource("track_line", {
+        "type": "FeatureCollection",
+        "features": [
+          {
+            "type": "Feature",
+            "geometry": {"type": "LineString", "coordinates": next.coordinates},
           },
-        );
-      } catch (_) {}
+        ],
+      });
+
+      // 3) Animació suau del darrer segment
+      final isRecording =
+          ref.read(trackProvider).recordingState == RecordingState.recording;
+
+      final isFollowing = ref.read(trackFollowNotifierProvider).isFollowing;
+
+      // Només animem si estem gravant i NO seguint un track importat
+      if (isRecording && !isFollowing) {
+        final last = next.coordinates.last;
+        final lon = last[0];
+        final lat = last[1];
+
+        try {
+          animateLastSegment(
+            lat: lat,
+            lon: lon,
+            allCoordinates: next.coordinates,
+            controller: mapController!,
+            userMovedMap: userMovedMap,
+            currentLastPosition: _lastPosition,
+            currentTimer: _animationTimer,
+            setLastPosition: (p) => _lastPosition = p,
+            setTimer: (t) => _animationTimer = t,
+            onAnimate: (val) {
+              if (mounted) setState(() => isProgrammaticMove = val);
+            },
+          );
+        } catch (_) {}
+      }
     });
 
     ref.listen(trackSettingsProvider, (previous, next) {
@@ -558,14 +609,10 @@ class _MapScreenState extends ConsumerState<MapScreen>
                       color: Colors.white,
                       size: 20,
                     ),
-                    onPressed: (!hasPermissions || !gpsEnabled)
-                        ? null
-                        : () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const SettingsScreen(),
-                            ),
-                          ),
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                    ),
                   ),
 
                   const SizedBox(width: 12),
@@ -742,12 +789,14 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     const SizedBox(height: 8),
 
                     // BOTÓ DE CENTRAR MAPA
+                    // BOTÓ DE CENTRAR MAPA
                     if (userMovedMap)
                       GestureDetector(
                         onTap: () {
-                          final track = ref.read(trackProvider);
-                          if (track.coordinates.isEmpty) return;
-                          final last = track.coordinates.last;
+                          final gps = ref.read(gpsManagerProvider);
+                          if (gps.position == null) return;
+
+                          final pos = gps.position!;
 
                           setState(() {
                             userMovedMap = false;
@@ -757,7 +806,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                           mapController
                               ?.animateCamera(
                                 CameraUpdate.newLatLng(
-                                  LatLng(last[1], last[0]),
+                                  LatLng(pos.latitude, pos.longitude),
                                 ),
                               )
                               .then((_) {
@@ -781,9 +830,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
                             border: Border.all(color: Colors.white10),
                           ),
                           child: const Icon(
-                            Icons.gps_fixed, // O Icons.my_location
-                            color: Colors
-                                .white, // Blau per destacar que cal centrar
+                            Icons.gps_fixed,
+                            color: Colors.white,
                             size: 20,
                           ),
                         ),

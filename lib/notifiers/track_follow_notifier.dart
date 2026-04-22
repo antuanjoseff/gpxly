@@ -2,14 +2,16 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gpxly/models/track_follow_state.dart';
+import 'package:gpxly/notifiers/gps_settings_notifier.dart';
 import 'package:gpxly/notifiers/imported_track_notifier.dart';
 import 'package:gpxly/notifiers/track_notifier.dart';
-import 'package:gpxly/services/native_gps_channel.dart';
-import 'package:gpxly/services/recording_handler.dart';
+import 'package:gpxly/services/gps_manager.dart';
+
+import 'package:gpxly/services/permissions_service.dart';
+
 import 'package:gpxly/utils/geo_utils.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:flutter/services.dart';
-import 'package:audioplayers/audioplayers.dart';
 
 // Helpers
 import 'helpers/geometry_utils.dart';
@@ -33,12 +35,6 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
   final progress = ProgressTracker();
   final sounds = TrackSounds();
   final debug = TrackDebug();
-
-  // ------------------------------------------------------------
-  // Subscripcions
-  // ------------------------------------------------------------
-  StreamSubscription? _locationSub;
-  StreamSubscription<Map<String, dynamic>>? _gpsSub;
 
   // ------------------------------------------------------------
   // Estat intern
@@ -75,10 +71,6 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
   // ------------------------------------------------------------
   @override
   TrackFollowState build() {
-    ref.onDispose(() {
-      _locationSub?.cancel();
-    });
-
     return const TrackFollowState(
       isFollowing: false,
       isOffTrack: false,
@@ -162,24 +154,38 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
     WidgetRef ref,
     MapLibreMapController? mapController,
   ) async {
-    // 1. Activar GPS + permisos (sense gravar)
-    await RecordingHandler.startGpsOnly(context, ref, mapController);
+    // 1. Permisos igual que RecordingHandler
+    final ok = await PermissionsService.ensureGpsReady(context);
+    if (!ok) return;
 
-    // 2. Subscriure’ns al flux de GPS
-    _gpsSub?.cancel();
-    _gpsSub = NativeGpsChannel.locationStream.listen((data) {
-      final double lat = data["lat"];
-      final double lon = data["lon"];
-      updateUserPosition(LatLng(lat, lon));
-    });
+    // 2. Activar GPS via GPSManager
+    final gps = ref.read(gpsManagerProvider.notifier);
+    final settings = ref.read(gpsSettingsProvider);
 
-    // 3. Estat intern de seguiment
+    await gps.startGps(
+      useTime: settings.useTime,
+      seconds: settings.seconds,
+      meters: settings.meters,
+      accuracy: settings.accuracy,
+    );
+
+    // 3. Indicar que estem seguint un track
+    gps.setFollowing(true);
+
+    // 4. Estat intern
     state = state.copyWith(isFollowing: true, mode: FollowMode.initializing);
 
     _hasEverBeenOnTrack = false;
     _hasEverBeenOffTrack = false;
     offTrackAlertsSent = 0;
 
+    // 5. Centrar mapa a la posició actual si existeix
+    final pos = ref.read(gpsManagerProvider).position;
+    if (pos != null && mapController != null) {
+      mapController.animateCamera(CameraUpdate.newLatLng(pos));
+    }
+
+    // 6. Inicialitzar distància inicial
     final imported = ref.read(importedTrackProvider);
     if (imported == null || imported.coordinates.isEmpty) return;
 
@@ -195,23 +201,21 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
       importedLatLng,
       _lastUserPositions,
     );
-    final dist = closest.distance;
 
     _lastDistances.clear();
-    _lastDistances.add(dist);
+    _lastDistances.add(closest.distance);
   }
 
   // ------------------------------------------------------------
   // Seguiment amb enregistrament
   // ------------------------------------------------------------
   void startFollowingWithRecording() async {
-    state = state.copyWith(isFollowing: true, mode: FollowMode.initializing);
+    final gps = ref.read(gpsManagerProvider.notifier);
 
-    _gpsSub = NativeGpsChannel.locationStream.listen((data) {
-      final double lat = data["lat"];
-      final double lon = data["lon"];
-      updateUserPosition(LatLng(lat, lon));
-    });
+    // 1. Indicar que estem seguint un track
+    gps.setFollowing(true);
+
+    state = state.copyWith(isFollowing: true, mode: FollowMode.initializing);
 
     _hasEverBeenOnTrack = false;
     _hasEverBeenOffTrack = false;
@@ -235,18 +239,17 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
       importedLatLng,
       _lastUserPositions,
     );
-    final dist = closest.distance;
 
     _lastDistances.clear();
-    _lastDistances.add(dist);
+    _lastDistances.add(closest.distance);
   }
 
   // ------------------------------------------------------------
   // Aturar seguiment
   // ------------------------------------------------------------
   void stopFollowing() {
-    _gpsSub?.cancel();
-    _gpsSub = null;
+    final gps = ref.read(gpsManagerProvider.notifier);
+    gps.setFollowing(false);
 
     state = state.copyWith(
       isFollowing: false,
@@ -335,6 +338,7 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
             140 && // Angle clarament oposat
         reverseDetector.isReverseDirection(closest, _lastUserPositions)) {
       _reverseDetectionLocked = true;
+      sounds.playReversedTrackSound();
       _askUserToReverseTrack();
       return;
     }

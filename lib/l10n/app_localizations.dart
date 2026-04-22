@@ -298,7 +298,7 @@ abstract class AppLocalizations {
   /// No description provided for @backOnTrack.
   ///
   /// In en, this message translates to:
-  /// **'You are back on the track'**
+  /// **'You are on the track'**
   String get backOnTrack;
 
   /// No description provided for @elevationFixing.
@@ -576,6 +576,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Invert'**
   String get reverseTrackConfirm;
+
+  /// No description provided for @gpxFilenameTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'GPX file name'**
+  String get gpxFilenameTitle;
+
+  /// No description provided for @gpxFilenameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'File name'**
+  String get gpxFilenameLabel;
+
+  /// No description provided for @gpxFilenameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the file name'**
+  String get gpxFilenameHint;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

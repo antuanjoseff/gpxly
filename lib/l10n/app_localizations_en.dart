@@ -108,7 +108,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get offTrack => 'You are drifting away from the imported track';
 
   @override
-  String get backOnTrack => 'You are back on the track';
+  String get backOnTrack => 'You are on the track';
 
   @override
   String get elevationFixing => 'Fixing altitudes';
@@ -247,4 +247,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reverseTrackConfirm => 'Invert';
+
+  @override
+  String get gpxFilenameTitle => 'GPX file name';
+
+  @override
+  String get gpxFilenameLabel => 'File name';
+
+  @override
+  String get gpxFilenameHint => 'Enter the file name';
 }

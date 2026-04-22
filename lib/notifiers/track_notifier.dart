@@ -9,12 +9,10 @@ import 'package:gpxly/notifiers/gps_altitude_notifier.dart';
 import 'package:gpxly/services/elevations_api_conf.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/track.dart';
-import '../services/native_gps_channel.dart';
 import 'package:http/http.dart' as http;
 
 class TrackNotifier extends Notifier<Track> {
   Timer? _timer;
-  StreamSubscription<Map<String, dynamic>>? _subscription;
   Track? _initialState;
 
   @override
@@ -51,49 +49,6 @@ class TrackNotifier extends Notifier<Track> {
         );
       }
     });
-
-    _subscription ??= NativeGpsChannel.locationStream.listen((data) {
-      if (state.recordingState != RecordingState.recording) return;
-
-      // 1. Extreure totes les dades del TrackingService.kt
-      final double lat = data["lat"] as double;
-      final double lon = data["lon"] as double;
-      final double accuracy = data["accuracy"] as double;
-      final double rawAlt = (data["altitude"] ?? 0.0) as double;
-      final double speed = (data["speed"] ?? 0.0) as double;
-      final double heading = (data["heading"] ?? 0.0) as double;
-      final int satUsed = (data["sat_used"] ?? 0) as int;
-
-      // Precisions i temps real del satèl·lit
-      final double vAcc = (data["vAccuracy"] ?? 0.0) as double;
-      final double sAcc = (data["sAccuracy"] ?? 0.0) as double;
-      final double hAcc = (data["hAccuracy"] ?? 0.0) as double;
-      final DateTime gpsTimestamp = DateTime.fromMillisecondsSinceEpoch(
-        data["timestamp"] as int,
-      );
-
-      // 2. Aplicar correcció d'altitud
-      final double correction = localAltitudeCorrection(lat, lon);
-      final double correctedAlt = rawAlt - correction;
-
-      // 3. Afegir el punt amb tota la telemetria
-      addPointFromPosition(
-        Position(
-          latitude: lat,
-          longitude: lon,
-          altitude: correctedAlt,
-          timestamp: gpsTimestamp,
-          accuracy: accuracy,
-          altitudeAccuracy: vAcc,
-          heading: heading,
-          headingAccuracy: hAcc,
-          speed: speed,
-          speedAccuracy: sAcc,
-          isMocked: false,
-        ),
-        satUsed,
-      );
-    });
   }
 
   void pauseRecording() {
@@ -105,9 +60,6 @@ class TrackNotifier extends Notifier<Track> {
   }
 
   Future<void> stopRecording() async {
-    await NativeGpsChannel.stop();
-    await _subscription?.cancel();
-    _subscription = null;
     _timer?.cancel();
     _timer = null;
 
@@ -287,8 +239,6 @@ class TrackNotifier extends Notifier<Track> {
   void reset() {
     _timer?.cancel();
     _timer = null;
-    _subscription?.cancel();
-    _subscription = null;
 
     state = Track(
       coordinates: [],
@@ -308,7 +258,33 @@ class TrackNotifier extends Notifier<Track> {
       maxElevation: -9999.0,
       minElevation: 9999.0,
     );
+
     clearCache();
+  }
+
+  void addRawGpsPoint(Map<String, dynamic> data) {
+    final lat = data["lat"] as double;
+    final lon = data["lon"] as double;
+
+    final rawAlt = (data["altitude"] ?? 0.0) as double;
+    final correction = localAltitudeCorrection(lat, lon);
+    final correctedAlt = rawAlt - correction;
+
+    final pos = Position(
+      latitude: lat,
+      longitude: lon,
+      altitude: correctedAlt,
+      timestamp: DateTime.fromMillisecondsSinceEpoch(data["timestamp"] as int),
+      accuracy: (data["accuracy"] ?? 0.0) as double,
+      altitudeAccuracy: (data["vAccuracy"] ?? 0.0) as double,
+      heading: (data["heading"] ?? 0.0) as double,
+      headingAccuracy: (data["hAccuracy"] ?? 0.0) as double,
+      speed: (data["speed"] ?? 0.0) as double,
+      speedAccuracy: (data["sAccuracy"] ?? 0.0) as double,
+      isMocked: false,
+    );
+
+    addPointFromPosition(pos, (data["sat_used"] ?? 0) as int);
   }
 
   double localAltitudeCorrection(double lat, double lon) {

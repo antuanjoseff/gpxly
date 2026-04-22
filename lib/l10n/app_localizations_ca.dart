@@ -108,7 +108,7 @@ class AppLocalizationsCa extends AppLocalizations {
   String get offTrack => 'T\'estàs allunyant del track importat';
 
   @override
-  String get backOnTrack => 'Has tornat al track';
+  String get backOnTrack => 'Estàs sobre el track';
 
   @override
   String get elevationFixing => 'Corregint altituds';
@@ -247,4 +247,13 @@ class AppLocalizationsCa extends AppLocalizations {
 
   @override
   String get reverseTrackConfirm => 'Inverteix';
+
+  @override
+  String get gpxFilenameTitle => 'Nom del fitxer GPX';
+
+  @override
+  String get gpxFilenameLabel => 'Nom del fitxer';
+
+  @override
+  String get gpxFilenameHint => 'Introdueix el nom del fitxer';
 }
