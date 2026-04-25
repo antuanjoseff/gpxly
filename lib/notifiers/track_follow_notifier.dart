@@ -51,11 +51,9 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
 
   bool _offTrackDismissed = false;
   bool _isCurrentlyOffTrack = false;
-  bool _backOnTrackAlertSent = false;
 
   bool _hasEverBeenOnTrack = false;
   bool _hasEverBeenOffTrack = false;
-  bool _hasShownBackOnTrackOnce = false;
 
   bool _reverseDetectionLocked = false;
   bool _reverseDialogShown = false;
@@ -73,6 +71,7 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
   TrackFollowState build() {
     return const TrackFollowState(
       isFollowing: false,
+      isPaused: false,
       isOffTrack: false,
       distanceToTrack: 0,
       showOffTrackSnackbar: false,
@@ -104,25 +103,6 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
     // Tanquem el diàleg
     state = state.copyWith(showReverseTrackDialog: false);
   }
-
-  // void _reverseImportedTrack() {
-  //   ref.read(importedTrackProvider.notifier).reverseTrack();
-
-  //   _lastDistances.clear();
-  //   _hasEverBeenOnTrack = false;
-  //   _hasEverBeenOffTrack = false;
-  //   _offTrackDismissed = false;
-  //   _reverseDialogShown = false;
-  //   _reverseDetectionLocked = false;
-  //   offTrackAlertsSent = 0;
-
-  //   state = state.copyWith(
-  //     mode: FollowMode.initializing,
-  //     showReverseTrackDialog: false,
-  //     isOffTrack: false,
-  //     distanceToTrack: 0,
-  //   );
-  // }
 
   void dismissReverseTrackDialog() {
     // 🔥 Invertim igualment el track
@@ -252,27 +232,33 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
   // ------------------------------------------------------------
   // Aturar seguiment
   // ------------------------------------------------------------
+  // Dins de TrackFollowNotifier
   void stopFollowing() {
     final gps = ref.read(gpsManagerProvider.notifier);
     gps.setFollowing(false);
 
     state = state.copyWith(
       isFollowing: false,
+      isPaused: false,
       isOffTrack: false,
       distanceToTrack: 0,
       showOffTrackSnackbar: false,
       mode: FollowMode.notFollowing,
     );
 
+    // NETEJA INTERNA 👈 Molt important per estalviar memòria
     _lastDistances.clear();
-    _offTrackStart = null;
-    _offTrackDismissed = false;
+    _lastUserPositions.clear();
+    _distanceProgressOnTrack = 0.0;
+    _lastProjectedPoint = null;
+    offTrackAlertsSent = 0;
   }
 
   // ------------------------------------------------------------
   // Actualitzar posició
   // ------------------------------------------------------------
   void updateUserPosition(LatLng userPos) {
+    if (!state.isFollowing || state.isPaused) return;
     if (debugMode) {
       _processDebugPosition(userPos);
       return;
@@ -482,15 +468,23 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
     final bool isNearEnd = closest.distance < 15;
     final bool isLastSegment = closest.segmentIndex >= totalPoints - 2;
 
-    // Nou criteri: si estàs molt a prop del final, no cal progressió mínima
-    final bool nearEndOverride = isNearEnd && isLastSegment;
-
     const double minProgressRequired = 100.0;
     final bool hasMinimumProgress =
         _distanceProgressOnTrack >= minProgressRequired;
 
-    return nearEndOverride ||
-        (isNearEnd && isLastSegment && hasMinimumProgress);
+    // SOLO termina si está al final Y ha caminado 100m.
+    // Esto evita que se cierre al importar si estás en la meta.
+    return isNearEnd && isLastSegment && hasMinimumProgress;
+  }
+
+  void togglePause() {
+    state = state.copyWith(isPaused: !state.isPaused);
+
+    // Limpiamos el punto de referencia para que al reanudar
+    // no calcule un "salto" de distancia erróneo.
+    if (state.isPaused) {
+      _lastProjectedPoint = null;
+    }
   }
 
   // ------------------------------------------------------------

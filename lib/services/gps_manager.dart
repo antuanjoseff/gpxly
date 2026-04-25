@@ -141,8 +141,20 @@ class GpsManager extends Notifier<GpsManagerState> {
   // ------------------------------------------------------------
   // FLAGS
   // ------------------------------------------------------------
-  void setRecording(bool value) => recording = value;
-  void setFollowing(bool value) => following = value;
+  // Dins de la classe GpsManager
+  void setRecording(bool value) {
+    recording = value;
+    if (!recording && !following) {
+      stopGps(); // Apaguem el hardware si no fem res de res
+    }
+  }
+
+  void setFollowing(bool value) {
+    following = value;
+    if (!recording && !following) {
+      stopGps(); // Apaguem el hardware si no fem res de res
+    }
+  }
 }
 
 final gpsManagerProvider = NotifierProvider<GpsManager, GpsManagerState>(

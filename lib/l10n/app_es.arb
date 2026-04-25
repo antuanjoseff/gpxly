@@ -102,7 +102,12 @@
 
 "gpxFilenameTitle": "Nombre del archivo GPX",
 "gpxFilenameLabel": "Nombre del archivo",
-"gpxFilenameHint": "Introduce el nombre del archivo"
+"gpxFilenameHint": "Introduce el nombre del archivo",
+
+"recording": "GRABANDO",
+"paused": "PAUSADO",
+"following": "SIGUIENDO",
+"followPaused": "RUTA EN PAUSA"
 
 }
 

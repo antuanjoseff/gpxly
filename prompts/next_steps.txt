@@ -1,20 +1,9 @@
-Contexto del Proyecto:
-Estamos desarrollando una App de seguimiento y grabación de tracks en Flutter. El estado se gestiona con Riverpod y el mapa con MapLibre.
-Arquitectura Implementada:
+RESUMEN DE CONTEXTO PARA CONTINUAR (GPXLY APP):
 
-    GpsManager (Notifier): Centraliza la recepción de coordenadas. Notifica primero al trackProvider (grabación) y al trackFollowNotifier (seguimiento), y finalmente actualiza su propia posición.
-    MapScreen (UI):
-        Utiliza un "semáforo" visual llamado isAnimatingSegment para bloquear actualizaciones de Riverpod mientras hay una animación en curso.
-        Implementa un Smart Center que permite al usuario mover el mapa manualmente (userMovedMap) sin que la cámara salte de nuevo al GPS, a menos que el usuario esté en modo seguimiento automático.
-    animateLastSegment (Función de Animación):
-        Realiza una interpolación lineal de 10 pasos (500ms) para mover el punto azul y estirar el último segmento de la línea de grabación.
-        Al finalizar la animación de la cámara, espera un Future.delayed antes de liberar los flags de animación para no romper el Smart Center.
-
-Últimos cambios aplicados:
-
-    Consolidación de Listeners: Se han fusionado los listeners del trackProvider en uno solo.
-    Prevención del "Efecto Flash": En el listener del track, se aplica un sublist(0, length - 1) para ocultar el punto nuevo mientras la animación lo está "estirando", evitando saltos visuales.
-    Simultaneidad: La lógica ahora permite grabar y seguir un track importado al mismo tiempo sin conflictos de renderizado.
-
-Estado Actual:
-La animación es fluida y el Smart Center es estable. El siguiente paso sería verificar la precisión del GPS o añadir nuevas funcionalidades estadísticas al panel inferior.
+    Nueva UX: Panel inferior dividido (BottomBarContainer) con botones de acción rápida para Gravació (Rojo) y Seguiment (Azul).
+    Lógica de Pausa: Implementado isPaused en TrackFollowNotifier. Cuando está activo, updateUserPosition hace un return inmediato para ahorrar batería/CPU.
+    Seguimiento: Añadido filtro de 100m de progreso mínimo en _checkIfFinished para evitar que la ruta se cierre sola al empezar cerca del final.
+    Gestión GPS: GpsManager ahora apaga el hardware solo si recording y following son ambos false.
+    Mapa: Configurado Zoom 18 automático al recibir la primera posición GPS válida al grabar.
+    Pendiente: Revisar el pequeño "efecto flash" o desaparición del último segmento del track durante la animación de movimiento.
+    Traducciones: Añadidas las claves recording, paused, following y followPaused (ca, es, en).

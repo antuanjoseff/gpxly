@@ -317,13 +317,34 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
     // Listener dins build (Riverpod obliga)
     // 1. LISTENER DEL GPS (El que manda)
-    ref.listen(gpsManagerProvider, (prev, next) {
+    ref.listen<GpsManagerState>(gpsManagerProvider, (prev, next) {
       if (!styleInitialized || mapController == null || next.position == null)
         return;
 
-      // Solo disparamos la animación.
-      // Ella internamente ya sabe si debe centrar la cámara (if !userMovedMap)
-      _animateGpsPosition(next.position!);
+      final pos = next.position!;
+      final bool isFirstPoint = prev?.position == null;
+      final bool isRecording =
+          ref.read(trackProvider).recordingState == RecordingState.recording;
+
+      // 1. SEMPRE animem la posició (punt blau i possible segment)
+      _animateGpsPosition(pos);
+
+      // 2. A MÉS, si és el primer punt, fem el zoom
+      if (isFirstPoint && isRecording) {
+        setState(() {
+          userMovedMap = false;
+          isProgrammaticMove = true;
+        });
+
+        mapController!
+            .animateCamera(
+              CameraUpdate.newLatLngZoom(pos, 18.0),
+              duration: const Duration(milliseconds: 1500),
+            )
+            .then((_) {
+              if (mounted) setState(() => isProgrammaticMove = false);
+            });
+      }
     });
 
     // 2. LISTENER DEL TRACK (El pasivo)
@@ -331,7 +352,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
     ref.listen(trackProvider, (previous, next) {
       if (!styleInitialized || mapController == null) return;
 
-      // 1) Si el track se ha reseteado → limpiamos
       if (next.coordinates.isEmpty) {
         mapController!.setGeoJsonSource("track_line", {
           "type": "FeatureCollection",
@@ -340,12 +360,11 @@ class _MapScreenState extends ConsumerState<MapScreen>
         return;
       }
 
-      // 2) PREVENIR EL "EFECTO FLASH"
-      // Si estamos grabando, preparamos una lista que NO tenga el último punto,
-      // ya que ese punto es el "destino" que la animación va a alcanzar poco a poco.
+      bool isRecording = next.recordingState == RecordingState.recording;
       List<List<double>> coordinatesToDraw = next.coordinates;
 
-      bool isRecording = next.recordingState == RecordingState.recording;
+      // Mientras grabamos, dibujamos siempre hasta el penúltimo.
+      // El último punto es el "objetivo" al que el punto azul está viajando.
       if (isRecording && next.coordinates.length > 1) {
         coordinatesToDraw = next.coordinates.sublist(
           0,
@@ -353,23 +372,18 @@ class _MapScreenState extends ConsumerState<MapScreen>
         );
       }
 
-      // 3) Solo dibujamos si NO estamos animando.
-      // Cuando la animación termine (isAnimatingSegment = false), este listener
-      // se disparará de nuevo y dibujará la línea completa definitiva.
-      if (!isAnimatingSegment) {
-        mapController!.setGeoJsonSource("track_line", {
-          "type": "FeatureCollection",
-          "features": [
-            {
-              "type": "Feature",
-              "geometry": {
-                "type": "LineString",
-                "coordinates": coordinatesToDraw,
-              },
+      mapController!.setGeoJsonSource("track_line", {
+        "type": "FeatureCollection",
+        "features": [
+          {
+            "type": "Feature",
+            "geometry": {
+              "type": "LineString",
+              "coordinates": coordinatesToDraw,
             },
-          ],
-        });
-      }
+          },
+        ],
+      });
     });
 
     ref.listen(trackSettingsProvider, (previous, next) {
@@ -554,18 +568,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
                   const SizedBox(width: 12),
 
-                  // Botó d'importació
-                  IconButton(
-                    icon: const Icon(Icons.file_upload_outlined, size: 26),
-                    onPressed: () {
-                      pickGpxAndImport(
-                        context: context,
-                        ref: ref,
-                        mapController: mapController,
-                      );
-                    },
-                  ),
-
                   // Botó de settings
                   IconButton(
                     visualDensity: VisualDensity.compact,
@@ -694,18 +696,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 child: Column(
                   children: [
                     // NOU: BOTÓ DE PERFIL D'ELEVACIÓ
-                    // FloatingAltitudePanel(),
-                    // const SizedBox(height: 8),
-                    ElevatedButton(
-                      onPressed: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              const RecordingFollowingSimulatorPage(),
-                        ),
-                      ),
-                      child: Text('Debug'),
-                    ),
                     GestureDetector(
                       onTap: () => Navigator.push(
                         context,
@@ -805,55 +795,78 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   ],
                 ),
               ),
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: _fullScreen
+                    ? const SizedBox.shrink() // Si està en fullScreen no mostrem res
+                    : BottomBarContainer(
+                        isExpanded: _isPanelExpanded,
+                        onToggle: () => setState(
+                          () => _isPanelExpanded = !_isPanelExpanded,
+                        ),
+
+                        // L'estat de gravació que ve del teu provider/model
+                        state: track.recordingState,
+
+                        onStart: () async {
+                          final ok = await requestLocationPermissionsUnified(
+                            context,
+                            ref,
+                          );
+                          if (!ok) return;
+
+                          setState(() {
+                            userMovedMap = false;
+                            isProgrammaticMove = true;
+                          });
+
+                          await RecordingHandler.start(
+                            context,
+                            ref,
+                            mapController,
+                          );
+                          Future.delayed(const Duration(milliseconds: 300), () {
+                            if (mounted)
+                              setState(() => isProgrammaticMove = false);
+                          });
+
+                          setState(() => _isPanelExpanded = false);
+                        },
+                        onPause: () => RecordingHandler.pause(ref),
+                        onResume: () => RecordingHandler.resume(ref),
+                        onStop: () => _handleStopProcess(context, ref),
+
+                        hasImportedTrack: hasImportedTrack,
+                        isFollowingTrack: trackFollowState.isFollowing,
+
+                        // ... resta de paràmetres iguals
+                        onImportTrack: () {
+                          pickGpxAndImport(
+                            context: context,
+                            ref: ref,
+                            mapController: mapController,
+                          );
+                        },
+
+                        onFollowTrack: () {
+                          if (trackFollowState.isFollowing) {
+                            // 1. ATURAR CÀLCULS (Estalvi de bateria/CPU)
+                            ref
+                                .read(trackFollowNotifierProvider.notifier)
+                                .stopFollowing();
+
+                            // 2. NETEJAR RUTA (Per poder importar-ne una de nova)
+                            ref.read(importedTrackProvider.notifier).clear();
+                          } else {
+                            // Si no està seguint, iniciem normalment
+                            _onFollowTrack();
+                          }
+                        },
+                      ),
+              ),
             ],
           ],
         ),
-        bottomNavigationBar: _fullScreen
-            ? null
-            : BottomBarContainer(
-                isExpanded: _isPanelExpanded,
-                onToggle: () =>
-                    setState(() => _isPanelExpanded = !_isPanelExpanded),
-
-                state: track.recordingState,
-
-                onStart: () async {
-                  final ok = await requestLocationPermissionsUnified(
-                    context,
-                    ref,
-                  );
-                  if (!ok) return;
-
-                  setState(() {
-                    userMovedMap = false;
-                    isProgrammaticMove = true;
-                  });
-
-                  await RecordingHandler.start(context, ref, mapController);
-
-                  Future.delayed(const Duration(milliseconds: 300), () {
-                    if (mounted) setState(() => isProgrammaticMove = false);
-                  });
-
-                  setState(() => _isPanelExpanded = false);
-                },
-
-                onPause: () => RecordingHandler.pause(ref),
-                onResume: () => RecordingHandler.resume(ref),
-                onStop: () => _handleStopProcess(context, ref),
-                hasImportedTrack: hasImportedTrack,
-
-                isFollowingTrack: trackFollowState.isFollowing,
-                onImportTrack: () {
-                  pickGpxAndImport(
-                    context: context,
-                    ref: ref,
-                    mapController: mapController,
-                  );
-                },
-
-                onFollowTrack: _onFollowTrack,
-              ),
       ),
     );
   }

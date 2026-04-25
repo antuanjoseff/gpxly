@@ -594,6 +594,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Enter the file name'**
   String get gpxFilenameHint;
+
+  /// No description provided for @recording.
+  ///
+  /// In en, this message translates to:
+  /// **'RECORDING'**
+  String get recording;
+
+  /// No description provided for @paused.
+  ///
+  /// In en, this message translates to:
+  /// **'PAUSED'**
+  String get paused;
+
+  /// No description provided for @following.
+  ///
+  /// In en, this message translates to:
+  /// **'FOLLOWING'**
+  String get following;
+
+  /// No description provided for @followPaused.
+  ///
+  /// In en, this message translates to:
+  /// **'TRACK PAUSED'**
+  String get followPaused;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

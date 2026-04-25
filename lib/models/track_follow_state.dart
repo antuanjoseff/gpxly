@@ -2,6 +2,7 @@ import 'package:gpxly/notifiers/track_follow_notifier.dart';
 
 class TrackFollowState {
   final bool isFollowing;
+  final bool isPaused;
   final bool isOffTrack;
   final double distanceToTrack;
   final bool showOffTrackSnackbar;
@@ -12,6 +13,7 @@ class TrackFollowState {
 
   const TrackFollowState({
     required this.isFollowing,
+    required this.isPaused,
     required this.isOffTrack,
     required this.distanceToTrack,
     this.showOffTrackSnackbar = false,
@@ -23,6 +25,7 @@ class TrackFollowState {
 
   TrackFollowState copyWith({
     bool? isFollowing,
+    bool? isPaused,
     bool? isOffTrack,
     double? distanceToTrack,
     bool? showOffTrackSnackbar,
@@ -33,6 +36,7 @@ class TrackFollowState {
   }) {
     return TrackFollowState(
       isFollowing: isFollowing ?? this.isFollowing,
+      isPaused: isPaused ?? this.isPaused,
       isOffTrack: isOffTrack ?? this.isOffTrack,
       distanceToTrack: distanceToTrack ?? this.distanceToTrack,
       showOffTrackSnackbar: showOffTrackSnackbar ?? this.showOffTrackSnackbar,

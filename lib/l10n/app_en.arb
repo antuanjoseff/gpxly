@@ -102,5 +102,10 @@
 
 "gpxFilenameTitle": "GPX file name",
 "gpxFilenameLabel": "File name",
-"gpxFilenameHint": "Enter the file name"
+"gpxFilenameHint": "Enter the file name",
+
+"recording": "RECORDING",
+"paused": "PAUSED",
+"following": "FOLLOWING",
+"followPaused": "TRACK PAUSED"
 }

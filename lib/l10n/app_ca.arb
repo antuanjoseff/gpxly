@@ -103,6 +103,11 @@
 
 "gpxFilenameTitle": "Nom del fitxer GPX",
 "gpxFilenameLabel": "Nom del fitxer",
-"gpxFilenameHint": "Introdueix el nom del fitxer"
+"gpxFilenameHint": "Introdueix el nom del fitxer",
+
+  "recording": "GRAVANT",
+  "paused": "PAUSAT",
+  "following": "SEGUINT",
+  "followPaused": "PAUSA RUTA"
 
 }

@@ -256,4 +256,16 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get gpxFilenameHint => 'Introduce el nombre del archivo';
+
+  @override
+  String get recording => 'GRABANDO';
+
+  @override
+  String get paused => 'PAUSADO';
+
+  @override
+  String get following => 'SIGUIENDO';
+
+  @override
+  String get followPaused => 'RUTA EN PAUSA';
 }

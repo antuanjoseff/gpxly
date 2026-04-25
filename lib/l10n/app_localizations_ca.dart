@@ -256,4 +256,16 @@ class AppLocalizationsCa extends AppLocalizations {
 
   @override
   String get gpxFilenameHint => 'Introdueix el nom del fitxer';
+
+  @override
+  String get recording => 'GRAVANT';
+
+  @override
+  String get paused => 'PAUSAT';
+
+  @override
+  String get following => 'SEGUINT';
+
+  @override
+  String get followPaused => 'PAUSA RUTA';
 }
