@@ -1,16 +1,7 @@
 import 'dart:async';
 import 'package:maplibre_gl/maplibre_gl.dart';
 
-/// Anima el darrer segment del track amb interpolació suau.
-///
-/// [lat], [lon] → nova posició real
-/// [allCoordinates] → track complet
-/// [controller] → MapLibre controller
-/// [userMovedMap] → si l’usuari ha mogut el mapa, no recentrem
-/// [setLastPosition] → callback per actualitzar _lastPosition al MapScreen
-/// [setTimer] → callback per guardar el Timer a MapScreen
-/// [currentLastPosition] → valor actual de _lastPosition
-/// [currentTimer] → valor actual de _animationTimer
+/// Anima el darrer segment del track amb interpolació suau i manté el Smart Center.
 void animateLastSegment({
   required double lat,
   required double lon,
@@ -22,24 +13,101 @@ void animateLastSegment({
   required void Function(LatLng) setLastPosition,
   required void Function(Timer?) setTimer,
   required void Function(bool) onAnimate,
+  void Function(double lon, double lat)? overrideDrawPoint,
+  void Function(List<List<double>> coords)? overrideDrawLine,
+  bool drawSegment = true,
 }) {
   final newPos = LatLng(lat, lon);
 
-  // Si la posició no ha canviat, no animem
+  // 1. Evitar ejecuciones duplicadas o innecesarias
   if (currentLastPosition != null &&
       currentLastPosition.latitude == newPos.latitude &&
       currentLastPosition.longitude == newPos.longitude) {
     return;
   }
-
-  // Si ja hi ha una animació en marxa, no la reiniciem
   if (currentTimer != null && currentTimer.isActive) return;
 
-  // 🔵 CAS ESPECIAL: només hi ha un punt → dibuix immediat
+  // 2. Punto de inicio de la animación (desde donde está el punto azul ahora)
+  final double startLat = currentLastPosition?.latitude ?? lat;
+  final double startLon = currentLastPosition?.longitude ?? lon;
+
+  // 3. Caso inicial: Pocos puntos
   if (allCoordinates.length < 2) {
     setLastPosition(newPos);
+    _updateUserLocationSource(controller, lon, lat, overrideDrawPoint);
+    if (drawSegment) {
+      _updateTrackLineSource(controller, allCoordinates, overrideDrawLine);
+    }
+    return;
+  }
 
-    // Punt blau
+  // 4. Preparar la animación por pasos
+  int currentStep = 0;
+  const int steps = 10;
+
+  // Bloqueamos el "semáforo" (isAnimatingSegment e isProgrammaticMove = true)
+  onAnimate(true);
+
+  final timer = Timer.periodic(const Duration(milliseconds: 50), (t) {
+    currentStep++;
+
+    final double animatedLat =
+        startLat + (lat - startLat) * (currentStep / steps);
+    final double animatedLon =
+        startLon + (lon - startLon) * (currentStep / steps);
+
+    // A) Mover Punto Azul
+    _updateUserLocationSource(
+      controller,
+      animatedLon,
+      animatedLat,
+      overrideDrawPoint,
+    );
+
+    // B) Estirar Línea
+    if (drawSegment) {
+      final animatedCoordinates = [
+        ...allCoordinates.sublist(0, allCoordinates.length - 1),
+        [animatedLon, animatedLat],
+      ];
+      _updateTrackLineSource(controller, animatedCoordinates, overrideDrawLine);
+    }
+
+    // 5. Finalizar animación y gestionar Smart Center
+    if (currentStep >= steps) {
+      t.cancel();
+      setLastPosition(newPos);
+      setTimer(null);
+
+      // Si el usuario NO ha movido el mapa manualmente, centramos la cámara
+      if (!userMovedMap) {
+        controller.animateCamera(CameraUpdate.newLatLng(newPos)).then((_) {
+          // ESPERAMOS a que la cámara termine para no romper el Smart Center
+          Future.delayed(const Duration(milliseconds: 150), () {
+            onAnimate(false); // Liberamos los flags
+          });
+        });
+      } else {
+        // Si el usuario movió el mapa, no movemos cámara y liberamos ya
+        onAnimate(false);
+      }
+    }
+  });
+
+  setTimer(timer);
+}
+
+// --- HELPERS ---
+
+void _updateUserLocationSource(
+  MapLibreMapController controller,
+  double lon,
+  double lat,
+  Function? override,
+) {
+  if (override != null) {
+    override(lon, lat);
+  } else {
     controller.setGeoJsonSource("user_location", {
       "type": "FeatureCollection",
       "features": [
@@ -52,87 +120,25 @@ void animateLastSegment({
         },
       ],
     });
-
-    // Línia (amb 1 punt no es veu, però és correcte)
-    controller.setGeoJsonSource("track_line", {
-      "type": "FeatureCollection",
-      "features": [
-        {
-          "type": "Feature",
-          "geometry": {"type": "LineString", "coordinates": allCoordinates},
-        },
-      ],
-    });
-
-    return;
   }
+}
 
-  // 🔴 A partir d’aquí → animació
-  final fullTrack = List<List<double>>.from(allCoordinates);
-  final penultimate = fullTrack[fullTrack.length - 2];
-  final startLat = penultimate[1];
-  final startLon = penultimate[0];
-
-  int currentStep = 0;
-
-  final timer = Timer.periodic(const Duration(milliseconds: 50), (t) {
-    const steps = 10;
-
-    currentStep++;
-
-    final deltaLat = (lat - startLat) / steps;
-    final deltaLon = (lon - startLon) / steps;
-
-    final animatedLat = startLat + deltaLat * currentStep;
-    final animatedLon = startLon + deltaLon * currentStep;
-
-    // 🔵 Actualitzar punt blau
-    controller.setGeoJsonSource("user_location", {
-      "type": "FeatureCollection",
-      "features": [
-        {
-          "type": "Feature",
-          "geometry": {
-            "type": "Point",
-            "coordinates": [animatedLon, animatedLat],
-          },
-        },
-      ],
-    });
-
-    // 🔴 Actualitzar línia amb el punt interpolat
-    final animatedCoordinates = [
-      ...fullTrack.sublist(0, fullTrack.length - 1),
-      [animatedLon, animatedLat],
-    ];
-
+void _updateTrackLineSource(
+  MapLibreMapController controller,
+  List<List<double>> coords,
+  Function? override,
+) {
+  if (override != null) {
+    override(coords);
+  } else {
     controller.setGeoJsonSource("track_line", {
       "type": "FeatureCollection",
       "features": [
         {
           "type": "Feature",
-          "geometry": {
-            "type": "LineString",
-            "coordinates": animatedCoordinates,
-          },
+          "geometry": {"type": "LineString", "coordinates": coords},
         },
       ],
     });
-
-    // Final de l’animació
-    if (currentStep >= steps) {
-      t.cancel();
-      setLastPosition(newPos);
-
-      if (!userMovedMap) {
-        onAnimate(true); // Avisem que el moviment és de codi
-        controller.animateCamera(CameraUpdate.newLatLng(newPos)).then((_) {
-          onAnimate(false); // Alliberem quan acaba l'animació
-        });
-      }
-      setTimer(null);
-    }
-  });
-
-  setTimer(timer);
+  }
 }

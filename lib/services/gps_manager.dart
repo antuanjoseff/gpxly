@@ -85,23 +85,17 @@ class GpsManager extends Notifier<GpsManagerState> {
   // ------------------------------------------------------------
   // REP DADES DEL GPS (ÚNIC LLOC)
   // ------------------------------------------------------------
+  // ------------------------------------------------------------
+  // REP DADES DEL GPS (ÚNIC LLOC)
+  // ------------------------------------------------------------
   void _onGpsData(Map<String, dynamic> data) {
     final lat = data["lat"] as double;
     final lon = data["lon"] as double;
-
     final pos = LatLng(lat, lon);
 
-    // 1) Actualitzar estat global
-    state = state.copyWith(
-      position: pos,
-      accuracy: data["accuracy"] as double?,
-      altitude: data["altitude"] as double?,
-      speed: data["speed"] as double?,
-      heading: data["heading"] as double?,
-      satellites: data["sat_used"] as int?,
-    );
-
-    // 2) Si estem gravant → enviar a TrackNotifier
+    // PAS 1: Actualitzem el Notifier de Gravació (si toca)
+    // Ho fem primer perquè quan la UI pregunti per les coordenades
+    // per fer l'animació, ja tingui el nou punt a la llista.
     if (recording) {
       ref
           .read(trackProvider.notifier)
@@ -125,10 +119,23 @@ class GpsManager extends Notifier<GpsManagerState> {
           );
     }
 
-    // 3) Si estem seguint → enviar a TrackFollowNotifier
+    // PAS 2: Actualitzem el Notifier de Seguiment (si toca)
+    // Això calcula si estem fora de ruta, distàncies, etc.
     if (following) {
       ref.read(trackFollowNotifierProvider.notifier).updateUserPosition(pos);
     }
+
+    // PAS 3: Actualitzem l'estat propi del GpsManager.
+    // Aquest és el pas final perquè és el que dispara el 'ref.listen'
+    // a la MapScreen que inicia l'animació visual del punt blau i la línia.
+    state = state.copyWith(
+      position: pos,
+      accuracy: data["accuracy"] as double?,
+      altitude: data["altitude"] as double?,
+      speed: data["speed"] as double?,
+      heading: data["heading"] as double?,
+      satellites: data["sat_used"] as int?,
+    );
   }
 
   // ------------------------------------------------------------

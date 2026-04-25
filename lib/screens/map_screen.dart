@@ -11,9 +11,10 @@ import 'package:gpxly/notifiers/permissions_notifier.dart';
 import 'package:gpxly/notifiers/track_follow_notifier.dart';
 import 'package:gpxly/notifiers/track_notifier.dart';
 import 'package:gpxly/notifiers/track_settings_notifier.dart';
-import 'package:gpxly/screens/debug_screen.dart';
 import 'package:gpxly/screens/settings/settings_screen.dart';
 import 'package:gpxly/screens/stats_screen.dart';
+import 'package:gpxly/screens/ux_google2.dart'
+    show RecordingFollowingSimulatorPage;
 import 'package:gpxly/services/gps_manager.dart';
 import 'package:gpxly/services/gpx_import_flow.dart';
 import 'package:gpxly/services/location_permission_flow.dart';
@@ -49,7 +50,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
   bool _fullScreen = false;
   LatLng? _initialCameraTarget;
   double _initialZoom = 14;
-
+  bool isAnimatingSegment = false;
   Timer? _cameraMoveDebounce;
   DateTime? _lastBackPress;
 
@@ -153,15 +154,12 @@ class _MapScreenState extends ConsumerState<MapScreen>
   }
 
   void _onMapChanged() {
-    if (isProgrammaticMove) return; // 👈 CLAU
+    // Si la animación o la cámara están trabajando, ignoramos el evento
+    if (isProgrammaticMove || isAnimatingSegment) return;
 
     final moving = mapController?.isCameraMoving ?? false;
-
     if (moving) {
-      _cameraMoveDebounce?.cancel();
-      _cameraMoveDebounce = Timer(const Duration(milliseconds: 150), () {
-        userMovedMap = true;
-      });
+      userMovedMap = true; // El usuario ha tomado el control manual
     }
   }
 
@@ -283,23 +281,28 @@ class _MapScreenState extends ConsumerState<MapScreen>
   }
 
   void _animateGpsPosition(LatLng newPos) {
+    setState(() => isProgrammaticMove = true);
+
+    final isRecording =
+        ref.read(trackProvider).recordingState == RecordingState.recording;
+    final shouldDrawSegment = isRecording;
+
     animateLastSegment(
       lat: newPos.latitude,
       lon: newPos.longitude,
-      allCoordinates: [
-        if (_lastPosition != null)
-          [_lastPosition!.longitude, _lastPosition!.latitude],
-        [newPos.longitude, newPos.latitude],
-      ],
+      allCoordinates: ref.read(trackProvider).coordinates,
       controller: mapController!,
       userMovedMap: userMovedMap,
       currentLastPosition: _lastPosition,
       currentTimer: _animationTimer,
       setLastPosition: (p) => _lastPosition = p,
       setTimer: (t) => _animationTimer = t,
-      onAnimate: (val) {
-        if (mounted) setState(() => isProgrammaticMove = val);
+      onAnimate: (isAnimating) {
+        if (mounted) setState(() => isProgrammaticMove = isAnimating);
       },
+      overrideDrawPoint: null,
+      overrideDrawLine: null,
+      drawSegment: shouldDrawSegment,
     );
   }
 
@@ -313,50 +316,22 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final trackFollowState = ref.watch(trackFollowNotifierProvider);
 
     // Listener dins build (Riverpod obliga)
+    // 1. LISTENER DEL GPS (El que manda)
     ref.listen(gpsManagerProvider, (prev, next) {
-      if (!styleInitialized || mapController == null) return;
-      if (next.position == null) return;
+      if (!styleInitialized || mapController == null || next.position == null)
+        return;
 
-      final pos = next.position!;
-
-      // 🔵 Actualitzar punt blau
-      final isRecording =
-          ref.read(trackProvider).recordingState == RecordingState.recording;
-
-      // Si NO estàs gravant → animem el punt blau amb smooth movement
-      if (!isRecording) {
-        _animateGpsPosition(pos);
-      } else {
-        // Si estàs gravant → el punt blau ja s’anima via trackProvider
-        mapController!.setGeoJsonSource("user_location", {
-          "type": "FeatureCollection",
-          "features": [
-            {
-              "type": "Feature",
-              "geometry": {
-                "type": "Point",
-                "coordinates": [pos.longitude, pos.latitude],
-              },
-            },
-          ],
-        });
-      }
-
-      // 🔄 Centrar mapa si l’usuari no l’ha mogut
-      if (!userMovedMap) {
-        isProgrammaticMove = true;
-        mapController!.animateCamera(CameraUpdate.newLatLng(pos)).then((_) {
-          Future.delayed(const Duration(milliseconds: 300), () {
-            if (mounted) setState(() => isProgrammaticMove = false);
-          });
-        });
-      }
+      // Solo disparamos la animación.
+      // Ella internamente ya sabe si debe centrar la cámara (if !userMovedMap)
+      _animateGpsPosition(next.position!);
     });
 
+    // 2. LISTENER DEL TRACK (El pasivo)
+    // Este código debe estar justo debajo del anterior en tu build
     ref.listen(trackProvider, (previous, next) {
       if (!styleInitialized || mapController == null) return;
 
-      // 1) Si el track s'ha resetejat → esborrem la línia
+      // 1) Si el track se ha reseteado → limpiamos
       if (next.coordinates.isEmpty) {
         mapController!.setGeoJsonSource("track_line", {
           "type": "FeatureCollection",
@@ -365,45 +340,35 @@ class _MapScreenState extends ConsumerState<MapScreen>
         return;
       }
 
-      // 2) Dibuixar la línia del track gravat (sempre)
-      mapController!.setGeoJsonSource("track_line", {
-        "type": "FeatureCollection",
-        "features": [
-          {
-            "type": "Feature",
-            "geometry": {"type": "LineString", "coordinates": next.coordinates},
-          },
-        ],
-      });
+      // 2) PREVENIR EL "EFECTO FLASH"
+      // Si estamos grabando, preparamos una lista que NO tenga el último punto,
+      // ya que ese punto es el "destino" que la animación va a alcanzar poco a poco.
+      List<List<double>> coordinatesToDraw = next.coordinates;
 
-      // 3) Animació suau del darrer segment
-      final isRecording =
-          ref.read(trackProvider).recordingState == RecordingState.recording;
+      bool isRecording = next.recordingState == RecordingState.recording;
+      if (isRecording && next.coordinates.length > 1) {
+        coordinatesToDraw = next.coordinates.sublist(
+          0,
+          next.coordinates.length - 1,
+        );
+      }
 
-      final isFollowing = ref.read(trackFollowNotifierProvider).isFollowing;
-
-      // Només animem si estem gravant i NO seguint un track importat
-      if (isRecording && !isFollowing) {
-        final last = next.coordinates.last;
-        final lon = last[0];
-        final lat = last[1];
-
-        try {
-          animateLastSegment(
-            lat: lat,
-            lon: lon,
-            allCoordinates: next.coordinates,
-            controller: mapController!,
-            userMovedMap: userMovedMap,
-            currentLastPosition: _lastPosition,
-            currentTimer: _animationTimer,
-            setLastPosition: (p) => _lastPosition = p,
-            setTimer: (t) => _animationTimer = t,
-            onAnimate: (val) {
-              if (mounted) setState(() => isProgrammaticMove = val);
+      // 3) Solo dibujamos si NO estamos animando.
+      // Cuando la animación termine (isAnimatingSegment = false), este listener
+      // se disparará de nuevo y dibujará la línea completa definitiva.
+      if (!isAnimatingSegment) {
+        mapController!.setGeoJsonSource("track_line", {
+          "type": "FeatureCollection",
+          "features": [
+            {
+              "type": "Feature",
+              "geometry": {
+                "type": "LineString",
+                "coordinates": coordinatesToDraw,
+              },
             },
-          );
-        } catch (_) {}
+          ],
+        });
       }
     });
 
@@ -735,7 +700,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
                       onPressed: () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => const DebugSimulator(),
+                          builder: (_) =>
+                              const RecordingFollowingSimulatorPage(),
                         ),
                       ),
                       child: Text('Debug'),
@@ -852,15 +818,22 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 state: track.recordingState,
 
                 onStart: () async {
-                  // 1) Flux unificat de permisos
                   final ok = await requestLocationPermissionsUnified(
                     context,
                     ref,
                   );
                   if (!ok) return;
 
-                  // 2) Ara sí → flux complet de gravació
+                  setState(() {
+                    userMovedMap = false;
+                    isProgrammaticMove = true;
+                  });
+
                   await RecordingHandler.start(context, ref, mapController);
+
+                  Future.delayed(const Duration(milliseconds: 300), () {
+                    if (mounted) setState(() => isProgrammaticMove = false);
+                  });
 
                   setState(() => _isPanelExpanded = false);
                 },

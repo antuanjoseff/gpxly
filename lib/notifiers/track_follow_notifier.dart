@@ -125,7 +125,12 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
   // }
 
   void dismissReverseTrackDialog() {
+    // 🔥 Invertim igualment el track
+    ref.read(importedTrackProvider.notifier).reverseTrack();
+
     _reverseDialogShown = false;
+    _reverseDetectionLocked = false;
+
     state = state.copyWith(showReverseTrackDialog: false);
   }
 
@@ -476,11 +481,16 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
   bool _checkIfFinished(ClosestResult closest, double totalPoints) {
     final bool isNearEnd = closest.distance < 15;
     final bool isLastSegment = closest.segmentIndex >= totalPoints - 2;
+
+    // Nou criteri: si estàs molt a prop del final, no cal progressió mínima
+    final bool nearEndOverride = isNearEnd && isLastSegment;
+
     const double minProgressRequired = 100.0;
     final bool hasMinimumProgress =
         _distanceProgressOnTrack >= minProgressRequired;
 
-    return isNearEnd && isLastSegment && hasMinimumProgress;
+    return nearEndOverride ||
+        (isNearEnd && isLastSegment && hasMinimumProgress);
   }
 
   // ------------------------------------------------------------

@@ -1,112 +1,20 @@
-01.- Multi idioma
+Contexto del Proyecto:
+Estamos desarrollando una App de seguimiento y grabación de tracks en Flutter. El estado se gestiona con Riverpod y el mapa con MapLibre.
+Arquitectura Implementada:
 
+    GpsManager (Notifier): Centraliza la recepción de coordenadas. Notifica primero al trackProvider (grabación) y al trackFollowNotifier (seguimiento), y finalmente actualiza su propia posición.
+    MapScreen (UI):
+        Utiliza un "semáforo" visual llamado isAnimatingSegment para bloquear actualizaciones de Riverpod mientras hay una animación en curso.
+        Implementa un Smart Center que permite al usuario mover el mapa manualmente (userMovedMap) sin que la cámara salte de nuevo al GPS, a menos que el usuario esté en modo seguimiento automático.
+    animateLastSegment (Función de Animación):
+        Realiza una interpolación lineal de 10 pasos (500ms) para mover el punto azul y estirar el último segmento de la línea de grabación.
+        Al finalizar la animación de la cámara, espera un Future.delayed antes de liberar los flags de animación para no romper el Smart Center.
 
+Últimos cambios aplicados:
 
-.- botó per mostrar posició actual quan no s'està gravant el track
-.- Obrir arxiu .gpx i seguir-lo¿?
+    Consolidación de Listeners: Se han fusionado los listeners del trackProvider en uno solo.
+    Prevención del "Efecto Flash": En el listener del track, se aplica un sublist(0, length - 1) para ocultar el punto nuevo mientras la animación lo está "estirando", evitando saltos visuales.
+    Simultaneidad: La lógica ahora permite grabar y seguir un track importado al mismo tiempo sin conflictos de renderizado.
 
----------------------------
--- 4. Gestió del temps a loadFromCache
----------------------------
-
-Una observació sobre localAltitudeCorrection:
-He vist que la tens "hardcoded" segons latitud/longitud. Si més endavant vols que el teu RecordingHandler sigui realment universal, podríem moure aquesta lògica a un servei d'API que consulti un Model Digital d'Elevacions (DEM) per obtenir una precisió del 100% a tot el món.
-
----------------------------
--- PROMPT MILLORE GRAFIC
----------------------------
-PROMPT GOOGLE.
-Context del Projecte: Gràfic d'Altimetria en Flutter
-Estructura Base:
-
-    Llibreria: fl_chart per a la línia de perfil GPS.
-    Components: CustomPainters superposats (SelectionPainter i RangeAreaPainter) per a indicadors i àrees seleccionades.
-    Lògica Centralitzada: Classe ChartLogic per gestionar conversions de coordenades píxel a índexs de dades (indexToX, calculateIndexFromX).
-
-Funcionalitats Implementades:
-
-    Mode de Selecció Dual:
-        Drag simple: Un sol clic/arrossegament activa una "needle" de consulta puntual (alçada/distància).
-        Long Press: Activa el mode segment (Range Selector) situant dos indicadors al 25% i 75% del gràfic.
-    Interacció Tàctil Avançada:
-        Implementació de onPanDown i onPanUpdate per "caçar" i arrossegar agulles individuals ja existents.
-        Variable d'estat _draggingNeedle per gestionar quina part del rang s'està movent.
-    Estabilització Visual (Anti-soroll):
-        Lògica de effectiveRange (mínim de 50m) per evitar l'efecte "dents de serra" en terrenys planers.
-        Marge vertical forçat del 10% (superior i inferior) sincronitzat entre gràfic i painters.
-    UI/UX Pro:
-        Tooltips dinàmics: Etiquetes sobre el gràfic que s'amaguen automàticament si les agulles estan massa juntes per evitar col·lisions.
-        Panell d'Estadístiques: _buildSegmentStatsBar en estil "Dark Panel" (Deep Green, tipografia monoespaiada) que mostra distància, temps, velocitat i desnivell acumulat (gain).
-
-Millores Pendents (Roadmap):
-
-    
-    Zoom to Selection: Animació per ampliar el segment seleccionat a tot l'ample del gràfic.
-    
-
--------------------------------------    
--- PROMPT IMPORTAR GPS I FER SEGUIMENT    
-------------------------------------- 
-
-PROMPT:
-
-“Continuem amb la funcionalitat dels waypoints.
-
-Vull implementar tot això pas a pas:
-
-1) Provider de waypoints
-
-    Cada waypoint ha de tenir: nom, lat, lon, trackIndex.
-
-    El trackIndex és l’índex del punt del track en el moment de crear-lo.
-
-    Necessito un provider amb addWaypoint(), removeWaypoint(), clear().
-
-2) Botó al mapa per afegir waypoint
-
-    Un botó flotant o icona al mapa.
-
-    En prémer-lo → obrir un diàleg amb nom suggerit “Punt N”.
-
-    L’usuari pot canviar el nom.
-
-    Acceptar → afegir waypoint.
-
-    Cancel·lar → no fer res.
-
-3) Mostrar waypoints al mapa (MapLibre)
-
-    Afegir un SymbolLayer amb una icona (provisional).
-
-    Cada waypoint ha d’aparèixer al mapa immediatament.
-
-4) Exportació GPX
-
-    Abans del <trk> afegir:
-    <wpt lat="…" lon="…"><name>…</name></wpt>
-
-    Un per cada waypoint.
-
-5) Integració amb el gràfic d’elevacions
-
-    El gràfic NO es filtra.
-
-    Sempre mostra TOT el track.
-
-    Només vull dibuixar un puntet a l’eix X per cada waypoint.
-
-    El punt s’ha de dibuixar a la posició X corresponent al trackIndex.
-
-6) Selecció de rang amb waypoints
-
-    A la llista de waypoints, cada waypoint ha de tenir botó “Inici” i “Final”.
-
-    Quan selecciono un waypoint com a inici → startIndex = trackIndex.
-
-    Quan selecciono un waypoint com a final → endIndex = trackIndex.
-
-    El SelectionPainter ja dibuixa les agulles, així que només cal passar-li startIndex i endIndex.
-
-    NO vull redibuixar el gràfic ni fer subgràfics.
-
-Comencem pel punt 1: crea el provider de waypoints amb l’estructura de dades adequada i les funcions add/remove/clear.”
+Estado Actual:
+La animación es fluida y el Smart Center es estable. El siguiente paso sería verificar la precisión del GPS o añadir nuevas funcionalidades estadísticas al panel inferior.
