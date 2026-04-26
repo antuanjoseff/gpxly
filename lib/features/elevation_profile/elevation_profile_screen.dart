@@ -7,13 +7,16 @@ import 'package:gpxly/features/elevation_profile/painters/selection_painter.dart
 import 'package:gpxly/features/elevation_profile/painters/range_highlight_painter.dart';
 import 'package:gpxly/features/elevation_profile/utils/chart_utils.dart';
 import 'package:gpxly/l10n/app_localizations.dart';
+import 'package:gpxly/models/waypoint.dart';
 import 'package:gpxly/notifiers/imported_track_settings_notifier.dart';
 
 import 'package:gpxly/notifiers/track_notifier.dart';
 import 'package:gpxly/notifiers/imported_track_notifier.dart';
 import 'package:gpxly/notifiers/track_settings_notifier.dart';
+import 'package:gpxly/notifiers/waypoints_notifier.dart';
 import 'package:gpxly/utils/distance_utils.dart';
 import 'package:gpxly/theme/app_colors.dart';
+import 'package:gpxly/widgets/waypoint_button.dart';
 
 enum ActiveHandle { none, start, end }
 
@@ -30,6 +33,8 @@ class _ElevationProfileScreenState
   int? selectedIndexGraph;
   int? selectedIndexStart;
   int? selectedIndexEnd;
+  int? expandedWaypointIndex;
+
   double statsHeight = 120;
 
   ActiveHandle activeHandle = ActiveHandle.none;
@@ -285,6 +290,122 @@ class _ElevationProfileScreenState
       height: 32,
       color: Colors.white24,
       margin: const EdgeInsets.symmetric(horizontal: 6),
+    );
+  }
+
+  void _onShowWaypoint(Waypoint wp) {
+    setState(() {
+      selectedIndexGraph = (selectedIndexGraph == wp.trackIndex)
+          ? null
+          : wp.trackIndex;
+    });
+  }
+
+  void _onSetStartFromWaypoint(Waypoint wp) {
+    setState(() {
+      selectedIndexStart = (selectedIndexStart == wp.trackIndex)
+          ? null
+          : wp.trackIndex;
+      selectedIndexGraph = wp.trackIndex;
+    });
+  }
+
+  void _onSetEndFromWaypoint(Waypoint wp) {
+    setState(() {
+      selectedIndexEnd = (selectedIndexEnd == wp.trackIndex)
+          ? null
+          : wp.trackIndex;
+      selectedIndexGraph = wp.trackIndex;
+    });
+  }
+
+  // 1) Substitueix el teu _buildWaypointsList per aquest:
+  Widget _buildWaypointsList(BuildContext context) {
+    final waypoints = ref.watch(waypointsProvider);
+
+    if (waypoints.isEmpty) return const SizedBox.shrink();
+
+    return GridView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisExtent: 44,
+        crossAxisSpacing: 6,
+        mainAxisSpacing: 6,
+      ),
+      itemCount: waypoints.length,
+      itemBuilder: (_, i) {
+        final wp = waypoints[i];
+
+        return Container(
+          padding: const EdgeInsets.only(left: 10, right: 2),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.black12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withAlpha(8),
+                blurRadius: 3,
+                offset: const Offset(0, 1),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              // Ahora el nombre empieza directamente y tiene más espacio
+              Expanded(
+                child: Text(
+                  wp.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Color(0xFF333333),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+
+              // Botones grandes y ultra-compactos
+              _compactActionBtn(
+                icon: Icons.visibility,
+                active: selectedIndexGraph == wp.trackIndex,
+                activeColor: AppColors.skyBlue,
+                onTap: () => _onShowWaypoint(wp),
+              ),
+              _compactActionBtn(
+                icon: Icons.flag_circle,
+                active: selectedIndexStart == wp.trackIndex,
+                activeColor: AppColors.trackGreen,
+                onTap: () => _onSetStartFromWaypoint(wp),
+              ),
+              _compactActionBtn(
+                icon: Icons.flag,
+                active: selectedIndexEnd == wp.trackIndex,
+                activeColor: AppColors.redAlert,
+                onTap: () => _onSetEndFromWaypoint(wp),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _compactActionBtn({
+    required IconData icon,
+    required bool active,
+    required Color activeColor,
+    required VoidCallback onTap,
+  }) {
+    return IconButton(
+      visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
+      iconSize: 22,
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(minWidth: 24, minHeight: 32),
+      icon: Icon(icon, color: active ? activeColor : Colors.black26),
+      onPressed: onTap,
     );
   }
 
@@ -562,6 +683,11 @@ class _ElevationProfileScreenState
                       Positioned.fill(
                         child: CustomPaint(
                           painter: SelectionPainter(
+                            waypointIndices: ref
+                                .watch(waypointsProvider)
+                                .map((wp) => wp.trackIndex)
+                                .toList(),
+
                             graphX: selectedIndexGraph != null
                                 ? (primaryDists[selectedIndexGraph!] /
                                               primaryDists.last) *
@@ -620,6 +746,7 @@ class _ElevationProfileScreenState
             trackColor,
             importedTrackColor,
           ),
+          Expanded(child: _buildWaypointsList(context)),
         ],
       ),
     );

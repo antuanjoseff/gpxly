@@ -5,6 +5,9 @@ class SelectionPainter extends CustomPainter {
   final double? graphX;
   final int? graphIndex;
 
+  // Waypoints
+  final List<int>? waypointIndices;
+
   // Rang
   final double? startX;
   final int? startIndex;
@@ -44,6 +47,7 @@ class SelectionPainter extends CustomPainter {
     this.secondaryDistances,
     this.secondaryAltitudes,
     this.secondaryGraphNeedleColor,
+    this.waypointIndices,
   });
 
   @override
@@ -76,6 +80,23 @@ class SelectionPainter extends CustomPainter {
     if (startX != null && endX != null) {
       if ((endX! - startX!).abs() < 60) {
         showRangeText = false;
+      }
+    }
+
+    // --- WAYPOINTS ---
+    if (waypointIndices != null && waypointIndices!.isNotEmpty) {
+      final wpPaint = Paint()
+        ..color = Colors.orangeAccent
+        ..style = PaintingStyle.fill;
+
+      for (final idx in waypointIndices!) {
+        if (idx < 0 || idx >= distances.length) continue;
+
+        final double usableWidth = size.width - 48;
+        final double x = (distances[idx] / distances.last) * usableWidth + 24;
+
+        // Puntet a la base del gràfic
+        canvas.drawCircle(Offset(x, xAxisY - 4), 4, wpPaint);
       }
     }
 
@@ -323,6 +344,7 @@ class SelectionPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant SelectionPainter old) {
     return old.graphX != graphX ||
+        old.waypointIndices != waypointIndices ||
         old.startX != startX ||
         old.endX != endX ||
         old.graphIndex != graphIndex ||
