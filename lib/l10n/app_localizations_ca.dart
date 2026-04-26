@@ -195,7 +195,7 @@ class AppLocalizationsCa extends AppLocalizations {
   String get noData => 'Sense dades';
 
   @override
-  String get realTrack => 'Track real';
+  String get recordingTrack => 'Track gravat';
 
   @override
   String get importedTrack => 'Ruta';

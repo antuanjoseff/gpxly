@@ -740,12 +740,13 @@ class _ElevationProfileScreenState
           // 3) LLEGENDA
           // ─────────────────────────────────────────────
           _buildLegend(
-            hasImported,
-            hasReal,
-            primaryIsReal,
-            trackColor,
-            importedTrackColor,
+            hasReal: real.coordinates.isNotEmpty,
+            hasImported: importedTrack?.coordinates.isNotEmpty ?? false,
+            primaryIsReal: primaryIsReal,
+            trackColor: trackColor,
+            importedTrackColor: importedTrackColor,
           ),
+
           Expanded(child: _buildWaypointsList(context)),
         ],
       ),
@@ -753,13 +754,17 @@ class _ElevationProfileScreenState
   }
 }
 
-Widget _buildLegend(
-  bool hasSecondary,
-  bool hasReal,
-  bool primaryIsReal,
-  Color trackColor,
-  Color importedTrackColor,
-) {
+Widget _buildLegend({
+  required bool hasReal,
+  required bool hasImported,
+  required bool primaryIsReal,
+  required Color trackColor,
+  required Color importedTrackColor,
+}) {
+  if (!hasReal && !hasImported) {
+    return const SizedBox.shrink();
+  }
+
   final effectivePrimaryIsReal = hasReal ? primaryIsReal : false;
 
   final primaryLabel = effectivePrimaryIsReal ? "Track real" : "Track importat";
@@ -771,38 +776,45 @@ Widget _buildLegend(
     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
     child: Row(
       children: [
-        Row(
-          children: [
-            Container(
-              width: 14,
-              height: 14,
-              decoration: BoxDecoration(
-                color: trackColor,
-                shape: BoxShape.circle,
-              ),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              primaryLabel,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: AppColors.dark,
-              ),
-            ),
-          ],
-        ),
-
-        const SizedBox(width: 20),
-
-        if (hasSecondary)
+        // PRIMER TRACK (només si existeix)
+        if (hasReal || hasImported)
           Row(
             children: [
               Container(
                 width: 14,
                 height: 14,
                 decoration: BoxDecoration(
-                  color: importedTrackColor,
+                  color: effectivePrimaryIsReal
+                      ? trackColor
+                      : importedTrackColor,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                primaryLabel,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.dark,
+                ),
+              ),
+            ],
+          ),
+
+        const SizedBox(width: 20),
+
+        // SEGON TRACK (només si existeix)
+        if (hasReal && hasImported)
+          Row(
+            children: [
+              Container(
+                width: 14,
+                height: 14,
+                decoration: BoxDecoration(
+                  color: effectivePrimaryIsReal
+                      ? importedTrackColor
+                      : trackColor,
                   shape: BoxShape.circle,
                 ),
               ),

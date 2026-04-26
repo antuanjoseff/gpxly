@@ -51,7 +51,7 @@ class TrackStatsScreen extends ConsumerWidget {
                   flex: 2,
                   child: Center(
                     child: Text(
-                      t.realTrack.toUpperCase(), // "TRACK"
+                      t.recordingTrack.toUpperCase(), // "TRACK"
                       style: const TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.bold,

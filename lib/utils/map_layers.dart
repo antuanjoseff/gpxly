@@ -117,6 +117,7 @@ void updateWaypointsOnMap(
   MapLibreMapController controller,
   List<Waypoint> waypoints,
 ) {
+  print("WAYPOINT UPDATE");
   final features = waypoints.map((wp) {
     return {
       "type": "Feature",

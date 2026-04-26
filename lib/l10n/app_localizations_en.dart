@@ -195,7 +195,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noData => 'No data';
 
   @override
-  String get realTrack => 'Real track';
+  String get recordingTrack => 'Recording gravat';
 
   @override
   String get importedTrack => 'Route';

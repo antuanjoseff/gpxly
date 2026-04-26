@@ -469,11 +469,11 @@ abstract class AppLocalizations {
   /// **'No data'**
   String get noData;
 
-  /// No description provided for @realTrack.
+  /// No description provided for @recordingTrack.
   ///
   /// In en, this message translates to:
-  /// **'Real track'**
-  String get realTrack;
+  /// **'Recording gravat'**
+  String get recordingTrack;
 
   /// No description provided for @importedTrack.
   ///

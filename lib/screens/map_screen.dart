@@ -53,6 +53,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
   double _initialZoom = 14;
   bool isAnimatingSegment = false;
   Timer? _cameraMoveDebounce;
+  bool waypointLayersReady = false;
   DateTime? _lastBackPress;
 
   LatLng? _lastPosition;
@@ -167,71 +168,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
   void _handleStopProcess(BuildContext context, WidgetRef ref) async {
     final prefs = await SharedPreferences.getInstance();
 
-    final result = await showDialog<String>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: const Text("Finalitzar gravació"),
-        content: const Text("Què vols fer amb la gravació actual?"),
-        actions: [
-          Row(
-            children: [
-              // BOTÓ COMPARTIR (icona) — ocupa menys espai
-              Expanded(
-                flex: 1, // 👈 més petit
-                child: SizedBox(
-                  height: 56, // 👈 mateixa alçada
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green.shade800,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    onPressed: () => Navigator.pop(context, "share"),
-                    child: const Icon(Icons.share, size: 26),
-                  ),
-                ),
-              ),
-
-              const SizedBox(width: 12),
-
-              // BOTÓ FINALITZAR (text) — ocupa més espai
-              Expanded(
-                flex: 2, // 👈 més ample
-                child: SizedBox(
-                  height: 56, // 👈 mateixa alçada
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red.shade700,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    onPressed: () => Navigator.pop(context, "finish"),
-                    child: const Text(
-                      "FINALITZAR",
-                      softWrap: false,
-                      overflow: TextOverflow.fade,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-
+    final result = await AppMessages.showStopRecordingDialog(context);
+    if (!mounted) return;
     if (result == null) return;
 
     // Aturem la gravació
@@ -254,24 +192,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
   }
 
   Future<bool?> _askDeleteTrack() {
-    return showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => AlertDialog(
-        title: const Text("Eliminar dades?"),
-        content: const Text("Vols eliminar la informació actual del track?"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text("MANTENIR"),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text("ELIMINAR"),
-          ),
-        ],
-      ),
-    );
+    return AppMessages.showDeleteTrackDialog(context);
   }
 
   bool isConsistentlyIncreasing(List<double> values) {
@@ -363,7 +284,13 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final last = track.coordinates.last;
 
     // 1) Obrim el diàleg amb nom suggerit
-    final name = await AppMessages.showAddWaypointDialog(context, ref);
+    final waypoints = ref.read(waypointsProvider);
+    final suggestedName = "Punt ${waypoints.length + 1}";
+
+    final name = await AppMessages.showAddWaypointDialog(
+      context,
+      suggestedName: suggestedName,
+    );
 
     // Si l’usuari cancel·la → sortim
     if (name == null || name.isEmpty) return;
@@ -438,12 +365,12 @@ class _MapScreenState extends ConsumerState<MapScreen>
     });
 
     ref.listen(waypointsProvider, (prev, next) async {
-      if (mapController != null && styleInitialized) {
-        updateWaypointsOnMap(mapController!, next);
-
-        // 🔥 Animació d’aparició
-        await animateWaypointAppearance(mapController!);
+      if (!styleInitialized || !waypointLayersReady || mapController == null) {
+        return;
       }
+
+      updateWaypointsOnMap(mapController!, next);
+      await animateWaypointAppearance(mapController!);
     });
 
     ref.listen(trackSettingsProvider, (previous, next) {
@@ -685,6 +612,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 onStyleLoadedCallback: () async {
                   await setupUserLocationLayer(mapController!);
                   await setupWaypointLayers(mapController!);
+                  waypointLayersReady = true;
                   styleInitialized = true;
 
                   // Apliquem color i gruix del track triats per l’usuari
@@ -778,17 +706,13 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     ),
 
                     const SizedBox(height: 8),
-                    if (recordingState == RecordingState.recording)
-                      Positioned(
-                        bottom: 160, // ajusta segons el teu layout
-                        right: 16,
-                        child: _buildSquareButton(
-                          icon: Icons.add_location_alt_outlined,
-                          onTap: () => _onAddWaypoint(context, ref),
-                        ),
+                    if (recordingState == RecordingState.recording) ...[
+                      _buildSquareButton(
+                        icon: Icons.add_location_alt_outlined,
+                        onTap: () => _onAddWaypoint(context, ref),
                       ),
-
-                    const SizedBox(height: 8),
+                      const SizedBox(height: 8),
+                    ],
 
                     // BOTÓ DE CENTRAR MAPA
                     if (userMovedMap)
