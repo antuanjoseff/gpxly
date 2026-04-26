@@ -114,6 +114,10 @@
 "followingTitle": "FOLLOWING",
 "recordingTitle": "RECORDING",
 "pauseShort": "Pause",
-"stopShort": "Stop"
+"stopShort": "Stop",
+
+"stopFollowingTitle": "Detener seguimiento",
+"stopFollowingMessage": "¿Quieres detener el seguimiento? Se quitará la ruta del mapa.",
+"stopFollowingConfirm": "DETENER RUTA"
 }
 

@@ -618,6 +618,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'TRACK PAUSED'**
   String get followPaused;
+
+  /// No description provided for @track.
+  ///
+  /// In en, this message translates to:
+  /// **'Ruta'**
+  String get track;
+
+  /// No description provided for @followShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Seguir'**
+  String get followShort;
+
+  /// No description provided for @followingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'SEGUIMIENTO'**
+  String get followingTitle;
+
+  /// No description provided for @recordingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'GRABACIÓN'**
+  String get recordingTitle;
+
+  /// No description provided for @pauseShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Pausa'**
+  String get pauseShort;
+
+  /// No description provided for @stopShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Detener'**
+  String get stopShort;
+
+  /// No description provided for @stopFollowingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop Following'**
+  String get stopFollowingTitle;
+
+  /// No description provided for @stopFollowingMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Do you want to stop following? The route will be removed from the map.'**
+  String get stopFollowingMessage;
+
+  /// No description provided for @stopFollowingConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'STOP ROUTE'**
+  String get stopFollowingConfirm;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

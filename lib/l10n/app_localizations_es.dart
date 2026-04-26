@@ -268,4 +268,31 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get followPaused => 'RUTA EN PAUSA';
+
+  @override
+  String get track => 'Track';
+
+  @override
+  String get followShort => 'Follow';
+
+  @override
+  String get followingTitle => 'FOLLOWING';
+
+  @override
+  String get recordingTitle => 'RECORDING';
+
+  @override
+  String get pauseShort => 'Pause';
+
+  @override
+  String get stopShort => 'Stop';
+
+  @override
+  String get stopFollowingTitle => 'Detener seguimiento';
+
+  @override
+  String get stopFollowingMessage => '¿Quieres detener el seguimiento? Se quitará la ruta del mapa.';
+
+  @override
+  String get stopFollowingConfirm => 'DETENER RUTA';
 }

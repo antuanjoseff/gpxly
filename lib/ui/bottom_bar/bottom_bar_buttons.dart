@@ -5,6 +5,7 @@ import 'package:gpxly/models/track.dart';
 import 'package:gpxly/notifiers/imported_track_notifier.dart';
 import 'package:gpxly/notifiers/track_follow_notifier.dart';
 import 'package:gpxly/theme/app_colors.dart';
+import 'package:gpxly/ui/app_messages.dart';
 import 'package:gpxly/ui/bottom_bar/pressable_scale.dart';
 
 class BottomBarButtons extends ConsumerWidget {
@@ -79,7 +80,7 @@ class BottomBarButtons extends ConsumerWidget {
       return _bigActionButton(
         key: const ValueKey("rec_idle"),
         label: t.startRecording,
-        icon: Icons.play_arrow_rounded, // 👈 Icona típica de "Play" per iniciar
+        icon: Icons.play_arrow_rounded,
         color: Colors.red,
         onTap: onStart,
       );
@@ -133,9 +134,14 @@ class BottomBarButtons extends ConsumerWidget {
       onToggle: () {
         ref.read(trackFollowNotifierProvider.notifier).togglePause();
       },
-      onStop: () {
-        ref.read(trackFollowNotifierProvider.notifier).stopFollowing();
-        ref.read(importedTrackProvider.notifier).clear();
+      onStop: () async {
+        // 🔥 CRIDEM AL DIÀLEG DE CONFIRMACIÓ
+        final confirm = await AppMessages.showStopFollowingDialog(context);
+
+        if (confirm == true) {
+          ref.read(trackFollowNotifierProvider.notifier).stopFollowing();
+          ref.read(importedTrackProvider.notifier).clear();
+        }
       },
     );
   }

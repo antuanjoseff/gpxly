@@ -60,7 +60,7 @@ class AppMessages {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         title: Row(
           children: [
-            const Icon(Icons.history, color: AppColors.mustardYellow),
+            const Icon(Icons.history, color: AppColors.white),
             const SizedBox(width: 10),
             Text(
               t.recoverTrackTitle,
@@ -542,6 +542,58 @@ class AppMessages {
               Navigator.pop(context, value.isEmpty ? null : value);
             },
             child: Text(loc.export),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 7. Diàleg per aturar el seguiment de ruta
+  static Future<bool?> showStopFollowingDialog(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
+
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.tertiary,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        // Cambiamos Row por Column o usamos ListTile para el título
+        title: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(
+              Icons.wrong_location_outlined,
+              color: Colors.white,
+              size: 28,
+            ),
+            const SizedBox(height: 10),
+            Text(
+              t.stopFollowingTitle,
+              softWrap: true, // Permite saltar de línea
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 18, // Ajustamos un poco el tamaño
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          t.stopFollowingMessage,
+          style: const TextStyle(color: Colors.white, fontSize: 14),
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(t.cancel, style: const TextStyle(color: Colors.white)),
+          ),
+          const SizedBox(width: 8),
+          ElevatedButton(
+            style: _buttonStyle(Colors.redAccent),
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(t.stopFollowingConfirm),
           ),
         ],
       ),

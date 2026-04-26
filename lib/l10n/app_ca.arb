@@ -115,6 +115,10 @@
 "followingTitle": "SEGUIMENT",
 "recordingTitle": "GRAVACIÓ",
 "pauseShort": "Pausa",
-"stopShort": "Atura"
+"stopShort": "Atura",
+
+"stopFollowingTitle": "Aturar seguiment",
+"stopFollowingMessage": "Vols aturar el seguiment? Es traurà la ruta del mapa.",
+"stopFollowingConfirm": "ATURAR RUTA"
 
 }

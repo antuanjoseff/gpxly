@@ -114,6 +114,10 @@
 "followingTitle": "SEGUIMIENTO",
 "recordingTitle": "GRABACIÓN",
 "pauseShort": "Pausa",
-"stopShort": "Detener"
+"stopShort": "Detener",
+
+"stopFollowingTitle": "Stop Following",
+"stopFollowingMessage": "Do you want to stop following? The route will be removed from the map.",
+"stopFollowingConfirm": "STOP ROUTE"
 
 }

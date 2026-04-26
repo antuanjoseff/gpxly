@@ -6,6 +6,7 @@ import 'package:gpxly/screens/map_screen.dart';
 import 'package:gpxly/theme/app_theme.dart';
 
 void main() {
+  // El ProviderScope solo debe envolver la raíz una vez
   runApp(const ProviderScope(child: GPXlyApp()));
 }
 
@@ -14,19 +15,17 @@ class GPXlyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ProviderScope(
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        localizationsDelegates: const [
-          AppLocalizations.delegate,
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        supportedLocales: const [Locale('en'), Locale('ca'), Locale('es')],
-        theme: appTheme,
-        home: const MapScreen(),
-      ),
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [Locale('en'), Locale('ca'), Locale('es')],
+      theme: appTheme,
+      home: const MapScreen(),
     );
   }
 }
