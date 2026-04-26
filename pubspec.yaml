@@ -91,6 +91,7 @@ flutter:
     - assets/sound/fireworks.mp3
     - assets/sound/fireworks2.mp3
     - assets/sound/snap_fingers.mp3
+    - assets/icon/waypoint.png
     
 
   #   - images/a_dot_burr.jpeg

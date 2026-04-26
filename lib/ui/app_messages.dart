@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gpxly/l10n/app_localizations.dart';
 import 'package:gpxly/notifiers/elevation_progress_notifier.dart';
 import 'package:gpxly/notifiers/track_follow_notifier.dart';
+import 'package:gpxly/notifiers/waypoints_notifier.dart';
 import '../theme/app_colors.dart';
 
 class AppMessages {
@@ -18,9 +19,12 @@ class AppMessages {
   static void showExitWarning(BuildContext context) {
     final t = AppLocalizations.of(context)!;
 
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(t.exitWarning)));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(t.exitWarning),
+        backgroundColor: Colors.green.shade700,
+      ),
+    );
   }
 
   // 2. Diàleg de GPS desactivat
@@ -594,6 +598,85 @@ class AppMessages {
             style: _buttonStyle(Colors.redAccent),
             onPressed: () => Navigator.pop(context, true),
             child: Text(t.stopFollowingConfirm),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 8. Diàleg per afegir un waypoint
+  static Future<String?> showAddWaypointDialog(
+    BuildContext context,
+    WidgetRef ref,
+  ) {
+    final t = AppLocalizations.of(context)!;
+
+    final count = ref.read(waypointsProvider).length;
+    final suggestedName = "Punt ${count + 1}";
+    final controller = TextEditingController(text: suggestedName);
+
+    return showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.tertiary,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+
+        title: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(
+              Icons.add_location_alt_outlined,
+              color: AppColors.mustardYellow,
+              size: 28,
+            ),
+            const SizedBox(height: 10),
+            Text(
+              t.waypointNameTitle,
+              softWrap: true,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
+            ),
+          ],
+        ),
+
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          style: const TextStyle(color: Colors.white),
+          decoration: InputDecoration(
+            hintText: t.waypointNameHint,
+            hintStyle: const TextStyle(color: Colors.white54),
+            enabledBorder: const UnderlineInputBorder(
+              borderSide: BorderSide(color: Colors.white24),
+            ),
+            focusedBorder: const UnderlineInputBorder(
+              borderSide: BorderSide(color: AppColors.skyBlue),
+            ),
+          ),
+        ),
+
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, null),
+            child: Text(
+              t.cancel,
+              style: TextStyle(color: Colors.white.withAlpha(150)),
+            ),
+          ),
+          const SizedBox(width: 8),
+          ElevatedButton(
+            style: _buttonStyle(AppColors.skyBlue),
+            onPressed: () {
+              final value = controller.text.trim();
+              Navigator.pop(context, value.isEmpty ? null : value);
+            },
+            child: Text(t.ok),
           ),
         ],
       ),

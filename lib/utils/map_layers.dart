@@ -1,6 +1,8 @@
 import 'dart:typed_data';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:gpxly/models/waypoint.dart';
 import 'package:gpxly/theme/app_colors.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 
@@ -13,7 +15,7 @@ Future<void> setupUserLocationLayer(MapLibreMapController controller) async {
   // -------------------------
   await controller.addSource(
     "imported_track",
-    GeojsonSourceProperties(
+    const GeojsonSourceProperties(
       data: {"type": "FeatureCollection", "features": []},
     ),
   );
@@ -36,7 +38,7 @@ Future<void> setupUserLocationLayer(MapLibreMapController controller) async {
   // -------------------------
   await controller.addSource(
     "track_line",
-    GeojsonSourceProperties(
+    const GeojsonSourceProperties(
       data: {"type": "FeatureCollection", "features": []},
     ),
   );
@@ -66,7 +68,7 @@ Future<void> setupUserLocationLayer(MapLibreMapController controller) async {
   // -------------------------
   await controller.addSource(
     "user_location",
-    GeojsonSourceProperties(
+    const GeojsonSourceProperties(
       data: {"type": "FeatureCollection", "features": []},
     ),
   );
@@ -109,6 +111,72 @@ void updateMapPosition(
       onAnimate(false);
     });
   }
+}
+
+void updateWaypointsOnMap(
+  MapLibreMapController controller,
+  List<Waypoint> waypoints,
+) {
+  final features = waypoints.map((wp) {
+    return {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [wp.lon, wp.lat],
+      },
+      "properties": {"name": wp.name},
+    };
+  }).toList();
+
+  controller.setGeoJsonSource('waypoints_source', {
+    "type": "FeatureCollection",
+    "features": features,
+  });
+}
+
+Future<void> animateWaypointAppearance(MapLibreMapController controller) async {
+  const int steps = 10;
+  const Duration stepDuration = Duration(milliseconds: 20);
+
+  for (int i = 0; i <= steps; i++) {
+    final double t = i / steps;
+
+    await controller.setLayerProperties(
+      'waypoints_layer',
+      SymbolLayerProperties(
+        iconSize: 0.05 + (0.25 * t), // 0.05 → 0.30
+        iconOpacity: t,
+      ),
+    );
+
+    await Future.delayed(stepDuration);
+  }
+}
+
+Future<void> setupWaypointLayers(MapLibreMapController controller) async {
+  final ByteData wpBytes = await rootBundle.load('assets/icon/waypoint.png');
+  final Uint8List wpIcon = wpBytes.buffer.asUint8List();
+  await controller.addImage('waypoint_icon', wpIcon);
+
+  await controller.addSource(
+    'waypoints_source',
+    const GeojsonSourceProperties(
+      data: {"type": "FeatureCollection", "features": []},
+    ),
+  );
+
+  await controller.addLayer(
+    'waypoints_source',
+    'waypoints_layer',
+    const SymbolLayerProperties(
+      iconImage: 'waypoint_icon',
+      iconSize: 0.05,
+      iconOpacity: 0.0,
+      iconAllowOverlap: true,
+      iconIgnorePlacement: true,
+      iconAnchor: "bottom",
+    ),
+  );
 }
 
 /// Crea un cercle blau com a icona del punt de l’usuari

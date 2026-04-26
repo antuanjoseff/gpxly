@@ -118,6 +118,8 @@
 
 "stopFollowingTitle": "Stop Following",
 "stopFollowingMessage": "Do you want to stop following? The route will be removed from the map.",
-"stopFollowingConfirm": "STOP ROUTE"
+"stopFollowingConfirm": "STOP ROUTE",
 
+"waypointNameTitle": "Waypoint name",
+"waypointNameHint": "Enter a name"
 }

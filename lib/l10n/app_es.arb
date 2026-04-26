@@ -118,6 +118,9 @@
 
 "stopFollowingTitle": "Detener seguimiento",
 "stopFollowingMessage": "¿Quieres detener el seguimiento? Se quitará la ruta del mapa.",
-"stopFollowingConfirm": "DETENER RUTA"
+"stopFollowingConfirm": "DETENER RUTA",
+
+"waypointNameTitle": "Nombre del waypoint",
+"waypointNameHint": "Introduce un nombre"
 }
 

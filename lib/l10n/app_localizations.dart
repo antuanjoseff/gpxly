@@ -672,6 +672,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'STOP ROUTE'**
   String get stopFollowingConfirm;
+
+  /// No description provided for @waypointNameTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Waypoint name'**
+  String get waypointNameTitle;
+
+  /// No description provided for @waypointNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a name'**
+  String get waypointNameHint;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

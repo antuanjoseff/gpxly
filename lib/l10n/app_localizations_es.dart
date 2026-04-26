@@ -295,4 +295,10 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get stopFollowingConfirm => 'DETENER RUTA';
+
+  @override
+  String get waypointNameTitle => 'Nombre del waypoint';
+
+  @override
+  String get waypointNameHint => 'Introduce un nombre';
 }

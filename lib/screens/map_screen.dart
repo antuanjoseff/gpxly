@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gpxly/features/elevation_profile/elevation_profile_screen.dart';
 import 'package:gpxly/models/track.dart';
+import 'package:gpxly/models/waypoint.dart';
 import 'package:gpxly/notifiers/gps_speed_notifier.dart';
 import 'package:gpxly/notifiers/imported_track_notifier.dart';
 import 'package:gpxly/notifiers/imported_track_settings_notifier.dart';
@@ -11,6 +12,7 @@ import 'package:gpxly/notifiers/permissions_notifier.dart';
 import 'package:gpxly/notifiers/track_follow_notifier.dart';
 import 'package:gpxly/notifiers/track_notifier.dart';
 import 'package:gpxly/notifiers/track_settings_notifier.dart';
+import 'package:gpxly/notifiers/waypoints_notifier.dart';
 import 'package:gpxly/screens/settings/settings_screen.dart';
 import 'package:gpxly/screens/stats_screen.dart';
 
@@ -351,9 +353,38 @@ class _MapScreenState extends ConsumerState<MapScreen>
     );
   }
 
+  void _onAddWaypoint(BuildContext context, WidgetRef ref) async {
+    final track = ref.read(trackProvider);
+
+    // Si no hi ha punts → no fem res
+    if (track.coordinates.isEmpty) return;
+
+    // Última posició del track
+    final last = track.coordinates.last;
+
+    // 1) Obrim el diàleg amb nom suggerit
+    final name = await AppMessages.showAddWaypointDialog(context, ref);
+
+    // Si l’usuari cancel·la → sortim
+    if (name == null || name.isEmpty) return;
+
+    // 2) Creem el waypoint
+    final wp = Waypoint(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      name: name,
+      lat: last[1],
+      lon: last[0],
+      trackIndex: track.coordinates.length - 1,
+    );
+
+    // 3) Guardem al provider
+    ref.read(waypointsProvider.notifier).add(wp);
+  }
+
   @override
   Widget build(BuildContext context) {
     final track = ref.watch(trackProvider);
+    final recordingState = track.recordingState;
     final trackSettings = ref.watch(trackSettingsProvider);
     final importedTrack = ref.watch(importedTrackProvider);
     final hasImportedTrack =
@@ -404,6 +435,15 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
       // SI NO ESTAMOS GRABANDO (ej. pausa o stop): Pintamos normal.
       _updateTrackLineSource(next.coordinates);
+    });
+
+    ref.listen(waypointsProvider, (prev, next) async {
+      if (mapController != null && styleInitialized) {
+        updateWaypointsOnMap(mapController!, next);
+
+        // 🔥 Animació d’aparició
+        await animateWaypointAppearance(mapController!);
+      }
     });
 
     ref.listen(trackSettingsProvider, (previous, next) {
@@ -644,6 +684,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 },
                 onStyleLoadedCallback: () async {
                   await setupUserLocationLayer(mapController!);
+                  await setupWaypointLayers(mapController!);
                   styleInitialized = true;
 
                   // Apliquem color i gruix del track triats per l’usuari
@@ -737,6 +778,17 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     ),
 
                     const SizedBox(height: 8),
+                    if (recordingState == RecordingState.recording)
+                      Positioned(
+                        bottom: 160, // ajusta segons el teu layout
+                        right: 16,
+                        child: _buildSquareButton(
+                          icon: Icons.add_location_alt_outlined,
+                          onTap: () => _onAddWaypoint(context, ref),
+                        ),
+                      ),
+
+                    const SizedBox(height: 8),
 
                     // BOTÓ DE CENTRAR MAPA
                     if (userMovedMap)
@@ -762,10 +814,11 @@ class _MapScreenState extends ConsumerState<MapScreen>
                                 Future.delayed(
                                   const Duration(milliseconds: 300),
                                   () {
-                                    if (mounted)
+                                    if (mounted) {
                                       setState(
                                         () => isProgrammaticMove = false,
                                       );
+                                    }
                                   },
                                 );
                               });

@@ -119,6 +119,9 @@
 
 "stopFollowingTitle": "Aturar seguiment",
 "stopFollowingMessage": "Vols aturar el seguiment? Es traurà la ruta del mapa.",
-"stopFollowingConfirm": "ATURAR RUTA"
+"stopFollowingConfirm": "ATURAR RUTA",
+
+"waypointNameTitle": "Nom del waypoint",
+"waypointNameHint": "Introdueix un nom"
 
 }

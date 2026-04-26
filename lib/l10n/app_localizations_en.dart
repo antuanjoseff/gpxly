@@ -295,4 +295,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get stopFollowingConfirm => 'STOP ROUTE';
+
+  @override
+  String get waypointNameTitle => 'Waypoint name';
+
+  @override
+  String get waypointNameHint => 'Enter a name';
 }
