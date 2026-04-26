@@ -13,8 +13,7 @@ import 'package:gpxly/notifiers/track_notifier.dart';
 import 'package:gpxly/notifiers/track_settings_notifier.dart';
 import 'package:gpxly/screens/settings/settings_screen.dart';
 import 'package:gpxly/screens/stats_screen.dart';
-import 'package:gpxly/screens/ux_google2.dart'
-    show RecordingFollowingSimulatorPage;
+
 import 'package:gpxly/services/gps_manager.dart';
 import 'package:gpxly/services/gpx_import_flow.dart';
 import 'package:gpxly/services/location_permission_flow.dart';
@@ -281,16 +280,25 @@ class _MapScreenState extends ConsumerState<MapScreen>
   }
 
   void _animateGpsPosition(LatLng newPos) {
+    // 1. Bloqueamos movimientos externos
     setState(() => isProgrammaticMove = true);
 
-    final isRecording =
-        ref.read(trackProvider).recordingState == RecordingState.recording;
-    final shouldDrawSegment = isRecording;
+    final trackData = ref.read(trackProvider);
+    final isRecording = trackData.recordingState == RecordingState.recording;
+    final coords = trackData.coordinates;
 
+    // 2. TRUCO CLAVE: Antes de empezar la animación, forzamos el dibujo
+    // de la línea SIN el último punto que acaba de llegar.
+    // Esto elimina el "salto" visual del que hablabas.
+    if (isRecording && coords.length > 1) {
+      _updateTrackLineSource(coords.sublist(0, coords.length - 1));
+    }
+
+    // 3. Ejecutamos la animación (que irá añadiendo el punto interpolado)
     animateLastSegment(
       lat: newPos.latitude,
       lon: newPos.longitude,
-      allCoordinates: ref.read(trackProvider).coordinates,
+      allCoordinates: coords, // Pasamos la lista completa
       controller: mapController!,
       userMovedMap: userMovedMap,
       currentLastPosition: _lastPosition,
@@ -301,8 +309,45 @@ class _MapScreenState extends ConsumerState<MapScreen>
         if (mounted) setState(() => isProgrammaticMove = isAnimating);
       },
       overrideDrawPoint: null,
-      overrideDrawLine: null,
-      drawSegment: shouldDrawSegment,
+      overrideDrawLine: (animatedCoords) =>
+          _updateTrackLineSource(animatedCoords),
+      drawSegment: isRecording,
+    );
+  }
+
+  void _updateTrackLineSource(List<List<double>> coords) {
+    if (mapController == null) return;
+    mapController!.setGeoJsonSource("track_line", {
+      "type": "FeatureCollection",
+      "features": [
+        {
+          "type": "Feature",
+          "geometry": {"type": "LineString", "coordinates": coords},
+        },
+      ],
+    });
+  }
+
+  Widget _buildSquareButton({
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 52, // 🎯 Nova amplada de la brúixola
+        height: 52, // 🎯 Quadrat perfecte
+        decoration: BoxDecoration(
+          color: AppColors.tertiary,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white10),
+        ),
+        child: Icon(
+          icon,
+          color: Colors.white,
+          size: 26, // 🎯 Una mica més petita per la nova mida de 52px
+        ),
+      ),
     );
   }
 
@@ -348,42 +393,17 @@ class _MapScreenState extends ConsumerState<MapScreen>
     });
 
     // 2. LISTENER DEL TRACK (El pasivo)
-    // Este código debe estar justo debajo del anterior en tu build
     ref.listen(trackProvider, (previous, next) {
       if (!styleInitialized || mapController == null) return;
 
-      if (next.coordinates.isEmpty) {
-        mapController!.setGeoJsonSource("track_line", {
-          "type": "FeatureCollection",
-          "features": [],
-        });
-        return;
-      }
+      final isRecording = next.recordingState == RecordingState.recording;
 
-      bool isRecording = next.recordingState == RecordingState.recording;
-      List<List<double>> coordinatesToDraw = next.coordinates;
+      // SI ESTAMOS GRABANDO: No pintamos desde aquí.
+      // Delegamos el dibujo a la función _animateGpsPosition que se dispara por el GPS.
+      if (isRecording) return;
 
-      // Mientras grabamos, dibujamos siempre hasta el penúltimo.
-      // El último punto es el "objetivo" al que el punto azul está viajando.
-      if (isRecording && next.coordinates.length > 1) {
-        coordinatesToDraw = next.coordinates.sublist(
-          0,
-          next.coordinates.length - 1,
-        );
-      }
-
-      mapController!.setGeoJsonSource("track_line", {
-        "type": "FeatureCollection",
-        "features": [
-          {
-            "type": "Feature",
-            "geometry": {
-              "type": "LineString",
-              "coordinates": coordinatesToDraw,
-            },
-          },
-        ],
-      });
+      // SI NO ESTAMOS GRABANDO (ej. pausa o stop): Pintamos normal.
+      _updateTrackLineSource(next.coordinates);
     });
 
     ref.listen(trackSettingsProvider, (previous, next) {
@@ -560,14 +580,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 ),
 
                 actions: [
-                  // 🔥 Píndola de gravació
-                  RecordingStatusBar(
-                    state: track.recordingState,
-                    duration: track.duration,
-                  ),
-
-                  const SizedBox(width: 12),
-
                   // Botó de settings
                   IconButton(
                     visualDensity: VisualDensity.compact,
@@ -681,12 +693,14 @@ class _MapScreenState extends ConsumerState<MapScreen>
               // -------------------------
               // PÍNDOLA FLOTANT (CENTRAT DALT)
               // -------------------------
-              const Positioned(
+              Positioned(
                 top: 10,
                 left: 10,
-                child: CompassAltitudeScaleRow(),
+                child: RecordingStatusBar(
+                  state: track.recordingState,
+                  duration: track.duration,
+                ),
               ),
-
               // -------------------------
               // COLUMNA DE BOTONS SUPERIOR DRETA
               // -------------------------
@@ -695,63 +709,42 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 right: 12,
                 child: Column(
                   children: [
-                    // NOU: BOTÓ DE PERFIL D'ELEVACIÓ
-                    GestureDetector(
+                    const CompassScalePanel(), // Aquest ja fa 62px d'ample
+                    const SizedBox(height: 8),
+
+                    // BOTÓ DE PERFIL D'ELEVACIÓ
+                    _buildSquareButton(
+                      icon: Icons.terrain_outlined,
                       onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => const ElevationProfileScreen(),
                         ),
                       ),
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: AppColors.tertiary,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.white10),
-                        ),
-                        child: const Icon(
-                          Icons.terrain_outlined, // Icona de muntanya/relleu
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                      ),
                     ),
+
                     const SizedBox(height: 8),
+
                     // BOTÓ DE DADES (ESTADÍSTIQUES)
-                    GestureDetector(
+                    _buildSquareButton(
+                      icon: Icons.bar_chart,
                       onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => const TrackStatsScreen(),
                         ),
                       ),
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color:
-                              AppColors.tertiary, // Mateix fons que la píndola
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.white10),
-                        ),
-                        child: const Icon(
-                          Icons.bar_chart,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                      ),
                     ),
 
                     const SizedBox(height: 8),
 
                     // BOTÓ DE CENTRAR MAPA
-                    // BOTÓ DE CENTRAR MAPA
                     if (userMovedMap)
-                      GestureDetector(
+                      _buildSquareButton(
+                        icon: Icons.gps_fixed,
                         onTap: () {
                           final gps = ref.read(gpsManagerProvider);
                           if (gps.position == null) return;
-
                           final pos = gps.position!;
 
                           setState(() {
@@ -769,32 +762,19 @@ class _MapScreenState extends ConsumerState<MapScreen>
                                 Future.delayed(
                                   const Duration(milliseconds: 300),
                                   () {
-                                    if (mounted) {
+                                    if (mounted)
                                       setState(
                                         () => isProgrammaticMove = false,
                                       );
-                                    }
                                   },
                                 );
                               });
                         },
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: AppColors.tertiary,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.white10),
-                          ),
-                          child: const Icon(
-                            Icons.gps_fixed,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                        ),
                       ),
                   ],
                 ),
               ),
+
               Align(
                 alignment: Alignment.bottomCenter,
                 child: _fullScreen

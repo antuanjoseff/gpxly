@@ -39,6 +39,47 @@ class TrackStatsScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          // --- CAPÇALERA DE COLUMNES ---
+          Padding(
+            padding: const EdgeInsets.only(
+              bottom: 8,
+              left: 54,
+            ), // Alineat amb els valors
+            child: Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: Center(
+                    child: Text(
+                      t.realTrack.toUpperCase(), // "TRACK"
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ),
+                ),
+                if (hasImported) ...[
+                  const SizedBox(width: 8),
+                  Expanded(
+                    flex: 2,
+                    child: Center(
+                      child: Text(
+                        t.importedTrack.toUpperCase(), // "RUTA"
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+
           _buildStatTile(
             icon: Icons.timer,
             label: t.statTime,
@@ -127,16 +168,21 @@ class TrackStatsScreen extends ConsumerWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center, // Centrat verticalment
           children: [
-            _iconLabelColumn(icon, label),
+            SizedBox(
+              width: 42, // Fix per alinear icona i label
+              child: _iconLabelColumn(icon, label),
+            ),
 
-            const SizedBox(width: 16),
+            const SizedBox(width: 12),
 
             Expanded(
               flex: 2,
               child: _trackValueBox(
-                color: AppColors.mustardYellow.withOpacity(0.25),
+                color: AppColors.trackGreen.withAlpha(
+                  64,
+                ), // canvi a trackGreen + Alpha
                 value: value1,
               ),
             ),
@@ -146,7 +192,7 @@ class TrackStatsScreen extends ConsumerWidget {
               Expanded(
                 flex: 2,
                 child: _trackValueBox(
-                  color: Colors.lightBlueAccent.withOpacity(0.25),
+                  color: AppColors.primary.withAlpha(100), // canvi a Alpha
                   value: value2,
                 ),
               ),
@@ -159,13 +205,15 @@ class TrackStatsScreen extends ConsumerWidget {
 
   Widget _iconLabelColumn(IconData icon, String label) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, color: AppColors.dark, size: 22),
-        const SizedBox(height: 4),
+        Icon(icon, color: AppColors.dark, size: 20),
+        const SizedBox(height: 2),
         Text(
           label,
+          textAlign: TextAlign.center,
           style: const TextStyle(
-            fontSize: 12,
+            fontSize: 10,
             fontWeight: FontWeight.bold,
             color: AppColors.dark,
           ),
@@ -176,7 +224,7 @@ class TrackStatsScreen extends ConsumerWidget {
 
   Widget _trackValueBox({required Color color, required String value}) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(8),
@@ -185,7 +233,7 @@ class TrackStatsScreen extends ConsumerWidget {
         child: Text(
           value,
           style: const TextStyle(
-            fontSize: 18,
+            fontSize: 16,
             fontWeight: FontWeight.w900,
             fontFamily: 'monospace',
             color: AppColors.dark,

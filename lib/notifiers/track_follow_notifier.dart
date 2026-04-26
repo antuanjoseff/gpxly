@@ -94,13 +94,20 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
   }
 
   void reverseImportedTrack() {
+    // 1. Invertimos las coordenadas en el almacén (Provider)
     ref.read(importedTrackProvider.notifier).reverseTrack();
 
-    // Només reiniciem la detecció de reversed
+    // 2. REINICIO CRÍTICO DE MEMORIA
+    _lastUserPositions.clear(); // <--- OBLIGATORIO: borra el rumbo antiguo
+    _lastProjectedPoint =
+        null; // <--- Evita saltos de distancia en el siguiente tick
+    _lastDistances.clear(); // <--- Limpia el histórico de "alejamiento"
+
+    // 3. Flags de UI
     _reverseDialogShown = false;
     _reverseDetectionLocked = false;
 
-    // Tanquem el diàleg
+    // 4. Actualizamos estado
     state = state.copyWith(showReverseTrackDialog: false);
   }
 

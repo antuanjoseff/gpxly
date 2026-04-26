@@ -78,7 +78,7 @@ void animateLastSegment({
       t.cancel();
       setLastPosition(newPos);
       setTimer(null);
-
+      _updateTrackLineSource(controller, allCoordinates, overrideDrawLine);
       // Si el usuario NO ha movido el mapa manualmente, centramos la cámara
       if (!userMovedMap) {
         controller.animateCamera(CameraUpdate.newLatLng(newPos)).then((_) {

@@ -491,7 +491,7 @@ class AppMessages {
           ElevatedButton(
             style: _buttonStyle(AppColors.skyBlue),
             onPressed: () => Navigator.pop(context, true),
-            child: Text(t.reverseTrackConfirm),
+            child: Text(t.ok),
           ),
         ],
       ),

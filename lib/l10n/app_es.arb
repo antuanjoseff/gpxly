@@ -107,7 +107,13 @@
 "recording": "GRABANDO",
 "paused": "PAUSADO",
 "following": "SIGUIENDO",
-"followPaused": "RUTA EN PAUSA"
+"followPaused": "RUTA EN PAUSA",
 
+"track": "Track",
+"followShort": "Follow",
+"followingTitle": "FOLLOWING",
+"recordingTitle": "RECORDING",
+"pauseShort": "Pause",
+"stopShort": "Stop"
 }
 

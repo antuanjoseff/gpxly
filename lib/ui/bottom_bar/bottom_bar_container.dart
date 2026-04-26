@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gpxly/l10n/app_localizations.dart'; // 👈 AFEGIT PER L10N
 import 'package:gpxly/models/track.dart';
 import 'package:gpxly/notifiers/track_follow_notifier.dart';
+import 'package:gpxly/theme/app_colors.dart';
 import 'bottom_bar_buttons.dart';
 
 class BottomBarContainer extends ConsumerWidget {
@@ -101,7 +102,7 @@ class BottomBarContainer extends ConsumerWidget {
                                 ? t.followPaused
                                       .toUpperCase() // 👈 MULTILANG
                                 : t.following.toUpperCase(), // 👈 MULTILANG
-                            color: Colors.blue,
+                            color: AppColors.deepGreen,
                             showDot: isFollowingTrack && !isFollowPaused,
                           ),
                         ],

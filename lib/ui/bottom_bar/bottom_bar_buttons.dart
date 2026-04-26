@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gpxly/l10n/app_localizations.dart';
 import 'package:gpxly/models/track.dart';
 import 'package:gpxly/notifiers/imported_track_notifier.dart';
 import 'package:gpxly/notifiers/track_follow_notifier.dart';
+import 'package:gpxly/theme/app_colors.dart';
 import 'package:gpxly/ui/bottom_bar/pressable_scale.dart';
 
 class BottomBarButtons extends ConsumerWidget {
@@ -26,8 +28,6 @@ class BottomBarButtons extends ConsumerWidget {
   });
 
   @override
-  // ... resta del codi igual fins al build
-  @override
   Widget build(BuildContext context, WidgetRef ref) {
     final followState = ref.watch(trackFollowNotifierProvider);
     final imported = ref.watch(importedTrackProvider);
@@ -40,7 +40,7 @@ class BottomBarButtons extends ConsumerWidget {
           Expanded(
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 300),
-              child: _buildRecordingSlot(),
+              child: _buildRecordingSlot(context),
             ),
           ),
 
@@ -57,10 +57,11 @@ class BottomBarButtons extends ConsumerWidget {
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 300),
               child: _buildFollowingSlot(
+                context,
                 ref,
                 hasImported,
                 followState.isFollowing,
-                followState.isPaused, // 👈 PASSEM L'ESTAT DE PAUSA AQUÍ
+                followState.isPaused,
               ),
             ),
           ),
@@ -69,20 +70,47 @@ class BottomBarButtons extends ConsumerWidget {
     );
   }
 
-  // ... _buildRecordingSlot es queda igual
+  // --- GRAVACIÓ ---
+  // --- GRAVACIÓ (Columna Esquerra) ---
+  Widget _buildRecordingSlot(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
 
+    if (state == RecordingState.idle) {
+      return _bigActionButton(
+        key: const ValueKey("rec_idle"),
+        label: t.startRecording,
+        icon: Icons.play_arrow_rounded, // 👈 Icona típica de "Play" per iniciar
+        color: Colors.red,
+        onTap: onStart,
+      );
+    }
+
+    return _activeControlUI(
+      key: const ValueKey("rec_active"),
+      title: t.recording,
+      isPaused: state == RecordingState.paused,
+      color: Colors.red,
+      onToggle: state == RecordingState.recording ? onPause : onResume,
+      onStop: onStop,
+    );
+  }
+
+  // --- SEGUIMENT (Columna Dreta) ---
   Widget _buildFollowingSlot(
+    BuildContext context,
     WidgetRef ref,
     bool hasImported,
     bool isFollowing,
-    bool isFollowPaused, // 👈 AFEGIM EL PARÀMETRE AQUÍ
+    bool isFollowPaused,
   ) {
+    final t = AppLocalizations.of(context)!;
+
     if (!hasImported) {
       return _bigActionButton(
         key: const ValueKey("foll_no_track"),
-        label: "Ruta",
+        label: t.importedTrack,
         icon: Icons.file_upload,
-        color: Colors.blue,
+        color: AppColors.deepGreen,
         onTap: onImportTrack,
       );
     }
@@ -90,21 +118,19 @@ class BottomBarButtons extends ConsumerWidget {
     if (!isFollowing) {
       return _bigActionButton(
         key: const ValueKey("foll_has_track"),
-        label: "Seguir",
-        icon: Icons.play_arrow,
-        color: Colors.blue,
+        label: t.follow,
+        icon: Icons.navigation_rounded, // 👈 Manté la icona de navegació
+        color: AppColors.deepGreen,
         onTap: onFollowTrack,
       );
     }
 
-    // 3. Siguiendo ruta activamente
     return _activeControlUI(
       key: const ValueKey("foll_active"),
-      title: "SEGUIMENT",
-      isPaused: isFollowPaused, // 👈 ARA JA RECONEIX LA VARIABLE
-      color: Colors.blue,
+      title: t.following,
+      isPaused: isFollowPaused,
+      color: AppColors.deepGreen,
       onToggle: () {
-        // 👈 CONNECTEM L'ACCIÓ DE PAUSAR
         ref.read(trackFollowNotifierProvider.notifier).togglePause();
       },
       onStop: () {
@@ -114,33 +140,49 @@ class BottomBarButtons extends ConsumerWidget {
     );
   }
 
-  // ... resta de components UI igual
-
-  // Lógica de los botones de Grabación
-  Widget _buildRecordingSlot() {
-    if (state == RecordingState.idle) {
-      return _bigActionButton(
-        key: const ValueKey("rec_idle"),
-        label: "Gravar",
-        icon: Icons.fiber_manual_record,
-        color: Colors.red,
-        onTap: onStart,
-      );
-    }
-    return _activeControlUI(
-      key: const ValueKey("rec_active"),
-      title: "GRAVACIÓ",
-      isPaused: state == RecordingState.paused,
-      color: Colors.red,
-      onToggle: state == RecordingState.recording ? onPause : onResume,
-      onStop: onStop,
+  // --- Lògica d'icones als controls de pausa ---
+  Widget _activeControlUI({
+    required Key key,
+    required String title,
+    required bool isPaused,
+    required Color color,
+    required VoidCallback onToggle,
+    required VoidCallback onStop,
+  }) {
+    return Column(
+      key: key,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+            color: Colors.grey,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _circleButton(
+              // Quan està en pausa, mostrem Play per a gravació i Navegació per a seguiment
+              icon: isPaused
+                  ? (color == Colors.red
+                        ? Icons.play_arrow_rounded
+                        : Icons.navigation_rounded)
+                  : Icons.pause,
+              color: color,
+              onTap: onToggle,
+            ),
+            _circleButton(icon: Icons.stop, color: color, onTap: onStop),
+          ],
+        ),
+      ],
     );
   }
 
-  // Lógica de los botones de Seguimiento (CON TU LÓGICA DE RESET)
-
-  // --- COMPONENTES UI (Tu estilo visual solicitado) ---
-
+  // --- COMPONENTS UI ---
   Widget _bigActionButton({
     required Key key,
     required String label,
@@ -169,42 +211,6 @@ class BottomBarButtons extends ConsumerWidget {
     );
   }
 
-  Widget _activeControlUI({
-    required Key key,
-    required String title,
-    required bool isPaused,
-    required Color color,
-    required VoidCallback onToggle,
-    required VoidCallback onStop,
-  }) {
-    return Column(
-      key: key,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 10,
-            fontWeight: FontWeight.bold,
-            color: Colors.grey,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            _circleButton(
-              icon: isPaused ? Icons.play_arrow : Icons.pause,
-              color: color,
-              onTap: onToggle,
-            ),
-            _circleButton(icon: Icons.stop, color: color, onTap: onStop),
-          ],
-        ),
-      ],
-    );
-  }
-
   Widget _circleButton({
     required IconData icon,
     required Color color,
@@ -216,7 +222,7 @@ class BottomBarButtons extends ConsumerWidget {
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: color.withOpacity(0.1),
+          color: color.withAlpha(26), // 0.1 → 26
         ),
         child: Icon(icon, color: color, size: 24),
       ),

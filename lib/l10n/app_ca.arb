@@ -105,9 +105,16 @@
 "gpxFilenameLabel": "Nom del fitxer",
 "gpxFilenameHint": "Introdueix el nom del fitxer",
 
-  "recording": "GRAVANT",
-  "paused": "PAUSAT",
-  "following": "SEGUINT",
-  "followPaused": "PAUSA RUTA"
+"recording": "GRAVANT",
+"paused": "PAUSAT",
+"following": "SEGUINT",
+"followPaused": "PAUSA RUTA",
+
+"track": "Ruta",
+"followShort": "Seguir",
+"followingTitle": "SEGUIMENT",
+"recordingTitle": "GRAVACIÓ",
+"pauseShort": "Pausa",
+"stopShort": "Atura"
 
 }
