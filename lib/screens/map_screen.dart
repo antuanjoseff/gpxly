@@ -370,7 +370,16 @@ class _MapScreenState extends ConsumerState<MapScreen>
       }
 
       updateWaypointsOnMap(mapController!, next);
-      await animateWaypointAppearance(mapController!);
+
+      await animateWaypointAppearance(
+        mapController!,
+        'waypoints_recorded_layer',
+      );
+
+      await animateWaypointAppearance(
+        mapController!,
+        'waypoints_imported_layer',
+      );
     });
 
     ref.listen(trackSettingsProvider, (previous, next) {

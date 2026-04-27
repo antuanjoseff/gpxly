@@ -8,6 +8,13 @@ class WaypointsNotifier extends Notifier<List<Waypoint>> {
   }
 
   // -----------------------------
+  // SET (substituir tota la llista)
+  // -----------------------------
+  void setWaypoints(List<Waypoint> newList) {
+    state = List.unmodifiable(newList);
+  }
+
+  // -----------------------------
   // ADD
   // -----------------------------
   void add(Waypoint wp) {
