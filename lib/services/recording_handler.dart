@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:gpxly/notifiers/waypoints_notifier.dart';
 import 'package:gpxly/services/gps_manager.dart';
 import 'package:gpxly/notifiers/gps_settings_notifier.dart';
 import 'package:gpxly/notifiers/permissions_notifier.dart';
@@ -68,13 +69,27 @@ class RecordingHandler {
     // ───────────────────────────────────────────────
     // 1. RECUPERAR TRACK DES DE CACHE
     // ───────────────────────────────────────────────
-    if (prefs.containsKey('temp_track_data')) {
+    // ───────────────────────────────────────────────
+    // 1. RECUPERAR TRACK + WAYPOINTS DES DE CACHE
+    // ───────────────────────────────────────────────
+    final wpNotifier = ref.read(waypointsProvider.notifier);
+    final hasTrackCache = prefs.containsKey('temp_track_data');
+    final hasWpCache = wpNotifier.hasSavedWaypoints;
+
+    if (hasTrackCache || hasWpCache) {
       if (!context.mounted) return;
 
       final recuperar = await AppMessages.showRecoverTrackDialog(context);
 
       if (recuperar == true) {
-        await notifier.loadFromCache();
+        // TRACK
+        if (hasTrackCache) {
+          await notifier.loadFromCache();
+        }
+
+        // WAYPOINTS (ja carregats automàticament al provider)
+        // No cal fer res: el provider ja els té a state
+
         notifier.startRecording(context);
         gps.setRecording(true);
 
@@ -89,8 +104,15 @@ class RecordingHandler {
         ref.read(permissionsProvider.notifier).checkPermissions();
         return;
       } else {
-        await notifier.clearCache();
-        notifier.reset();
+        // DESCARTAR-HO TOT
+        if (hasTrackCache) {
+          await notifier.clearCache();
+          notifier.reset();
+        }
+
+        if (hasWpCache) {
+          wpNotifier.clear(); // també esborra SharedPreferences
+        }
       }
     }
 

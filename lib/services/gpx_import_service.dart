@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gpxly/utils/calculations.dart';
 import 'package:gpxly/utils/geo_utils.dart';
 import '../models/track.dart';
+import '../models/waypoint.dart';
 import '../notifiers/imported_track_notifier.dart';
+import '../notifiers/waypoints_notifier.dart';
 
 class GpxImportService {
   static Future<void> importGpx(WidgetRef ref, String xmlString) async {
@@ -17,10 +19,13 @@ class GpxImportService {
     final coords = <List<double>>[];
     final alts = <double>[];
     final times = <DateTime>[];
-    final distancesList = <double>[]; // <--- AFEGIT
+    final distancesList = <double>[];
 
     double accumulatedDistance = 0.0;
 
+    // -------------------------------------------------
+    // Parsejar TRACK
+    // -------------------------------------------------
     for (int i = 0; i < points.length; i++) {
       final p = points[i];
       if (p.lat == null || p.lon == null) continue;
@@ -31,7 +36,6 @@ class GpxImportService {
       final rawTime = p.time ?? DateTime.now();
       times.add(normalizeGpxTime(rawTime));
 
-      // Càlcul de la distància acumulada punt a punt
       if (i > 0) {
         accumulatedDistance += haversineDistance(
           coords[i - 1][1],
@@ -43,9 +47,9 @@ class GpxImportService {
       distancesList.add(accumulatedDistance);
     }
 
-    // -----------------------------
+    // -------------------------------------------------
     // Bounding box
-    // -----------------------------
+    // -------------------------------------------------
     final lats = coords.map((c) => c[1]).toList();
     final lons = coords.map((c) => c[0]).toList();
 
@@ -54,26 +58,26 @@ class GpxImportService {
     final minLon = lons.reduce((a, b) => a < b ? a : b);
     final maxLon = lons.reduce((a, b) => a > b ? a : b);
 
-    // -----------------------------
+    // -------------------------------------------------
     // Durada
-    // -----------------------------
+    // -------------------------------------------------
     Duration totalDuration = Duration.zero;
     if (times.length > 1) {
       totalDuration = times.last.difference(times.first);
     }
 
-    // -----------------------------
+    // -------------------------------------------------
     // Desnivells
-    // -----------------------------
+    // -------------------------------------------------
     final ascent = computeAscent(alts);
     final descent = computeDescent(alts);
 
-    // -----------------------------
+    // -------------------------------------------------
     // Crear Track importat
-    // -----------------------------
+    // -------------------------------------------------
     final imported = Track(
       coordinates: coords,
-      distances: distancesList, // <--- ARA EL MODEL REB LA LLISTA
+      distances: distancesList,
       altitudes: alts,
       timestamps: times,
       accuracies: [],
@@ -83,7 +87,7 @@ class GpxImportService {
       vAccuracies: [],
       recordingState: RecordingState.idle,
       duration: totalDuration,
-      distance: accumulatedDistance, // Fem servir la que hem calculat al bucle
+      distance: accumulatedDistance,
       ascent: ascent,
       descent: descent,
       maxElevation: alts.reduce((a, b) => a > b ? a : b),
@@ -94,10 +98,55 @@ class GpxImportService {
       maxLon: maxLon,
     );
 
-    // -----------------------------
-    // Guardar al provider
-    // -----------------------------
+    // -------------------------------------------------
+    // Guardar TRACK al provider
+    // -------------------------------------------------
     ref.read(importedTrackProvider.notifier).setTrack(imported);
+
+    // -------------------------------------------------
+    // Parsejar WAYPOINTS i assignar trackIndex
+    // -------------------------------------------------
+    int findClosestTrackIndex(double wpLat, double wpLon) {
+      double minDist = double.infinity;
+      int minIndex = 0;
+
+      for (int i = 0; i < coords.length; i++) {
+        final lat = coords[i][1];
+        final lon = coords[i][0];
+
+        final d = haversineDistance(wpLat, wpLon, lat, lon);
+
+        if (d < minDist) {
+          minDist = d;
+          minIndex = i;
+        }
+      }
+
+      return minIndex;
+    }
+
+    final importedWaypoints = <Waypoint>[];
+
+    for (final w in gpx.wpts) {
+      if (w.lat == null || w.lon == null) continue;
+
+      final closestIndex = findClosestTrackIndex(w.lat!, w.lon!);
+
+      importedWaypoints.add(
+        Waypoint(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          name: w.name ?? "Waypoint",
+          lat: w.lat!,
+          lon: w.lon!,
+          trackIndex: closestIndex,
+        ),
+      );
+    }
+
+    // -------------------------------------------------
+    // Guardar WAYPOINTS al provider
+    // -------------------------------------------------
+    ref.read(waypointsProvider.notifier).setWaypoints(importedWaypoints);
   }
 
   static DateTime normalizeGpxTime(DateTime t) {

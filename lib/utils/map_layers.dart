@@ -20,9 +20,6 @@ Future<void> setupUserLocationLayer(MapLibreMapController controller) async {
     ),
   );
 
-  // -------------------------
-  // LAYER: imported_track_layer
-  // -------------------------
   await controller.addLayer(
     "imported_track",
     "imported_track_layer",
@@ -33,8 +30,9 @@ Future<void> setupUserLocationLayer(MapLibreMapController controller) async {
       lineCap: "round",
     ),
   );
+
   // -------------------------
-  // SOURCE: track_line
+  // SOURCE: track_line (La línia "fixa" consolidada)
   // -------------------------
   await controller.addSource(
     "track_line",
@@ -43,14 +41,32 @@ Future<void> setupUserLocationLayer(MapLibreMapController controller) async {
     ),
   );
 
-  // -------------------------
-  // LAYER: track_line_layer
-  // -------------------------
   await controller.addLayer(
     "track_line",
     "track_line_layer",
     const LineLayerProperties(
       lineColor: "#FF0000",
+      lineWidth: 4.0,
+      lineJoin: "round",
+      lineCap: "round",
+    ),
+  );
+
+  // -------------------------
+  // NUEVO - SOURCE: track_animating_segment (El tram que s'estira)
+  // -------------------------
+  await controller.addSource(
+    "track_animating_segment",
+    const GeojsonSourceProperties(
+      data: {"type": "FeatureCollection", "features": []},
+    ),
+  );
+
+  await controller.addLayer(
+    "track_animating_segment",
+    "track_animating_layer",
+    const LineLayerProperties(
+      lineColor: "#FF0000", // Mateix vermell
       lineWidth: 4.0,
       lineJoin: "round",
       lineCap: "round",
@@ -74,12 +90,17 @@ Future<void> setupUserLocationLayer(MapLibreMapController controller) async {
   );
 
   // -------------------------
-  // LAYER: user_location_layer
+  // LAYER: user_location_layer (Sempre l'última perquè quedi a dalt)
   // -------------------------
   await controller.addLayer(
     "user_location",
     "user_location_layer",
-    const SymbolLayerProperties(iconImage: "user_icon", iconSize: 1.0),
+    const SymbolLayerProperties(
+      iconImage: "user_icon",
+      iconSize: 1.0,
+      iconAllowOverlap: true,
+      iconIgnorePlacement: true,
+    ),
   );
 }
 
@@ -117,8 +138,10 @@ void updateWaypointsOnMap(
   MapLibreMapController controller,
   List<Waypoint> waypoints,
 ) {
-  print("WAYPOINT UPDATE");
-  final features = waypoints.map((wp) {
+  final recorded = waypoints.where((wp) => wp.trackIndex >= 0).toList();
+  final imported = waypoints.where((wp) => wp.trackIndex < 0).toList();
+
+  final recordedFeatures = recorded.map((wp) {
     return {
       "type": "Feature",
       "geometry": {
@@ -129,13 +152,32 @@ void updateWaypointsOnMap(
     };
   }).toList();
 
-  controller.setGeoJsonSource('waypoints_source', {
+  final importedFeatures = imported.map((wp) {
+    return {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [wp.lon, wp.lat],
+      },
+      "properties": {"name": wp.name},
+    };
+  }).toList();
+
+  controller.setGeoJsonSource('waypoints_recorded_source', {
     "type": "FeatureCollection",
-    "features": features,
+    "features": recordedFeatures,
+  });
+
+  controller.setGeoJsonSource('waypoints_imported_source', {
+    "type": "FeatureCollection",
+    "features": importedFeatures,
   });
 }
 
-Future<void> animateWaypointAppearance(MapLibreMapController controller) async {
+Future<void> animateWaypointAppearance(
+  MapLibreMapController controller,
+  String layerId,
+) async {
   const int steps = 10;
   const Duration stepDuration = Duration(milliseconds: 20);
 
@@ -143,11 +185,8 @@ Future<void> animateWaypointAppearance(MapLibreMapController controller) async {
     final double t = i / steps;
 
     await controller.setLayerProperties(
-      'waypoints_layer',
-      SymbolLayerProperties(
-        iconSize: 0.05 + (0.25 * t), // 0.05 → 0.30
-        iconOpacity: t,
-      ),
+      layerId,
+      SymbolLayerProperties(iconSize: 0.05 + (0.25 * t), iconOpacity: t),
     );
 
     await Future.delayed(stepDuration);
@@ -155,22 +194,56 @@ Future<void> animateWaypointAppearance(MapLibreMapController controller) async {
 }
 
 Future<void> setupWaypointLayers(MapLibreMapController controller) async {
-  final ByteData wpBytes = await rootBundle.load('assets/icon/waypoint.png');
-  final Uint8List wpIcon = wpBytes.buffer.asUint8List();
-  await controller.addImage('waypoint_icon', wpIcon);
+  // ICONA WAYPOINT GRAVAT
+  final ByteData wpRecordedBytes = await rootBundle.load(
+    'assets/icon/waypoint.png',
+  );
+  final Uint8List wpRecordedIcon = wpRecordedBytes.buffer.asUint8List();
+  await controller.addImage('waypoint_recorded_icon', wpRecordedIcon);
 
+  // ICONA WAYPOINT IMPORTAT
+  final ByteData wpImportedBytes = await rootBundle.load(
+    'assets/icon/waypoint_imported.png',
+  );
+  final Uint8List wpImportedIcon = wpImportedBytes.buffer.asUint8List();
+  await controller.addImage('waypoint_imported_icon', wpImportedIcon);
+
+  // SOURCE: recorded
   await controller.addSource(
-    'waypoints_source',
+    'waypoints_recorded_source',
     const GeojsonSourceProperties(
       data: {"type": "FeatureCollection", "features": []},
     ),
   );
 
+  // SOURCE: imported
+  await controller.addSource(
+    'waypoints_imported_source',
+    const GeojsonSourceProperties(
+      data: {"type": "FeatureCollection", "features": []},
+    ),
+  );
+
+  // LAYER: recorded
   await controller.addLayer(
-    'waypoints_source',
-    'waypoints_layer',
+    'waypoints_recorded_source',
+    'waypoints_recorded_layer',
     const SymbolLayerProperties(
-      iconImage: 'waypoint_icon',
+      iconImage: 'waypoint_recorded_icon',
+      iconSize: 0.05,
+      iconOpacity: 0.0,
+      iconAllowOverlap: true,
+      iconIgnorePlacement: true,
+      iconAnchor: "bottom",
+    ),
+  );
+
+  // LAYER: imported
+  await controller.addLayer(
+    'waypoints_imported_source',
+    'waypoints_imported_layer',
+    const SymbolLayerProperties(
+      iconImage: 'waypoint_imported_icon',
       iconSize: 0.05,
       iconOpacity: 0.0,
       iconAllowOverlap: true,
