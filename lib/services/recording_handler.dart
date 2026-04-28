@@ -30,6 +30,12 @@ class RecordingHandler {
     if (preserve) {
       prefs.setBool("preserve_track_on_start", false);
 
+      // 🔹 NOVETAT: recuperar track des de cache abans de continuar
+      final hasTrackCache = prefs.containsKey('temp_track_data');
+      if (hasTrackCache) {
+        await notifier.loadFromCache();
+      }
+
       HapticFeedback.mediumImpact();
 
       final pos = await Geolocator.getCurrentPosition();
@@ -67,9 +73,6 @@ class RecordingHandler {
     }
 
     // ───────────────────────────────────────────────
-    // 1. RECUPERAR TRACK DES DE CACHE
-    // ───────────────────────────────────────────────
-    // ───────────────────────────────────────────────
     // 1. RECUPERAR TRACK + WAYPOINTS DES DE CACHE
     // ───────────────────────────────────────────────
     final wpNotifier = ref.read(waypointsProvider.notifier);
@@ -88,7 +91,6 @@ class RecordingHandler {
         }
 
         // WAYPOINTS (ja carregats automàticament al provider)
-        // No cal fer res: el provider ja els té a state
 
         notifier.startRecording(context);
         gps.setRecording(true);
