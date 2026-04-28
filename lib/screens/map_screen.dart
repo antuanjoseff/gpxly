@@ -253,24 +253,45 @@ class _MapScreenState extends ConsumerState<MapScreen>
     return true;
   }
 
+  // void _animateGpsPosition(LatLng newPos) {
+  //   if (!mounted || mapController == null) return;
+
+  //   setState(() => isProgrammaticMove = true);
+
+  //   if (_latLngB.latitude == 0) {
+  //     _latLngA = newPos;
+  //     _latLngB = newPos;
+  //     _updateUserLocationSource(newPos.longitude, newPos.latitude);
+  //     setState(() => isProgrammaticMove = false);
+  //     return;
+  //   }
+
+  //   _latLngA = _latLngB;
+  //   _latLngB = newPos;
+
+  //   _cameraDrivenByAnimation = true;
+  //   _posController.forward(from: 0.0);
+  // }
+
   void _animateGpsPosition(LatLng newPos) {
     if (!mounted || mapController == null) return;
-
-    setState(() => isProgrammaticMove = true);
-
-    if (_latLngB.latitude == 0) {
-      _latLngA = newPos;
-      _latLngB = newPos;
-      _updateUserLocationSource(newPos.longitude, newPos.latitude);
-      setState(() => isProgrammaticMove = false);
-      return;
+    if (!userMovedMap) {
+      isProgrammaticMove = true;
+      mapController!.moveCamera(CameraUpdate.newLatLng(newPos));
     }
 
-    _latLngA = _latLngB;
+    // Actualitzem posicions internes
+    _latLngA = newPos;
     _latLngB = newPos;
 
-    _cameraDrivenByAnimation = true;
-    _posController.forward(from: 0.0);
+    // Actualitzem el punt blau
+    _updateUserLocationSource(newPos.longitude, newPos.latitude);
+
+    // SmartCenter: només centrar si l’usuari NO ha mogut el mapa
+    if (!userMovedMap) {
+      print("---> mapController.moveCamera (NO ANIMACIÓ)");
+      mapController!.moveCamera(CameraUpdate.newLatLng(newPos));
+    }
   }
 
   void _updateTrackLineSource(List<List<double>> coords) {
@@ -617,30 +638,13 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
                   setState(() => _fullScreen = false);
                 },
-                onCameraMove: (position) {
-                  if (_cameraDrivenByAnimation) return;
+                onCameraMove: (_) {
                   if (isProgrammaticMove) return;
                   userMovedMap = true;
                 },
 
-                onCameraIdle: () async {
-                  if (mapController == null) return;
-                  final pos = await mapController!.cameraPosition;
-                  if (pos == null) return;
-
-                  ref.read(mapZoomProvider.notifier).update(pos.zoom);
-                  ref
-                      .read(mapCenterLatProvider.notifier)
-                      .update(pos.target.latitude);
-
-                  if (_cameraDrivenByAnimation) {
-                    _cameraDrivenByAnimation = false;
-                    return;
-                  }
-
-                  if (isProgrammaticMove) {
-                    setState(() => isProgrammaticMove = false);
-                  }
+                onCameraIdle: () {
+                  isProgrammaticMove = false;
                 },
 
                 onMapCreated: (controller) {
