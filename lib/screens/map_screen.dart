@@ -275,23 +275,95 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
   void _animateGpsPosition(LatLng newPos) {
     if (!mounted || mapController == null) return;
-    if (!userMovedMap) {
-      isProgrammaticMove = true;
-      mapController!.moveCamera(CameraUpdate.newLatLng(newPos));
-    }
 
-    // Actualitzem posicions internes
+    // 1. NO centrem el mapa aquí
+    // (Això és el canvi important)
+
+    // 2. Actualitzem posicions internes
     _latLngA = newPos;
     _latLngB = newPos;
 
-    // Actualitzem el punt blau
+    // 3. Punt blau immediat (posició final real)
     _updateUserLocationSource(newPos.longitude, newPos.latitude);
 
-    // SmartCenter: només centrar si l’usuari NO ha mogut el mapa
-    if (!userMovedMap) {
-      print("---> mapController.moveCamera (NO ANIMACIÓ)");
-      mapController!.moveCamera(CameraUpdate.newLatLng(newPos));
+    // 4. Obtenim track
+    final trackData = ref.read(trackProvider);
+    final coords = trackData.coordinates;
+
+    if (coords.length < 2) {
+      _updateTrackLineSource(coords);
+      return;
     }
+
+    // 5. Penúltim i últim punt real
+    final prevReal = LatLng(
+      coords[coords.length - 2][1],
+      coords[coords.length - 2][0],
+    );
+    final lastReal = LatLng(coords.last[1], coords.last[0]);
+
+    // 6. Pintem track sense l’últim punt real
+    final coordsWithoutLast = coords.sublist(0, coords.length - 1);
+    _updateTrackLineSource(coordsWithoutLast);
+
+    // ---------------------------------------------------------
+    // 🔥 ANIMACIÓ AMB TIMER (sense moure càmera a cada tick)
+    // ---------------------------------------------------------
+
+    const int steps = 30;
+    int currentStep = 0;
+
+    _animationTimer?.cancel();
+    _animationTimer = Timer.periodic(const Duration(milliseconds: 16), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+
+      currentStep++;
+      final t = currentStep / steps;
+
+      // Interpolació
+      final lat =
+          prevReal.latitude + (lastReal.latitude - prevReal.latitude) * t;
+      final lng =
+          prevReal.longitude + (lastReal.longitude - prevReal.longitude) * t;
+
+      // 1. Punt blau animat
+      _updateUserLocationSource(lng, lat);
+
+      // 2. Segment animat
+      final animatedCoords = List<List<double>>.from(coordsWithoutLast)
+        ..add([lng, lat]);
+
+      _updateTrackLineSource(animatedCoords);
+
+      // 3. Final de l’animació
+      // 3. Final de l’animació
+      if (currentStep >= steps) {
+        timer.cancel();
+
+        // Pintem track real complet
+        _updateTrackLineSource(coords);
+
+        // Punt blau final
+        _updateUserLocationSource(lastReal.longitude, lastReal.latitude);
+
+        // 🔥 Centrat suau del mapa NOMÉS ara
+        if (!userMovedMap) {
+          isProgrammaticMove = true;
+          mapController!.animateCamera(
+            CameraUpdate.newLatLng(lastReal),
+            duration: Duration(milliseconds: 100),
+          );
+        }
+
+        // Alliberem el flag després que MapLibre acabi
+        Future.delayed(const Duration(milliseconds: 150), () {
+          if (mounted) isProgrammaticMove = false;
+        });
+      }
+    });
   }
 
   void _updateTrackLineSource(List<List<double>> coords) {
