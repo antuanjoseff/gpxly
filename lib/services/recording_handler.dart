@@ -9,6 +9,7 @@ import 'package:gpxly/notifiers/permissions_notifier.dart';
 import 'package:gpxly/notifiers/track_notifier.dart';
 import 'package:gpxly/services/permissions_service.dart';
 import 'package:gpxly/ui/app_messages.dart';
+import 'package:gpxly/utils/map_layers.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -90,7 +91,21 @@ class RecordingHandler {
           await notifier.loadFromCache();
         }
 
-        // WAYPOINTS (ja carregats automàticament al provider)
+        // 🔥 Dibuixar waypoints recuperats
+        final wpts = ref.read(waypointsProvider);
+        if (mapController != null && wpts.isNotEmpty) {
+          updateWaypointsOnMap(mapController, wpts);
+
+          await animateWaypointAppearance(
+            mapController,
+            'waypoints_recorded_layer',
+          );
+
+          await animateWaypointAppearance(
+            mapController,
+            'waypoints_imported_layer',
+          );
+        }
 
         notifier.startRecording(context);
         gps.setRecording(true);
