@@ -82,13 +82,16 @@ class AppMessages {
             spacing: 8,
             runSpacing: 8,
             children: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: Text(
-                  cancelLabel ?? t.cancel,
-                  style: TextStyle(color: Colors.white.withAlpha(150)),
+              if (cancelLabel != null)
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: Text(
+                    cancelLabel,
+                    style: TextStyle(color: Colors.white.withAlpha(150)),
+                  ),
                 ),
-              ),
+
+              // Botó únic quan cancelLabel == null
               ElevatedButton(
                 style: _buttonStyle(AppColors.skyBlue),
                 onPressed: () => Navigator.pop(context, true),
@@ -199,6 +202,7 @@ class AppMessages {
     final t = AppLocalizations.of(context)!;
     return _showBaseDialog(
       context: context,
+      barrierDismissible: false,
       title: t.reverseTrackTitle,
       message: t.reverseTrackMessage,
       icon: Icons.swap_vert,

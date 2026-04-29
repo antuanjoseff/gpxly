@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gpxly/features/elevation_profile/elevation_profile_screen.dart';
 import 'package:gpxly/models/track.dart';
 import 'package:gpxly/models/waypoint.dart';
+import 'package:gpxly/notifiers/gps_speed_notifier.dart';
 import 'package:gpxly/notifiers/imported_track_notifier.dart';
 import 'package:gpxly/notifiers/imported_track_settings_notifier.dart';
 import 'package:gpxly/notifiers/permissions_notifier.dart';
@@ -451,7 +452,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   }
                 },
                 child: MapLibreMap(
-                  trackCameraPosition: false,
+                  trackCameraPosition: true,
                   compassEnabled: false,
                   styleString: "assets/osm_style.json",
                   initialCameraPosition: CameraPosition(
@@ -471,7 +472,14 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     );
                     setState(() => _fullScreen = false);
                   },
+                  onCameraIdle: () async {
+                    final pos = await mapController!.cameraPosition;
 
+                    ref.read(mapZoomProvider.notifier).update(pos!.zoom);
+                    ref
+                        .read(mapCenterLatProvider.notifier)
+                        .update(pos.target.latitude);
+                  },
                   onMapCreated: (controller) {
                     mapController = controller;
                     // Opcional: pots eliminar el listener de _onMapChanged si

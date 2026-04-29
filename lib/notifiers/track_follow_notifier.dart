@@ -112,9 +112,6 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
   }
 
   void dismissReverseTrackDialog() {
-    // 🔥 Invertim igualment el track
-    ref.read(importedTrackProvider.notifier).reverseTrack();
-
     _reverseDialogShown = false;
     _reverseDetectionLocked = false;
 
@@ -567,15 +564,11 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
       closest,
       _lastUserPositions,
     );
-    print("isReversed = $reversed");
-    print("_reverseDialogShown = $_reverseDialogShown");
-    print("_reverseDetectionLocked = $_reverseDetectionLocked");
 
     if (state.mode == FollowMode.onTrack &&
         !_reverseDialogShown &&
         !_reverseDetectionLocked &&
         reversed) {
-      print("↩️ REVERSED DETECTAT");
       _reverseDetectionLocked = true;
       _askUserToReverseTrack();
       return;

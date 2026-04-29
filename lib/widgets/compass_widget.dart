@@ -9,8 +9,11 @@ class CompassScalePanel extends ConsumerWidget {
   const CompassScalePanel({super.key});
 
   String _formatMeters(double m) {
-    if (m >= 1000) return "${(m / 1000).toStringAsFixed(1)} km";
-    return "${m.toInt()} m";
+    if (m >= 1000) {
+      final km = (m / 1000).round(); // sense decimals
+      return "$km km";
+    }
+    return "${m.round()} m"; // també sense decimals
   }
 
   @override
@@ -38,6 +41,9 @@ class CompassScalePanel extends ConsumerWidget {
       10000,
       20000,
       50000,
+      100000,
+      500000,
+      1000000,
     ];
 
     double chosenMeters = niceScales.first;
