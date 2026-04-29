@@ -1,3 +1,5 @@
+import 'package:maplibre_gl/maplibre_gl.dart';
+
 enum RecordingState {
   idle, // No gravant
   recording, // Gravació activa
@@ -26,11 +28,14 @@ class Track {
   final double maxElevation;
   final double minElevation;
 
-  // 👇 AFEGIT: bounding box
+  // Bounding box
   final double? minLat;
   final double? maxLat;
   final double? minLon;
   final double? maxLon;
+
+  // 🔥 Nou: punt blau actual
+  final LatLng? currentPosition;
 
   Track({
     required this.coordinates,
@@ -50,11 +55,12 @@ class Track {
     this.maxElevation = -9999.0,
     this.minElevation = 9999.0,
 
-    // 👇 AFEGIT
     this.minLat,
     this.maxLat,
     this.minLon,
     this.maxLon,
+
+    this.currentPosition, // 👈 afegit
   });
 
   Track copyWith({
@@ -75,11 +81,12 @@ class Track {
     double? maxElevation,
     double? minElevation,
 
-    // 👇 AFEGIT
     double? minLat,
     double? maxLat,
     double? minLon,
     double? maxLon,
+
+    LatLng? currentPosition, // 👈 afegit
   }) {
     return Track(
       coordinates: coordinates ?? this.coordinates,
@@ -99,11 +106,12 @@ class Track {
       maxElevation: maxElevation ?? this.maxElevation,
       minElevation: minElevation ?? this.minElevation,
 
-      // 👇 AFEGIT
       minLat: minLat ?? this.minLat,
       maxLat: maxLat ?? this.maxLat,
       minLon: minLon ?? this.minLon,
       maxLon: maxLon ?? this.maxLon,
+
+      currentPosition: currentPosition ?? this.currentPosition, // 👈 afegit
     );
   }
 

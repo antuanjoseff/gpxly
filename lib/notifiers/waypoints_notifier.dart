@@ -8,8 +8,7 @@ class WaypointsNotifier extends Notifier<List<Waypoint>> {
 
   @override
   List<Waypoint> build() {
-    // Carreguem waypoints guardats (si n'hi ha)
-    _loadFromPrefs();
+    // No carreguem res automàticament
     return const [];
   }
 
@@ -67,7 +66,8 @@ class WaypointsNotifier extends Notifier<List<Waypoint>> {
     await prefs.setString(_prefsKey, jsonEncode(list));
   }
 
-  Future<void> _loadFromPrefs() async {
+  // 🔥 Renombrada i feta pública
+  Future<void> restoreFromPrefs() async {
     final prefs = await SharedPreferences.getInstance();
     final jsonString = prefs.getString(_prefsKey);
 
@@ -87,7 +87,6 @@ class WaypointsNotifier extends Notifier<List<Waypoint>> {
         )
         .toList();
 
-    // IMPORTANT: no fem saveToPrefs aquí
     state = List.unmodifiable(loaded);
   }
 
