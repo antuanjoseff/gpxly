@@ -6,6 +6,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:gpxly/notifiers/gps_accuracy_notifier.dart';
 import 'package:gpxly/notifiers/gps_altitude_notifier.dart';
 import 'package:gpxly/notifiers/track_follow_notifier.dart';
+import 'package:gpxly/services/native_gps_channel.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/track.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
@@ -13,7 +14,7 @@ import 'package:maplibre_gl/maplibre_gl.dart';
 class TrackNotifier extends Notifier<Track> {
   Timer? _timer;
   Track? _initialState;
-
+  StreamSubscription? _gpsSub;
   bool isFollowing = false;
 
   @override
@@ -37,6 +38,162 @@ class TrackNotifier extends Notifier<Track> {
       minElevation: 9999.0,
       currentPosition: null, // 🔥 afegit
     );
+  }
+
+  void startGpsListener() {
+    _gpsSub?.cancel();
+
+    _gpsSub = NativeGpsChannel.positionStream().listen((data) {
+      onNativeGpsPoint(data);
+    });
+  }
+
+  void onNativeGpsPoint(Map<String, dynamic> data) {
+    final lat = data["lat"] as double;
+    final lon = data["lon"] as double;
+    final accuracy = data["accuracy"] as double;
+    final altitude = data["altitude"] as double;
+    final speed = data["speed"] as double;
+    final heading = data["heading"] as double;
+    final timestamp = DateTime.fromMillisecondsSinceEpoch(data["timestamp"]);
+    final vAccuracy = data["vAccuracy"] as double;
+    final satellites = data["satellites"] as int? ?? 0;
+
+    // 🔥 Converteix-ho al format que ja tens
+    onGpsPointRaw(
+      lat: lat,
+      lon: lon,
+      accuracy: accuracy,
+      altitude: altitude,
+      speed: speed,
+      heading: heading,
+      timestamp: timestamp,
+      vAccuracy: vAccuracy,
+      satellites: satellites,
+    );
+  }
+
+  void onGpsPointRaw({
+    required double lat,
+    required double lon,
+    required double accuracy,
+    required double altitude,
+    required double speed,
+    required double heading,
+    required DateTime timestamp,
+    required double vAccuracy,
+    required int satellites,
+  }) {
+    // 1. Actualitzar punt blau
+    state = state.copyWith(currentPosition: LatLng(lat, lon));
+
+    // 2. Si grava → afegir punt
+    if (state.recordingState == RecordingState.recording) {
+      addPointFromRaw(
+        lat: lat,
+        lon: lon,
+        accuracy: accuracy,
+        altitude: altitude,
+        speed: speed,
+        heading: heading,
+        timestamp: timestamp,
+        vAccuracy: vAccuracy,
+        satellites: satellites,
+      );
+    }
+
+    // 3. Si segueix → enviar al TrackFollowNotifier
+    if (isFollowing) {
+      ref
+          .read(trackFollowNotifierProvider.notifier)
+          .updateUserPosition(LatLng(lat, lon));
+    }
+  }
+
+  void addPointFromRaw({
+    required double lat,
+    required double lon,
+    required double accuracy,
+    required double altitude,
+    required double speed,
+    required double heading,
+    required DateTime timestamp,
+    required double vAccuracy,
+    required int satellites,
+  }) {
+    // 1. Actualitzem els micro-providers
+    ref.read(gpsAccuracyProvider.notifier).update(accuracy);
+    ref.read(gpsAltitudeProvider.notifier).update(altitude);
+
+    double newDistance = state.distance;
+    double newAscent = state.ascent;
+    double newDescent = state.descent;
+    double newMax = state.maxElevation;
+    double newMin = state.minElevation;
+
+    // Copiem la llista de distàncies
+    List<double> newDistancesList = [...state.distances];
+
+    if (state.coordinates.isNotEmpty) {
+      final lastCoords = state.coordinates.last; // [lon, lat]
+      final lastAlt = state.altitudes.last;
+
+      final lastLon = lastCoords[0];
+      final lastLat = lastCoords[1];
+
+      // Mateix càlcul que addPointFromPosition, però amb valors RAW
+      final double step = Geolocator.distanceBetween(
+        lastLat, // ✔️ lat anterior
+        lastLon, // ✔️ lon anterior
+        lat, // ✔️ lat nova
+        lon, // ✔️ lon nova
+      );
+
+      // Filtre anti-bogeries
+      if (step.isFinite && step < 200) {
+        newDistance += step;
+      }
+
+      final double diffAlt = altitude - lastAlt;
+      if (diffAlt > 0.5) {
+        newAscent += diffAlt;
+      } else if (diffAlt < -0.5) {
+        newDescent += diffAlt.abs();
+      }
+    }
+
+    // Afegim la distància acumulada
+    newDistancesList.add(newDistance);
+
+    // Actualitzem límits d'elevació
+    if (state.altitudes.isEmpty || altitude > newMax) newMax = altitude;
+    if (state.altitudes.isEmpty || altitude < newMin) newMin = altitude;
+
+    // Actualitzem estat
+    state = state.copyWith(
+      coordinates: [
+        ...state.coordinates,
+        [lon, lat],
+      ],
+      altitudes: [...state.altitudes, altitude],
+      distances: newDistancesList,
+      timestamps: [...state.timestamps, timestamp],
+      accuracies: [...state.accuracies, accuracy],
+      speeds: [...state.speeds, speed],
+      headings: [...state.headings, heading],
+      satellites: [...state.satellites, satellites],
+      vAccuracies: [...state.vAccuracies, vAccuracy],
+      distance: newDistance,
+      ascent: newAscent,
+      descent: newDescent,
+      maxElevation: newMax,
+      minElevation: newMin,
+    );
+
+    // Auto-save cada 10 punts
+    if (state.coordinates.length % 10 == 0) {
+      _autoSaveToPrefs();
+    }
   }
 
   Future<void> _autoSaveToPrefs() async {
@@ -238,7 +395,7 @@ class TrackNotifier extends Notifier<Track> {
       minElevation: newMin,
     );
 
-    // 💾 Auto-save cada 10 punts
+    // Auto-save cada 10 punts
     if (state.coordinates.length % 10 == 0) {
       _autoSaveToPrefs();
     }
@@ -247,7 +404,36 @@ class TrackNotifier extends Notifier<Track> {
   // ───────────────────────────────────────────────
   // 5) CACHE, RESET, ALTITUDES (igual que abans)
   // ───────────────────────────────────────────────
-  // ... (tot el teu codi actual)
+  Future<void> clearCache() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('temp_track_data');
+  }
+
+  void reset() {
+    _timer?.cancel();
+    _timer = null;
+
+    state = Track(
+      coordinates: [],
+      distances: [],
+      altitudes: [],
+      timestamps: [],
+      accuracies: [],
+      speeds: [],
+      headings: [],
+      satellites: [],
+      vAccuracies: [],
+      recordingState: RecordingState.idle,
+      duration: Duration.zero,
+      distance: 0.0,
+      ascent: 0.0,
+      descent: 0.0,
+      maxElevation: -9999.0,
+      minElevation: 9999.0,
+    );
+
+    clearCache();
+  }
 }
 
 final trackProvider = NotifierProvider<TrackNotifier, Track>(TrackNotifier.new);

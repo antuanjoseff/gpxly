@@ -287,3 +287,58 @@ Future<Uint8List> _createBlueDot() async {
   final byteData = await img.toByteData(format: ImageByteFormat.png);
   return byteData!.buffer.asUint8List();
 }
+
+// AFEGEIX A map_layers.dart
+
+void setTrackLineGeometry(
+  MapLibreMapController controller,
+  List<List<double>> coordinates,
+) {
+  controller.setGeoJsonSource("track_line", {
+    "type": "FeatureCollection",
+    "features": coordinates.isEmpty
+        ? []
+        : [
+            {
+              "type": "Feature",
+              "geometry": {"type": "LineString", "coordinates": coordinates},
+            },
+          ],
+  });
+}
+
+void setAnimatingSegmentGeometry(
+  MapLibreMapController controller,
+  List<List<double>> coordinates,
+) {
+  controller.setGeoJsonSource("track_animating_segment", {
+    "type": "FeatureCollection",
+    "features": coordinates.isEmpty
+        ? []
+        : [
+            {
+              "type": "Feature",
+              "geometry": {"type": "LineString", "coordinates": coordinates},
+            },
+          ],
+  });
+}
+
+void setUserLocationGeometry(
+  MapLibreMapController controller,
+  double lat,
+  double lon,
+) {
+  controller.setGeoJsonSource("user_location", {
+    "type": "FeatureCollection",
+    "features": [
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [lon, lat],
+        },
+      },
+    ],
+  });
+}

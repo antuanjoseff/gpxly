@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gpxly/notifiers/track_notifier.dart';
 import 'package:gpxly/notifiers/waypoints_notifier.dart';
 import 'package:gpxly/notifiers/permissions_notifier.dart';
+import 'package:gpxly/services/native_gps_channel.dart';
 import 'package:gpxly/services/permissions_service.dart';
 import 'package:gpxly/ui/app_messages.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -78,8 +79,22 @@ class RecordingHandler {
     // ───────────────────────────────────────────────
     // 3. INICIAR GRAVACIÓ NETA
     // ───────────────────────────────────────────────
+    // ───────────────────────────────────────────────
+    // 3. INICIAR GRAVACIÓ NETA
+    // ───────────────────────────────────────────────
     HapticFeedback.mediumImpact();
     await track.startRecording(context);
+
+    // 🔥 INICIAR GPS NATIU
+    await NativeGpsChannel.start(
+      useTime: true,
+      seconds: 1,
+      meters: 0,
+      accuracy: 10,
+    );
+
+    // 🔥 CONNECTAR STREAM → TRACKNOTIFIER
+    ref.read(trackProvider.notifier).startGpsListener();
 
     ref.read(permissionsProvider.notifier).checkPermissions();
   }

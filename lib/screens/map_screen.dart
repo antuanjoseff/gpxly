@@ -1,3 +1,8 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart'
+    show OneSequenceGestureRecognizer, EagerGestureRecognizer;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -21,6 +26,7 @@ import 'package:gpxly/ui/app_messages.dart';
 import 'package:gpxly/services/gpx_exporter.dart';
 import 'package:gpxly/ui/bottom_bar/bottom_bar_container.dart';
 import 'package:gpxly/utils/color_extensions.dart';
+import 'package:gpxly/utils/map_animator.dart';
 import 'package:gpxly/utils/map_layers.dart';
 import 'package:gpxly/widgets/compass_widget.dart';
 import 'package:gpxly/widgets/gps_accuracy_bars.dart';
@@ -45,6 +51,11 @@ class _MapScreenState extends ConsumerState<MapScreen>
   double _initialZoom = 14;
   bool waypointLayersReady = false;
   DateTime? _lastBackPress;
+  bool smartCenterEnabled = true;
+  bool isProgrammaticMove = false;
+  Timer? smartCenterDebounce;
+
+  late MapAnimator mapAnimator;
 
   final ButtonStyle recordButtonStyle = ElevatedButton.styleFrom(
     backgroundColor: Colors.red,
@@ -68,6 +79,19 @@ class _MapScreenState extends ConsumerState<MapScreen>
     Future.microtask(
       () => ref.read(permissionsProvider.notifier).checkPermissions(),
     );
+  }
+
+  void _centerOnUser() {
+    final pos = ref.read(trackProvider).currentPosition;
+    if (pos == null || mapController == null) return;
+
+    isProgrammaticMove = true;
+
+    mapController!.animateCamera(CameraUpdate.newLatLng(pos));
+    // 🔥 Reset de seguretat
+    Future.delayed(const Duration(milliseconds: 300), () {
+      isProgrammaticMove = false;
+    });
   }
 
   Future<void> _onFollowTrack() async {
@@ -132,7 +156,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
     if (eliminar == true) {
       prefs.setBool("preserve_track_on_start", false);
       ref.read(trackProvider.notifier).reset();
-      ref.read(trackProvider.notifier).clearTrack();
     } else {
       prefs.setBool("preserve_track_on_start", true);
     }
@@ -210,18 +233,23 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final trackFollowState = ref.watch(trackFollowNotifierProvider);
 
     // 2. LISTENER DEL TRACK (El pasivo)
-    ref.listen(trackProvider, (previous, next) {
+    ref.listen(trackProvider, (prev, next) {
       if (!styleInitialized || mapController == null) return;
 
-      mapController!.setGeoJsonSource("track_line", {
-        "type": "FeatureCollection",
-        "features": [
-          {
-            "type": "Feature",
-            "geometry": {"type": "LineString", "coordinates": next.coordinates},
-          },
-        ],
-      });
+      mapAnimator.updateFromTrack(next);
+
+      // Si SmartCenter està actiu → seguir el punt blau
+      if (smartCenterEnabled && next.currentPosition != null) {
+        isProgrammaticMove = true;
+
+        mapController!.animateCamera(
+          CameraUpdate.newLatLng(next.currentPosition!),
+        );
+
+        Future.delayed(const Duration(milliseconds: 300), () {
+          isProgrammaticMove = false;
+        });
+      }
     });
 
     ref.listen(waypointsProvider, (prev, next) async {
@@ -416,48 +444,59 @@ class _MapScreenState extends ConsumerState<MapScreen>
         body: Stack(
           children: [
             RepaintBoundary(
-              child: MapLibreMap(
-                trackCameraPosition: true,
-                compassEnabled: false,
-                styleString: "assets/osm_style.json",
-                initialCameraPosition: CameraPosition(
-                  target: _initialCameraTarget!,
-                  zoom: _initialZoom,
+              child: Listener(
+                onPointerMove: (PointerMoveEvent event) {
+                  if (smartCenterEnabled) {
+                    setState(() => smartCenterEnabled = false);
+                  }
+                },
+                child: MapLibreMap(
+                  trackCameraPosition: false,
+                  compassEnabled: false,
+                  styleString: "assets/osm_style.json",
+                  initialCameraPosition: CameraPosition(
+                    target: _initialCameraTarget!,
+                    zoom: _initialZoom,
+                  ),
+                  onMapLongClick: (point, latlng) {
+                    SystemChrome.setEnabledSystemUIMode(
+                      SystemUiMode.immersiveSticky,
+                    );
+                    setState(() => _fullScreen = true);
+                  },
+                  onMapClick: (point, latlng) {
+                    if (!_fullScreen) return;
+                    SystemChrome.setEnabledSystemUIMode(
+                      SystemUiMode.edgeToEdge,
+                    );
+                    setState(() => _fullScreen = false);
+                  },
+
+                  onMapCreated: (controller) {
+                    mapController = controller;
+                    // Opcional: pots eliminar el listener de _onMapChanged si
+                    // aquest també et donava problemes amb el Smart Center.
+                  },
+                  onStyleLoadedCallback: () async {
+                    await setupUserLocationLayer(mapController!);
+                    await setupWaypointLayers(mapController!);
+
+                    mapAnimator = MapAnimator(mapController!);
+
+                    waypointLayersReady = true;
+                    styleInitialized = true;
+
+                    mapController!.setLayerProperties(
+                      "track_line_layer",
+                      LineLayerProperties(
+                        lineColor: trackSettings.color.toMapLibreColor(),
+                        lineWidth: trackSettings.width,
+                        lineCap: "round",
+                        lineJoin: "round",
+                      ),
+                    );
+                  },
                 ),
-                onMapLongClick: (point, latlng) {
-                  SystemChrome.setEnabledSystemUIMode(
-                    SystemUiMode.immersiveSticky,
-                  );
-                  setState(() => _fullScreen = true);
-                },
-                onMapClick: (point, latlng) {
-                  if (!_fullScreen) return;
-                  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-                  setState(() => _fullScreen = false);
-                },
-
-                onMapCreated: (controller) {
-                  mapController = controller;
-                  // Opcional: pots eliminar el listener de _onMapChanged si
-                  // aquest també et donava problemes amb el Smart Center.
-                },
-                onStyleLoadedCallback: () async {
-                  await setupUserLocationLayer(mapController!);
-
-                  await setupWaypointLayers(mapController!);
-                  waypointLayersReady = true;
-                  styleInitialized = true;
-
-                  mapController!.setLayerProperties(
-                    "track_line_layer",
-                    LineLayerProperties(
-                      lineColor: trackSettings.color.toMapLibreColor(),
-                      lineWidth: trackSettings.width,
-                      lineCap: "round",
-                      lineJoin: "round",
-                    ),
-                  );
-                },
               ),
             ),
 
@@ -518,11 +557,14 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     ],
 
                     // BOTÓ DE CENTRAR MAPA
-                    _buildSquareButton(
-                      icon: Icons.gps_fixed,
-                      // Dentro del onTap del botón gps_fixed:
-                      onTap: () {},
-                    ),
+                    if (!smartCenterEnabled)
+                      _buildSquareButton(
+                        icon: Icons.gps_fixed,
+                        onTap: () {
+                          setState(() => smartCenterEnabled = true);
+                          _centerOnUser();
+                        },
+                      ),
                   ],
                 ),
               ),
@@ -548,6 +590,22 @@ class _MapScreenState extends ConsumerState<MapScreen>
                           if (!ok) return;
 
                           await RecordingHandler.start(context, ref);
+                          final map = mapController;
+                          final pos = ref.read(trackProvider).currentPosition;
+
+                          if (map != null && pos != null) {
+                            isProgrammaticMove = true;
+                            map.animateCamera(
+                              CameraUpdate.newLatLngZoom(pos, 18),
+                            );
+
+                            Future.delayed(
+                              const Duration(milliseconds: 300),
+                              () {
+                                isProgrammaticMove = false;
+                              },
+                            );
+                          }
 
                           setState(() => _isPanelExpanded = false);
                         },
@@ -616,7 +674,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
       prefs.setBool("preserve_track_on_start", false);
 
       // 2. Cridem al mètode correcte que hem definit al Notifier
-      ref.read(trackProvider.notifier).clearTrack();
+      ref.read(trackProvider.notifier).reset();
 
       // 3. També hauries de netejar els waypoints si n'hi havia
       ref.read(waypointsProvider.notifier).clear();
