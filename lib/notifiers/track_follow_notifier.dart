@@ -45,7 +45,7 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
   DateTime? _offTrackStart;
   DateTime? _lastOffTrackAlert;
 
-  int maxOffTrackAlerts = 1;
+  int maxOffTrackAlerts = 2;
   Duration offTrackCooldown = Duration(seconds: 20);
   int offTrackAlertsSent = 0;
 
@@ -448,7 +448,7 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
 
   void onUserBackOnTrack() {
     _offTrackDismissed = false;
-
+    offTrackAlertsSent = 0;
     HapticFeedback.lightImpact();
     sounds.playBackOnTrackSound();
 

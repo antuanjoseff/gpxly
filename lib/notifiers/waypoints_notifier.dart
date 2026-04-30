@@ -98,7 +98,11 @@ class WaypointsNotifier extends Notifier<List<Waypoint>> {
   // -----------------------------
   // Helper
   // -----------------------------
-  bool get hasSavedWaypoints => state.isNotEmpty;
+
+  Future<bool> hasSavedWaypoints() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.containsKey(_prefsKey);
+  }
 }
 
 final waypointsProvider = NotifierProvider<WaypointsNotifier, List<Waypoint>>(

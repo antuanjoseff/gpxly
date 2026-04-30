@@ -16,7 +16,7 @@ class RecordingHandler {
     final prefs = await SharedPreferences.getInstance();
 
     final hasTrackCache = prefs.containsKey('temp_track_data');
-    final hasWpCache = wpNotifier.hasSavedWaypoints;
+    final hasWpCache = await wpNotifier.hasSavedWaypoints();
 
     // ───────────────────────────────────────────────
     // 1. RECUPERAR TRACK + WAYPOINTS
@@ -34,7 +34,10 @@ class RecordingHandler {
 
         // Recuperar waypoints
         if (hasWpCache) {
-          wpNotifier.restoreFromPrefs();
+          // Esperem que map_screen hagi carregat capes i estil
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            wpNotifier.restoreFromPrefs();
+          });
         }
 
         HapticFeedback.mediumImpact();

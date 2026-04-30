@@ -450,8 +450,8 @@ class AppMessages {
         backgroundColor: AppColors.tertiary,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
-        title: Row(
-          children: const [
+        title: const Row(
+          children: [
             Icon(Icons.stop_circle_outlined, color: Colors.redAccent, size: 28),
             SizedBox(width: 12),
             Expanded(

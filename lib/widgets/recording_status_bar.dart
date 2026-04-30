@@ -49,14 +49,16 @@ class RecordingStatusBar extends ConsumerWidget {
         );
         break;
       case RecordingState.recording:
-        icon = AnimatedContainer(
-          duration: const Duration(milliseconds: 1000),
+        icon = Container(
+          width: 8, // més petit
+          height: 8, // més petit
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: blinking ? iconColor : Colors.white,
+            color: iconColor, // vermell, però sense animació
           ),
         );
         break;
+
       case RecordingState.paused:
         icon = Icon(Icons.pause, color: iconColor, size: 14);
         break;
@@ -80,7 +82,7 @@ class RecordingStatusBar extends ConsumerWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           // ⏱️ SECCIÓ CRONÒMETRE
-          SizedBox(width: 14, height: 14, child: Center(child: icon)),
+          SizedBox(width: 10, height: 14, child: Center(child: icon)),
           const SizedBox(width: 8),
           Text(
             duration.toString().split('.').first.padLeft(8, "0"),

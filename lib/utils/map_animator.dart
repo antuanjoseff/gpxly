@@ -7,8 +7,14 @@ class MapAnimator {
 
   LatLng? _lastUserPos;
   List<List<double>>? _lastTrack;
+  List<List<double>>? _lastAnimatedSegment;
 
   MapAnimator(this.controller);
+
+  void updateUserPositionDirect(LatLng pos) {
+    setUserLocationGeometry(controller, pos.latitude, pos.longitude);
+    _lastUserPos = pos;
+  }
 
   void updateFromTrack(Track track) {
     _animateUserPosition(track.currentPosition);
@@ -48,6 +54,21 @@ class MapAnimator {
     if (coords.length < 2) return;
 
     final lastTwo = coords.sublist(coords.length - 2);
+
+    // 🔥 1. Si el segment és el mateix que l’últim animat → NO animem
+    if (_lastAnimatedSegment != null &&
+        _lastAnimatedSegment![0][0] == lastTwo[0][0] &&
+        _lastAnimatedSegment![0][1] == lastTwo[0][1] &&
+        _lastAnimatedSegment![1][0] == lastTwo[1][0] &&
+        _lastAnimatedSegment![1][1] == lastTwo[1][1]) {
+      return;
+    }
+
+    // 🔥 2. Guardem el segment per evitar animacions repetides
+    _lastAnimatedSegment = lastTwo;
+
+    // 🔥 3. Ara sí animem
+    setAnimatingSegmentGeometry(controller, lastTwo);
 
     setAnimatingSegmentGeometry(controller, lastTwo);
 

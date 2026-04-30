@@ -1,8 +1,5 @@
 import 'dart:async';
-
 import 'package:flutter/foundation.dart';
-import 'package:flutter/gestures.dart'
-    show OneSequenceGestureRecognizer, EagerGestureRecognizer;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -234,12 +231,93 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final trackFollowState = ref.watch(trackFollowNotifierProvider);
 
     // 2. LISTENER DEL TRACK (El pasivo)
+    // ref.listen(trackProvider, (prev, next) {
+    //   if (!styleInitialized || mapController == null) return;
+    //   // 🔥 Primer fix GPS → dibuixa punt blau immediatament
+    //   if (next.currentPosition != null && prev?.currentPosition == null) {
+    //     mapAnimator.updateUserPositionDirect(next.currentPosition!);
+    //   }
+    //   mapAnimator.updateFromTrack(next);
+
+    //   // Si SmartCenter està actiu → seguir el punt blau
+    //   if (smartCenterEnabled && next.currentPosition != null) {
+    //     isProgrammaticMove = true;
+
+    //     mapController!.animateCamera(
+    //       CameraUpdate.newLatLng(next.currentPosition!),
+    //     );
+
+    //     Future.delayed(const Duration(milliseconds: 300), () {
+    //       isProgrammaticMove = false;
+    //     });
+    //   }
+    // });
+
     ref.listen(trackProvider, (prev, next) {
       if (!styleInitialized || mapController == null) return;
 
+      // ───────────────────────────────────────────────
+      // 1) PRIMER FIX GPS → punt blau + zoom 18
+      // ───────────────────────────────────────────────
+      if (next.currentPosition != null && prev?.currentPosition == null) {
+        final pos = next.currentPosition!;
+        mapAnimator.updateUserPositionDirect(pos);
+
+        isProgrammaticMove = true;
+        mapController!.animateCamera(CameraUpdate.newLatLngZoom(pos, 18));
+        Future.delayed(const Duration(milliseconds: 300), () {
+          isProgrammaticMove = false;
+        });
+      }
+
+      // ───────────────────────────────────────────────
+      // 2) FIT TO BOUNDS només quan recuperem un track
+      // ───────────────────────────────────────────────
+      final isRecoveringTrack =
+          (prev?.coordinates.isEmpty ?? true) &&
+          next.coordinates.isNotEmpty &&
+          next.recordingState == RecordingState.idle;
+
+      if (isRecoveringTrack) {
+        final coords = next.coordinates;
+
+        final lats = coords.map((c) => c[1]);
+        final lons = coords.map((c) => c[0]);
+
+        final bounds = LatLngBounds(
+          southwest: LatLng(
+            lats.reduce((a, b) => a < b ? a : b),
+            lons.reduce((a, b) => a < b ? a : b),
+          ),
+          northeast: LatLng(
+            lats.reduce((a, b) => a > b ? a : b),
+            lons.reduce((a, b) => a > b ? a : b),
+          ),
+        );
+
+        isProgrammaticMove = true;
+        mapController!.animateCamera(
+          CameraUpdate.newLatLngBounds(
+            bounds,
+            left: 40,
+            right: 40,
+            top: 40,
+            bottom: 40,
+          ),
+        );
+        Future.delayed(const Duration(milliseconds: 300), () {
+          isProgrammaticMove = false;
+        });
+      }
+
+      // ───────────────────────────────────────────────
+      // 3) Animacions normals
+      // ───────────────────────────────────────────────
       mapAnimator.updateFromTrack(next);
 
-      // Si SmartCenter està actiu → seguir el punt blau
+      // ───────────────────────────────────────────────
+      // 4) SmartCenter
+      // ───────────────────────────────────────────────
       if (smartCenterEnabled && next.currentPosition != null) {
         isProgrammaticMove = true;
 
