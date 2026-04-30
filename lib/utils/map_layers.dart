@@ -20,9 +20,6 @@ Future<void> setupUserLocationLayer(MapLibreMapController controller) async {
     ),
   );
 
-  // -------------------------
-  // LAYER: imported_track_layer
-  // -------------------------
   await controller.addLayer(
     "imported_track",
     "imported_track_layer",
@@ -33,8 +30,9 @@ Future<void> setupUserLocationLayer(MapLibreMapController controller) async {
       lineCap: "round",
     ),
   );
+
   // -------------------------
-  // SOURCE: track_line
+  // SOURCE: track_line (La línia "fixa" consolidada)
   // -------------------------
   await controller.addSource(
     "track_line",
@@ -43,14 +41,32 @@ Future<void> setupUserLocationLayer(MapLibreMapController controller) async {
     ),
   );
 
-  // -------------------------
-  // LAYER: track_line_layer
-  // -------------------------
   await controller.addLayer(
     "track_line",
     "track_line_layer",
     const LineLayerProperties(
       lineColor: "#FF0000",
+      lineWidth: 4.0,
+      lineJoin: "round",
+      lineCap: "round",
+    ),
+  );
+
+  // -------------------------
+  // NUEVO - SOURCE: track_animating_segment (El tram que s'estira)
+  // -------------------------
+  await controller.addSource(
+    "track_animating_segment",
+    const GeojsonSourceProperties(
+      data: {"type": "FeatureCollection", "features": []},
+    ),
+  );
+
+  await controller.addLayer(
+    "track_animating_segment",
+    "track_animating_layer",
+    const LineLayerProperties(
+      lineColor: "#FF0000", // Mateix vermell
       lineWidth: 4.0,
       lineJoin: "round",
       lineCap: "round",
@@ -74,12 +90,17 @@ Future<void> setupUserLocationLayer(MapLibreMapController controller) async {
   );
 
   // -------------------------
-  // LAYER: user_location_layer
+  // LAYER: user_location_layer (Sempre l'última perquè quedi a dalt)
   // -------------------------
   await controller.addLayer(
     "user_location",
     "user_location_layer",
-    const SymbolLayerProperties(iconImage: "user_icon", iconSize: 1.0),
+    const SymbolLayerProperties(
+      iconImage: "user_icon",
+      iconSize: 1.0,
+      iconAllowOverlap: true,
+      iconIgnorePlacement: true,
+    ),
   );
 }
 
@@ -265,4 +286,59 @@ Future<Uint8List> _createBlueDot() async {
   final img = await picture.toImage(size, size);
   final byteData = await img.toByteData(format: ImageByteFormat.png);
   return byteData!.buffer.asUint8List();
+}
+
+// AFEGEIX A map_layers.dart
+
+void setTrackLineGeometry(
+  MapLibreMapController controller,
+  List<List<double>> coordinates,
+) {
+  controller.setGeoJsonSource("track_line", {
+    "type": "FeatureCollection",
+    "features": coordinates.isEmpty
+        ? []
+        : [
+            {
+              "type": "Feature",
+              "geometry": {"type": "LineString", "coordinates": coordinates},
+            },
+          ],
+  });
+}
+
+void setAnimatingSegmentGeometry(
+  MapLibreMapController controller,
+  List<List<double>> coordinates,
+) {
+  controller.setGeoJsonSource("track_animating_segment", {
+    "type": "FeatureCollection",
+    "features": coordinates.isEmpty
+        ? []
+        : [
+            {
+              "type": "Feature",
+              "geometry": {"type": "LineString", "coordinates": coordinates},
+            },
+          ],
+  });
+}
+
+void setUserLocationGeometry(
+  MapLibreMapController controller,
+  double lat,
+  double lon,
+) {
+  controller.setGeoJsonSource("user_location", {
+    "type": "FeatureCollection",
+    "features": [
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [lon, lat],
+        },
+      },
+    ],
+  });
 }

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,8 +16,6 @@ import 'package:gpxly/notifiers/track_settings_notifier.dart';
 import 'package:gpxly/notifiers/waypoints_notifier.dart';
 import 'package:gpxly/screens/settings/settings_screen.dart';
 import 'package:gpxly/screens/stats_screen.dart';
-
-import 'package:gpxly/services/gps_manager.dart';
 import 'package:gpxly/services/gpx_import_flow.dart';
 import 'package:gpxly/services/location_permission_flow.dart';
 import 'package:gpxly/services/recording_handler.dart';
@@ -25,11 +24,10 @@ import 'package:gpxly/ui/app_messages.dart';
 import 'package:gpxly/services/gpx_exporter.dart';
 import 'package:gpxly/ui/bottom_bar/bottom_bar_container.dart';
 import 'package:gpxly/utils/color_extensions.dart';
-import 'package:gpxly/utils/map_animation.dart';
+import 'package:gpxly/utils/map_animator.dart';
 import 'package:gpxly/utils/map_layers.dart';
 import 'package:gpxly/widgets/compass_widget.dart';
 import 'package:gpxly/widgets/gps_accuracy_bars.dart';
-
 import 'package:gpxly/widgets/recording_status_bar.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -42,22 +40,20 @@ class MapScreen extends ConsumerStatefulWidget {
 }
 
 class _MapScreenState extends ConsumerState<MapScreen>
-    with WidgetsBindingObserver {
+    with WidgetsBindingObserver, TickerProviderStateMixin {
   MapLibreMapController? mapController;
   bool styleInitialized = false;
-  bool userMovedMap = false;
-  bool isProgrammaticMove = false;
   bool _isPanelExpanded = true;
   bool _fullScreen = false;
   LatLng? _initialCameraTarget;
   double _initialZoom = 14;
-  bool isAnimatingSegment = false;
-  Timer? _cameraMoveDebounce;
   bool waypointLayersReady = false;
   DateTime? _lastBackPress;
+  bool smartCenterEnabled = true;
+  bool isProgrammaticMove = false;
+  Timer? smartCenterDebounce;
 
-  LatLng? _lastPosition;
-  Timer? _animationTimer;
+  late MapAnimator mapAnimator;
 
   final ButtonStyle recordButtonStyle = ElevatedButton.styleFrom(
     backgroundColor: Colors.red,
@@ -73,7 +69,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
     fontWeight: FontWeight.bold,
   );
 
-  @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
@@ -82,6 +77,19 @@ class _MapScreenState extends ConsumerState<MapScreen>
     Future.microtask(
       () => ref.read(permissionsProvider.notifier).checkPermissions(),
     );
+  }
+
+  void _centerOnUser() {
+    final pos = ref.read(trackProvider).currentPosition;
+    if (pos == null || mapController == null) return;
+
+    isProgrammaticMove = true;
+
+    mapController!.animateCamera(CameraUpdate.newLatLng(pos));
+    // 🔥 Reset de seguretat
+    Future.delayed(const Duration(milliseconds: 300), () {
+      isProgrammaticMove = false;
+    });
   }
 
   Future<void> _onFollowTrack() async {
@@ -96,29 +104,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
     // Si NO està seguint → activar GPS + centrar mapa + iniciar seguiment
     await notifier.startFollowingWithoutRecording(context, ref, mapController);
-  }
-
-  void _handleFollowTrack() {
-    final importedTrack = ref.read(importedTrackProvider);
-    if (importedTrack == null || importedTrack.coordinates.isEmpty) return;
-
-    final coords = importedTrack.coordinates;
-    final last = coords.last;
-
-    setState(() {
-      userMovedMap = false;
-      isProgrammaticMove = true;
-    });
-
-    mapController
-        ?.animateCamera(CameraUpdate.newLatLng(LatLng(last[1], last[0])))
-        .then((_) {
-          Future.delayed(const Duration(milliseconds: 300), () {
-            if (mounted) {
-              setState(() => isProgrammaticMove = false);
-            }
-          });
-        });
   }
 
   Future<void> _loadLastPosition() async {
@@ -138,31 +123,14 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
   @override
   void dispose() {
-    _animationTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this); // Limpieza del observer
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused ||
-        state == AppLifecycleState.inactive) {
-      final track = ref.read(trackProvider);
-      if (track.coordinates.isNotEmpty) {
-        final last = track.coordinates.last;
-        // Aquí cridem a la funció que NO té filtre de temps
-        _forceSavePosition(last[1], last[0]);
-      }
-    }
-  }
-
-  void _onMapChanged() {
-    // Si la animación o la cámara están trabajando, ignoramos el evento
-    if (isProgrammaticMove || isAnimatingSegment) return;
-
-    final moving = mapController?.isCameraMoving ?? false;
-    if (moving) {
-      userMovedMap = true; // El usuario ha tomado el control manual
-    }
+        state == AppLifecycleState.inactive) {}
   }
 
   void _handleStopProcess(BuildContext context, WidgetRef ref) async {
@@ -193,62 +161,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
   Future<bool?> _askDeleteTrack() {
     return AppMessages.showDeleteTrackDialog(context);
-  }
-
-  bool isConsistentlyIncreasing(List<double> values) {
-    for (int i = 1; i < values.length; i++) {
-      if (values[i] < values[i - 1]) return false;
-    }
-    return true;
-  }
-
-  void _animateGpsPosition(LatLng newPos) {
-    // 1. Bloqueamos movimientos externos
-    setState(() => isProgrammaticMove = true);
-
-    final trackData = ref.read(trackProvider);
-    final isRecording = trackData.recordingState == RecordingState.recording;
-    final coords = trackData.coordinates;
-
-    // 2. TRUCO CLAVE: Antes de empezar la animación, forzamos el dibujo
-    // de la línea SIN el último punto que acaba de llegar.
-    // Esto elimina el "salto" visual del que hablabas.
-    if (isRecording && coords.length > 1) {
-      _updateTrackLineSource(coords.sublist(0, coords.length - 1));
-    }
-
-    // 3. Ejecutamos la animación (que irá añadiendo el punto interpolado)
-    animateLastSegment(
-      lat: newPos.latitude,
-      lon: newPos.longitude,
-      allCoordinates: coords, // Pasamos la lista completa
-      controller: mapController!,
-      userMovedMap: userMovedMap,
-      currentLastPosition: _lastPosition,
-      currentTimer: _animationTimer,
-      setLastPosition: (p) => _lastPosition = p,
-      setTimer: (t) => _animationTimer = t,
-      onAnimate: (isAnimating) {
-        if (mounted) setState(() => isProgrammaticMove = isAnimating);
-      },
-      overrideDrawPoint: null,
-      overrideDrawLine: (animatedCoords) =>
-          _updateTrackLineSource(animatedCoords),
-      drawSegment: isRecording,
-    );
-  }
-
-  void _updateTrackLineSource(List<List<double>> coords) {
-    if (mapController == null) return;
-    mapController!.setGeoJsonSource("track_line", {
-      "type": "FeatureCollection",
-      "features": [
-        {
-          "type": "Feature",
-          "geometry": {"type": "LineString", "coordinates": coords},
-        },
-      ],
-    });
   }
 
   Widget _buildSquareButton({
@@ -318,50 +230,105 @@ class _MapScreenState extends ConsumerState<MapScreen>
         importedTrack != null && importedTrack.coordinates.isNotEmpty;
     final trackFollowState = ref.watch(trackFollowNotifierProvider);
 
-    // Listener dins build (Riverpod obliga)
-    // 1. LISTENER DEL GPS (El que manda)
-    ref.listen<GpsManagerState>(gpsManagerProvider, (prev, next) {
-      if (!styleInitialized || mapController == null || next.position == null)
-        return;
-
-      final pos = next.position!;
-      final bool isFirstPoint = prev?.position == null;
-      final bool isRecording =
-          ref.read(trackProvider).recordingState == RecordingState.recording;
-
-      // 1. SEMPRE animem la posició (punt blau i possible segment)
-      _animateGpsPosition(pos);
-
-      // 2. A MÉS, si és el primer punt, fem el zoom
-      if (isFirstPoint && isRecording) {
-        setState(() {
-          userMovedMap = false;
-          isProgrammaticMove = true;
-        });
-
-        mapController!
-            .animateCamera(
-              CameraUpdate.newLatLngZoom(pos, 18.0),
-              duration: const Duration(milliseconds: 1500),
-            )
-            .then((_) {
-              if (mounted) setState(() => isProgrammaticMove = false);
-            });
-      }
-    });
-
     // 2. LISTENER DEL TRACK (El pasivo)
-    ref.listen(trackProvider, (previous, next) {
+    // ref.listen(trackProvider, (prev, next) {
+    //   if (!styleInitialized || mapController == null) return;
+    //   // 🔥 Primer fix GPS → dibuixa punt blau immediatament
+    //   if (next.currentPosition != null && prev?.currentPosition == null) {
+    //     mapAnimator.updateUserPositionDirect(next.currentPosition!);
+    //   }
+    //   mapAnimator.updateFromTrack(next);
+
+    //   // Si SmartCenter està actiu → seguir el punt blau
+    //   if (smartCenterEnabled && next.currentPosition != null) {
+    //     isProgrammaticMove = true;
+
+    //     mapController!.animateCamera(
+    //       CameraUpdate.newLatLng(next.currentPosition!),
+    //     );
+
+    //     Future.delayed(const Duration(milliseconds: 300), () {
+    //       isProgrammaticMove = false;
+    //     });
+    //   }
+    // });
+
+    ref.listen(trackProvider, (prev, next) {
       if (!styleInitialized || mapController == null) return;
 
-      final isRecording = next.recordingState == RecordingState.recording;
+      // ───────────────────────────────────────────────
+      // 1) PRIMER FIX GPS → punt blau + zoom 18
+      // ───────────────────────────────────────────────
+      if (next.currentPosition != null && prev?.currentPosition == null) {
+        final pos = next.currentPosition!;
+        mapAnimator.updateUserPositionDirect(pos);
 
-      // SI ESTAMOS GRABANDO: No pintamos desde aquí.
-      // Delegamos el dibujo a la función _animateGpsPosition que se dispara por el GPS.
-      if (isRecording) return;
+        isProgrammaticMove = true;
+        mapController!.animateCamera(CameraUpdate.newLatLngZoom(pos, 18));
+        Future.delayed(const Duration(milliseconds: 300), () {
+          isProgrammaticMove = false;
+        });
+      }
 
-      // SI NO ESTAMOS GRABANDO (ej. pausa o stop): Pintamos normal.
-      _updateTrackLineSource(next.coordinates);
+      // ───────────────────────────────────────────────
+      // 2) FIT TO BOUNDS només quan recuperem un track
+      // ───────────────────────────────────────────────
+      final isRecoveringTrack =
+          (prev?.coordinates.isEmpty ?? true) &&
+          next.coordinates.isNotEmpty &&
+          next.recordingState == RecordingState.idle;
+
+      if (isRecoveringTrack) {
+        final coords = next.coordinates;
+
+        final lats = coords.map((c) => c[1]);
+        final lons = coords.map((c) => c[0]);
+
+        final bounds = LatLngBounds(
+          southwest: LatLng(
+            lats.reduce((a, b) => a < b ? a : b),
+            lons.reduce((a, b) => a < b ? a : b),
+          ),
+          northeast: LatLng(
+            lats.reduce((a, b) => a > b ? a : b),
+            lons.reduce((a, b) => a > b ? a : b),
+          ),
+        );
+
+        isProgrammaticMove = true;
+        mapController!.animateCamera(
+          CameraUpdate.newLatLngBounds(
+            bounds,
+            left: 40,
+            right: 40,
+            top: 40,
+            bottom: 40,
+          ),
+        );
+        Future.delayed(const Duration(milliseconds: 300), () {
+          isProgrammaticMove = false;
+        });
+      }
+
+      // ───────────────────────────────────────────────
+      // 3) Animacions normals
+      // ───────────────────────────────────────────────
+      mapAnimator.updateFromTrack(next);
+
+      // ───────────────────────────────────────────────
+      // 4) SmartCenter
+      // ───────────────────────────────────────────────
+      if (smartCenterEnabled && next.currentPosition != null) {
+        isProgrammaticMove = true;
+
+        mapController!.animateCamera(
+          CameraUpdate.newLatLng(next.currentPosition!),
+        );
+
+        Future.delayed(const Duration(milliseconds: 300), () {
+          isProgrammaticMove = false;
+        });
+      }
     });
 
     ref.listen(waypointsProvider, (prev, next) async {
@@ -428,32 +395,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
           lineJoin: "round",
         ),
       );
-
-      setState(() {
-        userMovedMap = true;
-        isProgrammaticMove = true;
-      });
-
-      Future.delayed(const Duration(milliseconds: 200), () {
-        if (mapController != null) {
-          mapController!
-              .animateCamera(
-                CameraUpdate.newLatLngBounds(
-                  LatLngBounds(
-                    southwest: LatLng(next.minLat!, next.minLon!),
-                    northeast: LatLng(next.maxLat!, next.maxLon!),
-                  ),
-                  left: 50,
-                  top: 50,
-                  right: 50,
-                  bottom: 50,
-                ),
-              )
-              .then((_) {
-                if (mounted) setState(() => isProgrammaticMove = false);
-              });
-        }
-      });
     });
 
     ref.listen(importedTrackSettingsProvider, (previous, next) {
@@ -582,88 +523,66 @@ class _MapScreenState extends ConsumerState<MapScreen>
         body: Stack(
           children: [
             RepaintBoundary(
-              child: MapLibreMap(
-                trackCameraPosition: true,
-                compassEnabled: false,
-                styleString: "assets/osm_style.json",
-                initialCameraPosition: CameraPosition(
-                  target: _initialCameraTarget!,
-                  zoom: _initialZoom,
-                ),
-                onMapLongClick: (point, latlng) {
-                  SystemChrome.setEnabledSystemUIMode(
-                    SystemUiMode.immersiveSticky,
-                  );
-                  setState(() => _fullScreen = true);
-                },
-                onMapClick: (point, latlng) {
-                  if (!_fullScreen) return;
-                  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-                  setState(() => _fullScreen = false);
-                },
-                onCameraMove: (position) {
-                  if (isProgrammaticMove) return;
-                  userMovedMap = true;
-                },
-                onCameraIdle: () async {
-                  final pos = await mapController!.cameraPosition;
-
-                  ref.read(mapZoomProvider.notifier).update(pos!.zoom);
-                  ref
-                      .read(mapCenterLatProvider.notifier)
-                      .update(pos.target.latitude);
-                },
-
-                onMapCreated: (controller) {
-                  mapController = controller;
-                  controller.addListener(_onMapChanged);
-                },
-                onStyleLoadedCallback: () async {
-                  await setupUserLocationLayer(mapController!);
-                  await setupWaypointLayers(mapController!);
-                  waypointLayersReady = true;
-                  styleInitialized = true;
-
-                  // Apliquem color i gruix del track triats per l’usuari
-                  mapController!.setLayerProperties(
-                    "track_line_layer",
-                    LineLayerProperties(
-                      lineColor: trackSettings.color.toMapLibreColor(),
-                      lineWidth: trackSettings.width,
-                      lineCap: "round",
-                      lineJoin: "round",
-                    ),
-                  );
-
-                  final track = ref.read(trackProvider);
-
-                  if (track.coordinates.isNotEmpty) {
-                    final last = track.coordinates.last;
-
-                    updateMapPosition(
-                      mapController!,
-                      last[1],
-                      last[0],
-                      userMovedMap,
-                      (val) {
-                        if (mounted) setState(() => isProgrammaticMove = val);
-                      },
-                    );
-
-                    mapController!.setGeoJsonSource("track_line", {
-                      "type": "FeatureCollection",
-                      "features": [
-                        {
-                          "type": "Feature",
-                          "geometry": {
-                            "type": "LineString",
-                            "coordinates": track.coordinates,
-                          },
-                        },
-                      ],
-                    });
+              child: Listener(
+                onPointerMove: (PointerMoveEvent event) {
+                  if (smartCenterEnabled) {
+                    setState(() => smartCenterEnabled = false);
                   }
                 },
+                child: MapLibreMap(
+                  trackCameraPosition: true,
+                  compassEnabled: false,
+                  styleString: "assets/osm_style.json",
+                  initialCameraPosition: CameraPosition(
+                    target: _initialCameraTarget!,
+                    zoom: _initialZoom,
+                  ),
+                  onMapLongClick: (point, latlng) {
+                    SystemChrome.setEnabledSystemUIMode(
+                      SystemUiMode.immersiveSticky,
+                    );
+                    setState(() => _fullScreen = true);
+                  },
+                  onMapClick: (point, latlng) {
+                    if (!_fullScreen) return;
+                    SystemChrome.setEnabledSystemUIMode(
+                      SystemUiMode.edgeToEdge,
+                    );
+                    setState(() => _fullScreen = false);
+                  },
+                  onCameraIdle: () async {
+                    final pos = await mapController!.cameraPosition;
+
+                    ref.read(mapZoomProvider.notifier).update(pos!.zoom);
+                    ref
+                        .read(mapCenterLatProvider.notifier)
+                        .update(pos.target.latitude);
+                  },
+                  onMapCreated: (controller) {
+                    mapController = controller;
+                    // Opcional: pots eliminar el listener de _onMapChanged si
+                    // aquest també et donava problemes amb el Smart Center.
+                  },
+                  onStyleLoadedCallback: () async {
+                    await setupUserLocationLayer(mapController!);
+                    await setupWaypointLayers(mapController!);
+
+                    mapAnimator = MapAnimator(mapController!);
+
+                    waypointLayersReady = true;
+                    styleInitialized = true;
+
+                    mapController!.setLayerProperties(
+                      "track_line_layer",
+                      LineLayerProperties(
+                        lineColor: trackSettings.color.toMapLibreColor(),
+                        lineWidth: trackSettings.width,
+                        lineCap: "round",
+                        lineJoin: "round",
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
 
@@ -724,37 +643,12 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     ],
 
                     // BOTÓ DE CENTRAR MAPA
-                    if (userMovedMap)
+                    if (!smartCenterEnabled)
                       _buildSquareButton(
                         icon: Icons.gps_fixed,
                         onTap: () {
-                          final gps = ref.read(gpsManagerProvider);
-                          if (gps.position == null) return;
-                          final pos = gps.position!;
-
-                          setState(() {
-                            userMovedMap = false;
-                            isProgrammaticMove = true;
-                          });
-
-                          mapController
-                              ?.animateCamera(
-                                CameraUpdate.newLatLng(
-                                  LatLng(pos.latitude, pos.longitude),
-                                ),
-                              )
-                              .then((_) {
-                                Future.delayed(
-                                  const Duration(milliseconds: 300),
-                                  () {
-                                    if (mounted) {
-                                      setState(
-                                        () => isProgrammaticMove = false,
-                                      );
-                                    }
-                                  },
-                                );
-                              });
+                          setState(() => smartCenterEnabled = true);
+                          _centerOnUser();
                         },
                       ),
                   ],
@@ -781,20 +675,23 @@ class _MapScreenState extends ConsumerState<MapScreen>
                           );
                           if (!ok) return;
 
-                          setState(() {
-                            userMovedMap = false;
-                            isProgrammaticMove = true;
-                          });
+                          await RecordingHandler.start(context, ref);
+                          final map = mapController;
+                          final pos = ref.read(trackProvider).currentPosition;
 
-                          await RecordingHandler.start(
-                            context,
-                            ref,
-                            mapController,
-                          );
-                          Future.delayed(const Duration(milliseconds: 300), () {
-                            if (mounted)
-                              setState(() => isProgrammaticMove = false);
-                          });
+                          if (map != null && pos != null) {
+                            isProgrammaticMove = true;
+                            map.animateCamera(
+                              CameraUpdate.newLatLngZoom(pos, 18),
+                            );
+
+                            Future.delayed(
+                              const Duration(milliseconds: 300),
+                              () {
+                                isProgrammaticMove = false;
+                              },
+                            );
+                          }
 
                           setState(() => _isPanelExpanded = false);
                         },
@@ -837,38 +734,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
     );
   }
 
-  Future<void> _forceSavePosition(double lat, double lon) async {
-    final prefs = await SharedPreferences.getInstance();
-
-    // Obtenim l'estat actual del track per guardar l'última telemetria coneguda
-    final track = ref.read(trackProvider);
-
-    await prefs.setDouble('last_lat', lat);
-    await prefs.setDouble('last_lon', lon);
-
-    // 🔹 Guardem les noves propietats de l'últim punt registrat
-    if (track.altitudes.isNotEmpty) {
-      await prefs.setDouble('last_alt', track.altitudes.last);
-    }
-    if (track.speeds.isNotEmpty) {
-      await prefs.setDouble('last_speed', track.speeds.last);
-    }
-    if (track.headings.isNotEmpty) {
-      await prefs.setDouble('last_heading', track.headings.last);
-    }
-    if (track.satellites.isNotEmpty) {
-      await prefs.setInt('last_sat', track.satellites.last);
-    }
-    if (track.accuracies.isNotEmpty) {
-      await prefs.setDouble('last_acc', track.accuracies.last);
-    }
-    if (track.vAccuracies.isNotEmpty) {
-      await prefs.setDouble('last_vAcc', track.vAccuracies.last);
-    }
-
-    print(">>> Posició i telemetria completa guardada a SharedPreferences");
-  }
-
   Future<void> _shareTrack() async {
     final track = ref.read(trackProvider);
     if (track.coordinates.isEmpty) return;
@@ -888,9 +753,17 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final prefs = await SharedPreferences.getInstance();
     final eliminar = await _askDeleteTrack();
 
+    // ... després de exportGpx ...
+
     if (eliminar == true) {
+      // 1. Indiquem que no volem recuperar res el pròxim cop
       prefs.setBool("preserve_track_on_start", false);
+
+      // 2. Cridem al mètode correcte que hem definit al Notifier
       ref.read(trackProvider.notifier).reset();
+
+      // 3. També hauries de netejar els waypoints si n'hi havia
+      ref.read(waypointsProvider.notifier).clear();
     } else {
       prefs.setBool("preserve_track_on_start", true);
     }
