@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:gpxly/notifiers/gps_accuracy_notifier.dart';
 import 'package:gpxly/notifiers/gps_altitude_notifier.dart';
+import 'package:gpxly/notifiers/gps_settings_notifier.dart';
 import 'package:gpxly/notifiers/track_follow_notifier.dart';
 import 'package:gpxly/services/native_gps_channel.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -16,6 +17,7 @@ class TrackNotifier extends Notifier<Track> {
   Track? _initialState;
   StreamSubscription? _gpsSub;
   bool isFollowing = false;
+  bool gpsActive = false;
 
   @override
   Track build() {
@@ -36,7 +38,7 @@ class TrackNotifier extends Notifier<Track> {
       descent: 0.0,
       maxElevation: -9999.0,
       minElevation: 9999.0,
-      currentPosition: null, // 🔥 afegit
+      currentPosition: null,
     );
   }
 
@@ -46,6 +48,39 @@ class TrackNotifier extends Notifier<Track> {
     _gpsSub = NativeGpsChannel.positionStream().listen((data) {
       onNativeGpsPoint(data);
     });
+  }
+
+  Future<void> ensureGpsStarted() async {
+    if (gpsActive) {
+      print("⚠️ ensureGpsStarted() → GPS ja estava actiu");
+      return;
+    }
+
+    // 🔥 LLEGIR CONFIGURACIÓ DE L’USUARI
+    final gpsSettings = ref.read(gpsSettingsProvider);
+
+    print("   ACTIVANT GPS AMB CONFIGURACIÓ:");
+    print("   useTime  = ${gpsSettings.useTime}");
+    print("   seconds  = ${gpsSettings.seconds}");
+    print("   meters   = ${gpsSettings.meters}");
+    print("   accuracy = ${gpsSettings.accuracy}");
+
+    await NativeGpsChannel.start(
+      useTime: gpsSettings.useTime,
+      seconds: gpsSettings.seconds,
+      meters: gpsSettings.meters,
+      accuracy: gpsSettings.accuracy,
+    );
+
+    print("🔥 CONNECTANT startGpsListener()");
+    startGpsListener();
+
+    gpsActive = true;
+    print("✅ GPS ACTIVAT I LISTENER CONNECTAT");
+  }
+
+  void continueRecording() {
+    state = state.copyWith(recordingState: RecordingState.recording);
   }
 
   void onNativeGpsPoint(Map<String, dynamic> data) {
@@ -58,32 +93,7 @@ class TrackNotifier extends Notifier<Track> {
     final timestamp = DateTime.fromMillisecondsSinceEpoch(data["timestamp"]);
     final vAccuracy = data["vAccuracy"] as double;
     final satellites = data["satellites"] as int? ?? 0;
-
-    // 🔥 Converteix-ho al format que ja tens
-    onGpsPointRaw(
-      lat: lat,
-      lon: lon,
-      accuracy: accuracy,
-      altitude: altitude,
-      speed: speed,
-      heading: heading,
-      timestamp: timestamp,
-      vAccuracy: vAccuracy,
-      satellites: satellites,
-    );
-  }
-
-  void onGpsPointRaw({
-    required double lat,
-    required double lon,
-    required double accuracy,
-    required double altitude,
-    required double speed,
-    required double heading,
-    required DateTime timestamp,
-    required double vAccuracy,
-    required int satellites,
-  }) {
+    print("📡 onNativeGpsPoint() → REBUT PUNT RAW: $data");
     // 1. Actualitzar punt blau
     state = state.copyWith(currentPosition: LatLng(lat, lon));
 
@@ -226,7 +236,7 @@ class TrackNotifier extends Notifier<Track> {
       final prefs = await SharedPreferences.getInstance();
       final String? rawData = prefs.getString('temp_track_data');
       if (rawData == null) return;
-
+      print('>>> {rawData}');
       final Map<String, dynamic> data = jsonDecode(rawData);
 
       state = Track(
@@ -257,30 +267,6 @@ class TrackNotifier extends Notifier<Track> {
       );
     } catch (e) {
       debugPrint("Error carregant el cache: $e");
-    }
-  }
-
-  // ───────────────────────────────────────────────
-  // 1) PUNT D’ENTRADA ÚNIC DEL GPS
-  // ───────────────────────────────────────────────
-
-  void onGpsPoint(Position pos, {int satUsed = 0}) {
-    // 1. Actualitzar punt blau
-    state = state.copyWith(
-      currentPosition: LatLng(pos.latitude, pos.longitude),
-    );
-
-    // 2. Si estem gravant → afegir punt
-    if (state.recordingState == RecordingState.recording) {
-      addPointFromPosition(pos, satUsed);
-    }
-
-    // 3. Si estem seguint → enviar al TrackFollowNotifier
-    if (isFollowing) {
-      final userPos = LatLng(pos.latitude, pos.longitude);
-      ref
-          .read(trackFollowNotifierProvider.notifier)
-          .updateUserPosition(userPos);
     }
   }
 

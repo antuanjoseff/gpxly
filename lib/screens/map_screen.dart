@@ -13,7 +13,8 @@ import 'package:gpxly/notifiers/permissions_notifier.dart';
 import 'package:gpxly/notifiers/track_follow_notifier.dart';
 import 'package:gpxly/notifiers/track_notifier.dart';
 import 'package:gpxly/notifiers/track_settings_notifier.dart';
-import 'package:gpxly/notifiers/waypoints_notifier.dart';
+import 'package:gpxly/notifiers/waypoints_imporeted_notifier.dart';
+import 'package:gpxly/notifiers/waypoints_recorded_notifier.dart';
 import 'package:gpxly/screens/settings/settings_screen.dart';
 import 'package:gpxly/screens/stats_screen.dart';
 import 'package:gpxly/services/gpx_import_flow.dart';
@@ -52,6 +53,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
   bool smartCenterEnabled = true;
   bool isProgrammaticMove = false;
   Timer? smartCenterDebounce;
+  bool hasDoneFirstFixZoom = false;
 
   late MapAnimator mapAnimator;
 
@@ -103,7 +105,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
     }
 
     // Si NO està seguint → activar GPS + centrar mapa + iniciar seguiment
-    await notifier.startFollowingWithoutRecording(context, ref, mapController);
+    await notifier.startFollowing(context, ref, mapController);
   }
 
   Future<void> _loadLastPosition() async {
@@ -220,6 +222,40 @@ class _MapScreenState extends ConsumerState<MapScreen>
     ref.read(waypointsProvider.notifier).add(wp);
   }
 
+  void _fitToBounds(List<List<double>> coords) {
+    if (coords.isEmpty || mapController == null) return;
+
+    final lats = coords.map((c) => c[1]);
+    final lons = coords.map((c) => c[0]);
+
+    final sw = LatLng(
+      lats.reduce((a, b) => a < b ? a : b),
+      lons.reduce((a, b) => a < b ? a : b),
+    );
+    final ne = LatLng(
+      lats.reduce((a, b) => a > b ? a : b),
+      lons.reduce((a, b) => a > b ? a : b),
+    );
+
+    final bounds = LatLngBounds(southwest: sw, northeast: ne);
+
+    setState(() => isProgrammaticMove = true);
+
+    mapController!.animateCamera(
+      CameraUpdate.newLatLngBounds(
+        bounds,
+        left: 40,
+        right: 40,
+        top: 40,
+        bottom: 40,
+      ),
+    );
+
+    Future.delayed(const Duration(milliseconds: 400), () {
+      if (mounted) setState(() => isProgrammaticMove = false);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final track = ref.watch(trackProvider);
@@ -253,21 +289,48 @@ class _MapScreenState extends ConsumerState<MapScreen>
     //   }
     // });
 
-    ref.listen(trackProvider, (prev, next) {
-      if (!styleInitialized || mapController == null) return;
+    ref.listen(trackProvider, (prev, next) async {
+      // ───────────────────────────────────────────────
+      // 0) MAP READY CHECK
+      // ───────────────────────────────────────────────
+      if (!styleInitialized || mapController == null) {
+        print(
+          ">>> ❌ SORTINT: styleInitialized=$styleInitialized mapController=${mapController != null}",
+        );
+        return;
+      }
+
+      // ───────────────────────────────────────────────
+      // DEBUG POSICIÓ
+      // ───────────────────────────────────────────────
+      if (next.currentPosition != null) {
+        print(">>> 📍 Nova posició GPS: ${next.currentPosition}");
+      }
 
       // ───────────────────────────────────────────────
       // 1) PRIMER FIX GPS → punt blau + zoom 18
       // ───────────────────────────────────────────────
+      print(">>> 🧪 DEBUG PRIMER FIX:");
+      print(">>>     prev.currentPosition = ${prev?.currentPosition}");
+      print(">>>     next.currentPosition = ${next.currentPosition}");
+
       if (next.currentPosition != null && prev?.currentPosition == null) {
+        print(">>> 🔵 PRIMER FIX GPS → Zoom 18");
+
+        hasDoneFirstFixZoom = true;
+
         final pos = next.currentPosition!;
         mapAnimator.updateUserPositionDirect(pos);
 
         isProgrammaticMove = true;
+        print(">>> 🎥 Camera → newLatLngZoom(pos, 18)");
         mapController!.animateCamera(CameraUpdate.newLatLngZoom(pos, 18));
+
         Future.delayed(const Duration(milliseconds: 300), () {
           isProgrammaticMove = false;
         });
+      } else {
+        print(">>> ⚠️ NO és primer fix → NO Zoom 18");
       }
 
       // ───────────────────────────────────────────────
@@ -278,47 +341,31 @@ class _MapScreenState extends ConsumerState<MapScreen>
           next.coordinates.isNotEmpty &&
           next.recordingState == RecordingState.idle;
 
+      print(">>> 🔍 isRecoveringTrack = $isRecoveringTrack");
+      print(">>>    prev coords: ${prev?.coordinates.length ?? 0}");
+      print(">>>    next coords: ${next.coordinates.length}");
+      print(">>>    recordingState: ${next.recordingState}");
       if (isRecoveringTrack) {
-        final coords = next.coordinates;
-
-        final lats = coords.map((c) => c[1]);
-        final lons = coords.map((c) => c[0]);
-
-        final bounds = LatLngBounds(
-          southwest: LatLng(
-            lats.reduce((a, b) => a < b ? a : b),
-            lons.reduce((a, b) => a < b ? a : b),
-          ),
-          northeast: LatLng(
-            lats.reduce((a, b) => a > b ? a : b),
-            lons.reduce((a, b) => a > b ? a : b),
-          ),
-        );
-
-        isProgrammaticMove = true;
-        mapController!.animateCamera(
-          CameraUpdate.newLatLngBounds(
-            bounds,
-            left: 40,
-            right: 40,
-            top: 40,
-            bottom: 40,
-          ),
-        );
-        Future.delayed(const Duration(milliseconds: 300), () {
-          isProgrammaticMove = false;
-        });
+        print(">>> 📦 RECUPERANT TRACK → Calculant bounds…");
+        if (isRecoveringTrack) {
+          _fitToBounds(next.coordinates);
+        }
       }
 
       // ───────────────────────────────────────────────
       // 3) Animacions normals
       // ───────────────────────────────────────────────
+      print(">>> 🎞 updateFromTrack(next)");
       mapAnimator.updateFromTrack(next);
 
       // ───────────────────────────────────────────────
       // 4) SmartCenter
       // ───────────────────────────────────────────────
-      if (smartCenterEnabled && next.currentPosition != null) {
+      if (!hasDoneFirstFixZoom &&
+          smartCenterEnabled &&
+          next.currentPosition != null) {
+        print(">>> 🎯 SmartCenter → centrant mapa en ${next.currentPosition}");
+
         isProgrammaticMove = true;
 
         mapController!.animateCamera(
@@ -336,7 +383,10 @@ class _MapScreenState extends ConsumerState<MapScreen>
         return;
       }
 
-      updateWaypointsOnMap(mapController!, next);
+      final recorded = ref.read(waypointsProvider);
+      final imported = ref.read(importedWaypointsProvider);
+
+      updateWaypointsOnMap(mapController!, [...recorded, ...imported]);
 
       await animateWaypointAppearance(
         mapController!,
@@ -395,6 +445,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
           lineJoin: "round",
         ),
       );
+
+      // 👉 DRY: només cridem la funció
+      _fitToBounds(next.coordinates);
     });
 
     ref.listen(importedTrackSettingsProvider, (previous, next) {
@@ -560,6 +613,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   },
                   onMapCreated: (controller) {
                     mapController = controller;
+                    print(">>> 🟢 MAP FULLY READY");
                     // Opcional: pots eliminar el listener de _onMapChanged si
                     // aquest també et donava problemes amb el Smart Center.
                   },

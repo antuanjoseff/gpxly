@@ -4,7 +4,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:gpxly/notifiers/gpx_settings_notifier.dart'
     show gpxSettingsProvider;
 import 'package:gpxly/notifiers/track_notifier.dart';
-import 'package:gpxly/notifiers/waypoints_notifier.dart';
+import 'package:gpxly/notifiers/waypoints_recorded_notifier.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';

@@ -26,13 +26,53 @@ Future<void> pickGpxAndImport({
   final path = result.files.single.path;
   if (path == null) return;
 
-  // 2) Llegir el fitxer
-  final xml = await File(path).readAsString();
+  // ───────────────────────────────────────────────
+  // VALIDACIÓ DEL FITXER
+  // ───────────────────────────────────────────────
 
+  // 1) Validar extensió
+  if (!path.toLowerCase().endsWith(".gpx")) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("El fitxer seleccionat no és un GPX")),
+    );
+    return;
+  }
+
+  // 2) Llegir contingut com a text
+  String xml;
+  try {
+    xml = await File(path).readAsString();
+  } catch (_) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("No s'ha pogut llegir el fitxer GPX")),
+    );
+    return;
+  }
+
+  // 3) Validar que és XML
+  if (!xml.trim().startsWith("<")) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("El fitxer no sembla un XML GPX vàlid")),
+    );
+    return;
+  }
+
+  // 4) Validar que conté etiqueta GPX
+  if (!xml.contains("<gpx")) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("El fitxer no conté dades GPX")),
+    );
+    return;
+  }
+
+  // ───────────────────────────────────────────────
   // 3) Importar GPX (servei existent)
+  // ───────────────────────────────────────────────
   await GpxImportService.importGpx(ref, xml);
 
+  // ───────────────────────────────────────────────
   // 4) Centrar el mapa al track importat
+  // ───────────────────────────────────────────────
   final track = ref.read(trackProvider);
   if (track.coordinates.isEmpty || mapController == null) return;
 

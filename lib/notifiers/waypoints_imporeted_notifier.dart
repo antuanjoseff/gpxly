@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/waypoint.dart';
 
-class WaypointsNotifier extends Notifier<List<Waypoint>> {
+class ImportedWaypointsNotifier extends Notifier<List<Waypoint>> {
   static const _prefsKey = "recorded_waypoints";
 
   @override
@@ -18,13 +18,6 @@ class WaypointsNotifier extends Notifier<List<Waypoint>> {
   void setWaypoints(List<Waypoint> newList) {
     state = List.unmodifiable(newList);
     _saveToPrefs();
-  }
-
-  // -----------------------------
-  // SET (substituir tota la llista)
-  // -----------------------------
-  void setWaypoints(List<Waypoint> newList) {
-    state = List.unmodifiable(newList);
   }
 
   // -----------------------------
@@ -112,6 +105,7 @@ class WaypointsNotifier extends Notifier<List<Waypoint>> {
   }
 }
 
-final waypointsProvider = NotifierProvider<WaypointsNotifier, List<Waypoint>>(
-  WaypointsNotifier.new,
-);
+final importedWaypointsProvider =
+    NotifierProvider<ImportedWaypointsNotifier, List<Waypoint>>(
+      ImportedWaypointsNotifier.new,
+    );

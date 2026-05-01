@@ -85,13 +85,6 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
   // ------------------------------------------------------------
   // API pública
   // ------------------------------------------------------------
-  void toggleFollowing(BuildContext context) {
-    if (state.isFollowing) {
-      stopFollowing();
-    } else {
-      startFollowingWithRecording();
-    }
-  }
 
   void reverseImportedTrack() {
     // 1. Invertimos las coordenadas en el almacén (Provider)
@@ -138,43 +131,33 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
   // ------------------------------------------------------------
   // Seguiment sense enregistrament
   // ------------------------------------------------------------
-  Future<void> startFollowingWithoutRecording(
+  Future<void> startFollowing(
     BuildContext context,
     WidgetRef ref,
     MapLibreMapController? mapController,
   ) async {
-    // 1. Permisos igual que RecordingHandler
+    // 1. Permisos
     final ok = await PermissionsService.ensureGpsReady(context);
     if (!ok) return;
+    await ref.read(trackProvider.notifier).ensureGpsStarted();
 
-    // 2. Activar GPS via GPSManager
-    final gps = ref.read(gpsManagerProvider.notifier);
-    final settings = ref.read(gpsSettingsProvider);
+    // 2. Activar mode "following" al TrackNotifier
+    ref.read(trackProvider.notifier).setFollowing(true);
 
-    await gps.startGps(
-      useTime: settings.useTime,
-      seconds: settings.seconds,
-      meters: settings.meters,
-      accuracy: settings.accuracy,
-    );
-
-    // 3. Indicar que estem seguint un track
-    gps.setFollowing(true);
-
-    // 4. Estat intern
+    // 3. Estat intern
     state = state.copyWith(isFollowing: true, mode: FollowMode.initializing);
 
     _hasEverBeenOnTrack = false;
     _hasEverBeenOffTrack = false;
     offTrackAlertsSent = 0;
 
-    // 5. Centrar mapa a la posició actual si existeix
-    final pos = ref.read(gpsManagerProvider).position;
+    // 4. Centrar mapa a la posició actual
+    final pos = ref.read(trackProvider).currentPosition;
     if (pos != null && mapController != null) {
       mapController.animateCamera(CameraUpdate.newLatLng(pos));
     }
 
-    // 6. Inicialitzar distància inicial
+    // 5. Inicialitzar distància inicial
     final imported = ref.read(importedTrackProvider);
     if (imported == null || imported.coordinates.isEmpty) return;
 
@@ -191,46 +174,9 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
       _lastUserPositions,
     );
 
-    _lastDistances.clear();
-    _lastDistances.add(closest.distance);
-  }
-
-  // ------------------------------------------------------------
-  // Seguiment amb enregistrament
-  // ------------------------------------------------------------
-  void startFollowingWithRecording() async {
-    final gps = ref.read(gpsManagerProvider.notifier);
-
-    // 1. Indicar que estem seguint un track
-    gps.setFollowing(true);
-
-    state = state.copyWith(isFollowing: true, mode: FollowMode.initializing);
-
-    _hasEverBeenOnTrack = false;
-    _hasEverBeenOffTrack = false;
-    offTrackAlertsSent = 0;
-
-    final track = ref.read(trackProvider);
-    final imported = ref.read(importedTrackProvider);
-
-    if (track.coordinates.isEmpty) return;
-    if (imported == null || imported.coordinates.isEmpty) return;
-
-    final last = track.coordinates.last;
-    final lastPos = LatLng(last[1], last[0]);
-
-    final importedLatLng = imported.coordinates
-        .map((c) => LatLng(c[1], c[0]))
-        .toList();
-
-    final closest = geometry.closestPointAndSegment(
-      lastPos,
-      importedLatLng,
-      _lastUserPositions,
-    );
-
-    _lastDistances.clear();
-    _lastDistances.add(closest.distance);
+    _lastDistances
+      ..clear()
+      ..add(closest.distance);
   }
 
   // ------------------------------------------------------------
@@ -238,8 +184,7 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
   // ------------------------------------------------------------
   // Dins de TrackFollowNotifier
   void stopFollowing() {
-    final gps = ref.read(gpsManagerProvider.notifier);
-    gps.setFollowing(false);
+    ref.read(trackProvider.notifier).setFollowing(false);
 
     state = state.copyWith(
       isFollowing: false,

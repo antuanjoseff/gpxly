@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gpxly/notifiers/track_notifier.dart';
-import 'package:gpxly/notifiers/waypoints_notifier.dart';
+import 'package:gpxly/notifiers/waypoints_recorded_notifier.dart';
 import 'package:gpxly/notifiers/permissions_notifier.dart';
 import 'package:gpxly/services/native_gps_channel.dart';
 import 'package:gpxly/services/permissions_service.dart';
@@ -25,24 +25,24 @@ class RecordingHandler {
       if (!context.mounted) return;
 
       final recuperar = await AppMessages.showRecoverTrackDialog(context);
-
       if (recuperar == true) {
-        // Recuperar track
         if (hasTrackCache) {
-          await track.loadFromCache();
+          await track.loadFromCache(); // Carrega coordenades
         }
 
-        // Recuperar waypoints
         if (hasWpCache) {
-          // Esperem que map_screen hagi carregat capes i estil
           WidgetsBinding.instance.addPostFrameCallback((_) {
             wpNotifier.restoreFromPrefs();
           });
         }
 
-        HapticFeedback.mediumImpact();
-        await track.startRecording(context);
+        // IMPORTANT: NO BORRAR EL TRACK
+        track.continueRecording(); // ← NO esborra coordenades
 
+        // Iniciar GPS perquè comenci a afegir punts nous
+        await ref.read(trackProvider.notifier).ensureGpsStarted();
+
+        HapticFeedback.mediumImpact();
         ref.read(permissionsProvider.notifier).checkPermissions();
         return;
       } else {
@@ -82,22 +82,9 @@ class RecordingHandler {
     // ───────────────────────────────────────────────
     // 3. INICIAR GRAVACIÓ NETA
     // ───────────────────────────────────────────────
-    // ───────────────────────────────────────────────
-    // 3. INICIAR GRAVACIÓ NETA
-    // ───────────────────────────────────────────────
     HapticFeedback.mediumImpact();
     await track.startRecording(context);
-
-    // 🔥 INICIAR GPS NATIU
-    await NativeGpsChannel.start(
-      useTime: true,
-      seconds: 1,
-      meters: 0,
-      accuracy: 10,
-    );
-
-    // 🔥 CONNECTAR STREAM → TRACKNOTIFIER
-    ref.read(trackProvider.notifier).startGpsListener();
+    await ref.read(trackProvider.notifier).ensureGpsStarted();
 
     ref.read(permissionsProvider.notifier).checkPermissions();
   }

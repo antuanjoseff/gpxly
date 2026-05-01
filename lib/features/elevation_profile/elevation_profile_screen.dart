@@ -13,7 +13,7 @@ import 'package:gpxly/notifiers/imported_track_settings_notifier.dart';
 import 'package:gpxly/notifiers/track_notifier.dart';
 import 'package:gpxly/notifiers/imported_track_notifier.dart';
 import 'package:gpxly/notifiers/track_settings_notifier.dart';
-import 'package:gpxly/notifiers/waypoints_notifier.dart';
+import 'package:gpxly/notifiers/waypoints_recorded_notifier.dart';
 import 'package:gpxly/utils/distance_utils.dart';
 import 'package:gpxly/theme/app_colors.dart';
 import 'package:gpxly/widgets/waypoint_button.dart';
