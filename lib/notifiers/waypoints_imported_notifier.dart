@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/waypoint.dart';
 
 class ImportedWaypointsNotifier extends Notifier<List<Waypoint>> {
-  static const _prefsKey = "recorded_waypoints";
+  static const _prefsKey = "imported_waypoints";
 
   @override
   List<Waypoint> build() {
@@ -15,7 +15,7 @@ class ImportedWaypointsNotifier extends Notifier<List<Waypoint>> {
   // -----------------------------
   // SET (substituir tota la llista)
   // -----------------------------
-  void setWaypoints(List<Waypoint> newList) {
+  void setAll(List<Waypoint> newList) {
     state = List.unmodifiable(newList);
     _saveToPrefs();
   }

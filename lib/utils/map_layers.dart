@@ -134,14 +134,12 @@ void updateMapPosition(
   }
 }
 
-void updateWaypointsOnMap(
+void updateWaypointSource(
   MapLibreMapController controller,
+  String sourceId,
   List<Waypoint> waypoints,
 ) {
-  final recorded = waypoints.where((wp) => wp.trackIndex >= 0).toList();
-  final imported = waypoints.where((wp) => wp.trackIndex < 0).toList();
-
-  final recordedFeatures = recorded.map((wp) {
+  final features = waypoints.map((wp) {
     return {
       "type": "Feature",
       "geometry": {
@@ -152,25 +150,9 @@ void updateWaypointsOnMap(
     };
   }).toList();
 
-  final importedFeatures = imported.map((wp) {
-    return {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [wp.lon, wp.lat],
-      },
-      "properties": {"name": wp.name},
-    };
-  }).toList();
-
-  controller.setGeoJsonSource('waypoints_recorded_source', {
+  controller.setGeoJsonSource(sourceId, {
     "type": "FeatureCollection",
-    "features": recordedFeatures,
-  });
-
-  controller.setGeoJsonSource('waypoints_imported_source', {
-    "type": "FeatureCollection",
-    "features": importedFeatures,
+    "features": features,
   });
 }
 

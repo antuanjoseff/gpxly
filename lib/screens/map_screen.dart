@@ -13,7 +13,7 @@ import 'package:gpxly/notifiers/permissions_notifier.dart';
 import 'package:gpxly/notifiers/track_follow_notifier.dart';
 import 'package:gpxly/notifiers/track_notifier.dart';
 import 'package:gpxly/notifiers/track_settings_notifier.dart';
-import 'package:gpxly/notifiers/waypoints_imporeted_notifier.dart';
+import 'package:gpxly/notifiers/waypoints_imported_notifier.dart';
 import 'package:gpxly/notifiers/waypoints_recorded_notifier.dart';
 import 'package:gpxly/screens/settings/settings_screen.dart';
 import 'package:gpxly/screens/stats_screen.dart';
@@ -51,9 +51,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
   bool waypointLayersReady = false;
   DateTime? _lastBackPress;
   bool smartCenterEnabled = true;
-  bool isProgrammaticMove = false;
   Timer? smartCenterDebounce;
   bool hasDoneFirstFixZoom = false;
+  bool isProgrammaticMove = false;
 
   late MapAnimator mapAnimator;
 
@@ -85,13 +85,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final pos = ref.read(trackProvider).currentPosition;
     if (pos == null || mapController == null) return;
 
-    isProgrammaticMove = true;
-
     mapController!.animateCamera(CameraUpdate.newLatLng(pos));
-    // 🔥 Reset de seguretat
-    Future.delayed(const Duration(milliseconds: 300), () {
-      isProgrammaticMove = false;
-    });
   }
 
   Future<void> _onFollowTrack() async {
@@ -239,8 +233,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
     final bounds = LatLngBounds(southwest: sw, northeast: ne);
 
-    setState(() => isProgrammaticMove = true);
-
     mapController!.animateCamera(
       CameraUpdate.newLatLngBounds(
         bounds,
@@ -250,10 +242,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
         bottom: 40,
       ),
     );
-
-    Future.delayed(const Duration(milliseconds: 400), () {
-      if (mounted) setState(() => isProgrammaticMove = false);
-    });
   }
 
   @override
@@ -265,29 +253,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final hasImportedTrack =
         importedTrack != null && importedTrack.coordinates.isNotEmpty;
     final trackFollowState = ref.watch(trackFollowNotifierProvider);
-
-    // 2. LISTENER DEL TRACK (El pasivo)
-    // ref.listen(trackProvider, (prev, next) {
-    //   if (!styleInitialized || mapController == null) return;
-    //   // 🔥 Primer fix GPS → dibuixa punt blau immediatament
-    //   if (next.currentPosition != null && prev?.currentPosition == null) {
-    //     mapAnimator.updateUserPositionDirect(next.currentPosition!);
-    //   }
-    //   mapAnimator.updateFromTrack(next);
-
-    //   // Si SmartCenter està actiu → seguir el punt blau
-    //   if (smartCenterEnabled && next.currentPosition != null) {
-    //     isProgrammaticMove = true;
-
-    //     mapController!.animateCamera(
-    //       CameraUpdate.newLatLng(next.currentPosition!),
-    //     );
-
-    //     Future.delayed(const Duration(milliseconds: 300), () {
-    //       isProgrammaticMove = false;
-    //     });
-    //   }
-    // });
 
     ref.listen(trackProvider, (prev, next) async {
       // ───────────────────────────────────────────────
@@ -337,9 +302,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
       // 2) FIT TO BOUNDS només quan recuperem un track
       // ───────────────────────────────────────────────
       final isRecoveringTrack =
-          (prev?.coordinates.isEmpty ?? true) &&
-          next.coordinates.isNotEmpty &&
-          next.recordingState == RecordingState.idle;
+          (prev?.coordinates.isEmpty ?? true) && next.coordinates.isNotEmpty;
 
       print(">>> 🔍 isRecoveringTrack = $isRecoveringTrack");
       print(">>>    prev coords: ${prev?.coordinates.length ?? 0}");
@@ -361,9 +324,13 @@ class _MapScreenState extends ConsumerState<MapScreen>
       // ───────────────────────────────────────────────
       // 4) SmartCenter
       // ───────────────────────────────────────────────
-      if (!hasDoneFirstFixZoom &&
-          smartCenterEnabled &&
-          next.currentPosition != null) {
+      final hasImportedTrack =
+          ref.read(importedTrackProvider)?.coordinates.isNotEmpty == true;
+
+      if (smartCenterEnabled &&
+          next.currentPosition != null &&
+          !isProgrammaticMove &&
+          !hasImportedTrack) {
         print(">>> 🎯 SmartCenter → centrant mapa en ${next.currentPosition}");
 
         isProgrammaticMove = true;
@@ -379,19 +346,22 @@ class _MapScreenState extends ConsumerState<MapScreen>
     });
 
     ref.listen(waypointsProvider, (prev, next) async {
-      if (!styleInitialized || !waypointLayersReady || mapController == null) {
+      if (!styleInitialized || !waypointLayersReady || mapController == null)
         return;
-      }
 
-      final recorded = ref.read(waypointsProvider);
-      final imported = ref.read(importedWaypointsProvider);
-
-      updateWaypointsOnMap(mapController!, [...recorded, ...imported]);
+      updateWaypointSource(mapController!, 'waypoints_recorded_source', next);
 
       await animateWaypointAppearance(
         mapController!,
         'waypoints_recorded_layer',
       );
+    });
+
+    ref.listen(importedWaypointsProvider, (prev, next) async {
+      if (!styleInitialized || !waypointLayersReady || mapController == null)
+        return;
+
+      updateWaypointSource(mapController!, 'waypoints_imported_source', next);
 
       await animateWaypointAppearance(
         mapController!,
@@ -734,16 +704,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
                           final pos = ref.read(trackProvider).currentPosition;
 
                           if (map != null && pos != null) {
-                            isProgrammaticMove = true;
                             map.animateCamera(
                               CameraUpdate.newLatLngZoom(pos, 18),
-                            );
-
-                            Future.delayed(
-                              const Duration(milliseconds: 300),
-                              () {
-                                isProgrammaticMove = false;
-                              },
                             );
                           }
 

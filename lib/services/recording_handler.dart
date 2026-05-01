@@ -15,8 +15,14 @@ class RecordingHandler {
     final wpNotifier = ref.read(waypointsProvider.notifier);
     final prefs = await SharedPreferences.getInstance();
 
+    // 🔥 PRINT 1: comprovar si existeix la clau
+    print(
+      ">>> PREFS: temp_track_data existeix? ${prefs.containsKey('temp_track_data')}",
+    );
+
     final hasTrackCache = prefs.containsKey('temp_track_data');
     final hasWpCache = await wpNotifier.hasSavedWaypoints();
+    print(">>> START: hasTrackCache=$hasTrackCache, hasWpCache=$hasWpCache");
 
     // ───────────────────────────────────────────────
     // 1. RECUPERAR TRACK + WAYPOINTS

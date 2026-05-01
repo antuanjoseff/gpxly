@@ -1,6 +1,6 @@
 import 'package:gpx/gpx.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:gpxly/notifiers/waypoints_imporeted_notifier.dart';
+import 'package:gpxly/notifiers/waypoints_imported_notifier.dart';
 import 'package:gpxly/utils/calculations.dart';
 import 'package:gpxly/utils/geo_utils.dart';
 import '../models/track.dart';
@@ -146,9 +146,7 @@ class GpxImportService {
     // -------------------------------------------------
     // Guardar WAYPOINTS al provider
     // -------------------------------------------------
-    ref
-        .read(importedWaypointsProvider.notifier)
-        .setWaypoints(importedWaypoints);
+    ref.read(importedWaypointsProvider.notifier).setAll(importedWaypoints);
   }
 
   static DateTime normalizeGpxTime(DateTime t) {
