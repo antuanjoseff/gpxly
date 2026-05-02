@@ -57,7 +57,12 @@ class GpxImportService {
     final maxLat = lats.reduce((a, b) => a > b ? a : b);
     final minLon = lons.reduce((a, b) => a < b ? a : b);
     final maxLon = lons.reduce((a, b) => a > b ? a : b);
-
+    // 🔥 AFEGEIX AQUEST LOG
+    print(
+      ">>> IMPORTED BOUNDS (GPX): "
+      "minLat=$minLat, maxLat=$maxLat, "
+      "minLon=$minLon, maxLon=$maxLon",
+    );
     // -------------------------------------------------
     // Durada
     // -------------------------------------------------

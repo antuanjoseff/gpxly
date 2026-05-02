@@ -51,9 +51,11 @@ class _MapScreenState extends ConsumerState<MapScreen>
   bool waypointLayersReady = false;
   DateTime? _lastBackPress;
   bool smartCenterEnabled = true;
-  Timer? smartCenterDebounce;
   bool hasDoneFirstFixZoom = false;
   bool isProgrammaticMove = false;
+  bool isImportingGpx = false;
+  bool hasDoneRecoveryFit =
+      false; // Flag per controlar que només es recuperi un cop per sessió
 
   late MapAnimator mapAnimator;
 
@@ -81,11 +83,21 @@ class _MapScreenState extends ConsumerState<MapScreen>
     );
   }
 
+  void safeMoveCamera(CameraUpdate update) {
+    if (isImportingGpx || mapController == null) return;
+    mapController!.moveCamera(update);
+  }
+
+  void safeAnimateCamera(CameraUpdate update) {
+    print(">>> SAFE ANIMATE CAMERA");
+    mapController?.animateCamera(update);
+  }
+
   void _centerOnUser() {
     final pos = ref.read(trackProvider).currentPosition;
     if (pos == null || mapController == null) return;
 
-    mapController!.animateCamera(CameraUpdate.newLatLng(pos));
+    safeAnimateCamera(CameraUpdate.newLatLng(pos));
   }
 
   Future<void> _onFollowTrack() async {
@@ -216,32 +228,46 @@ class _MapScreenState extends ConsumerState<MapScreen>
     ref.read(waypointsProvider.notifier).add(wp);
   }
 
-  void _fitToBounds(List<List<double>> coords) {
+  void _fitToBounds(List<List<double>> coords, {bool instant = false}) {
     if (coords.isEmpty || mapController == null) return;
 
-    final lats = coords.map((c) => c[1]);
-    final lons = coords.map((c) => c[0]);
+    print(">>> 📸 FitToBounds cridat amb ${coords.length} punts");
 
-    final sw = LatLng(
-      lats.reduce((a, b) => a < b ? a : b),
-      lons.reduce((a, b) => a < b ? a : b),
-    );
-    final ne = LatLng(
-      lats.reduce((a, b) => a > b ? a : b),
-      lons.reduce((a, b) => a > b ? a : b),
-    );
+    final lats = coords.map((c) => c[1]).toList();
+    final lons = coords.map((c) => c[0]).toList();
 
-    final bounds = LatLngBounds(southwest: sw, northeast: ne);
-
-    mapController!.animateCamera(
-      CameraUpdate.newLatLngBounds(
-        bounds,
-        left: 40,
-        right: 40,
-        top: 40,
-        bottom: 40,
+    final bounds = LatLngBounds(
+      southwest: LatLng(
+        lats.reduce((a, b) => a < b ? a : b),
+        lons.reduce((a, b) => a < b ? a : b),
+      ),
+      northeast: LatLng(
+        lats.reduce((a, b) => a > b ? a : b),
+        lons.reduce((a, b) => a > b ? a : b),
       ),
     );
+
+    if (instant) {
+      mapController!.moveCamera(
+        CameraUpdate.newLatLngBounds(
+          bounds,
+          left: 50,
+          right: 50,
+          top: 50,
+          bottom: 50,
+        ),
+      );
+    } else {
+      mapController!.animateCamera(
+        CameraUpdate.newLatLngBounds(
+          bounds,
+          left: 50,
+          right: 50,
+          top: 50,
+          bottom: 50,
+        ),
+      );
+    }
   }
 
   @override
@@ -258,90 +284,121 @@ class _MapScreenState extends ConsumerState<MapScreen>
       // ───────────────────────────────────────────────
       // 0) MAP READY CHECK
       // ───────────────────────────────────────────────
-      if (!styleInitialized || mapController == null) {
-        print(
-          ">>> ❌ SORTINT: styleInitialized=$styleInitialized mapController=${mapController != null}",
-        );
+      if (!styleInitialized || mapController == null) return;
+
+      // ───────────────────────────────────────────────
+      // 1) ACTUALITZACIÓ VISUAL (Sempre s'executa)
+      // ───────────────────────────────────────────────
+      // Actualitzem el punt blau i la línia del track sense moure la càmera.
+      // Ho fem abans dels 'return' per no perdre fluïdesa visual.
+      if (next.currentPosition != null) {
+        mapAnimator.updateUserPositionDirect(next.currentPosition!);
+      }
+      mapAnimator.updateFromTrack(next);
+
+      // ───────────────────────────────────────────────
+      // 2) BLOQUEIG CRÍTIC D'IMPORTACIÓ
+      // ───────────────────────────────────────────────
+      // Si estem important un GPX, aturem qualsevol lògica que mogui la càmera.
+      if (isImportingGpx) {
+        print(">>> 🛡️ SmartCenter/Recovery bloquejat per importació activa.");
         return;
       }
 
       // ───────────────────────────────────────────────
-      // DEBUG POSICIÓ
+      // 3) PRIMER FIX GPS (Només si el mapa està "buit")
       // ───────────────────────────────────────────────
-      if (next.currentPosition != null) {
-        print(">>> 📍 Nova posició GPS: ${next.currentPosition}");
-      }
-
-      // ───────────────────────────────────────────────
-      // 1) PRIMER FIX GPS → punt blau + zoom 18
-      // ───────────────────────────────────────────────
-      print(">>> 🧪 DEBUG PRIMER FIX:");
-      print(">>>     prev.currentPosition = ${prev?.currentPosition}");
-      print(">>>     next.currentPosition = ${next.currentPosition}");
-
-      if (next.currentPosition != null && prev?.currentPosition == null) {
-        print(">>> 🔵 PRIMER FIX GPS → Zoom 18");
-
+      if (next.currentPosition != null &&
+          prev?.currentPosition == null &&
+          next.coordinates.isEmpty) {
         hasDoneFirstFixZoom = true;
-
         final pos = next.currentPosition!;
-        mapAnimator.updateUserPositionDirect(pos);
-
         isProgrammaticMove = true;
-        print(">>> 🎥 Camera → newLatLngZoom(pos, 18)");
-        mapController!.animateCamera(CameraUpdate.newLatLngZoom(pos, 18));
+
+        print(">>> 📍 Primer fix GPS: Centrant a zoom 18");
+        safeAnimateCamera(CameraUpdate.newLatLngZoom(pos, 18));
 
         Future.delayed(const Duration(milliseconds: 300), () {
           isProgrammaticMove = false;
         });
-      } else {
-        print(">>> ⚠️ NO és primer fix → NO Zoom 18");
+        return; // Si fem el primer fix, no cal fer res més en aquest tick
       }
 
       // ───────────────────────────────────────────────
-      // 2) FIT TO BOUNDS només quan recuperem un track
+      // 4) FIT TO BOUNDS (Només Recuperació Inicial)
       // ───────────────────────────────────────────────
+      // Useu el flag 'hasDoneRecoveryFit' que hem creat per evitar que
+      // es torni a disparar cada cop que arriba un punt GPS nou.
       final isRecoveringTrack =
-          (prev?.coordinates.isEmpty ?? true) && next.coordinates.isNotEmpty;
+          (prev?.coordinates.isEmpty ?? true) &&
+          next.coordinates.length > 1 &&
+          !hasDoneRecoveryFit;
 
-      print(">>> 🔍 isRecoveringTrack = $isRecoveringTrack");
-      print(">>>    prev coords: ${prev?.coordinates.length ?? 0}");
-      print(">>>    next coords: ${next.coordinates.length}");
-      print(">>>    recordingState: ${next.recordingState}");
       if (isRecoveringTrack) {
-        print(">>> 📦 RECUPERANT TRACK → Calculant bounds…");
-        if (isRecoveringTrack) {
-          _fitToBounds(next.coordinates);
-        }
+        hasDoneRecoveryFit = true;
+        print(">>> 🔄 Recuperant track de memòria: FitToBounds");
+        _fitToBounds(next.coordinates, instant: true);
+        return; // Prioritzem la recuperació sobre el SmartCenter
       }
 
       // ───────────────────────────────────────────────
-      // 3) Animacions normals
-      // ───────────────────────────────────────────────
-      print(">>> 🎞 updateFromTrack(next)");
-      mapAnimator.updateFromTrack(next);
-
-      // ───────────────────────────────────────────────
-      // 4) SmartCenter
+      // 5) SmartCenter (Seguiment actiu)
       // ───────────────────────────────────────────────
       final hasImportedTrack =
           ref.read(importedTrackProvider)?.coordinates.isNotEmpty == true;
 
+      // LÒGICA DE BLOQUEIG RADICAL
       if (smartCenterEnabled &&
           next.currentPosition != null &&
           !isProgrammaticMove &&
+          !isImportingGpx && // 1. No si estem important
           !hasImportedTrack) {
-        print(">>> 🎯 SmartCenter → centrant mapa en ${next.currentPosition}");
-
         isProgrammaticMove = true;
-
-        mapController!.animateCamera(
-          CameraUpdate.newLatLng(next.currentPosition!),
-        );
+        print(">>> 🎯 SmartCenter: EXECUTANT");
+        safeAnimateCamera(CameraUpdate.newLatLng(next.currentPosition!));
 
         Future.delayed(const Duration(milliseconds: 300), () {
           isProgrammaticMove = false;
         });
+      }
+    });
+
+    ref.listen(importedTrackProvider, (prev, next) {
+      if (!styleInitialized || mapController == null) return;
+
+      if (next == null || next.coordinates.isEmpty) {
+        mapController!.setGeoJsonSource("imported_track", {
+          "type": "FeatureCollection",
+          "features": [],
+        });
+        return;
+      }
+
+      mapController!.setGeoJsonSource("imported_track", {
+        "type": "FeatureCollection",
+        "features": [
+          {
+            "type": "Feature",
+            "geometry": {"type": "LineString", "coordinates": next.coordinates},
+          },
+        ],
+      });
+
+      final importedSettings = ref.read(importedTrackSettingsProvider);
+
+      mapController!.setLayerProperties(
+        "imported_track_layer",
+        LineLayerProperties(
+          lineColor: importedSettings.color.toMapLibreColor(),
+          lineWidth: importedSettings.width,
+          lineCap: "round",
+          lineJoin: "round",
+        ),
+      );
+
+      if (isImportingGpx) {
+        print(">>> FIT TO BOUNDS IMPORTED TRACK");
+        _fitToBounds(next.coordinates);
       }
     });
 
@@ -381,43 +438,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
           lineJoin: "round",
         ),
       );
-    });
-
-    ref.listen(importedTrackProvider, (prev, next) {
-      if (!styleInitialized || mapController == null) return;
-
-      if (next == null || next.coordinates.isEmpty) {
-        mapController!.setGeoJsonSource("imported_track", {
-          "type": "FeatureCollection",
-          "features": [],
-        });
-        return;
-      }
-
-      mapController!.setGeoJsonSource("imported_track", {
-        "type": "FeatureCollection",
-        "features": [
-          {
-            "type": "Feature",
-            "geometry": {"type": "LineString", "coordinates": next.coordinates},
-          },
-        ],
-      });
-
-      final importedSettings = ref.read(importedTrackSettingsProvider);
-
-      mapController!.setLayerProperties(
-        "imported_track_layer",
-        LineLayerProperties(
-          lineColor: importedSettings.color.toMapLibreColor(),
-          lineWidth: importedSettings.width,
-          lineCap: "round",
-          lineJoin: "round",
-        ),
-      );
-
-      // 👉 DRY: només cridem la funció
-      _fitToBounds(next.coordinates);
     });
 
     ref.listen(importedTrackSettingsProvider, (previous, next) {
@@ -553,7 +573,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   }
                 },
                 child: MapLibreMap(
-                  trackCameraPosition: true,
+                  trackCameraPosition: false,
                   compassEnabled: false,
                   styleString: "assets/osm_style.json",
                   initialCameraPosition: CameraPosition(
@@ -575,7 +595,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   },
                   onCameraIdle: () async {
                     final pos = await mapController!.cameraPosition;
-
+                    print(
+                      ">>> REAL CAMERA POSITION → ${pos?.target} zoom=${pos?.zoom}",
+                    );
                     ref.read(mapZoomProvider.notifier).update(pos!.zoom);
                     ref
                         .read(mapCenterLatProvider.notifier)
@@ -583,11 +605,10 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   },
                   onMapCreated: (controller) {
                     mapController = controller;
-                    print(">>> 🟢 MAP FULLY READY");
-                    // Opcional: pots eliminar el listener de _onMapChanged si
-                    // aquest també et donava problemes amb el Smart Center.
                   },
                   onStyleLoadedCallback: () async {
+                    print(">>> STYLE LOADED (callback)");
+
                     await setupUserLocationLayer(mapController!);
                     await setupWaypointLayers(mapController!);
 
@@ -704,7 +725,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                           final pos = ref.read(trackProvider).currentPosition;
 
                           if (map != null && pos != null) {
-                            map.animateCamera(
+                            safeAnimateCamera(
                               CameraUpdate.newLatLngZoom(pos, 18),
                             );
                           }
@@ -719,12 +740,50 @@ class _MapScreenState extends ConsumerState<MapScreen>
                         isFollowingTrack: trackFollowState.isFollowing,
 
                         // ... resta de paràmetres iguals
-                        onImportTrack: () {
-                          pickGpxAndImport(
-                            context: context,
-                            ref: ref,
-                            mapController: mapController,
-                          );
+                        onImportTrack: () async {
+                          // 1. BLOQUEIG ATÒMIC (Immediat)
+                          setState(() {
+                            isImportingGpx = true;
+                            smartCenterEnabled = false;
+                          });
+
+                          // 2. NETEJA DE CÀMERA
+                          // Com que no hi ha stopAnimation, movem la càmera on ja està
+                          // però amb moveCamera per tallar qualsevol animació en curs.
+                          final currentPos =
+                              await mapController?.cameraPosition;
+                          if (currentPos != null) {
+                            mapController?.moveCamera(
+                              CameraUpdate.newCameraPosition(currentPos),
+                            );
+                          }
+
+                          try {
+                            await pickGpxAndImport(
+                              context: context,
+                              ref: ref,
+                              mapController: mapController,
+                            );
+
+                            // 3. El FitToBounds del track importat
+                            final importedCoords = ref
+                                .read(importedTrackProvider)
+                                ?.coordinates;
+                            if (importedCoords != null &&
+                                importedCoords.isNotEmpty) {
+                              // Fem el fitToBounds amb un micro-delay perquè el mapa hagi digerit el GPX
+                              Future.delayed(
+                                const Duration(milliseconds: 50),
+                                () {
+                                  _fitToBounds(importedCoords, instant: true);
+                                },
+                              );
+                            }
+
+                            await Future.delayed(const Duration(seconds: 2));
+                          } finally {
+                            if (mounted) setState(() => isImportingGpx = false);
+                          }
                         },
 
                         onFollowTrack: () {

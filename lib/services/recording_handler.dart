@@ -11,6 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class RecordingHandler {
   static Future<void> start(BuildContext context, WidgetRef ref) async {
+    print(">>> START: RecordingHandler.start() executat");
     final track = ref.read(trackProvider.notifier);
     final wpNotifier = ref.read(waypointsProvider.notifier);
     final prefs = await SharedPreferences.getInstance();
