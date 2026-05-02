@@ -684,6 +684,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Enter a name'**
   String get waypointNameHint;
+
+  /// No description provided for @finishRecordingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish recording'**
+  String get finishRecordingTitle;
+
+  /// No description provided for @finishRecordingMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'What would you like to do with the current recording?'**
+  String get finishRecordingMessage;
+
+  /// No description provided for @finishRecordingConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'FINISH'**
+  String get finishRecordingConfirm;
+
+  /// No description provided for @shareTrack.
+  ///
+  /// In en, this message translates to:
+  /// **'SHARE'**
+  String get shareTrack;
+
+  /// No description provided for @continueRecording.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue recording'**
+  String get continueRecording;
+
+  /// No description provided for @deleteTrackTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete track'**
+  String get deleteTrackTitle;
+
+  /// No description provided for @deleteTrackMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete this imported track? This action cannot be undone.'**
+  String get deleteTrackMessage;
+
+  /// No description provided for @deleteTrackConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'DELETE'**
+  String get deleteTrackConfirm;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

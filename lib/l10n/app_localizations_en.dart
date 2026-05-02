@@ -301,4 +301,28 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get waypointNameHint => 'Enter a name';
+
+  @override
+  String get finishRecordingTitle => 'Finish recording';
+
+  @override
+  String get finishRecordingMessage => 'What would you like to do with the current recording?';
+
+  @override
+  String get finishRecordingConfirm => 'FINISH';
+
+  @override
+  String get shareTrack => 'SHARE';
+
+  @override
+  String get continueRecording => 'Continue recording';
+
+  @override
+  String get deleteTrackTitle => 'Delete track';
+
+  @override
+  String get deleteTrackMessage => 'Are you sure you want to delete this imported track? This action cannot be undone.';
+
+  @override
+  String get deleteTrackConfirm => 'DELETE';
 }

@@ -121,5 +121,14 @@
 "stopFollowingConfirm": "STOP ROUTE",
 
 "waypointNameTitle": "Waypoint name",
-"waypointNameHint": "Enter a name"
+"waypointNameHint": "Enter a name",
+
+"finishRecordingTitle": "Finish recording",
+"finishRecordingMessage": "What would you like to do with the current recording?",
+"finishRecordingConfirm": "FINISH",
+"shareTrack": "SHARE",
+"continueRecording": "Continue recording",
+"deleteTrackTitle": "Delete track",
+"deleteTrackMessage": "Are you sure you want to delete this imported track? This action cannot be undone.",
+"deleteTrackConfirm": "DELETE"
 }

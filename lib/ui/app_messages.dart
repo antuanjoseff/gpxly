@@ -13,6 +13,7 @@ class AppMessages {
   static ButtonStyle _buttonStyle(Color color) => ElevatedButton.styleFrom(
     backgroundColor: color,
     foregroundColor: Colors.white,
+    elevation: 0, // Més modern, sense ombra pesada
     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
   );
@@ -28,24 +29,39 @@ class AppMessages {
     IconData? icon,
     Color? iconColor,
     String? confirmLabel,
+    Color? confirmColor, // Per a botons vermells/alerta
     String? cancelLabel,
     bool barrierDismissible = true,
     List<Widget>? extraContent,
   }) {
     final t = AppLocalizations.of(context)!;
 
+    // Configuració de colors per evitar que el disseny es vegi "pesat"
+    const Color surfaceColor = Color(
+      0xFF242426,
+    ); // Gris fosc suau (estil sistema)
+    final Color accentColor = confirmColor ?? AppColors.skyBlue;
+    final Color secondaryText = Colors.white.withAlpha(
+      170,
+    ); // Blanc trencat per no fatigar
+
     return showDialog<bool>(
       context: context,
       barrierDismissible: barrierDismissible,
       builder: (context) => AlertDialog(
-        backgroundColor: AppColors.tertiary,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+        backgroundColor: surfaceColor,
+        surfaceTintColor: Colors.transparent, // Imprescindible en Material 3
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          // Vora fina per donar definició sense carregar
+          side: BorderSide(color: Colors.white.withAlpha(25)),
+        ),
+        titlePadding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
         title: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             if (icon != null) ...[
-              Icon(icon, color: iconColor ?? AppColors.skyBlue, size: 28),
+              Icon(icon, color: iconColor ?? accentColor, size: 26),
               const SizedBox(width: 12),
             ],
             Expanded(
@@ -54,7 +70,8 @@ class AppMessages {
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
-                  fontSize: 18,
+                  fontSize: 19,
+                  letterSpacing: -0.4,
                 ),
               ),
             ),
@@ -67,35 +84,63 @@ class AppMessages {
             if (message.isNotEmpty)
               Text(
                 message,
-                style: const TextStyle(color: Colors.white70, fontSize: 15),
+                style: TextStyle(
+                  color: secondaryText,
+                  fontSize: 15,
+                  height: 1.4,
+                ),
               ),
             if (extraContent != null) ...[
-              const SizedBox(height: 16),
+              // Espaiat dinàmic segons si hi ha missatge o no
+              SizedBox(height: message.isNotEmpty ? 20 : 8),
               ...extraContent,
             ],
           ],
         ),
-        actionsPadding: const EdgeInsets.fromLTRB(16, 5, 16, 16),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
         actions: [
-          Wrap(
-            alignment: WrapAlignment.end,
-            spacing: 8,
-            runSpacing: 8,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
             children: [
               if (cancelLabel != null)
                 TextButton(
                   onPressed: () => Navigator.pop(context, false),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                  ),
                   child: Text(
                     cancelLabel,
-                    style: TextStyle(color: Colors.white.withAlpha(150)),
+                    style: TextStyle(
+                      color: Colors.white.withAlpha(130),
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
-
-              // Botó únic quan cancelLabel == null
+              const SizedBox(width: 4),
               ElevatedButton(
-                style: _buttonStyle(AppColors.skyBlue),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: accentColor,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
                 onPressed: () => Navigator.pop(context, true),
-                child: Text(confirmLabel ?? t.ok),
+                child: Text(
+                  confirmLabel ?? t.ok,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                ),
               ),
             ],
           ),
@@ -253,35 +298,52 @@ class AppMessages {
     String suggestedName,
   ) async {
     final t = AppLocalizations.of(context)!;
-    // Pre-omplim el controlador amb el nom suggerit i seleccionem el text
-    final controller = TextEditingController(text: suggestedName);
+
+    final controller = TextEditingController(text: suggestedName)
+      ..selection = TextSelection(
+        baseOffset: 0,
+        extentOffset: suggestedName.length,
+      );
 
     final bool? confirmed = await _showBaseDialog(
       context: context,
-      title: t.exportTitle, // O la clau que tinguis per "Anomenar fitxer"
+      title: t.gpxFilenameTitle,
       message: "",
       icon: Icons.edit_note_rounded,
       iconColor: AppColors.skyBlue,
-      confirmLabel: t.export, // O t.save
+      confirmLabel: t.export,
       extraContent: [
-        TextField(
-          controller: controller,
-          autofocus: true,
-          style: const TextStyle(color: Colors.white),
-          decoration: InputDecoration(
-            hintText: t.waypointNameHint, // "Escriu el nom..."
-            hintStyle: const TextStyle(color: Colors.white30),
-            enabledBorder: const UnderlineInputBorder(
-              borderSide: BorderSide(color: Colors.white24),
+        Padding(
+          padding: const EdgeInsets.only(top: 16.0),
+          child: TextField(
+            controller: controller,
+            autofocus: true,
+            style: const TextStyle(color: Colors.white),
+            decoration: InputDecoration(
+              labelText: t.gpxFilenameLabel,
+              labelStyle: const TextStyle(color: AppColors.skyBlue),
+              hintText: t.gpxFilenameHint,
+              hintStyle: const TextStyle(color: Colors.white30),
+              suffixText: '.gpx',
+              suffixStyle: const TextStyle(color: Colors.white54),
+              border: const OutlineInputBorder(),
+              enabledBorder: OutlineInputBorder(
+                borderSide: const BorderSide(color: Colors.white24),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderSide: const BorderSide(
+                  color: AppColors.skyBlue,
+                  width: 2,
+                ),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              filled: true,
+              // Substituït withOpacity(0.05) per withAlpha
+              // Si uses Flutter 3.22+, withAlpha rep un double (0.0 a 1.0)
+              // Si uses una versió anterior, seria .withAlpha(13) (5% de 255)
+              fillColor: Colors.white.withAlpha((255 * 0.05).round()),
             ),
-            focusedBorder: const UnderlineInputBorder(
-              borderSide: BorderSide(color: AppColors.skyBlue),
-            ),
-          ),
-          // Selecciona tot el text automàticament per facilitar l'edició
-          onTap: () => controller.selection = TextSelection(
-            baseOffset: 0,
-            extentOffset: controller.text.length,
           ),
         ),
       ],
@@ -443,78 +505,102 @@ class AppMessages {
   }
 
   static Future<String?> showStopRecordingDialog(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
+    const Color surfaceColor = Color(0xFF242426);
+
     return showDialog<String>(
       context: context,
-      barrierDismissible: false,
+      barrierDismissible: true,
       builder: (context) => AlertDialog(
-        backgroundColor: AppColors.tertiary,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
-        title: const Row(
+        backgroundColor: surfaceColor,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: Colors.white.withAlpha(25)),
+        ),
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Icon(Icons.stop_circle_outlined, color: Colors.redAccent, size: 28),
-            SizedBox(width: 12),
-            Expanded(
+            Row(
+              children: [
+                const Icon(
+                  Icons.stop_circle_rounded,
+                  color: Colors.redAccent,
+                  size: 28,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  t.finishRecordingTitle,
+                  style: const TextStyle(color: Colors.white, fontSize: 20),
+                ),
+              ],
+            ),
+            IconButton(
+              onPressed: () => Navigator.pop(context, null),
+              icon: Icon(Icons.close, color: Colors.white.withAlpha(100)),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              t.finishRecordingMessage,
+              style: TextStyle(
+                color: Colors.white.withAlpha(170),
+                fontSize: 15,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, "finish"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.redAccent,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(double.infinity, 52),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
               child: Text(
-                "Finalitzar gravació",
-                style: TextStyle(
-                  color: Colors.white,
+                t.finishRecordingConfirm,
+                style: const TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 18,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton.icon(
+              onPressed: () => Navigator.pop(context, "share"),
+              icon: const Icon(Icons.share_rounded, size: 20),
+              label: Text(t.shareTrack),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white.withAlpha(30),
+                foregroundColor: Colors.white,
+                minimumSize: const Size(double.infinity, 52),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextButton(
+              onPressed: () => Navigator.pop(context, null),
+              child: Text(
+                t.continueRecording,
+                style: TextStyle(
+                  color: Colors.white.withAlpha(120),
+                  decoration: TextDecoration.underline,
                 ),
               ),
             ),
           ],
         ),
-        content: const Text(
-          "Què vols fer amb la gravació actual?",
-          style: TextStyle(color: Colors.white70, fontSize: 15),
-        ),
-        actionsPadding: const EdgeInsets.fromLTRB(16, 5, 16, 16),
-        actions: [
-          Row(
-            children: [
-              Expanded(
-                flex: 1,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green.shade800,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  onPressed: () => Navigator.pop(context, "share"),
-                  child: const Icon(Icons.share, size: 26),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                flex: 2,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red.shade700,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  onPressed: () => Navigator.pop(context, "finish"),
-                  child: const Text(
-                    "FINALITZAR",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
+        actions: const [],
       ),
     );
   }
@@ -529,6 +615,22 @@ class AppMessages {
       confirmLabel: "ELIMINAR",
       cancelLabel: "MANTENIR",
       barrierDismissible: false,
+    );
+  }
+
+  static Future<bool?> showDeleteImportedTrackDialog(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
+
+    return _showBaseDialog(
+      context: context,
+      title: t.deleteTrackTitle,
+      message: t.deleteTrackMessage,
+      icon: Icons.delete_outline_rounded,
+      iconColor: Colors.redAccent,
+      confirmLabel: t.deleteTrackConfirm,
+      confirmColor: Colors.redAccent,
+      cancelLabel: t.cancel, // Ja la tenies al diccionari
+      barrierDismissible: true,
     );
   }
 }

@@ -301,4 +301,28 @@ class AppLocalizationsCa extends AppLocalizations {
 
   @override
   String get waypointNameHint => 'Introdueix un nom';
+
+  @override
+  String get finishRecordingTitle => 'Finalitzar gravació';
+
+  @override
+  String get finishRecordingMessage => 'Què vols fer amb la gravació actual?';
+
+  @override
+  String get finishRecordingConfirm => 'FINALITZAR';
+
+  @override
+  String get shareTrack => 'COMPARTIR';
+
+  @override
+  String get continueRecording => 'Continuar gravant';
+
+  @override
+  String get deleteTrackTitle => 'Eliminar track';
+
+  @override
+  String get deleteTrackMessage => 'Estàs segur que vols eliminar aquest track importat? Aquesta acció no es pot desfer.';
+
+  @override
+  String get deleteTrackConfirm => 'ELIMINAR';
 }

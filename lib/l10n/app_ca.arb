@@ -122,6 +122,16 @@
 "stopFollowingConfirm": "ATURAR RUTA",
 
 "waypointNameTitle": "Nom del waypoint",
-"waypointNameHint": "Introdueix un nom"
+"waypointNameHint": "Introdueix un nom",
+
+"finishRecordingTitle": "Finalitzar gravació",
+"finishRecordingMessage": "Què vols fer amb la gravació actual?",
+"finishRecordingConfirm": "FINALITZAR",
+"shareTrack": "COMPARTIR",
+"continueRecording": "Continuar gravant",
+"deleteTrackTitle": "Eliminar track",
+"deleteTrackMessage": "Estàs segur que vols eliminar aquest track importat? Aquesta acció no es pot desfer.",
+"deleteTrackConfirm": "ELIMINAR"
+
 
 }

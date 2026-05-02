@@ -144,12 +144,20 @@ class BottomBarButtons extends ConsumerWidget {
                 onTap: onFollowTrack,
               ),
               // Botó de Paperera (Eliminar)
+              // Botó de Paperera (Eliminar)
               _circleButton(
                 icon: Icons.delete_outline,
                 color: Colors.redAccent,
-                onTap: () {
-                  ref.read(importedTrackProvider.notifier).clear();
-                  ref.read(importedWaypointsProvider.notifier).clear();
+                onTap: () async {
+                  // 1. Cridem al nou diàleg de confirmació que hem creat a AppMessages
+                  final confirm =
+                      await AppMessages.showDeleteImportedTrackDialog(context);
+
+                  // 2. Si l'usuari confirma (true), procedim a esborrar
+                  if (confirm == true) {
+                    ref.read(importedTrackProvider.notifier).clear();
+                    ref.read(importedWaypointsProvider.notifier).clear();
+                  }
                 },
               ),
             ],

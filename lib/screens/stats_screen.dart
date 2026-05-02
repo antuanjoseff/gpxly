@@ -4,7 +4,6 @@ import 'package:gpxly/l10n/app_localizations.dart';
 import 'package:gpxly/notifiers/track_notifier.dart';
 import 'package:gpxly/notifiers/imported_track_notifier.dart';
 import 'package:gpxly/theme/app_colors.dart';
-import 'package:gpxly/models/track.dart';
 
 class TrackStatsScreen extends ConsumerWidget {
   const TrackStatsScreen({super.key});
@@ -16,46 +15,53 @@ class TrackStatsScreen extends ConsumerWidget {
     final real = ref.watch(trackProvider);
     final imported = ref.watch(importedTrackProvider);
 
-    final hasReal = real.coordinates.isNotEmpty;
-    final hasImported = imported?.coordinates.isNotEmpty == true;
+    final hasImported = imported != null && imported.coordinates.isNotEmpty;
+    // ... dins del ListView ...
+    bool isValidElev(double elevation) => elevation.abs() < 9000;
 
-    final hasTimeReal = real.hasTimeData;
-    final hasTimeImported = imported?.hasTimeData == true;
+    // Estils de text per a les capçaleres (Més visibles)
+    const headerStyleRec = TextStyle(
+      fontSize: 11,
+      fontWeight: FontWeight.w900, // Molt més gruixut
+      color: AppColors.redAlert, // Color pur
+      letterSpacing: 0.8,
+    );
 
-    final hasCoordsReal = real.coordinates.isNotEmpty;
-    final hasCoordsImported = imported?.coordinates.isNotEmpty == true;
-
-    final hasElevReal = real.hasElevationData;
-    final hasElevImported = imported?.hasElevationData == true;
-
-    final hasAscReal = real.hasAscentDescent;
-    final hasAscImported = imported?.hasAscentDescent == true;
+    const headerStyleImp = TextStyle(
+      fontSize: 11,
+      fontWeight: FontWeight.w900,
+      color: AppColors.trackGreen, // Color pur
+      letterSpacing: 0.8,
+    );
 
     return Scaffold(
       appBar: AppBar(
         backgroundColor: AppColors.primary,
         title: Text(t.trackStatsTitle),
+        elevation: 0,
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // --- CAPÇALERA DE COLUMNES ---
+          // --- CAPÇALERA DE COLUMNES (DINÀMICA) ---
           Padding(
-            padding: const EdgeInsets.only(
-              bottom: 8,
-              left: 54,
-            ), // Alineat amb els valors
+            padding: const EdgeInsets.only(bottom: 12),
             child: Row(
               children: [
+                const SizedBox(width: 54), // Espai equivalent a icona + padding
                 Expanded(
-                  flex: 2,
-                  child: Center(
-                    child: Text(
-                      t.recordingTrack.toUpperCase(), // "TRACK"
-                      style: const TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.redAlert.withAlpha(
+                        20,
+                      ), // Fons molt subtil per emmarcar el text
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Center(
+                      child: Text(
+                        t.recordingTrack.toUpperCase(),
+                        style: headerStyleRec,
                       ),
                     ),
                   ),
@@ -63,14 +69,16 @@ class TrackStatsScreen extends ConsumerWidget {
                 if (hasImported) ...[
                   const SizedBox(width: 8),
                   Expanded(
-                    flex: 2,
-                    child: Center(
-                      child: Text(
-                        t.importedTrack.toUpperCase(), // "RUTA"
-                        style: const TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.trackGreen.withAlpha(20),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Center(
+                        child: Text(
+                          t.importedTrack.toUpperCase(),
+                          style: headerStyleImp,
                         ),
                       ),
                     ),
@@ -80,76 +88,96 @@ class TrackStatsScreen extends ConsumerWidget {
             ),
           ),
 
+          // --- SECCIÓ TEMPS I DISTÀNCIA ---
           _buildStatTile(
-            icon: Icons.timer,
+            icon: Icons.timer_outlined,
             label: t.statTime,
-            value1: hasTimeReal ? real.formattedDuration : "---",
-            value2: hasImported && hasTimeImported
-                ? imported!.formattedDuration
+            value1: real.coordinates.isNotEmpty && real.hasTimeData
+                ? real.formattedDuration
+                : "---",
+            value2: hasImported && imported.hasTimeData
+                ? imported.formattedDuration
                 : null,
           ),
 
           _buildStatTile(
-            icon: Icons.straighten,
+            icon: Icons.straighten_rounded,
             label: t.statDistance,
-            value1: hasCoordsReal
+            value1: real.coordinates.isNotEmpty
                 ? "${(real.distance / 1000).toStringAsFixed(2)} km"
                 : "---",
-            value2: hasImported && hasCoordsImported
+            value2: hasImported
                 ? "${(imported!.distance / 1000).toStringAsFixed(2)} km"
                 : null,
           ),
 
           _buildStatTile(
-            icon: Icons.speed,
+            icon: Icons.speed_rounded,
             label: t.statSpeed,
-            value1: hasTimeReal
+            value1: real.hasTimeData
                 ? "${real.averageSpeed.toStringAsFixed(1)} km/h"
                 : "---",
-            value2: hasImported && hasTimeImported
-                ? "${imported!.averageSpeed.toStringAsFixed(1)} km/h"
+            value2: hasImported && imported!.hasTimeData
+                ? "${imported.averageSpeed.toStringAsFixed(1)} km/h"
                 : null,
           ),
 
-          const Divider(height: 30),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: Divider(height: 32, thickness: 1),
+          ),
 
+          // --- SECCIÓ ALTIMETRIA ---
+          // Helper per validar si l'altitud és real
+
+          // --- SECCIÓ ALTIMETRIA ---
           _buildStatTile(
-            icon: Icons.terrain,
+            icon: Icons.terrain_rounded,
             label: t.statMaxElevation,
-            value1: hasElevReal
+            value1: real.hasElevationData && isValidElev(real.maxElevation)
                 ? "${real.maxElevation.toStringAsFixed(0)} m"
                 : "---",
-            value2: hasImported && hasElevImported
-                ? "${imported!.maxElevation.toStringAsFixed(0)} m"
+            value2:
+                hasImported &&
+                    imported!.hasElevationData &&
+                    isValidElev(imported.maxElevation)
+                ? "${imported.maxElevation.toStringAsFixed(0)} m"
                 : null,
           ),
 
           _buildStatTile(
-            icon: Icons.south_east,
+            icon: Icons.south_east_rounded,
             label: t.statMinElevation,
-            value1: hasElevReal
+            value1: real.hasElevationData && isValidElev(real.minElevation)
                 ? "${real.minElevation.toStringAsFixed(0)} m"
                 : "---",
-            value2: hasImported && hasElevImported
-                ? "${imported!.minElevation.toStringAsFixed(0)} m"
+            value2:
+                hasImported &&
+                    imported!.hasElevationData &&
+                    isValidElev(imported.minElevation)
+                ? "${imported.minElevation.toStringAsFixed(0)} m"
                 : null,
           ),
 
           _buildStatTile(
-            icon: Icons.unfold_less,
+            icon: Icons.unfold_less_rounded,
             label: t.statAscent,
-            value1: hasAscReal ? "${real.ascent.toStringAsFixed(0)} m" : "---",
-            value2: hasImported && hasAscImported
-                ? "${imported!.ascent.toStringAsFixed(0)} m"
+            value1: real.hasAscentDescent
+                ? "${real.ascent.toStringAsFixed(0)} m"
+                : "---",
+            value2: hasImported && imported!.hasAscentDescent
+                ? "${imported.ascent.toStringAsFixed(0)} m"
                 : null,
           ),
 
           _buildStatTile(
-            icon: Icons.unfold_more,
+            icon: Icons.unfold_more_rounded,
             label: t.statDescent,
-            value1: hasAscReal ? "${real.descent.toStringAsFixed(0)} m" : "---",
-            value2: hasImported && hasAscImported
-                ? "${imported!.descent.toStringAsFixed(0)} m"
+            value1: real.hasAscentDescent
+                ? "${real.descent.toStringAsFixed(0)} m"
+                : "---",
+            value2: hasImported && imported!.hasAscentDescent
+                ? "${imported.descent.toStringAsFixed(0)} m"
                 : null,
           ),
         ],
@@ -163,80 +191,71 @@ class TrackStatsScreen extends ConsumerWidget {
     required String value1,
     String? value2,
   }) {
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center, // Centrat verticalment
-          children: [
-            SizedBox(
-              width: 42, // Fix per alinear icona i label
-              child: _iconLabelColumn(icon, label),
-            ),
-
-            const SizedBox(width: 12),
-
-            Expanded(
-              flex: 2,
-              child: _trackValueBox(
-                color: AppColors.trackGreen.withAlpha(
-                  64,
-                ), // canvi a trackGreen + Alpha
-                value: value1,
-              ),
-            ),
-
-            if (value2 != null) ...[
-              const SizedBox(width: 8),
-              Expanded(
-                flex: 2,
-                child: _trackValueBox(
-                  color: AppColors.primary.withAlpha(100), // canvi a Alpha
-                  value: value2,
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+      decoration: BoxDecoration(
+        color: Colors.white, // O AppColors.surface si és Dark Mode
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          // Icona i Etiqueta
+          SizedBox(
+            width: 46,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, color: Colors.grey.shade600, size: 22),
+                const SizedBox(height: 4),
+                Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey.shade700,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
+          ),
+
+          const SizedBox(width: 12),
+
+          // Valor Track Real (Vermell)
+          Expanded(
+            child: _valueBox(value: value1, color: AppColors.redAlert),
+          ),
+
+          // Valor Track Importat (Verd)
+          if (value2 != null) ...[
+            const SizedBox(width: 8),
+            Expanded(
+              child: _valueBox(value: value2, color: AppColors.trackGreen),
+            ),
           ],
-        ),
+        ],
       ),
     );
   }
 
-  Widget _iconLabelColumn(IconData icon, String label) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, color: AppColors.dark, size: 20),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            fontSize: 10,
-            fontWeight: FontWeight.bold,
-            color: AppColors.dark,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _trackValueBox({required Color color, required String value}) {
+  Widget _valueBox({required String value, required Color color}) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 10),
       decoration: BoxDecoration(
-        color: color,
+        color: color.withAlpha(25), // Fons molt suau
         borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withAlpha(40), width: 1),
       ),
       child: Center(
         child: Text(
           value,
-          style: const TextStyle(
-            fontSize: 16,
+          style: TextStyle(
+            fontSize: 15,
             fontWeight: FontWeight.w900,
             fontFamily: 'monospace',
-            color: AppColors.dark,
+            color: color, // Text amb el color original per llegibilitat
           ),
         ),
       ),

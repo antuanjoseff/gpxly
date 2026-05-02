@@ -121,6 +121,14 @@
 "stopFollowingConfirm": "DETENER RUTA",
 
 "waypointNameTitle": "Nombre del waypoint",
-"waypointNameHint": "Introduce un nombre"
-}
+"waypointNameHint": "Introduce un nombre",
 
+"finishRecordingTitle": "Finalizar grabación",
+"finishRecordingMessage": "¿Qué quieres hacer con la grabación actual?",
+"finishRecordingConfirm": "FINALIZAR",
+"shareTrack": "COMPARTIR",
+"continueRecording": "Continuar grabando",
+"deleteTrackTitle": "Eliminar ruta",
+"deleteTrackMessage": "¿Estás seguro de que quieres eliminar esta ruta importada? Esta acción no se puede deshacer.",
+"deleteTrackConfirm": "ELIMINAR"
+}

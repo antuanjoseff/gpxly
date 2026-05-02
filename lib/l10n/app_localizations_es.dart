@@ -301,4 +301,28 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get waypointNameHint => 'Introduce un nombre';
+
+  @override
+  String get finishRecordingTitle => 'Finalizar grabación';
+
+  @override
+  String get finishRecordingMessage => '¿Qué quieres hacer con la grabación actual?';
+
+  @override
+  String get finishRecordingConfirm => 'FINALIZAR';
+
+  @override
+  String get shareTrack => 'COMPARTIR';
+
+  @override
+  String get continueRecording => 'Continuar grabando';
+
+  @override
+  String get deleteTrackTitle => 'Eliminar ruta';
+
+  @override
+  String get deleteTrackMessage => '¿Estás seguro de que quieres eliminar esta ruta importada? Esta acción no se puede deshacer.';
+
+  @override
+  String get deleteTrackConfirm => 'ELIMINAR';
 }
