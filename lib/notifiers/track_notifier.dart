@@ -79,10 +79,6 @@ class TrackNotifier extends Notifier<Track> {
     print("✅ GPS ACTIVAT I LISTENER CONNECTAT");
   }
 
-  void continueRecording() {
-    state = state.copyWith(recordingState: RecordingState.recording);
-  }
-
   void onNativeGpsPoint(Map<String, dynamic> data) {
     final lat = data["lat"] as double;
     final lon = data["lon"] as double;
@@ -280,26 +276,39 @@ class TrackNotifier extends Notifier<Track> {
   // ───────────────────────────────────────────────
   // 3) CONTROL DE GRAVACIÓ (igual que abans)
   // ───────────────────────────────────────────────
-  Future<void> startRecording(BuildContext context) async {
-    if (state.recordingState != RecordingState.recording) {
-      state = state.copyWith(recordingState: RecordingState.recording);
-    }
-
-    _timer ??= Timer.periodic(const Duration(seconds: 1), (_) {
-      if (state.recordingState == RecordingState.recording) {
-        state = state.copyWith(
-          duration: state.duration + const Duration(seconds: 1),
-        );
-      }
+  void _startTimer() {
+    _timer?.cancel(); // Seguretat: mai tinguis dos timers actius
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      state = state.copyWith(
+        duration: state.duration + const Duration(seconds: 1),
+      );
     });
   }
 
+  // 2. Modifica continueRecording perquè realment "continuï"
+  void continueRecording() {
+    state = state.copyWith(recordingState: RecordingState.recording);
+    _startTimer(); // <--- IMPRESCINDIBLE per recuperar el track
+  }
+
+  // 3. Assegura't que startRecording també el fa servir
+  Future<void> startRecording(BuildContext context) async {
+    // ... la teva lògica de neteja de dades anteriors ...
+    state = state.copyWith(
+      recordingState: RecordingState.recording,
+      duration: Duration.zero,
+    );
+    _startTimer();
+  }
+
   void pauseRecording() {
+    _timer?.cancel(); // Atura el cronòmetre físicament
     state = state.copyWith(recordingState: RecordingState.paused);
   }
 
   void resumeRecording() {
     state = state.copyWith(recordingState: RecordingState.recording);
+    _startTimer(); // Torna a engegar el cronòmetre
   }
 
   Future<void> stopRecording() async {
