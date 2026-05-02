@@ -732,6 +732,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'DELETE'**
   String get deleteTrackConfirm;
+
+  /// No description provided for @waypointDetailsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Waypoint details'**
+  String get waypointDetailsTitle;
+
+  /// No description provided for @waypointName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get waypointName;
+
+  /// No description provided for @waypointAltitude.
+  ///
+  /// In en, this message translates to:
+  /// **'Altitude'**
+  String get waypointAltitude;
+
+  /// No description provided for @waypointTrackPoint.
+  ///
+  /// In en, this message translates to:
+  /// **'Track point'**
+  String get waypointTrackPoint;
+
+  /// No description provided for @waypointDistance.
+  ///
+  /// In en, this message translates to:
+  /// **'Accumulated distance'**
+  String get waypointDistance;
+
+  /// No description provided for @waypointTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Time elapsed'**
+  String get waypointTime;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

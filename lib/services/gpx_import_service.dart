@@ -137,13 +137,22 @@ class GpxImportService {
 
       final closestIndex = findClosestTrackIndex(w.lat!, w.lon!);
 
+      // Recuperem les dades del track en aquell índex concret
+      final distAtWp = distancesList[closestIndex];
+      final eleAtWp = alts[closestIndex];
+      final timeAtWp = times[closestIndex];
+
       importedWaypoints.add(
         Waypoint(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          // Generem IDs únics millors que el timestamp simple si hi ha molts wpts
+          id: "imp_${w.lat}_${w.lon}_${DateTime.now().microsecondsSinceEpoch}",
           name: w.name ?? "Waypoint",
           lat: w.lat!,
           lon: w.lon!,
           trackIndex: closestIndex,
+          distanceAtPoint: distAtWp,
+          ele: w.ele ?? eleAtWp, // Prioritzem l'alçada del waypoint si existeix
+          time: w.time ?? timeAtWp,
         ),
       );
     }

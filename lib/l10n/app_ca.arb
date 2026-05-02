@@ -131,7 +131,12 @@
 "continueRecording": "Continuar gravant",
 "deleteTrackTitle": "Eliminar track",
 "deleteTrackMessage": "Estàs segur que vols eliminar aquest track importat? Aquesta acció no es pot desfer.",
-"deleteTrackConfirm": "ELIMINAR"
+"deleteTrackConfirm": "ELIMINAR",
 
-
+"waypointDetailsTitle": "Detalls del waypoint",
+"waypointName": "Nom",
+"waypointAltitude": "Altitud",
+"waypointTrackPoint": "Punt de la ruta",
+"waypointDistance": "Distància acumulada",
+"waypointTime": "Temps de pas"
 }

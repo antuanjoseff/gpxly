@@ -4,6 +4,9 @@ class Waypoint {
   final double lat;
   final double lon;
   final int trackIndex;
+  final double? distanceAtPoint; // <--- Nova
+  final double? ele; // <--- Nova
+  final DateTime? time; // <--- Nova
 
   const Waypoint({
     required this.id,
@@ -11,8 +14,10 @@ class Waypoint {
     required this.lat,
     required this.lon,
     required this.trackIndex,
+    this.distanceAtPoint,
+    this.ele,
+    this.time,
   });
-
   Waypoint copyWith({
     String? id,
     String? name,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gpxly/l10n/app_localizations.dart';
+import 'package:gpxly/models/waypoint.dart';
 import 'package:gpxly/notifiers/elevation_progress_notifier.dart';
 import 'package:gpxly/notifiers/track_follow_notifier.dart';
 import 'package:gpxly/theme/app_colors.dart';
@@ -631,6 +632,156 @@ class AppMessages {
       confirmColor: Colors.redAccent,
       cancelLabel: t.cancel, // Ja la tenies al diccionari
       barrierDismissible: true,
+    );
+  }
+
+  static Future<void> showWaypointDetails(
+    BuildContext context,
+    Waypoint wp,
+    Duration? elapsed,
+  ) {
+    final t = AppLocalizations.of(context)!;
+    const Color surfaceColor = Color(0xFF242426);
+    final Color secondaryText = Colors.white.withAlpha(170);
+    // Formatem la durada (ex: 01:24:05)
+
+    String? formattedDuration;
+    if (elapsed != null) {
+      final hours = elapsed.inHours.toString().padLeft(2, '0');
+      final minutes = elapsed.inMinutes
+          .remainder(60)
+          .toString()
+          .padLeft(2, '0');
+      final seconds = elapsed.inSeconds
+          .remainder(60)
+          .toString()
+          .padLeft(2, '0');
+      formattedDuration = "$hours:$minutes:$seconds";
+    }
+    // Formatem la distància si existeix
+    final String? formattedDistance = wp.distanceAtPoint != null
+        ? "${(wp.distanceAtPoint! / 1000).toStringAsFixed(2)} km"
+        : null;
+
+    return showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: surfaceColor,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: Colors.white.withAlpha(25)),
+        ),
+        titlePadding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
+        title: Row(
+          children: [
+            const Icon(Icons.place_rounded, color: AppColors.skyBlue, size: 28),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                t.waypointDetailsTitle,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 19,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            IconButton(
+              onPressed: () => Navigator.pop(context),
+              icon: Icon(
+                Icons.close,
+                color: Colors.white.withAlpha(100),
+                size: 20,
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildDetailItem(
+              t.waypointName,
+              wp.name,
+              Icons.label_outline,
+              secondaryText,
+            ),
+            _buildDetailItem(
+              t.waypointAltitude,
+              "${wp.ele?.toStringAsFixed(0) ?? '---'} m",
+              Icons.height,
+              secondaryText,
+            ),
+            _buildDetailItem(
+              t.waypointTrackPoint,
+              "#${wp.trackIndex}",
+              Icons.timeline,
+              secondaryText,
+            ),
+            // Mostrem la distància només si s'ha calculat prèviament
+            if (formattedDistance != null)
+              _buildDetailItem(
+                t.waypointDistance,
+                formattedDistance,
+                Icons.route_outlined,
+                secondaryText,
+              ),
+            if (formattedDuration != null)
+              _buildDetailItem(
+                t.waypointTime,
+                formattedDuration,
+                Icons.timer_outlined,
+                secondaryText,
+              ),
+          ],
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        actions: [
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white.withAlpha(30),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+              child: Text(t.ok),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static Widget _buildDetailItem(
+    String label,
+    String value,
+    IconData icon,
+    Color labelColor,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: labelColor),
+          const SizedBox(width: 12),
+          Text(label, style: TextStyle(color: labelColor, fontSize: 14)),
+          const Spacer(),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 15,
+              fontFamily: 'monospace',
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

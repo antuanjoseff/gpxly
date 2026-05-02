@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -200,8 +201,10 @@ class _MapScreenState extends ConsumerState<MapScreen>
     // Si no hi ha punts → no fem res
     if (track.coordinates.isEmpty) return;
 
-    // Última posició del track
-    final last = track.coordinates.last;
+    // Últimes dades registrades al track
+    final lastCoords = track.coordinates.last;
+    final lastAlt = track.altitudes.isNotEmpty ? track.altitudes.last : null;
+    final currentDist = track.distance; // Distància acumulada fins ara
 
     // 1) Obrim el diàleg amb nom suggerit
     final waypoints = ref.read(waypointsProvider);
@@ -215,13 +218,16 @@ class _MapScreenState extends ConsumerState<MapScreen>
     // Si l’usuari cancel·la → sortim
     if (name == null || name.isEmpty) return;
 
-    // 2) Creem el waypoint
+    // 2) Creem el waypoint amb la informació extra
     final wp = Waypoint(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: "rec_${DateTime.now().millisecondsSinceEpoch}",
       name: name,
-      lat: last[1],
-      lon: last[0],
+      lat: lastCoords[1],
+      lon: lastCoords[0],
       trackIndex: track.coordinates.length - 1,
+      ele: lastAlt, // Guardem l'altitud actual del GPS
+      distanceAtPoint: currentDist, // Guardem la distància acumulada actual
+      time: DateTime.now(), // Guardem el moment de creació
     );
 
     // 3) Guardem al provider
@@ -267,6 +273,55 @@ class _MapScreenState extends ConsumerState<MapScreen>
           bottom: 50,
         ),
       );
+    }
+  }
+
+  // Importa Point de dart:math si no el tens
+  void _onFeatureTapped(
+    Point<double> point,
+    LatLng latLng,
+    String featureId,
+    String layerId,
+    Annotation? annotation,
+  ) async {
+    // 1. Busquem quina "feature" s'ha clicat a les capes de waypoints
+    final features = await mapController?.queryRenderedFeatures(point, [
+      'waypoints_recorded_layer',
+      'waypoints_imported_layer',
+    ], null);
+
+    if (features == null || features.isEmpty) return;
+
+    // 2. Extraiem el waypoint_id de les propietats del GeoJSON
+    final dynamic feature = features.first;
+    final String? wpId = feature['properties']?['waypoint_id'];
+
+    if (wpId == null) return;
+
+    // 3. Busquem el waypoint en els nostres providers
+    final recorded = ref.read(waypointsProvider);
+    final imported = ref.read(importedWaypointsProvider);
+    final waypoint = [...recorded, ...imported].firstWhere(
+      (w) => w.id == wpId,
+      orElse: () => throw Exception("Waypoint no trobat"),
+    );
+
+    // 4. Calculem el temps transcorregut
+    Duration? elapsed;
+
+    // Decidim de quin track agafem l'hora d'inici
+    final track = wpId.startsWith('rec_')
+        ? ref.read(trackProvider)
+        : ref.read(importedTrackProvider);
+
+    if (track != null && track.timestamps.isNotEmpty && waypoint.time != null) {
+      // Diferència entre l'hora del waypoint i l'hora del primer punt del track
+      elapsed = waypoint.time!.difference(track.timestamps.first);
+    }
+
+    // 5. Obrim el diàleg amb tota la informació
+    if (mounted) {
+      AppMessages.showWaypointDetails(context, waypoint, elapsed);
     }
   }
 
@@ -598,7 +653,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   },
                   onMapCreated: (controller) {
                     mapController = controller;
+                    controller.onFeatureTapped.add(_onFeatureTapped);
                   },
+
                   onStyleLoadedCallback: () async {
                     print(">>> STYLE LOADED (callback)");
 

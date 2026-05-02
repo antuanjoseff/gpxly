@@ -146,7 +146,10 @@ void updateWaypointSource(
         "type": "Point",
         "coordinates": [wp.lon, wp.lat],
       },
-      "properties": {"name": wp.name},
+      "properties": {
+        "name": wp.name,
+        "waypoint_id": wp.id, // 👈 AQUESTA LÍNIA ÉS CRÍTICA
+      },
     };
   }).toList();
 

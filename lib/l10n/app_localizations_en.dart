@@ -325,4 +325,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deleteTrackConfirm => 'DELETE';
+
+  @override
+  String get waypointDetailsTitle => 'Waypoint details';
+
+  @override
+  String get waypointName => 'Name';
+
+  @override
+  String get waypointAltitude => 'Altitude';
+
+  @override
+  String get waypointTrackPoint => 'Track point';
+
+  @override
+  String get waypointDistance => 'Accumulated distance';
+
+  @override
+  String get waypointTime => 'Time elapsed';
 }

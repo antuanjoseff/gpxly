@@ -130,5 +130,13 @@
 "continueRecording": "Continuar grabando",
 "deleteTrackTitle": "Eliminar ruta",
 "deleteTrackMessage": "¿Estás seguro de que quieres eliminar esta ruta importada? Esta acción no se puede deshacer.",
-"deleteTrackConfirm": "ELIMINAR"
+"deleteTrackConfirm": "ELIMINAR",
+
+"waypointDetailsTitle": "Detalles del waypoint",
+"waypointName": "Nombre",
+"waypointAltitude": "Altitud",
+"waypointTrackPoint": "Punto de la ruta",
+"waypointDistance": "Distancia acumulada",
+"waypointTime": "Tiempo transcurrido"
+  
 }
