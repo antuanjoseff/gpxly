@@ -4,6 +4,7 @@ import 'package:gpxly/l10n/app_localizations.dart';
 import 'package:gpxly/models/track.dart';
 import 'package:gpxly/notifiers/imported_track_notifier.dart';
 import 'package:gpxly/notifiers/track_follow_notifier.dart';
+import 'package:gpxly/notifiers/waypoints_imported_notifier.dart';
 import 'package:gpxly/theme/app_colors.dart';
 import 'package:gpxly/ui/app_messages.dart';
 import 'package:gpxly/ui/bottom_bar/pressable_scale.dart';
@@ -141,6 +142,7 @@ class BottomBarButtons extends ConsumerWidget {
         if (confirm == true) {
           ref.read(trackFollowNotifierProvider.notifier).stopFollowing();
           ref.read(importedTrackProvider.notifier).clear();
+          ref.read(importedWaypointsProvider.notifier).clear();
         }
       },
     );
