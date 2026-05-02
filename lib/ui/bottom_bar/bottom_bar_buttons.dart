@@ -86,12 +86,13 @@ class BottomBarButtons extends ConsumerWidget {
         onTap: onStart,
       );
     }
-
+    final bool isPaused = state == RecordingState.paused;
     return _activeControlUI(
       key: const ValueKey("rec_active"),
-      title: t.recording,
-      isPaused: state == RecordingState.paused,
+      title: isPaused ? t.paused.toUpperCase() : t.recording.toUpperCase(),
+      // color: isPaused ? Colors.green : Colors.red,
       color: Colors.red,
+      isPaused: state == RecordingState.paused,
       onToggle: state == RecordingState.recording ? onPause : onResume,
       onStop: onStop,
     );
@@ -117,13 +118,43 @@ class BottomBarButtons extends ConsumerWidget {
       );
     }
 
+    // Dins de _buildFollowingSlot (BottomBarButtons.dart)
+
     if (!isFollowing) {
-      return _bigActionButton(
+      return Column(
         key: const ValueKey("foll_has_track"),
-        label: t.follow,
-        icon: Icons.navigation_rounded, // 👈 Manté la icona de navegació
-        color: AppColors.deepGreen,
-        onTap: onFollowTrack,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            t.importedTrack.toUpperCase(), // O una clau similar de traducció
+            style: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              // Botó de Navegació (Iniciar seguiment)
+              _circleButton(
+                icon: Icons.navigation_rounded,
+                color: AppColors.deepGreen,
+                onTap: onFollowTrack,
+              ),
+              // Botó de Paperera (Eliminar)
+              _circleButton(
+                icon: Icons.delete_outline,
+                color: Colors.redAccent,
+                onTap: () {
+                  ref.read(importedTrackProvider.notifier).clear();
+                  ref.read(importedWaypointsProvider.notifier).clear();
+                },
+              ),
+            ],
+          ),
+        ],
       );
     }
 

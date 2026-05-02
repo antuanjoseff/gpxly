@@ -93,7 +93,7 @@ class BottomBarContainer extends ConsumerWidget {
                             label: isPausedRec
                                 ? t.paused.toUpperCase()
                                 : t.recording.toUpperCase(), // 👈 MULTILANG
-                            color: Colors.red,
+                            color: isPausedRec ? Colors.green : Colors.red,
                             showDot: isRecording,
                           ),
                           _StatusIndicator(

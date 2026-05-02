@@ -296,9 +296,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
       }
       mapAnimator.updateFromTrack(next);
 
-      // ───────────────────────────────────────────────
-      // 2) BLOQUEIG CRÍTIC D'IMPORTACIÓ
-      // ───────────────────────────────────────────────
       // Si estem important un GPX, aturem qualsevol lògica que mogui la càmera.
       if (isImportingGpx) {
         print(">>> 🛡️ SmartCenter/Recovery bloquejat per importació activa.");
@@ -344,15 +341,10 @@ class _MapScreenState extends ConsumerState<MapScreen>
       // ───────────────────────────────────────────────
       // 5) SmartCenter (Seguiment actiu)
       // ───────────────────────────────────────────────
-      final hasImportedTrack =
-          ref.read(importedTrackProvider)?.coordinates.isNotEmpty == true;
-
-      // LÒGICA DE BLOQUEIG RADICAL
-      if (smartCenterEnabled &&
+      if (smartCenterEnabled && // 👈 Aquest flag és el que mana
           next.currentPosition != null &&
           !isProgrammaticMove &&
-          !isImportingGpx && // 1. No si estem important
-          !hasImportedTrack) {
+          !isImportingGpx) {
         isProgrammaticMove = true;
         print(">>> 🎯 SmartCenter: EXECUTANT");
         safeAnimateCamera(CameraUpdate.newLatLng(next.currentPosition!));
@@ -573,7 +565,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   }
                 },
                 child: MapLibreMap(
-                  trackCameraPosition: false,
+                  trackCameraPosition: true,
                   compassEnabled: false,
                   styleString: "assets/osm_style.json",
                   initialCameraPosition: CameraPosition(
@@ -595,10 +587,11 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   },
                   onCameraIdle: () async {
                     final pos = await mapController!.cameraPosition;
-                    print(
-                      ">>> REAL CAMERA POSITION → ${pos?.target} zoom=${pos?.zoom}",
-                    );
                     ref.read(mapZoomProvider.notifier).update(pos!.zoom);
+                    print(
+                      ">>> REAL CAMERA POSITION → ${pos.target} zoom=${pos.zoom}",
+                    );
+                    ref.read(mapZoomProvider.notifier).update(pos.zoom);
                     ref
                         .read(mapCenterLatProvider.notifier)
                         .update(pos.target.latitude);
