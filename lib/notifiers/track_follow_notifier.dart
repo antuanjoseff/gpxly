@@ -212,6 +212,8 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
     offTrackAlertsSent = 0;
     _offTrackStart = null; // Important netejar el cronòmetre d'offtrack
     _isCurrentlyOffTrack = false;
+    _reverseDialogShown = false;
+    _reverseDetectionLocked = false;
   }
 
   // ------------------------------------------------------------
@@ -285,10 +287,6 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
           geometry.headingDifference(closest.bearing, closest.userBearing) >
               140 &&
           reverseDetector.isReverseDirection(closest, _lastUserPositions)) {
-        // BLOQUEO INMEDIATO: Antes de disparar el estado, marcamos como mostrado
-        _reverseDialogShown = true;
-        _reverseDetectionLocked = true;
-
         sounds.playReversedTrackSound();
         _askUserToReverseTrack();
 
@@ -435,7 +433,7 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
   // ------------------------------------------------------------
   bool _checkIfFinished(ClosestResult closest, double totalPoints) {
     final bool isNearEnd = closest.distance < 15;
-    final bool isLastSegment = closest.segmentIndex >= totalPoints - 2;
+    // final bool isLastSegment = closest.segmentIndex >= totalPoints - 2;
 
     const double minProgressRequired = 100.0;
     final bool hasMinimumProgress =
@@ -443,7 +441,8 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
 
     // SOLO termina si está al final Y ha caminado 100m.
     // Esto evita que se cierre al importar si estás en la meta.
-    return isNearEnd && isLastSegment && hasMinimumProgress;
+    // return isNearEnd && isLastSegment && hasMinimumProgress;
+    return isNearEnd && hasMinimumProgress;
   }
 
   void togglePause() {

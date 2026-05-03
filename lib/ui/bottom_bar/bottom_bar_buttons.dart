@@ -194,7 +194,9 @@ class BottomBarButtons extends ConsumerWidget {
 
     return _activeControlUI(
       key: const ValueKey("foll_active"),
-      title: t.following,
+      title: isFollowPaused
+          ? t.paused.toUpperCase()
+          : t.following.toUpperCase(),
       isPaused: isFollowPaused,
       color: AppColors.deepGreen,
       onToggle: () {
