@@ -472,7 +472,7 @@ abstract class AppLocalizations {
   /// No description provided for @recordingTrack.
   ///
   /// In en, this message translates to:
-  /// **'Recording gravat'**
+  /// **'Track'**
   String get recordingTrack;
 
   /// No description provided for @importedTrack.

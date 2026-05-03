@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gpxly/l10n/app_localizations.dart';
+import 'package:gpxly/notifiers/permissions_notifier.dart';
 import 'package:gpxly/notifiers/settings_pending_notifier.dart';
 import 'package:gpxly/theme/app_colors.dart';
 import 'package:gpxly/ui/app_messages.dart';
-import 'package:gpxly/widgets/navigation_pause_icon.dart';
-
 import 'tabs/gps_settings_tab.dart';
 import 'tabs/gpx_settings_tab.dart';
 import 'tabs/track_settings_tab.dart';
 import 'tabs/imported_track_settings_tab.dart';
-
 import 'package:gpxly/notifiers/gps_settings_notifier.dart';
 import 'package:gpxly/notifiers/gpx_settings_notifier.dart';
 import 'package:gpxly/notifiers/track_settings_notifier.dart';
@@ -23,6 +21,8 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final t = AppLocalizations.of(context)!;
     final hasPending = ref.watch(settingsPendingProvider);
+    final permissions = ref.watch(permissionsProvider);
+    final hasPermission = permissions.hasPermission;
 
     return PopScope(
       canPop: false,
@@ -63,6 +63,7 @@ class SettingsScreen extends ConsumerWidget {
                 child: _SettingsTile(
                   icon: Icons.gps_fixed,
                   label: t.gpsTab,
+                  enabled: hasPermission,
                   hasPending: ref.watch(gpsPendingProvider),
                   onTap: () {
                     Navigator.push(
@@ -77,6 +78,7 @@ class SettingsScreen extends ConsumerWidget {
                 child: _SettingsTile(
                   icon: Icons.map,
                   label: t.gpxTab,
+                  enabled: hasPermission,
                   hasPending: ref.watch(gpxPendingProvider),
                   onTap: () {
                     Navigator.push(
@@ -91,6 +93,7 @@ class SettingsScreen extends ConsumerWidget {
                 child: _SettingsTile(
                   icon: Icons.timeline,
                   label: t.trackTab,
+                  enabled: hasPermission,
                   hasPending: ref.watch(trackPendingProvider),
                   onTap: () {
                     Navigator.push(
@@ -107,6 +110,7 @@ class SettingsScreen extends ConsumerWidget {
                 child: _SettingsTile(
                   icon: Icons.route,
                   label: t.importedTrack,
+                  enabled: hasPermission,
                   hasPending: ref.watch(importedTrackPendingProvider),
                   onTap: () {
                     Navigator.push(
@@ -180,12 +184,14 @@ class _SettingsTile extends StatefulWidget {
   final String label;
   final bool hasPending;
   final VoidCallback onTap;
+  final bool enabled;
 
   const _SettingsTile({
     required this.icon,
     required this.label,
     required this.hasPending,
     required this.onTap,
+    required this.enabled,
   });
 
   @override
@@ -202,63 +208,66 @@ class _SettingsTileState extends State<_SettingsTile> {
       duration: const Duration(milliseconds: 120),
       curve: Curves.easeOut,
       child: GestureDetector(
-        onTapDown: (_) => setState(() => scale = 0.96),
+        onTapDown: widget.enabled ? (_) => setState(() => scale = 0.96) : null,
         onTapUp: (_) => setState(() => scale = 1.0),
         onTapCancel: () => setState(() => scale = 1.0),
-        onTap: widget.onTap,
-        child: Material(
-          color: AppColors.white,
-          borderRadius: BorderRadius.circular(16),
-          elevation: 2,
-          child: Stack(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Icon(widget.icon, size: 40, color: AppColors.primary),
-                      const SizedBox(height: 12),
-                      Text(
-                        widget.label,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.primary,
+        onTap: widget.enabled ? widget.onTap : null,
+        child: Opacity(
+          opacity: widget.enabled ? 1.0 : 0.4,
+          child: Material(
+            color: AppColors.white,
+            borderRadius: BorderRadius.circular(16),
+            elevation: 2,
+            child: Stack(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Icon(widget.icon, size: 40, color: AppColors.primary),
+                        const SizedBox(height: 12),
+                        Text(
+                          widget.label,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primary,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              if (widget.hasPending)
-                Positioned(
-                  top: 12,
-                  right: 12,
-                  child: TweenAnimationBuilder<double>(
-                    tween: Tween(begin: 0.8, end: 1.0),
-                    duration: const Duration(milliseconds: 900),
-                    curve: Curves.easeInOut,
-                    builder: (context, scale, child) {
-                      return Transform.scale(scale: scale, child: child);
-                    },
-                    onEnd: () => setState(() {}),
-                    child: Container(
-                      width: 12,
-                      height: 12,
-                      decoration: const BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
-                      ),
+                      ],
                     ),
                   ),
                 ),
-            ],
+
+                if (widget.hasPending)
+                  Positioned(
+                    top: 12,
+                    right: 12,
+                    child: TweenAnimationBuilder<double>(
+                      tween: Tween(begin: 0.8, end: 1.0),
+                      duration: const Duration(milliseconds: 900),
+                      curve: Curves.easeInOut,
+                      builder: (context, scale, child) {
+                        return Transform.scale(scale: scale, child: child);
+                      },
+                      onEnd: () => setState(() {}),
+                      child: Container(
+                        width: 12,
+                        height: 12,
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),

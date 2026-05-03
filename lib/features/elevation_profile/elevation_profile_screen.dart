@@ -739,6 +739,7 @@ class _ElevationProfileScreenState
             primaryIsReal: primaryIsReal,
             trackColor: trackColor,
             importedTrackColor: importedTrackColor,
+            context: context,
           ),
 
           Expanded(child: _buildWaypointsList(context)),
@@ -754,17 +755,20 @@ Widget _buildLegend({
   required bool primaryIsReal,
   required Color trackColor,
   required Color importedTrackColor,
+  required BuildContext context,
 }) {
   if (!hasReal && !hasImported) {
     return const SizedBox.shrink();
   }
-
+  final t = AppLocalizations.of(context)!;
   final effectivePrimaryIsReal = hasReal ? primaryIsReal : false;
 
-  final primaryLabel = effectivePrimaryIsReal ? "Track real" : "Track importat";
+  final primaryLabel = effectivePrimaryIsReal
+      ? t.recordingTrack
+      : t.importedTrack;
   final secondaryLabel = effectivePrimaryIsReal
-      ? "Track importat"
-      : "Track real";
+      ? t.recordingTrack
+      : t.importedTrack;
 
   return Padding(
     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
