@@ -810,4 +810,19 @@ class AppMessages {
       cancelLabel: t.cancel,
     );
   }
+
+  static Future<bool?> showPendingChangesDialog(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
+
+    return _showBaseDialog(
+      context: context,
+      barrierDismissible: false,
+      title: t.pendingChangesTitle,
+      message: t.pendingChangesMessage,
+      icon: Icons.info_outline,
+      iconColor: AppColors.skyBlue,
+      confirmLabel: t.apply,
+      cancelLabel: t.discard,
+    );
+  }
 }

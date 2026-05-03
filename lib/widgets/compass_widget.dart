@@ -121,8 +121,8 @@ class CompassScalePanel extends ConsumerWidget {
               Text(
                 _formatMeters(chosenMeters),
                 style: const TextStyle(
-                  fontSize: 9, // Text un pèl més petit
-                  fontWeight: FontWeight.w600,
+                  fontSize: 10, // Text un pèl més petit
+                  fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),
               ),

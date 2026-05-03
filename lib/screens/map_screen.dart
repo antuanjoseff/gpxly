@@ -179,16 +179,16 @@ class _MapScreenState extends ConsumerState<MapScreen>
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 52, // 🎯 Nova amplada de la brúixola
-        height: 52, // 🎯 Quadrat perfecte
+        width: 52,
+        height: 52,
         decoration: BoxDecoration(
-          color: AppColors.tertiary,
+          color: AppColors.iconBackgroundColor,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: Colors.white10),
         ),
         child: Icon(
           icon,
-          color: Colors.white,
+          color: AppColors.iconForegroundColor,
           size: 26, // 🎯 Una mica més petita per la nova mida de 52px
         ),
       ),

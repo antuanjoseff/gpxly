@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gpxly/l10n/app_localizations.dart';
 import 'package:gpxly/notifiers/settings_pending_notifier.dart';
 import 'package:gpxly/theme/app_colors.dart';
+import 'package:gpxly/ui/app_messages.dart';
 import 'package:gpxly/widgets/navigation_pause_icon.dart';
 
 import 'tabs/gps_settings_tab.dart';
@@ -33,23 +34,7 @@ class SettingsScreen extends ConsumerWidget {
           return;
         }
 
-        final apply = await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: Text(t.pendingChangesTitle),
-            content: Text(t.pendingChangesMessage),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: Text(t.discard),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: Text(t.apply),
-              ),
-            ],
-          ),
-        );
+        final apply = await AppMessages.showPendingChangesDialog(context);
 
         if (apply == true) {
           await _applyAll(ref);

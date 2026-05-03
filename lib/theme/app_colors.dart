@@ -19,4 +19,15 @@ class AppColors {
   static const Color white = Colors.white;
   static const Color dark = Colors.black;
   static const Color alert = redAlert;
+
+  static const Color hardBrown = Color(0xFFaa685c);
+  static const Color mediumBrown = Color(0xFFb3776f);
+  static const Color ligthBrown = Color(0xFFcfa191);
+  static const Color ligthBlack = Color(0xFF5b5f68);
+
+  static const Color brownRed = Color(0xFF844452);
+  static const Color classicOrange = Color(0xFFce812f);
+
+  static const Color iconForegroundColor = Colors.white;
+  static const Color iconBackgroundColor = primary;
 }
