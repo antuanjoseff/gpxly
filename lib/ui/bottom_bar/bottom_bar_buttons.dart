@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gpxly/l10n/app_localizations.dart';
 import 'package:gpxly/models/track.dart';
+import 'package:gpxly/notifiers/gps_settings_notifier.dart';
+import 'package:gpxly/notifiers/helpers/thresholds.dart';
 import 'package:gpxly/notifiers/imported_track_notifier.dart';
 import 'package:gpxly/notifiers/track_follow_notifier.dart';
 import 'package:gpxly/notifiers/waypoints_imported_notifier.dart';
@@ -138,11 +140,35 @@ class BottomBarButtons extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               // Botó de Navegació (Iniciar seguiment)
+              // Botó de Navegació (Iniciar seguiment)
               _circleButton(
                 icon: Icons.navigation_rounded,
                 color: AppColors.deepGreen,
-                onTap: onFollowTrack,
+                onTap: () async {
+                  final gps = ref.read(gpsSettingsProvider);
+
+                  // 1. Comprovem si el GPS ja està configurat amb la precisió necessària
+                  // Si useTime és true i els segons són iguals o inferiors als del mode navegació
+                  final bool isAlreadyOptimized =
+                      gps.useTime &&
+                      gps.seconds <= TrackThresholds.navGpsSeconds &&
+                      gps.meters <= TrackThresholds.navGpsMeters;
+
+                  if (isAlreadyOptimized) {
+                    // Si ja és ràpid, iniciem directament
+                    onFollowTrack();
+                  } else {
+                    // 2. Si és lent, demanem permís per optimitzar-lo
+                    final confirm = await AppMessages.showGpsOptimizationDialog(
+                      context,
+                    );
+                    if (confirm == true) {
+                      onFollowTrack();
+                    }
+                  }
+                },
               ),
+
               // Botó de Paperera (Eliminar)
               // Botó de Paperera (Eliminar)
               _circleButton(

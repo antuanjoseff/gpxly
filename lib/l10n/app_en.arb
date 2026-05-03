@@ -137,5 +137,9 @@
 "waypointAltitude": "Altitude",
 "waypointTrackPoint": "Track point",
 "waypointDistance": "Accumulated distance",
-"waypointTime": "Time elapsed"
+"waypointTime": "Time elapsed",
+
+"gpsOptimizationTitle": "GPS Optimization",
+"gpsOptimizationMessage": "For precise tracking, high-fidelity mode will be activated. This may increase battery consumption.",
+"confirm": "CONFIRM"
 }

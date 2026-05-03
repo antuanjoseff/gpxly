@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gpxly/notifiers/helpers/thresholds.dart';
 import 'package:gpxly/services/native_gps_channel.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -117,6 +118,25 @@ class GpsSettingsNotifier extends Notifier<GpsSettings> {
       meters: state.meters,
       accuracy: state.accuracy,
     );
+  }
+
+  // En GpsSettingsNotifier
+  Future<void> setNavigationMode() async {
+    state = state.copyWith(
+      useTime: true,
+      seconds: TrackThresholds.navGpsSeconds,
+      meters: TrackThresholds.navGpsMeters,
+      accuracy: TrackThresholds.navGpsAccuracy,
+    );
+
+    // Aplicamos los cambios al canal nativo inmediatamente
+    await apply();
+  }
+
+  // A GpsSettingsNotifier
+  Future<void> restoreDefaultMode() async {
+    await _loadFromPrefs(); // Torna a posar els valors de l'usuari a l'estat
+    await apply(); // Envia aquests valors al canal natiu
   }
 }
 

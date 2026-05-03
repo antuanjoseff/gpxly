@@ -343,4 +343,13 @@ class AppLocalizationsCa extends AppLocalizations {
 
   @override
   String get waypointTime => 'Temps de pas';
+
+  @override
+  String get gpsOptimizationTitle => 'Optimització GPS';
+
+  @override
+  String get gpsOptimizationMessage => 'Per a un seguiment precís, cal activar el mode d\'alta fidelitat. Això pot augmentar el consum de bateria.';
+
+  @override
+  String get confirm => 'CONFIRMAR';
 }

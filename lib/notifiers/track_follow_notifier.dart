@@ -5,10 +5,7 @@ import 'package:gpxly/models/track_follow_state.dart';
 import 'package:gpxly/notifiers/gps_settings_notifier.dart';
 import 'package:gpxly/notifiers/imported_track_notifier.dart';
 import 'package:gpxly/notifiers/track_notifier.dart';
-import 'package:gpxly/services/gps_manager.dart';
-
 import 'package:gpxly/services/permissions_service.dart';
-
 import 'package:gpxly/utils/geo_utils.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:flutter/services.dart';
@@ -142,6 +139,8 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
     await ref.read(trackProvider.notifier).ensureGpsStarted();
 
     // 2. Activar mode "following" al TrackNotifier
+    // Ponemos el GPS en modo "Navegación" usando los umbrales centralizados
+    await ref.read(gpsSettingsProvider.notifier).setNavigationMode();
     ref.read(trackProvider.notifier).setFollowing(true);
 
     // 3. Estat intern
@@ -157,19 +156,21 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
       mapController.animateCamera(CameraUpdate.newLatLng(pos));
     }
 
-    // 5. Inicialitzar distància inicial
+    // 5. Inicialitzar distància inicial (Millorat)
     final imported = ref.read(importedTrackProvider);
     if (imported == null || imported.coordinates.isEmpty) return;
 
-    final first = imported.coordinates.first;
-    final firstPos = LatLng(first[1], first[0]);
+    // Useu la posició de l'usuari si la tenim, si no, el primer punt del track
+    final referencePos =
+        pos ??
+        LatLng(imported.coordinates.first[1], imported.coordinates.first[0]);
 
     final importedLatLng = imported.coordinates
         .map((c) => LatLng(c[1], c[0]))
         .toList();
 
     final closest = geometry.closestPointAndSegment(
-      firstPos,
+      referencePos, // <--- Càlcul més real si l'usuari ja és a la ruta
       importedLatLng,
       _lastUserPositions,
     );
@@ -177,14 +178,20 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
     _lastDistances
       ..clear()
       ..add(closest.distance);
+
+    // També és bona idea inicialitzar el punt projectat
+    _lastProjectedPoint = closest.projectedPoint;
   }
 
   // ------------------------------------------------------------
   // Aturar seguiment
   // ------------------------------------------------------------
-  // Dins de TrackFollowNotifier
   void stopFollowing() {
     ref.read(trackProvider.notifier).setFollowing(false);
+
+    // 1. Restaurar la configuració del GPS original de l'usuari
+    // Carreguem de Prefs i apliquem al canal natiu
+    ref.read(gpsSettingsProvider.notifier).restoreDefaultMode();
 
     state = state.copyWith(
       isFollowing: false,
@@ -192,15 +199,19 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
       isOffTrack: false,
       distanceToTrack: 0,
       showOffTrackSnackbar: false,
+      showBackOnTrackSnackbar: false, // Netegem també aquests flags
+      showEndOfTrackSnackbar: false,
       mode: FollowMode.notFollowing,
     );
 
-    // NETEJA INTERNA 👈 Molt important per estalviar memòria
+    // 2. NETEJA INTERNA
     _lastDistances.clear();
     _lastUserPositions.clear();
     _distanceProgressOnTrack = 0.0;
     _lastProjectedPoint = null;
     offTrackAlertsSent = 0;
+    _offTrackStart = null; // Important netejar el cronòmetre d'offtrack
+    _isCurrentlyOffTrack = false;
   }
 
   // ------------------------------------------------------------
@@ -216,7 +227,7 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
     _lastUserPositions.add(userPos);
     if (_lastUserPositions.length > 10) _lastUserPositions.removeAt(0);
 
-    if (!state.isFollowing) return;
+    // (Eliminado if redundante de isFollowing que ya estaba arriba)
 
     final imported = ref.read(importedTrackProvider);
     if (imported == null || imported.coordinates.isEmpty) return;
@@ -265,22 +276,26 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
 
     final isFar = dist > TrackThresholds.farThreshold;
 
-    // Reversed detection
-    // Hem afegit la comprovació de 'dist < TrackThresholds.nearThreshold'
-    // i un filtre d'angle estricte per evitar falsos positius en desviaments laterals.
+    // --- REVERSED DETECTION (MODIFICADO) ---
+    // Añadimos el chequeo de flags al principio para no procesar geometría innecesariamente
     if (state.mode == FollowMode.onTrack &&
         !_reverseDialogShown &&
-        !_reverseDetectionLocked &&
-        dist <
-            TrackThresholds
-                .nearThreshold && // Només si estem realment a prop del track
-        geometry.headingDifference(closest.bearing, closest.userBearing) >
-            140 && // Angle clarament oposat
-        reverseDetector.isReverseDirection(closest, _lastUserPositions)) {
-      _reverseDetectionLocked = true;
-      sounds.playReversedTrackSound();
-      _askUserToReverseTrack();
-      return;
+        !_reverseDetectionLocked) {
+      if (dist < TrackThresholds.nearThreshold &&
+          geometry.headingDifference(closest.bearing, closest.userBearing) >
+              140 &&
+          reverseDetector.isReverseDirection(closest, _lastUserPositions)) {
+        // BLOQUEO INMEDIATO: Antes de disparar el estado, marcamos como mostrado
+        _reverseDialogShown = true;
+        _reverseDetectionLocked = true;
+
+        sounds.playReversedTrackSound();
+        _askUserToReverseTrack();
+
+        // Retornamos para evitar que el autómata de estados se ejecute en este tick
+        // y así asegurar que el diálogo es la única acción prioritaria.
+        return;
+      }
     }
 
     // Autòmat
@@ -404,9 +419,14 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
   // Reverse dialog
   // ------------------------------------------------------------
   void _askUserToReverseTrack() {
-    if (_reverseDialogShown) return;
+    // Si ya se está mostrando el diálogo O si el usuario ya lo bloqueó
+    // en esta sesión (locked), no hacemos NADA.
+    if (_reverseDialogShown || _reverseDetectionLocked) return;
 
     _reverseDialogShown = true;
+    _reverseDetectionLocked =
+        true; // Bloqueamos nuevas detecciones inmediatamente
+
     state = state.copyWith(showReverseTrackDialog: true);
   }
 

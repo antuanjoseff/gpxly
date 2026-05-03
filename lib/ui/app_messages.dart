@@ -766,13 +766,26 @@ class AppMessages {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
       child: Row(
+        crossAxisAlignment:
+            CrossAxisAlignment.start, // Manté l'icona a dalt si el text creix
         children: [
           Icon(icon, size: 18, color: labelColor),
           const SizedBox(width: 12),
-          Text(label, style: TextStyle(color: labelColor, fontSize: 14)),
-          const Spacer(),
+
+          // El label ara ocupa tot l'espai central i fa wrap si cal
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(color: labelColor, fontSize: 14),
+              softWrap: true, // Permet el salt de línia
+            ),
+          ),
+
+          const SizedBox(width: 12), // Espai de separació
+          // El valor es manté a la dreta, fix, sense moure's
           Text(
             value,
+            textAlign: TextAlign.right,
             style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
@@ -782,6 +795,19 @@ class AppMessages {
           ),
         ],
       ),
+    );
+  }
+
+  static Future<bool?> showGpsOptimizationDialog(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
+    return _showBaseDialog(
+      context: context,
+      title: t.gpsOptimizationTitle,
+      message: t.gpsOptimizationMessage,
+      icon: Icons.bolt_rounded,
+      iconColor: Colors.amberAccent,
+      confirmLabel: t.confirm, // O t.activate segons el teu .arb
+      cancelLabel: t.cancel,
     );
   }
 }

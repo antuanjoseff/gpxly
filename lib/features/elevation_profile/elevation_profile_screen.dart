@@ -369,12 +369,6 @@ class _ElevationProfileScreenState
 
               // Botones grandes y ultra-compactos
               _compactActionBtn(
-                icon: Icons.visibility,
-                active: selectedIndexGraph == wp.trackIndex,
-                activeColor: AppColors.skyBlue,
-                onTap: () => _onShowWaypoint(wp),
-              ),
-              _compactActionBtn(
                 icon: Icons.flag_circle,
                 active: selectedIndexStart == wp.trackIndex,
                 activeColor: AppColors.trackGreen,

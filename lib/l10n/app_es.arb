@@ -137,6 +137,10 @@
 "waypointAltitude": "Altitud",
 "waypointTrackPoint": "Punto de la ruta",
 "waypointDistance": "Distancia acumulada",
-"waypointTime": "Tiempo transcurrido"
-  
+"waypointTime": "Tiempo transcurrido",
+
+"gpsOptimizationTitle": "Optimización GPS",
+"gpsOptimizationMessage": "Para un seguimiento preciso, activaremos el modo de alta fidelidad. Esto puede aumentar el consumo de batería.",
+"confirm": "CONFIRMAR"
+ 
 }

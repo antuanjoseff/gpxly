@@ -768,6 +768,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Time elapsed'**
   String get waypointTime;
+
+  /// No description provided for @gpsOptimizationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'GPS Optimization'**
+  String get gpsOptimizationTitle;
+
+  /// No description provided for @gpsOptimizationMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'For precise tracking, high-fidelity mode will be activated. This may increase battery consumption.'**
+  String get gpsOptimizationMessage;
+
+  /// No description provided for @confirm.
+  ///
+  /// In en, this message translates to:
+  /// **'CONFIRM'**
+  String get confirm;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -138,5 +138,9 @@
 "waypointAltitude": "Altitud",
 "waypointTrackPoint": "Punt de la ruta",
 "waypointDistance": "Distància acumulada",
-"waypointTime": "Temps de pas"
+"waypointTime": "Temps de pas",
+
+"gpsOptimizationTitle": "Optimització GPS",
+"gpsOptimizationMessage": "Per a un seguiment precís, cal activar el mode d'alta fidelitat. Això pot augmentar el consum de bateria.",
+"confirm": "CONFIRMAR"
 }
