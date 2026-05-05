@@ -16,7 +16,6 @@ import 'package:gpxly/notifiers/track_settings_notifier.dart';
 import 'package:gpxly/notifiers/waypoints_recorded_notifier.dart';
 import 'package:gpxly/utils/distance_utils.dart';
 import 'package:gpxly/theme/app_colors.dart';
-import 'package:gpxly/widgets/waypoint_button.dart';
 
 enum ActiveHandle { none, start, end }
 
@@ -760,6 +759,7 @@ Widget _buildLegend({
   if (!hasReal && !hasImported) {
     return const SizedBox.shrink();
   }
+
   final t = AppLocalizations.of(context)!;
   final effectivePrimaryIsReal = hasReal ? primaryIsReal : false;
 
@@ -767,65 +767,51 @@ Widget _buildLegend({
       ? t.recordingTrack
       : t.importedTrack;
   final secondaryLabel = effectivePrimaryIsReal
-      ? t.recordingTrack
-      : t.importedTrack;
+      ? t.importedTrack
+      : t.recordingTrack;
+
+  Widget legendItem(Color color, String label) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 14,
+          height: 14,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppColors.dark,
+          ),
+        ),
+      ],
+    );
+  }
 
   return Padding(
     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-    child: Row(
+    child: Wrap(
+      alignment: WrapAlignment.center,
+      spacing: 24,
+      runSpacing: 8,
       children: [
-        // PRIMER TRACK (només si existeix)
+        // PRIMER ELEMENT
         if (hasReal || hasImported)
-          Row(
-            children: [
-              Container(
-                width: 14,
-                height: 14,
-                decoration: BoxDecoration(
-                  color: effectivePrimaryIsReal
-                      ? trackColor
-                      : importedTrackColor,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                primaryLabel,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.dark,
-                ),
-              ),
-            ],
+          legendItem(
+            effectivePrimaryIsReal ? trackColor : importedTrackColor,
+            primaryLabel,
           ),
 
-        const SizedBox(width: 20),
-
-        // SEGON TRACK (només si existeix)
+        // SEGON ELEMENT
         if (hasReal && hasImported)
-          Row(
-            children: [
-              Container(
-                width: 14,
-                height: 14,
-                decoration: BoxDecoration(
-                  color: effectivePrimaryIsReal
-                      ? importedTrackColor
-                      : trackColor,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                secondaryLabel,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.dark,
-                ),
-              ),
-            ],
+          legendItem(
+            effectivePrimaryIsReal ? importedTrackColor : trackColor,
+            secondaryLabel,
           ),
       ],
     ),

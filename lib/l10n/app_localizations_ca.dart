@@ -105,7 +105,7 @@ class AppLocalizationsCa extends AppLocalizations {
   String get locationPermissionMessage => 'L’aplicació no té permisos per accedir a la ubicació. Vols obrir la configuració per donar permisos?';
 
   @override
-  String get offTrack => 'T\'estàs allunyant del track importat';
+  String get offTrack => 'T\'estàs allunyant de la ruta';
 
   @override
   String get backOnTrack => 'Estàs sobre el track';
@@ -243,10 +243,13 @@ class AppLocalizationsCa extends AppLocalizations {
   String get reverseTrackTitle => 'Direcció inversa';
 
   @override
-  String get reverseTrackMessage => 'Sembla que estàs seguint el track en direcció inversa. Vols invertir-lo per millorar la navegació?';
+  String get reverseTrackMessage => 'Vas en sentit contrari al trajecte. Vols invertir el sentit per rebre les indicacions correctes?';
 
   @override
-  String get reverseTrackConfirm => 'Inverteix';
+  String get reverseTrackConfirm => 'Sí, capgirar';
+
+  @override
+  String get ingnoreTrackConfirm => 'No, continuar';
 
   @override
   String get gpxFilenameTitle => 'Nom del fitxer GPX';
@@ -321,7 +324,7 @@ class AppLocalizationsCa extends AppLocalizations {
   String get deleteTrackTitle => 'Eliminar track';
 
   @override
-  String get deleteTrackMessage => 'Estàs segur que vols eliminar aquest track importat? Aquesta acció no es pot desfer.';
+  String get deleteTrackMessage => 'Estàs segur que vols eliminar aquesta  ruta? Aquesta acció no es pot desfer.';
 
   @override
   String get deleteTrackConfirm => 'ELIMINAR';

@@ -105,7 +105,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get locationPermissionMessage => 'The app does not have permission to access location. Do you want to open settings to grant it?';
 
   @override
-  String get offTrack => 'You are drifting away from the imported track';
+  String get offTrack => 'You are drifting away from the route';
 
   @override
   String get backOnTrack => 'You are on the track';
@@ -243,10 +243,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get reverseTrackTitle => 'Reverse direction';
 
   @override
-  String get reverseTrackMessage => 'It looks like you are following the track in reverse. Do you want to invert it for better navigation?';
+  String get reverseTrackMessage => 'You’re moving in the opposite direction. Would you like to reverse the route for correct guidance?';
 
   @override
-  String get reverseTrackConfirm => 'Invert';
+  String get reverseTrackConfirm => 'Yes, flip it';
+
+  @override
+  String get ingnoreTrackConfirm => 'No, keep it';
 
   @override
   String get gpxFilenameTitle => 'GPX file name';
@@ -321,7 +324,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteTrackTitle => 'Delete track';
 
   @override
-  String get deleteTrackMessage => 'Are you sure you want to delete this imported track? This action cannot be undone.';
+  String get deleteTrackMessage => 'Are you sure you want to delete this route? This action cannot be undone.';
 
   @override
   String get deleteTrackConfirm => 'DELETE';

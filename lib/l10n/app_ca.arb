@@ -41,7 +41,7 @@
   "locationPermissionTitle": "Permís de localització",
   "locationPermissionMessage": "L’aplicació no té permisos per accedir a la ubicació. Vols obrir la configuració per donar permisos?",
 
-  "offTrack": "T'estàs allunyant del track importat",
+  "offTrack": "T'estàs allunyant de la ruta",
   "backOnTrack": "Estàs sobre el track",
 
   "elevationFixing": "Corregint altituds",
@@ -98,8 +98,9 @@
 "endOfTrack": "Has arribat al final del track",
 
 "reverseTrackTitle": "Direcció inversa",
-"reverseTrackMessage": "Sembla que estàs seguint el track en direcció inversa. Vols invertir-lo per millorar la navegació?",
-"reverseTrackConfirm": "Inverteix",
+"reverseTrackMessage": "Vas en sentit contrari al trajecte. Vols invertir el sentit per rebre les indicacions correctes?",
+"reverseTrackConfirm": "Sí, capgirar",
+"ingnoreTrackConfirm": "No, continuar",
 
 "gpxFilenameTitle": "Nom del fitxer GPX",
 "gpxFilenameLabel": "Nom del fitxer",
@@ -130,7 +131,7 @@
 "shareTrack": "COMPARTIR",
 "continueRecording": "Continuar gravant",
 "deleteTrackTitle": "Eliminar track",
-"deleteTrackMessage": "Estàs segur que vols eliminar aquest track importat? Aquesta acció no es pot desfer.",
+"deleteTrackMessage": "Estàs segur que vols eliminar aquesta  ruta? Aquesta acció no es pot desfer.",
 "deleteTrackConfirm": "ELIMINAR",
 
 "waypointDetailsTitle": "Detalls del waypoint",

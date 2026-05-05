@@ -55,6 +55,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
   bool hasDoneFirstFixZoom = false;
   bool isProgrammaticMove = false;
   bool isImportingGpx = false;
+  bool _isShowingReverseDialog = false;
   bool hasDoneRecoveryFit =
       false; // Flag per controlar que només es recuperi un cop per sessió
 
@@ -512,20 +513,20 @@ class _MapScreenState extends ConsumerState<MapScreen>
     });
 
     ref.listen(trackFollowNotifierProvider, (prev, next) async {
-      final wasFalse = prev?.showReverseTrackDialog == false;
-      final isTrue = next.showReverseTrackDialog == true;
-
-      if (wasFalse && isTrue) {
-        // 🔥 Primer resetejar el flag al notifier
-        ref
-            .read(trackFollowNotifierProvider.notifier)
-            .dismissReverseTrackDialog();
+      if (next.showReverseTrackDialog && !_isShowingReverseDialog) {
+        _isShowingReverseDialog = true; // Bloqueamos nuevas aperturas
 
         final accept = await AppMessages.showReverseTrackDialog(context);
 
         if (accept == true) {
           ref.read(trackFollowNotifierProvider.notifier).reverseImportedTrack();
+        } else {
+          ref
+              .read(trackFollowNotifierProvider.notifier)
+              .dismissReverseTrackDialog();
         }
+
+        _isShowingReverseDialog = false; // Liberamos cuando el usuario cierra
       }
     });
 

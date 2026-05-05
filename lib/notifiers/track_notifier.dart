@@ -52,18 +52,11 @@ class TrackNotifier extends Notifier<Track> {
 
   Future<void> ensureGpsStarted() async {
     if (gpsActive) {
-      print("⚠️ ensureGpsStarted() → GPS ja estava actiu");
       return;
     }
 
     // 🔥 LLEGIR CONFIGURACIÓ DE L’USUARI
     final gpsSettings = ref.read(gpsSettingsProvider);
-
-    print("   ACTIVANT GPS AMB CONFIGURACIÓ:");
-    print("   useTime  = ${gpsSettings.useTime}");
-    print("   seconds  = ${gpsSettings.seconds}");
-    print("   meters   = ${gpsSettings.meters}");
-    print("   accuracy = ${gpsSettings.accuracy}");
 
     await NativeGpsChannel.start(
       useTime: gpsSettings.useTime,
@@ -72,11 +65,9 @@ class TrackNotifier extends Notifier<Track> {
       accuracy: gpsSettings.accuracy,
     );
 
-    print("🔥 CONNECTANT startGpsListener()");
     startGpsListener();
 
     gpsActive = true;
-    print("✅ GPS ACTIVAT I LISTENER CONNECTAT");
   }
 
   void onNativeGpsPoint(Map<String, dynamic> data) {
@@ -89,9 +80,12 @@ class TrackNotifier extends Notifier<Track> {
     final timestamp = DateTime.fromMillisecondsSinceEpoch(data["timestamp"]);
     final vAccuracy = data["vAccuracy"] as double;
     final satellites = data["satellites"] as int? ?? 0;
-    print("📡 onNativeGpsPoint() → REBUT PUNT RAW: $data");
+
     // 1. Actualitzar punt blau
-    state = state.copyWith(currentPosition: LatLng(lat, lon));
+    state = state.copyWith(
+      currentPosition: LatLng(lat, lon),
+      currentHeading: heading,
+    );
 
     // 2. Si grava → afegir punt
     if (state.recordingState == RecordingState.recording) {
@@ -187,6 +181,7 @@ class TrackNotifier extends Notifier<Track> {
       accuracies: [...state.accuracies, accuracy],
       speeds: [...state.speeds, speed],
       headings: [...state.headings, heading],
+      currentHeading: heading,
       satellites: [...state.satellites, satellites],
       vAccuracies: [...state.vAccuracies, vAccuracy],
       distance: newDistance,
@@ -435,6 +430,5 @@ final trackProvider = NotifierProvider<TrackNotifier, Track>(TrackNotifier.new);
 
 final compassHeadingProvider = Provider<double>((ref) {
   final track = ref.watch(trackProvider);
-  if (track.headings.isEmpty) return 0.0;
-  return track.headings.last; // heading en graus
+  return track.currentHeading;
 });

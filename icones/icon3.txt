@@ -1,67 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg
-  width="512"
-  height="512"
-  viewBox="0 0 512 512"
-  xmlns="http://www.w3.org/2000/svg"
->
-  <rect width="512" height="512" fill="none"/>
-
-  <!-- Camí sinuós -->
-  <path
-    d="M60 420
-       C 140 360, 180 330, 240 300
-       C 300 270, 350 240, 420 160
-       C 450 120, 460 90, 440 70"
-    fill="none"
-    stroke="#4CAF50"
-    stroke-width="28"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-  />
-
-  <!-- Caminant detallat -->
-  <g transform="translate(180, 200) scale(1.4)">
-    <!-- Cap -->
-    <circle cx="0" cy="-40" r="18" fill="#1E88E5"/>
-
-    <!-- Cos -->
-    <line x1="0" y1="-22" x2="0" y2="30"
-          stroke="#1E88E5" stroke-width="14" stroke-linecap="round"/>
-
-    <!-- Braç esquerre -->
-    <line x1="0" y1="-10" x2="-28" y2="20"
-          stroke="#1E88E5" stroke-width="12" stroke-linecap="round"/>
-
-    <!-- Braç dret -->
-    <line x1="0" y1="-10" x2="28" y2="10"
-          stroke="#1E88E5" stroke-width="12" stroke-linecap="round"/>
-
-    <!-- Cama esquerra -->
-    <line x1="0" y1="30" x2="-18" y2="65"
-          stroke="#1E88E5" stroke-width="14" stroke-linecap="round"/>
-
-    <!-- Cama dreta -->
-    <line x1="0" y1="30" x2="18" y2="65"
-          stroke="#1E88E5" stroke-width="14" stroke-linecap="round"/>
-  </g>
-
-  <!-- Satèl·lit GPS detallat -->
-  <g transform="translate(350, 80) scale(0.9)">
-    <!-- Cos del satèl·lit -->
-    <rect x="-30" y="-10" width="60" height="20"
-          fill="#FFFFFF" stroke="#1E88E5" stroke-width="4" rx="4"/>
-
-    <!-- Panells solars -->
-    <rect x="-80" y="-8" width="40" height="16"
-          fill="#1E88E5" rx="2"/>
-    <rect x="40" y="-8" width="40" height="16"
-          fill="#1E88E5" rx="2"/>
-
-    <!-- Antena -->
-    <line x1="0" y1="10" x2="0" y2="40"
-          stroke="#1E88E5" stroke-width="5" stroke-linecap="round"/>
-    <circle cx="0" cy="48" r="8" fill="#1E88E5"/>
-  </g>
-
+<svg width="800" height="800" viewBox="0 0 800 800" xmlns="http://w3.org">
+  <rect width="100%" height="100%" fill="#FFFFFF"/> <!-- 1. Blanco (Fondo) -->
+  
+  <!-- Alas superiores -->
+  <path d="M410,430 C330,410 180,240 180,180 C230,230 370,390 410,430 Z" fill="#29ABE2"/> <!-- 2. Azul -->
+  <path d="M390,430 C470,410 620,240 620,180 C570,230 430,390 390,430 Z" fill="#29ABE2"/>
+  
+  <!-- Alas inferiores -->
+  <path d="M380,450 C300,450 120,350 100,310 C150,380 300,455 380,450 Z" fill="#71BF44"/> <!-- 3. Verde -->
+  <path d="M420,450 C500,450 680,350 700,310 C650,380 500,455 420,450 Z" fill="#71BF44"/>
+  
+  <!-- Gota central -->
+  <path d="M400,390 C375,390 360,435 360,480 C360,525 378,540 400,540 C422,540 440,525 440,480 C440,435 425,390 400,390 Z" fill="#F39200"/> <!-- 4. Naranja -->
+  
+  <!-- Brillo de la gota -->
+  <path d="M400,405 C388,405 380,435 380,465 C380,490 388,505 400,505 C412,505 420,490 420,465 C420,435 412,405 400,405 Z" fill="#FFCB05"/> <!-- 5. Amarillo -->
 </svg>

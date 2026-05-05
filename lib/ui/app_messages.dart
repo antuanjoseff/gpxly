@@ -253,6 +253,8 @@ class AppMessages {
       message: t.reverseTrackMessage,
       icon: Icons.swap_vert,
       confirmLabel: t.activate,
+      cancelLabel: t
+          .ingnoreTrackConfirm, // <--- Añade esto para mostrar el botón Cancelar
     );
   }
 
