@@ -1,5 +1,5 @@
-import 'package:gpxly/models/track.dart';
-import 'package:gpxly/utils/map_layers.dart';
+import 'package:senda/models/track.dart';
+import 'package:senda/utils/map_layers.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 
 class MapAnimator {

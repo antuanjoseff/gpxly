@@ -2,8 +2,8 @@ import 'dart:typed_data';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:gpxly/models/waypoint.dart';
-import 'package:gpxly/theme/app_colors.dart';
+import 'package:senda/models/waypoint.dart';
+import 'package:senda/theme/app_colors.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 
 /// Configura les capes del mapa:

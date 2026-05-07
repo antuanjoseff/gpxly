@@ -3,19 +3,19 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 
-import 'package:gpxly/features/elevation_profile/painters/selection_painter.dart';
-import 'package:gpxly/features/elevation_profile/painters/range_highlight_painter.dart';
-import 'package:gpxly/features/elevation_profile/utils/chart_utils.dart';
-import 'package:gpxly/l10n/app_localizations.dart';
-import 'package:gpxly/models/waypoint.dart';
-import 'package:gpxly/notifiers/imported_track_settings_notifier.dart';
+import 'package:senda/features/elevation_profile/painters/selection_painter.dart';
+import 'package:senda/features/elevation_profile/painters/range_highlight_painter.dart';
+import 'package:senda/features/elevation_profile/utils/chart_utils.dart';
+import 'package:senda/l10n/app_localizations.dart';
+import 'package:senda/models/waypoint.dart';
+import 'package:senda/notifiers/imported_track_settings_notifier.dart';
 
-import 'package:gpxly/notifiers/track_notifier.dart';
-import 'package:gpxly/notifiers/imported_track_notifier.dart';
-import 'package:gpxly/notifiers/track_settings_notifier.dart';
-import 'package:gpxly/notifiers/waypoints_recorded_notifier.dart';
-import 'package:gpxly/utils/distance_utils.dart';
-import 'package:gpxly/theme/app_colors.dart';
+import 'package:senda/notifiers/track_notifier.dart';
+import 'package:senda/notifiers/imported_track_notifier.dart';
+import 'package:senda/notifiers/track_settings_notifier.dart';
+import 'package:senda/notifiers/waypoints_recorded_notifier.dart';
+import 'package:senda/utils/distance_utils.dart';
+import 'package:senda/theme/app_colors.dart';
 
 enum ActiveHandle { none, start, end }
 

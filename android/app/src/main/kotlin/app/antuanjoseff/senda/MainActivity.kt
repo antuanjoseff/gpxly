@@ -1,4 +1,4 @@
-package app.antuanjoseff.gpxgo
+package app.antuanjoseff.senda
 
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine

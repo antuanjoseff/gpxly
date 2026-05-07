@@ -1,4 +1,4 @@
-import 'package:gpxly/notifiers/track_follow_notifier.dart';
+import 'package:senda/notifiers/track_follow_notifier.dart';
 
 class TrackFollowState {
   final bool isFollowing;

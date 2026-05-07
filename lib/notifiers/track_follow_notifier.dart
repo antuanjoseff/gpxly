@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:gpxly/models/track_follow_state.dart';
-import 'package:gpxly/notifiers/gps_settings_notifier.dart';
-import 'package:gpxly/notifiers/imported_track_notifier.dart';
-import 'package:gpxly/notifiers/track_notifier.dart';
-import 'package:gpxly/services/permissions_service.dart';
-import 'package:gpxly/utils/geo_utils.dart';
+import 'package:senda/models/track_follow_state.dart';
+import 'package:senda/notifiers/gps_settings_notifier.dart';
+import 'package:senda/notifiers/imported_track_notifier.dart';
+import 'package:senda/notifiers/track_notifier.dart';
+import 'package:senda/services/permissions_service.dart';
+import 'package:senda/utils/geo_utils.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:flutter/services.dart';
 
@@ -218,9 +218,9 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
   // ------------------------------------------------------------
   // Actualitzar posició
   // ------------------------------------------------------------
-  void updateUserPosition(LatLng userPos) {
+  void updateUserPosition(LatLng userPos, {required double userHeading}) {
+    // <--- Afegeix el paràmetre aquí
     if (!state.isFollowing || state.isPaused) return;
-
     _lastUserPositions.add(userPos);
     if (_lastUserPositions.length > 10) _lastUserPositions.removeAt(0);
 

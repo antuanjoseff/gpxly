@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:gpxly/notifiers/gps_altitude_notifier.dart';
+import 'package:senda/notifiers/gps_altitude_notifier.dart';
 
 final blinkingProvider = StreamProvider<bool>((ref) async* {
   bool visible = true;

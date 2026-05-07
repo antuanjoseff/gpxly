@@ -9,7 +9,7 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get appTitle => 'GpxGo';
+  String get appTitle => 'Senda';
 
   @override
   String get startRecording => 'Record';
@@ -33,7 +33,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gpsDisabledTitle => 'GPS disabled';
 
   @override
-  String get gpsDisabledMessage => 'GPS is disabled. Do you want to enable it now?';
+  String get gpsDisabledMessage =>
+      'GPS is disabled. Do you want to enable it now?';
 
   @override
   String get cancel => 'CANCEL';
@@ -51,7 +52,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get recoverTrackTitle => 'Pending route';
 
   @override
-  String get recoverTrackMessage => 'A previous recording was not closed properly. Do you want to continue it or start a new one?';
+  String get recoverTrackMessage =>
+      'A previous recording was not closed properly. Do you want to continue it or start a new one?';
 
   @override
   String get discard => 'DISCARD';
@@ -72,7 +74,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get importGpxTitle => 'Import GPX';
 
   @override
-  String get importGpxMessage => 'You already have an active route or loaded data. Do you want to replace it with the GPX file?';
+  String get importGpxMessage =>
+      'You already have an active route or loaded data. Do you want to replace it with the GPX file?';
 
   @override
   String get import => 'IMPORT';
@@ -81,7 +84,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get viewModeTitle => 'View mode';
 
   @override
-  String get viewModeMessage => 'Do you want to enter view mode? No new points will be added and recording will be disabled.';
+  String get viewModeMessage =>
+      'Do you want to enter view mode? No new points will be added and recording will be disabled.';
 
   @override
   String get no => 'NO';
@@ -93,7 +97,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get permissionNeededTitle => 'Permission required';
 
   @override
-  String get permissionNeededMessage => 'To record the route correctly with the screen off, you must select: 👉 \"Allow always\".';
+  String get permissionNeededMessage =>
+      'To record the route correctly with the screen off, you must select: 👉 \"Allow always\".';
 
   @override
   String get continueLabel => 'CONTINUE';
@@ -102,7 +107,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get locationPermissionTitle => 'Location permission';
 
   @override
-  String get locationPermissionMessage => 'The app does not have permission to access location. Do you want to open settings to grant it?';
+  String get locationPermissionMessage =>
+      'The app does not have permission to access location. Do you want to open settings to grant it?';
 
   @override
   String get offTrack => 'You are drifting away from the route';
@@ -219,7 +225,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pendingChangesTitle => 'Pending changes';
 
   @override
-  String get pendingChangesMessage => 'You have unsaved changes. Do you want to apply them before returning to the map?';
+  String get pendingChangesMessage =>
+      'You have unsaved changes. Do you want to apply them before returning to the map?';
 
   @override
   String get settingsApplied => 'Settings applied!';
@@ -243,7 +250,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get reverseTrackTitle => 'Reverse direction';
 
   @override
-  String get reverseTrackMessage => 'You’re moving in the opposite direction. Would you like to reverse the route for correct guidance?';
+  String get reverseTrackMessage =>
+      'You’re moving in the opposite direction. Would you like to reverse the route for correct guidance?';
 
   @override
   String get reverseTrackConfirm => 'Yes, flip it';
@@ -294,7 +302,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get stopFollowingTitle => 'Stop Following';
 
   @override
-  String get stopFollowingMessage => 'Do you want to stop following? The route will be removed from the map.';
+  String get stopFollowingMessage =>
+      'Do you want to stop following? The route will be removed from the map.';
 
   @override
   String get stopFollowingConfirm => 'STOP ROUTE';
@@ -309,7 +318,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get finishRecordingTitle => 'Finish recording';
 
   @override
-  String get finishRecordingMessage => 'What would you like to do with the current recording?';
+  String get finishRecordingMessage =>
+      'What would you like to do with the current recording?';
 
   @override
   String get finishRecordingConfirm => 'FINISH';
@@ -324,7 +334,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteTrackTitle => 'Delete track';
 
   @override
-  String get deleteTrackMessage => 'Are you sure you want to delete this route? This action cannot be undone.';
+  String get deleteTrackMessage =>
+      'Are you sure you want to delete this route? This action cannot be undone.';
 
   @override
   String get deleteTrackConfirm => 'DELETE';
@@ -351,7 +362,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gpsOptimizationTitle => 'GPS Optimization';
 
   @override
-  String get gpsOptimizationMessage => 'For precise tracking, high-fidelity mode will be activated. This may increase battery consumption.';
+  String get gpsOptimizationMessage =>
+      'For precise tracking, high-fidelity mode will be activated. This may increase battery consumption.';
 
   @override
   String get confirm => 'CONFIRM';

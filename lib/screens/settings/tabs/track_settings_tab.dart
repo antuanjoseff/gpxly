@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
-import 'package:gpxly/l10n/app_localizations.dart';
-import 'package:gpxly/notifiers/settings_pending_notifier.dart';
-import 'package:gpxly/notifiers/track_settings_notifier.dart';
-import 'package:gpxly/theme/app_colors.dart';
+import 'package:senda/l10n/app_localizations.dart';
+import 'package:senda/notifiers/settings_pending_notifier.dart';
+import 'package:senda/notifiers/track_settings_notifier.dart';
+import 'package:senda/theme/app_colors.dart';
 
 class TrackSettingsTab extends ConsumerWidget {
   const TrackSettingsTab({super.key});

@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:gpxly/l10n/app_localizations.dart';
-import 'package:gpxly/models/track.dart';
-import 'package:gpxly/notifiers/gps_settings_notifier.dart';
-import 'package:gpxly/notifiers/helpers/thresholds.dart';
-import 'package:gpxly/notifiers/imported_track_notifier.dart';
-import 'package:gpxly/notifiers/track_follow_notifier.dart';
-import 'package:gpxly/notifiers/waypoints_imported_notifier.dart';
-import 'package:gpxly/theme/app_colors.dart';
-import 'package:gpxly/ui/app_messages.dart';
-import 'package:gpxly/ui/bottom_bar/pressable_scale.dart';
+import 'package:senda/l10n/app_localizations.dart';
+import 'package:senda/models/track.dart';
+import 'package:senda/notifiers/gps_settings_notifier.dart';
+import 'package:senda/notifiers/helpers/thresholds.dart';
+import 'package:senda/notifiers/imported_track_notifier.dart';
+import 'package:senda/notifiers/track_follow_notifier.dart';
+import 'package:senda/notifiers/waypoints_imported_notifier.dart';
+import 'package:senda/theme/app_colors.dart';
+import 'package:senda/ui/app_messages.dart';
+import 'package:senda/ui/bottom_bar/pressable_scale.dart';
 
 class BottomBarButtons extends ConsumerWidget {
   final RecordingState state;

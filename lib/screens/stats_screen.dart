@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:gpxly/l10n/app_localizations.dart';
-import 'package:gpxly/notifiers/track_notifier.dart';
-import 'package:gpxly/notifiers/imported_track_notifier.dart';
-import 'package:gpxly/theme/app_colors.dart';
+import 'package:senda/l10n/app_localizations.dart';
+import 'package:senda/notifiers/track_notifier.dart';
+import 'package:senda/notifiers/imported_track_notifier.dart';
+import 'package:senda/theme/app_colors.dart';
 
 class TrackStatsScreen extends ConsumerWidget {
   const TrackStatsScreen({super.key});

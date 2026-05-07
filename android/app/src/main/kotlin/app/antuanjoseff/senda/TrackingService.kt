@@ -1,4 +1,4 @@
-package app.antuanjoseff.gpxgo
+package app.antuanjoseff.senda
 
 import android.util.Log
 import android.app.*

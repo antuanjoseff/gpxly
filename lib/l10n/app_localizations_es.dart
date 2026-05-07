@@ -9,7 +9,7 @@ class AppLocalizationsEs extends AppLocalizations {
   AppLocalizationsEs([String locale = 'es']) : super(locale);
 
   @override
-  String get appTitle => 'GpxGo';
+  String get appTitle => 'Senda';
 
   @override
   String get startRecording => 'Grabar';
@@ -33,7 +33,8 @@ class AppLocalizationsEs extends AppLocalizations {
   String get gpsDisabledTitle => 'GPS desactivado';
 
   @override
-  String get gpsDisabledMessage => 'El GPS está desactivado. ¿Quieres activarlo ahora?';
+  String get gpsDisabledMessage =>
+      'El GPS está desactivado. ¿Quieres activarlo ahora?';
 
   @override
   String get cancel => 'CANCELAR';
@@ -51,7 +52,8 @@ class AppLocalizationsEs extends AppLocalizations {
   String get recoverTrackTitle => 'Ruta pendiente';
 
   @override
-  String get recoverTrackMessage => 'Se ha detectado una grabación que no se cerró correctamente. ¿Quieres continuarla o empezar una nueva?';
+  String get recoverTrackMessage =>
+      'Se ha detectado una grabación que no se cerró correctamente. ¿Quieres continuarla o empezar una nueva?';
 
   @override
   String get discard => 'DESCARTAR';
@@ -72,7 +74,8 @@ class AppLocalizationsEs extends AppLocalizations {
   String get importGpxTitle => 'Importar GPX';
 
   @override
-  String get importGpxMessage => 'Ya tienes una ruta activa o datos cargados. ¿Quieres sustituirlos por el archivo GPX?';
+  String get importGpxMessage =>
+      'Ya tienes una ruta activa o datos cargados. ¿Quieres sustituirlos por el archivo GPX?';
 
   @override
   String get import => 'IMPORTAR';
@@ -81,7 +84,8 @@ class AppLocalizationsEs extends AppLocalizations {
   String get viewModeTitle => 'Modo visualización';
 
   @override
-  String get viewModeMessage => '¿Quieres entrar en modo visualización? No se añadirán puntos nuevos y la grabación quedará desactivada.';
+  String get viewModeMessage =>
+      '¿Quieres entrar en modo visualización? No se añadirán puntos nuevos y la grabación quedará desactivada.';
 
   @override
   String get no => 'NO';
@@ -93,7 +97,8 @@ class AppLocalizationsEs extends AppLocalizations {
   String get permissionNeededTitle => 'Permiso necesario';
 
   @override
-  String get permissionNeededMessage => 'Para grabar la ruta correctamente con la pantalla apagada, debes seleccionar: 👉 \"Permitir siempre\".';
+  String get permissionNeededMessage =>
+      'Para grabar la ruta correctamente con la pantalla apagada, debes seleccionar: 👉 \"Permitir siempre\".';
 
   @override
   String get continueLabel => 'CONTINUAR';
@@ -102,7 +107,8 @@ class AppLocalizationsEs extends AppLocalizations {
   String get locationPermissionTitle => 'Permiso de ubicación';
 
   @override
-  String get locationPermissionMessage => 'La aplicación no tiene permisos para acceder a la ubicación. ¿Quieres abrir la configuración para concederlos?';
+  String get locationPermissionMessage =>
+      'La aplicación no tiene permisos para acceder a la ubicación. ¿Quieres abrir la configuración para concederlos?';
 
   @override
   String get offTrack => 'Te estás alejando de la ruta';
@@ -219,7 +225,8 @@ class AppLocalizationsEs extends AppLocalizations {
   String get pendingChangesTitle => 'Cambios pendientes';
 
   @override
-  String get pendingChangesMessage => 'Has realizado cambios que no has aplicado. ¿Quieres aplicarlos antes de volver al mapa?';
+  String get pendingChangesMessage =>
+      'Has realizado cambios que no has aplicado. ¿Quieres aplicarlos antes de volver al mapa?';
 
   @override
   String get settingsApplied => '¡Configuración aplicada!';
@@ -243,7 +250,8 @@ class AppLocalizationsEs extends AppLocalizations {
   String get reverseTrackTitle => 'Dirección inversa';
 
   @override
-  String get reverseTrackMessage => 'Vas en sentido contrario al trayecto. ¿Quieres invertir el sentido para recibir las indicaciones correctas?';
+  String get reverseTrackMessage =>
+      'Vas en sentido contrario al trayecto. ¿Quieres invertir el sentido para recibir las indicaciones correctas?';
 
   @override
   String get reverseTrackConfirm => 'Sí, invertir';
@@ -294,7 +302,8 @@ class AppLocalizationsEs extends AppLocalizations {
   String get stopFollowingTitle => 'Detener seguimiento';
 
   @override
-  String get stopFollowingMessage => '¿Quieres detener el seguimiento? Se quitará la ruta del mapa.';
+  String get stopFollowingMessage =>
+      '¿Quieres detener el seguimiento? Se quitará la ruta del mapa.';
 
   @override
   String get stopFollowingConfirm => 'DETENER RUTA';
@@ -309,7 +318,8 @@ class AppLocalizationsEs extends AppLocalizations {
   String get finishRecordingTitle => 'Finalizar grabación';
 
   @override
-  String get finishRecordingMessage => '¿Qué quieres hacer con la grabación actual?';
+  String get finishRecordingMessage =>
+      '¿Qué quieres hacer con la grabación actual?';
 
   @override
   String get finishRecordingConfirm => 'FINALIZAR';
@@ -324,7 +334,8 @@ class AppLocalizationsEs extends AppLocalizations {
   String get deleteTrackTitle => 'Eliminar ruta';
 
   @override
-  String get deleteTrackMessage => '¿Estás seguro de que quieres eliminar esta ruta? Esta acción no se puede deshacer.';
+  String get deleteTrackMessage =>
+      '¿Estás seguro de que quieres eliminar esta ruta? Esta acción no se puede deshacer.';
 
   @override
   String get deleteTrackConfirm => 'ELIMINAR';
@@ -351,7 +362,8 @@ class AppLocalizationsEs extends AppLocalizations {
   String get gpsOptimizationTitle => 'Optimización GPS';
 
   @override
-  String get gpsOptimizationMessage => 'Para un seguimiento preciso, activaremos el modo de alta fidelidad. Esto puede aumentar el consumo de batería.';
+  String get gpsOptimizationMessage =>
+      'Para un seguimiento preciso, activaremos el modo de alta fidelidad. Esto puede aumentar el consumo de batería.';
 
   @override
   String get confirm => 'CONFIRMAR';

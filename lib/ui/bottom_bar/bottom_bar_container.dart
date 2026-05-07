@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:gpxly/l10n/app_localizations.dart'; // 👈 AFEGIT PER L10N
-import 'package:gpxly/models/track.dart';
-import 'package:gpxly/notifiers/track_follow_notifier.dart';
-import 'package:gpxly/theme/app_colors.dart';
+import 'package:senda/l10n/app_localizations.dart'; // 👈 AFEGIT PER L10N
+import 'package:senda/models/track.dart';
+import 'package:senda/notifiers/track_follow_notifier.dart';
+import 'package:senda/theme/app_colors.dart';
 import 'bottom_bar_buttons.dart';
 
 class BottomBarContainer extends ConsumerWidget {

@@ -1,4 +1,4 @@
-import 'package:gpxly/models/track.dart';
+import 'package:senda/models/track.dart';
 
 /// Track antic — el deixem per compatibilitat
 Track makeLinearTrack() {

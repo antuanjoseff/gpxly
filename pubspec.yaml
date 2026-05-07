@@ -1,4 +1,4 @@
-name: gpxly
+name: senda
 description: App Flutter para grabar y exportar tracks GPX, con podómetro y cálculo de calorías.
 version: 0.1.0+1
 environment:

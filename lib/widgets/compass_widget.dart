@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:gpxly/notifiers/gps_speed_notifier.dart';
-import 'package:gpxly/notifiers/track_notifier.dart';
-import 'package:gpxly/theme/app_colors.dart';
+import 'package:senda/notifiers/gps_bearing_notifier.dart';
+import 'package:senda/notifiers/gps_speed_notifier.dart';
+import 'package:senda/theme/app_colors.dart';
 import 'dart:math' as math;
 
 class CompassScalePanel extends ConsumerWidget {
@@ -18,7 +18,7 @@ class CompassScalePanel extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final heading = ref.watch(compassHeadingProvider);
+    final heading = ref.watch(gpsBearingProvider);
     final zoom = ref.watch(mapZoomProvider);
     final latitude = ref.watch(mapCenterLatProvider);
 
