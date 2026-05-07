@@ -152,9 +152,26 @@ class TrackingService : Service() {
             val channel = NotificationChannel(channelId, "GPS Tracking", NotificationManager.IMPORTANCE_LOW)
             (getSystemService(NotificationManager::class.java)).createNotificationChannel(channel)
         }
+
+        val notificationIntent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+
+        val pendingIntent = PendingIntent.getActivity(
+            this,
+            0,
+            notificationIntent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
         val notification = NotificationCompat.Builder(this, channelId)
-            .setContentTitle("Gravant track").setContentText("GPS actiu")
-            .setSmallIcon(android.R.drawable.ic_menu_mylocation).build()
+            .setContentTitle("Gravant track")
+            .setContentText("GPS actiu")
+            .setSmallIcon(android.R.drawable.ic_menu_mylocation)
+            .setOngoing(true)
+            .setContentIntent(pendingIntent)   // 👈 AIXÒ FA QUE S’OBRI L’APP
+            .build()
+
         startForeground(1, notification)
     }
 
