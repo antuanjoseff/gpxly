@@ -225,7 +225,8 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
     _lastUserPositions.add(userPos);
     if (_lastUserPositions.length > 10) _lastUserPositions.removeAt(0);
 
-    // (Eliminado if redundante de isFollowing que ya estaba arriba)
+    // Minim de 5 posicions per fer càlculs
+    if (_lastUserPositions.length < 6) return;
 
     final imported = ref.read(importedTrackProvider);
     if (imported == null || imported.coordinates.isEmpty) return;

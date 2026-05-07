@@ -4,23 +4,33 @@ import 'package:senda/utils/geo_utils.dart';
 
 class ReverseDetector {
   bool isReverseDirection(ClosestResult c, List<LatLng> lastUserPositions) {
-    if (lastUserPositions.length < 2) return false;
+    // 1. Necessitem un historial mínim per ser fiables (p. ex. 6 punts)
+    if (lastUserPositions.length < 6) return false;
 
-    final prev = lastUserPositions[lastUserPositions.length - 2];
-    final curr = lastUserPositions[lastUserPositions.length - 1];
+    // 2. Agafem un punt de referència més enrere (per exemple, fa 5 posicions)
+    final oldPos = lastUserPositions[lastUserPositions.length - 6];
+    final currPos = lastUserPositions.last;
 
-    final movement = distanceBetween(
-      prev.latitude,
-      prev.longitude,
-      curr.latitude,
-      curr.longitude,
+    // 3. Calculem la distància neta recorreguda en aquest interval
+    final netDistance = distanceBetween(
+      oldPos.latitude,
+      oldPos.longitude,
+      currPos.latitude,
+      currPos.longitude,
     );
 
-    if (movement < 3) return false;
+    // 🔥 FILTRE CLAU: Només comprovem si hem recorregut una distància neta raonable.
+    // Això evita que salts petits del GPS mentre estàs quiet disparin l'alerta.
+    if (netDistance < 12) return false;
 
-    final movementBearing = bearingBetween(prev, curr);
+    // 4. Calculem el rumb real de la trajectòria (no d'un sol salt)
+    final movementBearing = bearingBetween(oldPos, currPos);
+
+    // 5. Comparem amb el rumb del track
     final diff = _headingDifference(c.bearing, movementBearing);
-    return diff > 135;
+
+    // Si la trajectòria real consolidada és oposada (>140º), és un positiu real
+    return diff > 140;
   }
 
   double _headingDifference(double h1, double h2) {
