@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:gpxly/theme/app_colors.dart';
+import 'package:senda/theme/app_colors.dart';
 
 final ThemeData appTheme = ThemeData(
   useMaterial3: true,

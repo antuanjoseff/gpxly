@@ -99,7 +99,8 @@
 
 "reverseTrackTitle": "Direcció inversa",
 "reverseTrackMessage": "Sembla que estàs seguint el track en direcció inversa. Vols invertir-lo per millorar la navegació?",
-"reverseTrackConfirm": "Inverteix",
+"reverseTrackConfirm": "Sí, inverteix",
+"ignoreTrackReverse": "Continuar",
 
 "gpxFilenameTitle": "Nom del fitxer GPX",
 "gpxFilenameLabel": "Nom del fitxer",

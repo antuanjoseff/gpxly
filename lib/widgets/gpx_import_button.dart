@@ -4,8 +4,8 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:gpxly/notifiers/track_notifier.dart';
-import 'package:gpxly/services/gpx_import_service.dart';
+import 'package:senda/notifiers/track_notifier.dart';
+import 'package:senda/services/gpx_import_service.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 
 /// 🔁 Funció reutilitzable per importar GPX i centrar el mapa

@@ -4,33 +4,34 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:gpxly/features/elevation_profile/elevation_profile_screen.dart';
-import 'package:gpxly/models/track.dart';
-import 'package:gpxly/models/waypoint.dart';
-import 'package:gpxly/notifiers/gps_speed_notifier.dart';
-import 'package:gpxly/notifiers/imported_track_notifier.dart';
-import 'package:gpxly/notifiers/imported_track_settings_notifier.dart';
-import 'package:gpxly/notifiers/permissions_notifier.dart';
-import 'package:gpxly/notifiers/track_follow_notifier.dart';
-import 'package:gpxly/notifiers/track_notifier.dart';
-import 'package:gpxly/notifiers/track_settings_notifier.dart';
-import 'package:gpxly/notifiers/waypoints_imported_notifier.dart';
-import 'package:gpxly/notifiers/waypoints_recorded_notifier.dart';
-import 'package:gpxly/screens/settings/settings_screen.dart';
-import 'package:gpxly/screens/stats_screen.dart';
-import 'package:gpxly/services/gpx_import_flow.dart';
-import 'package:gpxly/services/location_permission_flow.dart';
-import 'package:gpxly/services/recording_handler.dart';
-import 'package:gpxly/theme/app_colors.dart';
-import 'package:gpxly/ui/app_messages.dart';
-import 'package:gpxly/services/gpx_exporter.dart';
-import 'package:gpxly/ui/bottom_bar/bottom_bar_container.dart';
-import 'package:gpxly/utils/color_extensions.dart';
-import 'package:gpxly/utils/map_animator.dart';
-import 'package:gpxly/utils/map_layers.dart';
-import 'package:gpxly/widgets/compass_widget.dart';
-import 'package:gpxly/widgets/gps_accuracy_bars.dart';
-import 'package:gpxly/widgets/recording_status_bar.dart';
+import 'package:senda/features/elevation_profile/elevation_profile_screen.dart';
+import 'package:senda/models/track.dart';
+import 'package:senda/models/waypoint.dart';
+import 'package:senda/notifiers/gps_speed_notifier.dart';
+import 'package:senda/notifiers/imported_track_notifier.dart';
+import 'package:senda/notifiers/imported_track_settings_notifier.dart';
+import 'package:senda/notifiers/permissions_notifier.dart';
+import 'package:senda/notifiers/timer_notifier.dart';
+import 'package:senda/notifiers/track_follow_notifier.dart';
+import 'package:senda/notifiers/track_notifier.dart';
+import 'package:senda/notifiers/track_settings_notifier.dart';
+import 'package:senda/notifiers/waypoints_imported_notifier.dart';
+import 'package:senda/notifiers/waypoints_recorded_notifier.dart';
+import 'package:senda/screens/settings/settings_screen.dart';
+import 'package:senda/screens/stats_screen.dart';
+import 'package:senda/services/gpx_import_flow.dart';
+import 'package:senda/services/location_permission_flow.dart';
+import 'package:senda/services/recording_handler.dart';
+import 'package:senda/theme/app_colors.dart';
+import 'package:senda/ui/app_messages.dart';
+import 'package:senda/services/gpx_exporter.dart';
+import 'package:senda/ui/bottom_bar/bottom_bar_container.dart';
+import 'package:senda/utils/color_extensions.dart';
+import 'package:senda/utils/map_animator.dart';
+import 'package:senda/utils/map_layers.dart';
+import 'package:senda/widgets/compass_widget.dart';
+import 'package:senda/widgets/gps_accuracy_bars.dart';
+import 'package:senda/widgets/recording_status_bar.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -55,6 +56,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
   bool hasDoneFirstFixZoom = false;
   bool isProgrammaticMove = false;
   bool isImportingGpx = false;
+  bool _isShowingReverseDialog = false;
   bool hasDoneRecoveryFit =
       false; // Flag per controlar que només es recuperi un cop per sessió
 
@@ -138,8 +140,23 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused ||
-        state == AppLifecycleState.inactive) {}
+    // 🔥 Quan l'usuari torna a l'app (resumed)
+    if (state == AppLifecycleState.resumed) {
+      // 1. Forcem que els permisos i el GPS s'actualitzin al moment
+      ref.read(permissionsProvider.notifier).checkPermissions();
+      ref.read(permissionsProvider.notifier).checkServiceStatus();
+
+      // 2. Mirem si veníem d'intentar gravar (pendent d'activar GPS)
+      final permState = ref.read(permissionsProvider);
+
+      if (permState.serviceEnabled && permState.shouldResumeRecording) {
+        // Netegem el senyal perquè no ho torni a fer sol
+        ref.read(permissionsProvider.notifier).consumeSignal();
+
+        // EXECUTEM la gravació: aquí és on sortirà el diàleg de recuperar!
+        RecordingHandler.start(context, ref);
+      }
+    }
   }
 
   void _handleStopProcess(BuildContext context, WidgetRef ref) async {
@@ -149,8 +166,14 @@ class _MapScreenState extends ConsumerState<MapScreen>
     if (!mounted) return;
     if (result == null) return;
 
-    // Aturem la gravació
-    await ref.read(trackProvider.notifier).stopRecording();
+    // 1. Obtenim la durada actual del cronòmetre independent
+    final finalDuration = ref.read(timerProvider);
+
+    // 2. Aturem el cronòmetre (deixa de comptar)
+    ref.read(timerProvider.notifier).pause();
+
+    // 3. Passem la durada al track perquè la guardi en el seu estat final
+    await ref.read(trackProvider.notifier).stopRecording(finalDuration);
     if (!context.mounted) return;
 
     if (result == "share") {
@@ -512,20 +535,20 @@ class _MapScreenState extends ConsumerState<MapScreen>
     });
 
     ref.listen(trackFollowNotifierProvider, (prev, next) async {
-      final wasFalse = prev?.showReverseTrackDialog == false;
-      final isTrue = next.showReverseTrackDialog == true;
-
-      if (wasFalse && isTrue) {
-        // 🔥 Primer resetejar el flag al notifier
-        ref
-            .read(trackFollowNotifierProvider.notifier)
-            .dismissReverseTrackDialog();
+      if (next.showReverseTrackDialog && !_isShowingReverseDialog) {
+        _isShowingReverseDialog = true; // Bloqueamos nuevas aperturas
 
         final accept = await AppMessages.showReverseTrackDialog(context);
 
         if (accept == true) {
           ref.read(trackFollowNotifierProvider.notifier).reverseImportedTrack();
+        } else {
+          ref
+              .read(trackFollowNotifierProvider.notifier)
+              .dismissReverseTrackDialog();
         }
+
+        _isShowingReverseDialog = false; // Liberamos cuando el usuario cierra
       }
     });
 
@@ -578,7 +601,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 titleSpacing: 16,
 
                 title: const Text(
-                  'GpxGo',
+                  'Senda',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w900,
@@ -690,7 +713,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 left: 10,
                 child: RecordingStatusBar(
                   state: track.recordingState,
-                  duration: track.duration,
+                  duration: ref.watch(timerProvider),
                 ),
               ),
               // -------------------------
@@ -889,6 +912,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
       // 3. També hauries de netejar els waypoints si n'hi havia
       ref.read(waypointsProvider.notifier).clear();
+      ref.read(timerProvider.notifier).reset();
     } else {
       prefs.setBool("preserve_track_on_start", true);
     }

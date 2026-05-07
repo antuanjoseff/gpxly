@@ -246,7 +246,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get reverseTrackMessage => 'Parece que estás siguiendo el track en dirección inversa. ¿Quieres invertirlo para mejorar la navegación?';
 
   @override
-  String get reverseTrackConfirm => 'Invertir';
+  String get reverseTrackConfirm => 'Si, invertir';
+
+  @override
+  String get ignoreTrackReverse => 'No, continuar';
 
   @override
   String get gpxFilenameTitle => 'Nombre del archivo GPX';

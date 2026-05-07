@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:gpxly/models/track_follow_state.dart';
-import 'package:gpxly/notifiers/gps_settings_notifier.dart';
-import 'package:gpxly/notifiers/imported_track_notifier.dart';
-import 'package:gpxly/notifiers/track_notifier.dart';
-import 'package:gpxly/services/permissions_service.dart';
-import 'package:gpxly/utils/geo_utils.dart';
+import 'package:senda/models/track_follow_state.dart';
+import 'package:senda/notifiers/gps_settings_notifier.dart';
+import 'package:senda/notifiers/imported_track_notifier.dart';
+import 'package:senda/notifiers/track_notifier.dart';
+import 'package:senda/services/permissions_service.dart';
+import 'package:senda/utils/geo_utils.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:flutter/services.dart';
 
@@ -87,13 +87,12 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
     // 1. Invertimos las coordenadas en el almacén (Provider)
     ref.read(importedTrackProvider.notifier).reverseTrack();
 
-    // 2. REINICIO CRÍTICO DE MEMORIA
     _lastUserPositions.clear(); // <--- OBLIGATORIO: borra el rumbo antiguo
-    _lastProjectedPoint =
-        null; // <--- Evita saltos de distancia en el siguiente tick
-    _lastDistances.clear(); // <--- Limpia el histórico de "alejamiento"
+    _lastProjectedPoint = null;
+    _lastDistances.clear();
+
     _distanceProgressOnTrack = 0.0;
-    // 3. Flags de UI
+
     _reverseDialogShown = false;
     _reverseDetectionLocked = false;
 
@@ -219,7 +218,8 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
   // ------------------------------------------------------------
   // Actualitzar posició
   // ------------------------------------------------------------
-  void updateUserPosition(LatLng userPos) {
+  void updateUserPosition(LatLng userPos, {required double userHeading}) {
+    // <--- Afegeix el paràmetre aquí
     if (!state.isFollowing || state.isPaused) return;
 
     _lastUserPositions.add(userPos);
@@ -278,7 +278,7 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
     final isFar = dist > TrackThresholds.farThreshold;
 
     // --- REVERSED DETECTION (MODIFICADO) ---
-    // Añadimos el chequeo de flags al principio para no procesar geometría innecesariamente
+    // Solo comprobamos si estamos en ruta y no hay un diálogo ya en proceso o bloqueado
     if (state.mode == FollowMode.onTrack &&
         !_reverseDialogShown &&
         !_reverseDetectionLocked) {
@@ -287,10 +287,16 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
               140 &&
           reverseDetector.isReverseDirection(closest, _lastUserPositions)) {
         sounds.playReversedTrackSound();
-        _askUserToReverseTrack();
 
-        // Retornamos para evitar que el autómata de estados se ejecute en este tick
-        // y así asegurar que el diálogo es la única acción prioritaria.
+        // 1. Bloqueamos inmediatamente para que el siguiente tick de GPS no entre aquí
+        _reverseDialogShown = true;
+        _reverseDetectionLocked = true;
+
+        // 2. Notificamos al estado para que el ref.listen del mapa abra el diálogo
+        state = state.copyWith(showReverseTrackDialog: true);
+
+        // Retornamos para evitar que el autómata de estados cambie el modo a OffTrack
+        // mientras el usuario decide qué hacer con el diálogo.
         return;
       }
     }

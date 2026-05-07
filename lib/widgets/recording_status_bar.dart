@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:gpxly/models/track.dart';
-import 'package:gpxly/notifiers/gps_altitude_notifier.dart';
-import 'package:gpxly/widgets/floating_route_panel.dart'; // blinkingProvider
+import 'package:senda/models/track.dart';
+import 'package:senda/notifiers/gps_altitude_notifier.dart';
+import 'package:senda/widgets/floating_route_panel.dart'; // blinkingProvider
 
 class RecordingStatusBar extends ConsumerWidget {
   final RecordingState state;
@@ -16,8 +16,6 @@ class RecordingStatusBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final blinking = ref.watch(blinkingProvider).value ?? true;
-    // ⛰️ Watch de l'altitud
     final altitude = ref.watch(gpsAltitudeProvider);
 
     late final Color textColor;

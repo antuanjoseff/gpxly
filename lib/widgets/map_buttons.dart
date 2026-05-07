@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:gpxly/models/track.dart';
+import 'package:senda/models/track.dart';
 
 class StartPauseResumeButton extends StatelessWidget {
   final Track track;

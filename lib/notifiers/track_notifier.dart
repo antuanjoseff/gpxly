@@ -3,17 +3,17 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:gpxly/notifiers/gps_accuracy_notifier.dart';
-import 'package:gpxly/notifiers/gps_altitude_notifier.dart';
-import 'package:gpxly/notifiers/gps_settings_notifier.dart';
-import 'package:gpxly/notifiers/track_follow_notifier.dart';
-import 'package:gpxly/services/native_gps_channel.dart';
+import 'package:senda/notifiers/gps_accuracy_notifier.dart';
+import 'package:senda/notifiers/gps_altitude_notifier.dart';
+import 'package:senda/notifiers/gps_bearing_notifier.dart';
+import 'package:senda/notifiers/gps_settings_notifier.dart';
+import 'package:senda/notifiers/track_follow_notifier.dart';
+import 'package:senda/services/native_gps_channel.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/track.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 
 class TrackNotifier extends Notifier<Track> {
-  Timer? _timer;
   Track? _initialState;
   StreamSubscription? _gpsSub;
   bool isFollowing = false;
@@ -52,18 +52,11 @@ class TrackNotifier extends Notifier<Track> {
 
   Future<void> ensureGpsStarted() async {
     if (gpsActive) {
-      print("⚠️ ensureGpsStarted() → GPS ja estava actiu");
       return;
     }
 
     // 🔥 LLEGIR CONFIGURACIÓ DE L’USUARI
     final gpsSettings = ref.read(gpsSettingsProvider);
-
-    print("   ACTIVANT GPS AMB CONFIGURACIÓ:");
-    print("   useTime  = ${gpsSettings.useTime}");
-    print("   seconds  = ${gpsSettings.seconds}");
-    print("   meters   = ${gpsSettings.meters}");
-    print("   accuracy = ${gpsSettings.accuracy}");
 
     await NativeGpsChannel.start(
       useTime: gpsSettings.useTime,
@@ -72,11 +65,9 @@ class TrackNotifier extends Notifier<Track> {
       accuracy: gpsSettings.accuracy,
     );
 
-    print("🔥 CONNECTANT startGpsListener()");
     startGpsListener();
 
     gpsActive = true;
-    print("✅ GPS ACTIVAT I LISTENER CONNECTAT");
   }
 
   void onNativeGpsPoint(Map<String, dynamic> data) {
@@ -89,11 +80,26 @@ class TrackNotifier extends Notifier<Track> {
     final timestamp = DateTime.fromMillisecondsSinceEpoch(data["timestamp"]);
     final vAccuracy = data["vAccuracy"] as double;
     final satellites = data["satellites"] as int? ?? 0;
-    print("📡 onNativeGpsPoint() → REBUT PUNT RAW: $data");
-    // 1. Actualitzar punt blau
-    state = state.copyWith(currentPosition: LatLng(lat, lon));
 
-    // 2. Si grava → afegir punt
+    // 1. Actualitzacions immediates de la interfície (Canals ràpids)
+    ref.read(gpsBearingProvider.notifier).update(heading);
+    ref.read(gpsAccuracyProvider.notifier).update(accuracy);
+    ref.read(gpsAltitudeProvider.notifier).update(altitude);
+
+    // 2. Actualitzar l'estat del Track (Punt blau i rumb al mapa)
+    state = state.copyWith(
+      currentPosition: LatLng(lat, lon),
+      currentHeading: heading,
+    );
+
+    // 3. SEGUIMENT: Enviem posició i rumb alhora per a màxima eficiència
+    if (isFollowing) {
+      ref
+          .read(trackFollowNotifierProvider.notifier)
+          .updateUserPosition(LatLng(lat, lon), userHeading: heading);
+    }
+
+    // 4. GRAVACIÓ: Si l'usuari ha premut "Rec"
     if (state.recordingState == RecordingState.recording) {
       addPointFromRaw(
         lat: lat,
@@ -106,13 +112,6 @@ class TrackNotifier extends Notifier<Track> {
         vAccuracy: vAccuracy,
         satellites: satellites,
       );
-    }
-
-    // 3. Si segueix → enviar al TrackFollowNotifier
-    if (isFollowing) {
-      ref
-          .read(trackFollowNotifierProvider.notifier)
-          .updateUserPosition(LatLng(lat, lon));
     }
   }
 
@@ -128,8 +127,6 @@ class TrackNotifier extends Notifier<Track> {
     required int satellites,
   }) {
     // 1. Actualitzem els micro-providers
-    ref.read(gpsAccuracyProvider.notifier).update(accuracy);
-    ref.read(gpsAltitudeProvider.notifier).update(altitude);
 
     double newDistance = state.distance;
     double newAscent = state.ascent;
@@ -187,6 +184,7 @@ class TrackNotifier extends Notifier<Track> {
       accuracies: [...state.accuracies, accuracy],
       speeds: [...state.speeds, speed],
       headings: [...state.headings, heading],
+      currentHeading: heading,
       satellites: [...state.satellites, satellites],
       vAccuracies: [...state.vAccuracies, vAccuracy],
       distance: newDistance,
@@ -276,128 +274,40 @@ class TrackNotifier extends Notifier<Track> {
   // ───────────────────────────────────────────────
   // 3) CONTROL DE GRAVACIÓ (igual que abans)
   // ───────────────────────────────────────────────
-  void _startTimer() {
-    _timer?.cancel(); // Seguretat: mai tinguis dos timers actius
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      state = state.copyWith(
-        duration: state.duration + const Duration(seconds: 1),
-      );
-    });
-  }
-
-  // 2. Modifica continueRecording perquè realment "continuï"
-  void continueRecording() {
-    state = state.copyWith(recordingState: RecordingState.recording);
-    _startTimer(); // <--- IMPRESCINDIBLE per recuperar el track
-  }
-
-  // 3. Assegura't que startRecording també el fa servir
+  // 1. startRecording: Ja no inicia el cronòmetre aquí, ho fa el RecordingHandler
   Future<void> startRecording(BuildContext context) async {
-    // ... la teva lògica de neteja de dades anteriors ...
     state = state.copyWith(
       recordingState: RecordingState.recording,
       duration: Duration.zero,
+      // coordinates: [], etc. (la teva lògica de reset)
     );
-    _startTimer();
+  }
+
+  // 2. continueRecording: Només canvia l'estat, el timer ja l'hem engegat fora
+  void continueRecording() {
+    state = state.copyWith(recordingState: RecordingState.recording);
+  }
+
+  // 3. stopRecording: Aquest és el canvi més important
+  Future<void> stopRecording(Duration finalDuration) async {
+    state = state.copyWith(
+      recordingState: RecordingState.idle,
+      duration: finalDuration, // Guardem la durada que ens ve del timerProvider
+    );
+
+    await _autoSaveToPrefs();
   }
 
   void pauseRecording() {
-    _timer?.cancel(); // Atura el cronòmetre físicament
     state = state.copyWith(recordingState: RecordingState.paused);
   }
 
   void resumeRecording() {
     state = state.copyWith(recordingState: RecordingState.recording);
-    _startTimer(); // Torna a engegar el cronòmetre
-  }
-
-  Future<void> stopRecording() async {
-    _timer?.cancel();
-    _timer = null;
-    state = state.copyWith(recordingState: RecordingState.idle);
   }
 
   // ───────────────────────────────────────────────
-  // 4) RECORDER PUR (igual que abans)
-  // ───────────────────────────────────────────────
-  void addPointFromPosition(Position pos, [int sat_used = 0]) {
-    // 1. Actualitzem els micro-providers (com ja feies)
-    ref.read(gpsAccuracyProvider.notifier).update(pos.accuracy);
-    ref.read(gpsAltitudeProvider.notifier).update(pos.altitude);
-
-    double newDistance = state.distance;
-    double newAscent = state.ascent;
-    double newDescent = state.descent;
-    double newMax = state.maxElevation;
-    double newMin = state.minElevation;
-
-    // Creem una còpia de la llista de distàncies actual per afegir-hi el nou valor
-    List<double> newDistancesList = [...state.distances];
-
-    if (state.coordinates.isNotEmpty) {
-      final lastCoords = state.coordinates.last; // [lon, lat]
-      final lastAlt = state.altitudes.last;
-
-      final lastLon = lastCoords[0];
-      final lastLat = lastCoords[1];
-
-      // Càlcul correcte
-      final double step = Geolocator.distanceBetween(
-        lastLat, // ✔️ lat
-        lastLon, // ✔️ lon
-        pos.latitude, // ✔️ lat
-        pos.longitude, // ✔️ lon
-      );
-
-      // Filtre anti-bogeries
-      if (step.isFinite && step < 200) {
-        newDistance += step;
-      }
-
-      final double diffAlt = pos.altitude - lastAlt;
-      if (diffAlt > 0.5) {
-        newAscent += diffAlt;
-      } else if (diffAlt < -0.5) {
-        newDescent += diffAlt.abs();
-      }
-    }
-
-    // 2. Afegim la distància total acumulada en aquest punt a la llista
-    newDistancesList.add(newDistance);
-
-    // 📈 Actualitzem límits d'elevació
-    if (state.altitudes.isEmpty || pos.altitude > newMax) newMax = pos.altitude;
-    if (state.altitudes.isEmpty || pos.altitude < newMin) newMin = pos.altitude;
-
-    // 🚀 Actualitzem l'estat amb la nova llista 'distances'
-    state = state.copyWith(
-      coordinates: [
-        ...state.coordinates,
-        [pos.longitude, pos.latitude],
-      ],
-      altitudes: [...state.altitudes, pos.altitude],
-      distances: newDistancesList, // <--- LA NOVA LLISTA ACTUALITZADA
-      timestamps: [...state.timestamps, pos.timestamp],
-      accuracies: [...state.accuracies, pos.accuracy],
-      speeds: [...state.speeds, pos.speed],
-      headings: [...state.headings, pos.heading],
-      satellites: [...state.satellites, sat_used],
-      vAccuracies: [...state.vAccuracies, pos.altitudeAccuracy],
-      distance: newDistance,
-      ascent: newAscent,
-      descent: newDescent,
-      maxElevation: newMax,
-      minElevation: newMin,
-    );
-
-    // Auto-save cada 10 punts
-    if (state.coordinates.length % 10 == 0) {
-      _autoSaveToPrefs();
-    }
-  }
-
-  // ───────────────────────────────────────────────
-  // 5) CACHE, RESET, ALTITUDES (igual que abans)
+  // 4) CACHE, RESET, ALTITUDES (igual que abans)
   // ───────────────────────────────────────────────
   Future<void> clearCache() async {
     final prefs = await SharedPreferences.getInstance();
@@ -405,9 +315,6 @@ class TrackNotifier extends Notifier<Track> {
   }
 
   void reset() {
-    _timer?.cancel();
-    _timer = null;
-
     state = Track(
       coordinates: [],
       distances: [],
@@ -432,9 +339,3 @@ class TrackNotifier extends Notifier<Track> {
 }
 
 final trackProvider = NotifierProvider<TrackNotifier, Track>(TrackNotifier.new);
-
-final compassHeadingProvider = Provider<double>((ref) {
-  final track = ref.watch(trackProvider);
-  if (track.headings.isEmpty) return 0.0;
-  return track.headings.last; // heading en graus
-});

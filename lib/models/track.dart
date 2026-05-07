@@ -35,6 +35,7 @@ class Track {
   final double? maxLon;
 
   // 🔥 Nou: punt blau actual
+  final double currentHeading;
   final LatLng? currentPosition;
 
   Track({
@@ -45,6 +46,7 @@ class Track {
     this.distances = const [],
     this.speeds = const [],
     this.headings = const [],
+    this.currentHeading = 0.0,
     this.satellites = const [],
     this.vAccuracies = const [],
     this.recordingState = RecordingState.idle,
@@ -71,6 +73,7 @@ class Track {
     List<double>? accuracies,
     List<double>? speeds,
     List<double>? headings,
+    double? currentHeading,
     List<int>? satellites,
     List<double>? vAccuracies,
     RecordingState? recordingState,
@@ -96,6 +99,7 @@ class Track {
       accuracies: accuracies ?? this.accuracies,
       speeds: speeds ?? this.speeds,
       headings: headings ?? this.headings,
+      currentHeading: currentHeading ?? this.currentHeading,
       satellites: satellites ?? this.satellites,
       vAccuracies: vAccuracies ?? this.vAccuracies,
       recordingState: recordingState ?? this.recordingState,
@@ -116,7 +120,6 @@ class Track {
   }
 
   double get currentSpeedKmH => (speeds.isNotEmpty) ? speeds.last * 3.6 : 0.0;
-  double get currentHeading => (headings.isNotEmpty) ? headings.last : 0.0;
   int get currentSatellites => (satellites.isNotEmpty) ? satellites.last : 0;
   double get averageSpeed =>
       (duration.inSeconds > 0) ? (distance / duration.inSeconds) * 3.6 : 0.0;

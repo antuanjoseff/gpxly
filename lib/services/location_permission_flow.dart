@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:gpxly/notifiers/permissions_notifier.dart';
-import 'package:gpxly/services/permissions_service.dart';
-import 'package:gpxly/ui/app_messages.dart';
+import 'package:senda/notifiers/permissions_notifier.dart';
+import 'package:senda/services/permissions_service.dart';
+import 'package:senda/ui/app_messages.dart';
 
 Future<bool> requestLocationPermissionsUnified(
   BuildContext context,

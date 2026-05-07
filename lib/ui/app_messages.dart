@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:gpxly/l10n/app_localizations.dart';
-import 'package:gpxly/models/waypoint.dart';
-import 'package:gpxly/notifiers/elevation_progress_notifier.dart';
-import 'package:gpxly/notifiers/track_follow_notifier.dart';
-import 'package:gpxly/theme/app_colors.dart';
+import 'package:senda/l10n/app_localizations.dart';
+import 'package:senda/models/waypoint.dart';
+import 'package:senda/notifiers/elevation_progress_notifier.dart';
+import 'package:senda/notifiers/track_follow_notifier.dart';
+import 'package:senda/theme/app_colors.dart';
 
 class AppMessages {
   // ==========================================
@@ -252,7 +252,8 @@ class AppMessages {
       title: t.reverseTrackTitle,
       message: t.reverseTrackMessage,
       icon: Icons.swap_vert,
-      confirmLabel: t.activate,
+      confirmLabel: t.reverseTrackConfirm,
+      cancelLabel: t.ignoreTrackReverse,
     );
   }
 

@@ -1,29 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:gpxly/notifiers/track_notifier.dart';
-import 'package:gpxly/notifiers/waypoints_recorded_notifier.dart';
-import 'package:gpxly/notifiers/permissions_notifier.dart';
-import 'package:gpxly/services/native_gps_channel.dart';
-import 'package:gpxly/services/permissions_service.dart';
-import 'package:gpxly/ui/app_messages.dart';
+import 'package:senda/notifiers/timer_notifier.dart';
+import 'package:senda/notifiers/track_notifier.dart';
+import 'package:senda/notifiers/waypoints_recorded_notifier.dart';
+import 'package:senda/notifiers/permissions_notifier.dart';
+import 'package:senda/services/permissions_service.dart';
+import 'package:senda/ui/app_messages.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class RecordingHandler {
   static Future<void> start(BuildContext context, WidgetRef ref) async {
-    print(">>> START: RecordingHandler.start() executat");
     final track = ref.read(trackProvider.notifier);
     final wpNotifier = ref.read(waypointsProvider.notifier);
     final prefs = await SharedPreferences.getInstance();
 
-    // 🔥 PRINT 1: comprovar si existeix la clau
-    print(
-      ">>> PREFS: temp_track_data existeix? ${prefs.containsKey('temp_track_data')}",
-    );
-
     final hasTrackCache = prefs.containsKey('temp_track_data');
     final hasWpCache = await wpNotifier.hasSavedWaypoints();
-    print(">>> START: hasTrackCache=$hasTrackCache, hasWpCache=$hasWpCache");
 
     // ───────────────────────────────────────────────
     // 1. RECUPERAR TRACK + WAYPOINTS
@@ -34,7 +27,10 @@ class RecordingHandler {
       final recuperar = await AppMessages.showRecoverTrackDialog(context);
       if (recuperar == true) {
         if (hasTrackCache) {
-          await track.loadFromCache(); // Carrega coordenades
+          await track.loadFromCache();
+          // 🔥 Recuperem la durada guardada al timerProvider
+          final cachedDuration = ref.read(trackProvider).duration;
+          ref.read(timerProvider.notifier).setInitialValue(cachedDuration);
         }
 
         if (hasWpCache) {
@@ -43,36 +39,36 @@ class RecordingHandler {
           });
         }
 
-        // IMPORTANT: NO BORRAR EL TRACK
-        track.continueRecording(); // ← NO esborra coordenades
+        track.continueRecording();
 
-        // Iniciar GPS perquè comenci a afegir punts nous
+        // 🔥 Engeguem el cronòmetre des d'on s'havia quedat
+        ref.read(timerProvider.notifier).start();
+
         await ref.read(trackProvider.notifier).ensureGpsStarted();
 
         HapticFeedback.mediumImpact();
         ref.read(permissionsProvider.notifier).checkPermissions();
         return;
       } else {
-        // Eliminar track
-        if (hasTrackCache) {
-          await prefs.remove('temp_track_data');
-        }
-
-        // Eliminar waypoints
-        if (hasWpCache) {
-          wpNotifier.clear();
-        }
+        if (hasTrackCache) await prefs.remove('temp_track_data');
+        if (hasWpCache) wpNotifier.clear();
       }
     }
 
     // ───────────────────────────────────────────────
-    // 2. PERMISOS
+    // 2. PERMISOS I GPS
     // ───────────────────────────────────────────────
     final status = await PermissionsService.checkGpsAndPermissions();
 
     if (status == GpsPermissionStatus.gpsOff) {
       if (!context.mounted) return;
-      await AppMessages.showGpsDisabledDialog(context);
+      final go = await AppMessages.showGpsDisabledDialog(context);
+      if (go == true) {
+        // 🔥 Marquem l'acció pendent perquè s'iniciï sol al tornar
+        ref.read(permissionsProvider.notifier).setPendingAction(true);
+        // Obrim la configuració fent servir el teu servei
+        await PermissionsService.ensureGpsReady(context);
+      }
       return;
     }
 
@@ -84,12 +80,20 @@ class RecordingHandler {
 
       final ok = await PermissionsService.ensurePermissions(context);
       if (!context.mounted || !ok) return;
+
+      // ⚠️ ELIMINAT EL 'return': Ara el codi segueix avall
+      // i inicia la gravació sola un cop acceptats els permisos.
     }
 
     // ───────────────────────────────────────────────
     // 3. INICIAR GRAVACIÓ NETA
     // ───────────────────────────────────────────────
     HapticFeedback.mediumImpact();
+
+    // 🔥 Netegem i engeguem el cronòmetre independent
+    ref.read(timerProvider.notifier).reset();
+    ref.read(timerProvider.notifier).start();
+
     await track.startRecording(context);
     await ref.read(trackProvider.notifier).ensureGpsStarted();
 
@@ -101,23 +105,24 @@ class RecordingHandler {
   // ───────────────────────────────────────────────
   static Future<void> pause(WidgetRef ref) async {
     HapticFeedback.lightImpact();
+    ref.read(timerProvider.notifier).pause();
     ref.read(trackProvider.notifier).pauseRecording();
   }
 
-  // ───────────────────────────────────────────────
-  // REPRENDRE
-  // ───────────────────────────────────────────────
   static Future<void> resume(WidgetRef ref) async {
     HapticFeedback.lightImpact();
+    ref.read(timerProvider.notifier).start();
     ref.read(trackProvider.notifier).resumeRecording();
   }
 
-  // ───────────────────────────────────────────────
-  // ATURAR
-  // ───────────────────────────────────────────────
   static Future<void> stop(WidgetRef ref) async {
     HapticFeedback.heavyImpact();
-    await ref.read(trackProvider.notifier).stopRecording();
-    // No cal eliminar res: el track queda a prefs fins que l’usuari decideixi
+    ref.read(timerProvider.notifier).pause(); // 🔥 Atura cronòmetre
+
+    // Passem la durada actual al trackProvider perquè la guardi definitivament
+    final finalDuration = ref.read(timerProvider);
+    await ref.read(trackProvider.notifier).stopRecording(finalDuration);
+
+    ref.read(timerProvider.notifier).reset(); // 🔥 Neteja
   }
 }

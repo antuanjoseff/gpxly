@@ -3,20 +3,19 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 
-import 'package:gpxly/features/elevation_profile/painters/selection_painter.dart';
-import 'package:gpxly/features/elevation_profile/painters/range_highlight_painter.dart';
-import 'package:gpxly/features/elevation_profile/utils/chart_utils.dart';
-import 'package:gpxly/l10n/app_localizations.dart';
-import 'package:gpxly/models/waypoint.dart';
-import 'package:gpxly/notifiers/imported_track_settings_notifier.dart';
+import 'package:senda/features/elevation_profile/painters/selection_painter.dart';
+import 'package:senda/features/elevation_profile/painters/range_highlight_painter.dart';
+import 'package:senda/features/elevation_profile/utils/chart_utils.dart';
+import 'package:senda/l10n/app_localizations.dart';
+import 'package:senda/models/waypoint.dart';
+import 'package:senda/notifiers/imported_track_settings_notifier.dart';
 
-import 'package:gpxly/notifiers/track_notifier.dart';
-import 'package:gpxly/notifiers/imported_track_notifier.dart';
-import 'package:gpxly/notifiers/track_settings_notifier.dart';
-import 'package:gpxly/notifiers/waypoints_recorded_notifier.dart';
-import 'package:gpxly/utils/distance_utils.dart';
-import 'package:gpxly/theme/app_colors.dart';
-import 'package:gpxly/widgets/waypoint_button.dart';
+import 'package:senda/notifiers/track_notifier.dart';
+import 'package:senda/notifiers/imported_track_notifier.dart';
+import 'package:senda/notifiers/track_settings_notifier.dart';
+import 'package:senda/notifiers/waypoints_recorded_notifier.dart';
+import 'package:senda/utils/distance_utils.dart';
+import 'package:senda/theme/app_colors.dart';
 
 enum ActiveHandle { none, start, end }
 
@@ -144,7 +143,9 @@ class _ElevationProfileScreenState
             primaryAlts.length,
             (i) => FlSpot(primaryDists[i], primaryAlts[i]),
           ),
-          isCurved: false,
+          isCurved: true,
+          curveSmoothness: 0.5,
+          preventCurveOverShooting: true,
           color: primaryIsReal ? trackColor : importedTrackColor,
           barWidth: 3,
           dotData: const FlDotData(show: false),
@@ -164,7 +165,9 @@ class _ElevationProfileScreenState
               secondaryAlts.length,
               (i) => FlSpot(secondaryDists[i], secondaryAlts[i]),
             ),
-            isCurved: false,
+            isCurved: true,
+            curveSmoothness: 0.5,
+            preventCurveOverShooting: true,
             color: primaryIsReal ? trackColor : importedTrackColor,
             barWidth: 3,
             dotData: const FlDotData(show: false),
@@ -760,6 +763,7 @@ Widget _buildLegend({
   if (!hasReal && !hasImported) {
     return const SizedBox.shrink();
   }
+
   final t = AppLocalizations.of(context)!;
   final effectivePrimaryIsReal = hasReal ? primaryIsReal : false;
 
@@ -767,65 +771,51 @@ Widget _buildLegend({
       ? t.recordingTrack
       : t.importedTrack;
   final secondaryLabel = effectivePrimaryIsReal
-      ? t.recordingTrack
-      : t.importedTrack;
+      ? t.importedTrack
+      : t.recordingTrack;
+
+  Widget legendItem(Color color, String label) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 14,
+          height: 14,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppColors.dark,
+          ),
+        ),
+      ],
+    );
+  }
 
   return Padding(
     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-    child: Row(
+    child: Wrap(
+      alignment: WrapAlignment.center,
+      spacing: 24,
+      runSpacing: 8,
       children: [
-        // PRIMER TRACK (només si existeix)
+        // PRIMER ELEMENT
         if (hasReal || hasImported)
-          Row(
-            children: [
-              Container(
-                width: 14,
-                height: 14,
-                decoration: BoxDecoration(
-                  color: effectivePrimaryIsReal
-                      ? trackColor
-                      : importedTrackColor,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                primaryLabel,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.dark,
-                ),
-              ),
-            ],
+          legendItem(
+            effectivePrimaryIsReal ? trackColor : importedTrackColor,
+            primaryLabel,
           ),
 
-        const SizedBox(width: 20),
-
-        // SEGON TRACK (només si existeix)
+        // SEGON ELEMENT
         if (hasReal && hasImported)
-          Row(
-            children: [
-              Container(
-                width: 14,
-                height: 14,
-                decoration: BoxDecoration(
-                  color: effectivePrimaryIsReal
-                      ? importedTrackColor
-                      : trackColor,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                secondaryLabel,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.dark,
-                ),
-              ),
-            ],
+          legendItem(
+            effectivePrimaryIsReal ? importedTrackColor : trackColor,
+            secondaryLabel,
           ),
       ],
     ),

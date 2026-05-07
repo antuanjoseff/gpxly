@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:gpxly/notifiers/helpers/thresholds.dart';
-import 'package:gpxly/services/native_gps_channel.dart';
+import 'package:senda/notifiers/helpers/thresholds.dart';
+import 'package:senda/services/native_gps_channel.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class GpsSettings {

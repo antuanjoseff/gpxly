@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:gpxly/theme/app_colors.dart';
 import 'pressable_scale.dart';
 
 class AppActionButton extends StatelessWidget {

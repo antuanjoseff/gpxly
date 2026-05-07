@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:gpxly/notifiers/gps_altitude_notifier.dart';
-import 'package:gpxly/theme/app_colors.dart';
-import 'package:gpxly/widgets/floating_route_panel.dart'; // Assegura't que el path sigui correcte
+import 'package:senda/notifiers/gps_altitude_notifier.dart';
+import 'package:senda/theme/app_colors.dart';
+import 'package:senda/widgets/floating_route_panel.dart'; // Assegura't que el path sigui correcte
 
 class FloatingAltitudePanel extends ConsumerWidget {
   const FloatingAltitudePanel({super.key});

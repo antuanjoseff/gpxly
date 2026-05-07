@@ -1,6 +1,6 @@
-import 'package:gpxly/notifiers/helpers/closest_result.dart';
+import 'package:senda/notifiers/helpers/closest_result.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
-import 'package:gpxly/utils/geo_utils.dart';
+import 'package:senda/utils/geo_utils.dart';
 
 class ReverseDetector {
   bool isReverseDirection(ClosestResult c, List<LatLng> lastUserPositions) {

@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:gpxly/notifiers/gps_accuracy_notifier.dart';
-import 'package:gpxly/notifiers/permissions_notifier.dart';
-import 'package:gpxly/notifiers/track_notifier.dart';
-import 'package:gpxly/notifiers/track_follow_notifier.dart'; // 👈 Importamos el seguidor
-import 'package:gpxly/services/location_permission_flow.dart';
+import 'package:senda/notifiers/gps_accuracy_notifier.dart';
+import 'package:senda/notifiers/permissions_notifier.dart';
+import 'package:senda/notifiers/track_notifier.dart';
+import 'package:senda/notifiers/track_follow_notifier.dart';
+import 'package:senda/services/location_permission_flow.dart';
 import '../utils/gps_accuracy.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:gpxly/ui/app_messages.dart';
+import 'package:senda/ui/app_messages.dart';
 
 class GpsAccuracyBars extends ConsumerWidget {
   final int totalBars;
@@ -18,9 +18,7 @@ class GpsAccuracyBars extends ConsumerWidget {
     final permissions = ref.watch(permissionsProvider);
     final level = ref.watch(gpsAccuracyLevelProvider);
     final track = ref.watch(trackProvider);
-    final followState = ref.watch(
-      trackFollowNotifierProvider,
-    ); // 👈 Escuchamos seguimiento
+    final followState = ref.watch(trackFollowNotifierProvider);
     final accuracy = ref.watch(gpsAccuracyProvider);
 
     // ───────────────────────────────────────────────

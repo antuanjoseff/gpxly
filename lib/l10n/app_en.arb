@@ -98,7 +98,8 @@
 
 "reverseTrackTitle": "Reverse direction",
 "reverseTrackMessage": "It looks like you are following the track in reverse. Do you want to invert it for better navigation?",
-"reverseTrackConfirm": "Invert",
+"reverseTrackConfirm": "Yes, flip it",
+"ignoreTrackReverse": "No, keep it",
 
 "gpxFilenameTitle": "GPX file name",
 "gpxFilenameLabel": "File name",

@@ -1,8 +1,8 @@
 import 'package:gpx/gpx.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:gpxly/notifiers/waypoints_imported_notifier.dart';
-import 'package:gpxly/utils/calculations.dart';
-import 'package:gpxly/utils/geo_utils.dart';
+import 'package:senda/notifiers/waypoints_imported_notifier.dart';
+import 'package:senda/utils/calculations.dart';
+import 'package:senda/utils/geo_utils.dart';
 import '../models/track.dart';
 import '../models/waypoint.dart';
 import '../notifiers/imported_track_notifier.dart';

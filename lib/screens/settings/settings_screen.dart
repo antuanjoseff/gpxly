@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:gpxly/l10n/app_localizations.dart';
-import 'package:gpxly/notifiers/permissions_notifier.dart';
-import 'package:gpxly/notifiers/settings_pending_notifier.dart';
-import 'package:gpxly/theme/app_colors.dart';
-import 'package:gpxly/ui/app_messages.dart';
+import 'package:senda/l10n/app_localizations.dart';
+import 'package:senda/notifiers/permissions_notifier.dart';
+import 'package:senda/notifiers/settings_pending_notifier.dart';
+import 'package:senda/theme/app_colors.dart';
+import 'package:senda/ui/app_messages.dart';
 import 'tabs/gps_settings_tab.dart';
 import 'tabs/gpx_settings_tab.dart';
 import 'tabs/track_settings_tab.dart';
 import 'tabs/imported_track_settings_tab.dart';
-import 'package:gpxly/notifiers/gps_settings_notifier.dart';
-import 'package:gpxly/notifiers/gpx_settings_notifier.dart';
-import 'package:gpxly/notifiers/track_settings_notifier.dart';
-import 'package:gpxly/notifiers/imported_track_settings_notifier.dart';
+import 'package:senda/notifiers/gps_settings_notifier.dart';
+import 'package:senda/notifiers/gpx_settings_notifier.dart';
+import 'package:senda/notifiers/track_settings_notifier.dart';
+import 'package:senda/notifiers/imported_track_settings_notifier.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});

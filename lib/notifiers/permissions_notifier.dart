@@ -1,12 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:gpxly/models/gps_permission.dart';
+import 'package:senda/models/gps_permission.dart';
 import 'package:permission_handler/permission_handler.dart' as perm;
 import 'package:geolocator/geolocator.dart' as geo;
 
 class PermissionsNotifier extends Notifier<GpsPermissionState> {
   StreamSubscription? _serviceSub;
+  bool _pendingStartAfterGpsOn = false;
 
   @override
   GpsPermissionState build() {
@@ -23,15 +24,27 @@ class PermissionsNotifier extends Notifier<GpsPermissionState> {
   }
 
   Future<void> _init() async {
+    // 1. Llegim l'estat inicial de forma atòmica
     await checkPermissions();
     await checkServiceStatus();
 
+    // 2. Escoltem els canvis futurs del xip GPS
     _serviceSub = geo.Geolocator.getServiceStatusStream().listen((status) {
-      // status és un enum intern no públic → només podem usar toString()
-      final enabled = status.toString().contains('enabled');
-      state = state.copyWith(serviceEnabled: enabled);
+      // Millor usar l'enum ServiceStatus en lloc de .toString().contains(...)
+      final bool enabled = status == geo.ServiceStatus.enabled;
+
+      // Només actualitzem si l'estat realment ha canviat per estalviar redibuixats
+      if (state.serviceEnabled != enabled) {
+        state = state.copyWith(serviceEnabled: enabled);
+        if (enabled && _pendingStartAfterGpsOn) {
+          _pendingStartAfterGpsOn = false;
+          state = state.copyWith(shouldResumeRecording: true);
+        }
+      }
     });
   }
+
+  void setPendingAction(bool pending) => _pendingStartAfterGpsOn = pending;
 
   Future<void> checkPermissions() async {
     final status = await perm.Permission.location.status;
@@ -46,6 +59,10 @@ class PermissionsNotifier extends Notifier<GpsPermissionState> {
   Future<void> checkServiceStatus() async {
     final enabled = await geo.Geolocator.isLocationServiceEnabled();
     state = state.copyWith(serviceEnabled: enabled);
+  }
+
+  void consumeSignal() {
+    state = state.copyWith(shouldResumeRecording: false);
   }
 }
 

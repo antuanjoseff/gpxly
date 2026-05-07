@@ -574,8 +574,14 @@ abstract class AppLocalizations {
   /// No description provided for @reverseTrackConfirm.
   ///
   /// In en, this message translates to:
-  /// **'Invert'**
+  /// **'Yes, flip it'**
   String get reverseTrackConfirm;
+
+  /// No description provided for @ignoreTrackReverse.
+  ///
+  /// In en, this message translates to:
+  /// **'No, keep it'**
+  String get ignoreTrackReverse;
 
   /// No description provided for @gpxFilenameTitle.
   ///

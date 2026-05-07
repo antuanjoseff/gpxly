@@ -98,7 +98,8 @@
 
 "reverseTrackTitle": "Dirección inversa",
 "reverseTrackMessage": "Parece que estás siguiendo el track en dirección inversa. ¿Quieres invertirlo para mejorar la navegación?",
-"reverseTrackConfirm": "Invertir",
+"reverseTrackConfirm": "Si, invertir",
+"ignoreTrackReverse": "No, continuar",
 
 "gpxFilenameTitle": "Nombre del archivo GPX",
 "gpxFilenameLabel": "Nombre del archivo",
