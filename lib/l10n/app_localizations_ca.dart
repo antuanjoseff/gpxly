@@ -9,7 +9,7 @@ class AppLocalizationsCa extends AppLocalizations {
   AppLocalizationsCa([String locale = 'ca']) : super(locale);
 
   @override
-  String get appTitle => 'Senda';
+  String get appTitle => 'GpxGo';
 
   @override
   String get startRecording => 'Gravar';
@@ -21,8 +21,7 @@ class AppLocalizationsCa extends AppLocalizations {
   String get gpsDisabled => 'El GPS està desactivat';
 
   @override
-  String get locationPermissionRequired =>
-      'Cal acceptar permisos de localització';
+  String get locationPermissionRequired => 'Cal acceptar permisos de localització';
 
   @override
   String get exitWarning => 'Prem enrere un altre cop per sortir';
@@ -34,8 +33,7 @@ class AppLocalizationsCa extends AppLocalizations {
   String get gpsDisabledTitle => 'GPS desactivat';
 
   @override
-  String get gpsDisabledMessage =>
-      'El GPS està desactivat. Vols activar-lo ara?';
+  String get gpsDisabledMessage => 'El GPS està desactivat. Vols activar-lo ara?';
 
   @override
   String get cancel => 'CANCEL·LAR';
@@ -53,8 +51,7 @@ class AppLocalizationsCa extends AppLocalizations {
   String get recoverTrackTitle => 'Ruta pendent';
 
   @override
-  String get recoverTrackMessage =>
-      'S\'ha detectat una gravació que no es va tancar correctament. Vols continuar-la o començar-ne una de nova?';
+  String get recoverTrackMessage => 'S\'ha detectat una gravació que no es va tancar correctament. Vols continuar-la o començar-ne una de nova?';
 
   @override
   String get discard => 'DESCARTAR';
@@ -75,8 +72,7 @@ class AppLocalizationsCa extends AppLocalizations {
   String get importGpxTitle => 'Importar GPX';
 
   @override
-  String get importGpxMessage =>
-      'Ja tens una ruta activa o dades carregades. Vols substituir-les pel fitxer GPX?';
+  String get importGpxMessage => 'Ja tens una ruta activa o dades carregades. Vols substituir-les pel fitxer GPX?';
 
   @override
   String get import => 'IMPORTAR';
@@ -85,8 +81,7 @@ class AppLocalizationsCa extends AppLocalizations {
   String get viewModeTitle => 'Mode visualització';
 
   @override
-  String get viewModeMessage =>
-      'Vols entrar en mode visualització? No s\'afegiran punts nous i la gravació quedarà desactivada.';
+  String get viewModeMessage => 'Vols entrar en mode visualització? No s\'afegiran punts nous i la gravació quedarà desactivada.';
 
   @override
   String get no => 'NO';
@@ -98,8 +93,7 @@ class AppLocalizationsCa extends AppLocalizations {
   String get permissionNeededTitle => 'Permís necessari';
 
   @override
-  String get permissionNeededMessage =>
-      'Per poder gravar la ruta correctament amb la pantalla apagada, cal seleccionar: 👉 \"Permetre sempre\".';
+  String get permissionNeededMessage => 'Per poder gravar la ruta correctament amb la pantalla apagada, cal seleccionar: 👉 \"Permetre sempre\".';
 
   @override
   String get continueLabel => 'CONTINUA';
@@ -108,11 +102,10 @@ class AppLocalizationsCa extends AppLocalizations {
   String get locationPermissionTitle => 'Permís de localització';
 
   @override
-  String get locationPermissionMessage =>
-      'L’aplicació no té permisos per accedir a la ubicació. Vols obrir la configuració per donar permisos?';
+  String get locationPermissionMessage => 'L’aplicació no té permisos per accedir a la ubicació. Vols obrir la configuració per donar permisos?';
 
   @override
-  String get offTrack => 'T\'estàs allunyant de la ruta';
+  String get offTrack => 'T\'estàs allunyant del track importat';
 
   @override
   String get backOnTrack => 'Estàs sobre el track';
@@ -226,8 +219,7 @@ class AppLocalizationsCa extends AppLocalizations {
   String get pendingChangesTitle => 'Canvis pendents';
 
   @override
-  String get pendingChangesMessage =>
-      'Has fet canvis que no has aplicat. Vols aplicar-los abans de tornar al mapa?';
+  String get pendingChangesMessage => 'Has fet canvis que no has aplicat. Vols aplicar-los abans de tornar al mapa?';
 
   @override
   String get settingsApplied => 'Configuració aplicada!';
@@ -251,14 +243,13 @@ class AppLocalizationsCa extends AppLocalizations {
   String get reverseTrackTitle => 'Direcció inversa';
 
   @override
-  String get reverseTrackMessage =>
-      'Vas en sentit contrari al trajecte. Vols invertir el sentit per rebre les indicacions correctes?';
+  String get reverseTrackMessage => 'Sembla que estàs seguint el track en direcció inversa. Vols invertir-lo per millorar la navegació?';
 
   @override
-  String get reverseTrackConfirm => 'Sí, capgirar';
+  String get reverseTrackConfirm => 'Sí, inverteix';
 
   @override
-  String get ingnoreTrackConfirm => 'No, continuar';
+  String get ignoreTrackReverse => 'Continuar';
 
   @override
   String get gpxFilenameTitle => 'Nom del fitxer GPX';
@@ -303,8 +294,7 @@ class AppLocalizationsCa extends AppLocalizations {
   String get stopFollowingTitle => 'Aturar seguiment';
 
   @override
-  String get stopFollowingMessage =>
-      'Vols aturar el seguiment? Es traurà la ruta del mapa.';
+  String get stopFollowingMessage => 'Vols aturar el seguiment? Es traurà la ruta del mapa.';
 
   @override
   String get stopFollowingConfirm => 'ATURAR RUTA';
@@ -334,8 +324,7 @@ class AppLocalizationsCa extends AppLocalizations {
   String get deleteTrackTitle => 'Eliminar track';
 
   @override
-  String get deleteTrackMessage =>
-      'Estàs segur que vols eliminar aquesta  ruta? Aquesta acció no es pot desfer.';
+  String get deleteTrackMessage => 'Estàs segur que vols eliminar aquest track importat? Aquesta acció no es pot desfer.';
 
   @override
   String get deleteTrackConfirm => 'ELIMINAR';
@@ -362,8 +351,7 @@ class AppLocalizationsCa extends AppLocalizations {
   String get gpsOptimizationTitle => 'Optimització GPS';
 
   @override
-  String get gpsOptimizationMessage =>
-      'Per a un seguiment precís, cal activar el mode d\'alta fidelitat. Això pot augmentar el consum de bateria.';
+  String get gpsOptimizationMessage => 'Per a un seguiment precís, cal activar el mode d\'alta fidelitat. Això pot augmentar el consum de bateria.';
 
   @override
   String get confirm => 'CONFIRMAR';

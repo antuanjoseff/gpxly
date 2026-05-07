@@ -140,8 +140,23 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused ||
-        state == AppLifecycleState.inactive) {}
+    // 🔥 Quan l'usuari torna a l'app (resumed)
+    if (state == AppLifecycleState.resumed) {
+      // 1. Forcem que els permisos i el GPS s'actualitzin al moment
+      ref.read(permissionsProvider.notifier).checkPermissions();
+      ref.read(permissionsProvider.notifier).checkServiceStatus();
+
+      // 2. Mirem si veníem d'intentar gravar (pendent d'activar GPS)
+      final permState = ref.read(permissionsProvider);
+
+      if (permState.serviceEnabled && permState.shouldResumeRecording) {
+        // Netegem el senyal perquè no ho torni a fer sol
+        ref.read(permissionsProvider.notifier).consumeSignal();
+
+        // EXECUTEM la gravació: aquí és on sortirà el diàleg de recuperar!
+        RecordingHandler.start(context, ref);
+      }
+    }
   }
 
   void _handleStopProcess(BuildContext context, WidgetRef ref) async {
@@ -342,14 +357,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final hasImportedTrack =
         importedTrack != null && importedTrack.coordinates.isNotEmpty;
     final trackFollowState = ref.watch(trackFollowNotifierProvider);
-
-    ref.listen(permissionsProvider, (previous, next) {
-      // Si el GPS estava OFF i ara està ON, i teníem una acció pendent...
-      if (next.serviceEnabled && !(previous?.serviceEnabled ?? true)) {
-        // ...cridem automàticament a la funció start que acabem de modificar
-        RecordingHandler.start(context, ref);
-      }
-    });
 
     ref.listen(trackProvider, (prev, next) async {
       // ───────────────────────────────────────────────

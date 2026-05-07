@@ -38,7 +38,7 @@ class PermissionsNotifier extends Notifier<GpsPermissionState> {
         state = state.copyWith(serviceEnabled: enabled);
         if (enabled && _pendingStartAfterGpsOn) {
           _pendingStartAfterGpsOn = false;
-          // Cridem al RecordingHandler automàticament des d'aquí o notifiquem a la UI
+          state = state.copyWith(shouldResumeRecording: true);
         }
       }
     });
@@ -59,6 +59,10 @@ class PermissionsNotifier extends Notifier<GpsPermissionState> {
   Future<void> checkServiceStatus() async {
     final enabled = await geo.Geolocator.isLocationServiceEnabled();
     state = state.copyWith(serviceEnabled: enabled);
+  }
+
+  void consumeSignal() {
+    state = state.copyWith(shouldResumeRecording: false);
   }
 }
 
