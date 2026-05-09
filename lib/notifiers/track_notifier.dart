@@ -51,13 +51,14 @@ class TrackNotifier extends Notifier<Track> {
   }
 
   Future<void> ensureGpsStarted() async {
-    if (gpsActive) {
-      return;
-    }
+    print(
+      "[SENDA-DEBUG] TrackNotifier: Dins de ensureGpsStarted (gpsActive: $gpsActive)",
+    );
+    if (gpsActive) return;
 
-    // 🔥 LLEGIR CONFIGURACIÓ DE L’USUARI
     final gpsSettings = ref.read(gpsSettingsProvider);
 
+    print("[SENDA-DEBUG] TrackNotifier: Cridant NativeGpsChannel.start...");
     await NativeGpsChannel.start(
       useTime: gpsSettings.useTime,
       seconds: gpsSettings.seconds,
@@ -65,8 +66,8 @@ class TrackNotifier extends Notifier<Track> {
       accuracy: gpsSettings.accuracy,
     );
 
+    print("[SENDA-DEBUG] TrackNotifier: NativeGpsChannel.start ha respost!");
     startGpsListener();
-
     gpsActive = true;
   }
 

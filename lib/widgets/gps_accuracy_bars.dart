@@ -27,16 +27,18 @@ class GpsAccuracyBars extends ConsumerWidget {
     if (!permissions.hasPermission) {
       return GestureDetector(
         behavior: HitTestBehavior.opaque,
+        // Dins del Gesture detector de "SENSE PERMISOS" (Punt 1)
         onTap: () async {
           final ok = await requestLocationPermissionsUnified(context, ref);
 
-          // 🔥 FORZAMOS REFRESCO: Si el usuario acepta, notificamos al provider
-          // para que el widget se redibuje inmediatamente.
-          ref.read(permissionsProvider.notifier).checkPermissions();
+          // 🔥 ARA SÍ: Refresquem les dues coses (Permisos i Sensor)
+          final permNotifier = ref.read(permissionsProvider.notifier);
+          await permNotifier.checkPermissions();
+          await permNotifier.checkServiceStatus(); // <--- AFEGEIX AIXÒ
 
           if (!ok) return;
-          print("🎉 Permisos OK des de la icona!");
         },
+
         child: Container(
           padding: const EdgeInsets.all(6),
           child: const Tooltip(
@@ -53,12 +55,16 @@ class GpsAccuracyBars extends ConsumerWidget {
     if (!permissions.serviceEnabled) {
       return GestureDetector(
         behavior: HitTestBehavior.opaque,
+        // Dins de GpsAccuracyBars, al onTap de GPS DESACTIVAT:
         onTap: () async {
           final go = await AppMessages.showGpsDisabledDialog(context);
           if (go == true) {
-            Geolocator.openLocationSettings();
+            await Geolocator.openLocationSettings();
+            // Forcem una comprovació manual al tornar
+            await ref.read(permissionsProvider.notifier).checkServiceStatus();
           }
         },
+
         child: Container(
           padding: const EdgeInsets.all(6),
           child: const Tooltip(

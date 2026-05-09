@@ -745,7 +745,9 @@ class _ElevationProfileScreenState
             context: context,
           ),
 
-          Expanded(child: _buildWaypointsList(context)),
+          Expanded(
+            child: SafeArea(bottom: true, child: _buildWaypointsList(context)),
+          ),
         ],
       ),
     );

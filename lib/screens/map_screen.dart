@@ -21,6 +21,7 @@ import 'package:senda/screens/settings/settings_screen.dart';
 import 'package:senda/screens/stats_screen.dart';
 import 'package:senda/services/gpx_import_flow.dart';
 import 'package:senda/services/location_permission_flow.dart';
+import 'package:senda/services/permissions_service.dart';
 import 'package:senda/services/recording_handler.dart';
 import 'package:senda/theme/app_colors.dart';
 import 'package:senda/ui/app_messages.dart';
@@ -59,6 +60,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
   bool _isShowingReverseDialog = false;
   bool hasDoneRecoveryFit =
       false; // Flag per controlar que només es recuperi un cop per sessió
+  DateTime _lastPrefsSave = DateTime.now();
 
   late MapAnimator mapAnimator;
 
@@ -76,14 +78,32 @@ class _MapScreenState extends ConsumerState<MapScreen>
     fontWeight: FontWeight.bold,
   );
 
+  @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
 
+    // 1. Carreguem la posició guardada al disc immediatament.
+    // Això fa que _initialCameraTarget deixi de ser null i el mapa s'infli ja mateix.
     _loadLastPosition();
-    Future.microtask(
-      () => ref.read(permissionsProvider.notifier).checkPermissions(),
-    );
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final ok = await PermissionsService.ensureBasicLocation(context);
+      if (ok) {
+        // 2. Engeguem el TEU sistema de GPS (el canal natiu)
+        await ref.read(trackProvider.notifier).ensureGpsStarted();
+
+        // 3. Com que el GPS ja està en marxa, esperem que arribi la primera
+        // posició del TEU provider per centrar el mapa si encara estem a (0,0).
+        final pos = ref.read(trackProvider).currentPosition;
+        if (pos != null &&
+            (_initialCameraTarget == null ||
+                _initialCameraTarget!.latitude == 0)) {
+          setState(() {
+            _initialCameraTarget = pos;
+          });
+        }
+      }
+    });
   }
 
   void safeMoveCamera(CameraUpdate update) {
@@ -122,20 +142,38 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final lat = prefs.getDouble("last_lat");
     final lon = prefs.getDouble("last_lon");
 
-    if (lat != null && lon != null) {
-      _initialCameraTarget = LatLng(lat, lon);
-    } else {
-      _initialCameraTarget = const LatLng(0, 0);
-      _initialZoom = 1.0;
+    if (mounted) {
+      setState(() {
+        if (lat != null && lon != null) {
+          _initialCameraTarget = LatLng(lat, lon);
+          _initialZoom = 14.0; // Un zoom de ciutat estàndard
+        } else {
+          // Si no hi ha res, una posició per defecte (ex. Catalunya/BCN)
+          // per no aparèixer al mig de l'oceà
+          _initialCameraTarget = const LatLng(41.3851, 2.1734);
+          _initialZoom = 7.0;
+        }
+      });
     }
-
-    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this); // Limpieza del observer
     super.dispose();
+  }
+
+  Future<void> _savePositionToPrefs() async {
+    final pos = ref.read(trackProvider).currentPosition;
+    if (pos != null) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setDouble("last_lat", pos.latitude);
+      await prefs.setDouble("last_lon", pos.longitude);
+      _lastPrefsSave = DateTime.now(); // Actualitzem la marca de temps
+      print(
+        "[SENDA-DEBUG] Posició guardada a Prefs: ${pos.latitude}, ${pos.longitude}",
+      );
+    }
   }
 
   @override
@@ -359,19 +397,22 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final trackFollowState = ref.watch(trackFollowNotifierProvider);
 
     ref.listen(trackProvider, (prev, next) async {
-      // ───────────────────────────────────────────────
-      // 0) MAP READY CHECK
-      // ───────────────────────────────────────────────
       if (!styleInitialized || mapController == null) return;
 
       // ───────────────────────────────────────────────
-      // 1) ACTUALITZACIÓ VISUAL (Sempre s'executa)
+      // 0) ACTUALITZACIÓ VISUAL I GUARDAT PERIÒDIC
       // ───────────────────────────────────────────────
-      // Actualitzem el punt blau i la línia del track sense moure la càmera.
-      // Ho fem abans dels 'return' per no perdre fluïdesa visual.
       if (next.currentPosition != null) {
+        // Punt blau sempre fluid
         mapAnimator.updateUserPositionDirect(next.currentPosition!);
+
+        // --- GUARDAT EFICIENT (Cada 5 minuts) ---
+        final ara = DateTime.now();
+        if (ara.difference(_lastPrefsSave).inMinutes >= 5) {
+          _savePositionToPrefs(); // Crida a la funció que hem creat abans
+        }
       }
+
       mapAnimator.updateFromTrack(next);
 
       // Si estem important un GPX, aturem qualsevol lògica que mogui la càmera.
@@ -396,14 +437,12 @@ class _MapScreenState extends ConsumerState<MapScreen>
         Future.delayed(const Duration(milliseconds: 300), () {
           isProgrammaticMove = false;
         });
-        return; // Si fem el primer fix, no cal fer res més en aquest tick
+        return;
       }
 
       // ───────────────────────────────────────────────
       // 4) FIT TO BOUNDS (Només Recuperació Inicial)
       // ───────────────────────────────────────────────
-      // Useu el flag 'hasDoneRecoveryFit' que hem creat per evitar que
-      // es torni a disparar cada cop que arriba un punt GPS nou.
       final isRecoveringTrack =
           (prev?.coordinates.isEmpty ?? true) &&
           next.coordinates.length > 1 &&
@@ -413,13 +452,13 @@ class _MapScreenState extends ConsumerState<MapScreen>
         hasDoneRecoveryFit = true;
         print(">>> 🔄 Recuperant track de memòria: FitToBounds");
         _fitToBounds(next.coordinates, instant: true);
-        return; // Prioritzem la recuperació sobre el SmartCenter
+        return;
       }
 
       // ───────────────────────────────────────────────
       // 5) SmartCenter (Seguiment actiu)
       // ───────────────────────────────────────────────
-      if (smartCenterEnabled && // 👈 Aquest flag és el que mana
+      if (smartCenterEnabled &&
           next.currentPosition != null &&
           !isProgrammaticMove &&
           !isImportingGpx) {
@@ -568,7 +607,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
         ref.read(trackFollowNotifierProvider.notifier).clearOffTrackSnackbar();
       }
     });
-
+    print(
+      "[SENDA-DEBUG] MapScreen Build: _initialCameraTarget és $_initialCameraTarget",
+    );
     if (_initialCameraTarget == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }

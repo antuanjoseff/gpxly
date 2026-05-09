@@ -47,13 +47,29 @@ class PermissionsNotifier extends Notifier<GpsPermissionState> {
   void setPendingAction(bool pending) => _pendingStartAfterGpsOn = pending;
 
   Future<void> checkPermissions() async {
-    final status = await perm.Permission.location.status;
-    state = state.copyWith(hasPermission: status.isGranted);
+    // Comprovem tots dos nivells
+    final statusAlways = await perm.Permission.locationAlways.status;
+    final statusInUse = await perm.Permission.location.status;
+
+    // L'app "té permís" si qualsevol dels dos és positiu
+    state = state.copyWith(
+      hasPermission: statusAlways.isGranted || statusInUse.isGranted,
+    );
   }
 
   Future<void> requestPermissions() async {
+    // Quan demanes permís, el sistema sol anar per passos.
+    // Millor demanar el genèric i després el 'always' si cal.
     final status = await perm.Permission.location.request();
+
+    // Actualitzem l'estat basant-nos en el resultat immediat
     state = state.copyWith(hasPermission: status.isGranted);
+
+    // Si vols forçar el 'always' després:
+    if (status.isGranted) {
+      final statusAlways = await perm.Permission.locationAlways.request();
+      state = state.copyWith(hasPermission: statusAlways.isGranted);
+    }
   }
 
   Future<void> checkServiceStatus() async {

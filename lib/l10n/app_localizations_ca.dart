@@ -355,4 +355,13 @@ class AppLocalizationsCa extends AppLocalizations {
 
   @override
   String get confirm => 'CONFIRMAR';
+
+  @override
+  String get notificationPermissionTitle => 'Notificacions de seguiment';
+
+  @override
+  String get notificationPermissionMessage => 'Senda necessita mostrar una notificació mentre graves la ruta. Això evita que el sistema aturi l\'aplicació per estalviar bateria i garanteix que no perdis el teu track.';
+
+  @override
+  String get understood => 'ENTESOS';
 }

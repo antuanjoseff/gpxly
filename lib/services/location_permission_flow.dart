@@ -4,35 +4,50 @@ import 'package:geolocator/geolocator.dart';
 import 'package:senda/notifiers/permissions_notifier.dart';
 import 'package:senda/services/permissions_service.dart';
 import 'package:senda/ui/app_messages.dart';
+import 'package:permission_handler/permission_handler.dart'; // Imprescindible per a openAppSettings
 
 Future<bool> requestLocationPermissionsUnified(
   BuildContext context,
   WidgetRef ref,
 ) async {
-  // 1) Comprovar GPS + permisos (mateix flux que RecordingHandler.start)
+  // 1) Comprovar estat actual
   final status = await PermissionsService.checkGpsAndPermissions();
 
-  // GPS OFF
+  // --- GPS OFF ---
   if (status == GpsPermissionStatus.gpsOff) {
     final go = await AppMessages.showGpsDisabledDialog(context);
     if (go == true) Geolocator.openLocationSettings();
     return false;
   }
 
-  // PERMISOS DENEGATS
+  // --- PERMISOS DENEGATS O BLOQUEJATS ---
   if (status == GpsPermissionStatus.permissionDenied) {
-    // Explicació prèvia (igual que RecordingHandler.start)
+    // 🔥 MILLORA: Mirem si el permís està bloquejat permanentment (per haver dit 'enrere' 2 cops)
+    final isPermanentlyDenied =
+        await Permission.locationAlways.isPermanentlyDenied;
+
+    if (isPermanentlyDenied) {
+      // Si està bloquejat, el pop-up de sistema ja no sortirà.
+      // Mostrem el diàleg que avisa que cal anar a la configuració manual.
+      final goSettings = await AppMessages.showLocationPermissionDialog(
+        context,
+      );
+      if (goSettings == true) {
+        await openAppSettings(); // Obre la pantalla de l'app dins d'Ajustos
+      }
+      return false;
+    }
+
+    // Si NO està bloquejat permanentment, fem el flux normal
     final continuar = await AppMessages.showPermissionExplanation(context);
     if (continuar != true) return false;
 
-    // Flux complet de permisos
     final ok = await PermissionsService.ensurePermissions(context);
     if (!ok) return false;
 
-    // Recarregar estat
+    // Recarregar estat del provider
     await ref.read(permissionsProvider.notifier).checkPermissions();
   }
 
-  // Si arribem aquí → tot correcte
   return true;
 }

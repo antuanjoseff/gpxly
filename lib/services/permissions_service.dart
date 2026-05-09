@@ -37,6 +37,32 @@ class PermissionsService {
     return GpsPermissionStatus.ok;
   }
 
+  // A permissions_service.dart
+
+  static Future<bool> ensureBackgroundLocationWithDialog(
+    BuildContext context,
+  ) async {
+    // 1. Comprovem si ja tenim el permís "Sempre" (Always)
+    final status = await Permission.locationAlways.status;
+    if (status.isGranted) return true;
+
+    // 2. Si no el tenim, mostrem el TEU diàleg explicatiu (AppMessages)
+    final continuar = await AppMessages.showPermissionExplanation(context);
+    if (continuar != true) return false;
+
+    // 3. Demanem el permís de sistema (Always)
+    // Això és el que permet que el teu NativeGpsChannel continuï viu
+    // quan l'usuari bloquegi la pantalla.
+    final res = await Permission.locationAlways.request();
+
+    if (res.isGranted) {
+      await _ensureNotifications(context); // Ara fa servir el diàleg explicatiu
+      return true;
+    }
+
+    return false;
+  }
+
   static Future<bool> _ensureGpsEnabled(BuildContext context) async {
     final enabled = await Geolocator.isLocationServiceEnabled();
     if (enabled) return true;
@@ -61,6 +87,10 @@ class PermissionsService {
     final status = await Permission.notification.status;
     if (status.isGranted) return true;
 
+    // 1. Mostrem el TEU diàleg explicatiu abans de la petició del sistema
+    await AppMessages.showNotificationPermissionDialog(context);
+
+    // 2. Llançem la petició oficial del sistema
     final res = await Permission.notification.request();
     return res.isGranted;
   }
@@ -107,12 +137,10 @@ class PermissionsService {
     }
 
     // 3) Permís de background (Android)
+    // 4) Permís de notificacions (Android 13+)
     if (Platform.isAndroid) {
-      final bg = await Permission.locationAlways.status;
-      if (!bg.isGranted) {
-        final res = await Permission.locationAlways.request();
-        if (!res.isGranted) return false;
-      }
+      final notifGranted = await _ensureNotifications(context);
+      if (!notifGranted) return false;
     }
 
     // 4) Permís de notificacions (Android 13+)
@@ -125,5 +153,24 @@ class PermissionsService {
     }
 
     return true;
+  }
+
+  // AFEGEIX AIXÒ AL FINAL DE LA TEVA CLASSE PermissionsService
+  // Dins de ensureBasicLocation a PermissionsService.dart
+  static Future<bool> ensureBasicLocation(BuildContext context) async {
+    print("[SENDA-DEBUG] PermService: Entrant a ensureBasicLocation");
+
+    // Fem servir Geolocator per a la petició inicial
+    LocationPermission perm = await Geolocator.checkPermission();
+    print("[SENDA-DEBUG] PermService: Status inicial (Geolocator) = $perm");
+
+    if (perm == LocationPermission.denied) {
+      print("[SENDA-DEBUG] PermService: Demanant permisos via Geolocator...");
+      perm = await Geolocator.requestPermission();
+      print("[SENDA-DEBUG] PermService: Nou status = $perm");
+    }
+
+    return perm == LocationPermission.whileInUse ||
+        perm == LocationPermission.always;
   }
 }

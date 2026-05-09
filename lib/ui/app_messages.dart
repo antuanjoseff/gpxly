@@ -826,4 +826,17 @@ class AppMessages {
       cancelLabel: t.discard,
     );
   }
+
+  static Future<bool?> showNotificationPermissionDialog(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
+    return _showBaseDialog(
+      context: context,
+      barrierDismissible: false, // Forcem la lectura perquè és crític
+      title: t.notificationPermissionTitle,
+      message: t.notificationPermissionMessage,
+      icon: Icons.notifications_active_outlined,
+      iconColor: AppColors.skyBlue,
+      confirmLabel: t.understood,
+    );
+  }
 }

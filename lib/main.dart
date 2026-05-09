@@ -4,9 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/l10n/app_localizations.dart';
 import 'package:senda/screens/map_screen.dart';
 import 'package:senda/theme/app_theme.dart';
+import 'package:senda/notifiers/permissions_notifier.dart';
 
 void main() {
-  // El ProviderScope solo debe envolver la raíz una vez
   runApp(const ProviderScope(child: GPXlyApp()));
 }
 
@@ -15,17 +15,56 @@ class GPXlyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      localizationsDelegates: const [
-        AppLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: const [Locale('en'), Locale('ca'), Locale('es')],
-      theme: appTheme,
-      home: const MapScreen(),
+    return _LifecycleWrapper(
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: [Locale('en'), Locale('ca'), Locale('es')],
+        theme: appTheme,
+        home: MapScreen(),
+      ),
     );
   }
+}
+
+/// ─────────────────────────────────────────────────────────
+/// LISTENER DE CICLO DE VIDA (soluciona el problema)
+/// ─────────────────────────────────────────────────────────
+class _LifecycleWrapper extends ConsumerStatefulWidget {
+  const _LifecycleWrapper({super.key, required this.child});
+  final Widget child;
+
+  @override
+  ConsumerState<_LifecycleWrapper> createState() => _LifecycleWrapperState();
+}
+
+class _LifecycleWrapperState extends ConsumerState<_LifecycleWrapper>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // 🔥 Solució: refrescar permisos quan tornem a l’app
+      ref.read(permissionsProvider.notifier).checkPermissions();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }

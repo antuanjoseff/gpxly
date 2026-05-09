@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:senda/notifiers/timer_notifier.dart';
 import 'package:senda/notifiers/track_notifier.dart';
 import 'package:senda/notifiers/waypoints_recorded_notifier.dart';
@@ -26,25 +27,19 @@ class RecordingHandler {
 
       final recuperar = await AppMessages.showRecoverTrackDialog(context);
       if (recuperar == true) {
-        if (hasTrackCache) {
-          await track.loadFromCache();
-          // 🔥 Recuperem la durada guardada al timerProvider
-          final cachedDuration = ref.read(trackProvider).duration;
-          ref.read(timerProvider.notifier).setInitialValue(cachedDuration);
-        }
+        // (Lògica de recuperació de cache igual...)
+        if (hasTrackCache) await track.loadFromCache();
+        if (hasWpCache) wpNotifier.restoreFromPrefs();
 
-        if (hasWpCache) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            wpNotifier.restoreFromPrefs();
-          });
-        }
+        // Abans de continuar, verifiquem permís "Sempre" (per seguretat)
+        final ok = await PermissionsService.ensureBackgroundLocationWithDialog(
+          context,
+        );
+        if (!ok) return;
 
         track.continueRecording();
-
-        // 🔥 Engeguem el cronòmetre des d'on s'havia quedat
         ref.read(timerProvider.notifier).start();
-
-        await ref.read(trackProvider.notifier).ensureGpsStarted();
+        await track.ensureGpsStarted(); // Engega el NativeGpsChannel
 
         HapticFeedback.mediumImpact();
         ref.read(permissionsProvider.notifier).checkPermissions();
@@ -56,47 +51,42 @@ class RecordingHandler {
     }
 
     // ───────────────────────────────────────────────
-    // 2. PERMISOS I GPS
+    // 2. GPS I PERMISOS "ALWAYS" (Sense Geolocator)
     // ───────────────────────────────────────────────
-    final status = await PermissionsService.checkGpsAndPermissions();
 
-    if (status == GpsPermissionStatus.gpsOff) {
+    // A) Comprovar si el xip GPS està encès
+    final serviceStatus = await Permission.location.serviceStatus;
+    if (!serviceStatus.isEnabled) {
       if (!context.mounted) return;
       final go = await AppMessages.showGpsDisabledDialog(context);
       if (go == true) {
-        // 🔥 Marquem l'acció pendent perquè s'iniciï sol al tornar
         ref.read(permissionsProvider.notifier).setPendingAction(true);
-        // Obrim la configuració fent servir el teu servei
-        await PermissionsService.ensureGpsReady(context);
+        // Obrim ajustos de localització del sistema
+        openAppSettings();
       }
       return;
     }
 
-    if (status == GpsPermissionStatus.permissionDenied) {
-      if (!context.mounted) return;
-
-      final continuar = await AppMessages.showPermissionExplanation(context);
-      if (continuar != true) return;
-
-      final ok = await PermissionsService.ensurePermissions(context);
-      if (!context.mounted || !ok) return;
-
-      // ⚠️ ELIMINAT EL 'return': Ara el codi segueix avall
-      // i inicia la gravació sola un cop acceptats els permisos.
-    }
+    // B) Diàleg explicatiu + Permís "Sempre"
+    final ok = await PermissionsService.ensureBackgroundLocationWithDialog(
+      context,
+    );
+    if (!ok) return;
 
     // ───────────────────────────────────────────────
     // 3. INICIAR GRAVACIÓ NETA
     // ───────────────────────────────────────────────
     HapticFeedback.mediumImpact();
 
-    // 🔥 Netegem i engeguem el cronòmetre independent
+    // Reset i inici del cronòmetre
     ref.read(timerProvider.notifier).reset();
     ref.read(timerProvider.notifier).start();
 
+    // Iniciem gravació i engeguem el NativeGpsChannel
     await track.startRecording(context);
-    await ref.read(trackProvider.notifier).ensureGpsStarted();
+    await track.ensureGpsStarted();
 
+    // Actualitzem l'estat visual dels permisos al Notifier
     ref.read(permissionsProvider.notifier).checkPermissions();
   }
 

@@ -7,6 +7,7 @@ import 'package:senda/notifiers/helpers/thresholds.dart';
 import 'package:senda/notifiers/imported_track_notifier.dart';
 import 'package:senda/notifiers/track_follow_notifier.dart';
 import 'package:senda/notifiers/waypoints_imported_notifier.dart';
+import 'package:senda/services/permissions_service.dart';
 import 'package:senda/theme/app_colors.dart';
 import 'package:senda/ui/app_messages.dart';
 import 'package:senda/ui/bottom_bar/pressable_scale.dart';
@@ -145,6 +146,12 @@ class BottomBarButtons extends ConsumerWidget {
                 icon: Icons.navigation_rounded,
                 color: AppColors.deepGreen,
                 onTap: () async {
+                  // Mateixa seguretat per al seguiment
+                  final ok =
+                      await PermissionsService.ensureBackgroundLocationWithDialog(
+                        context,
+                      );
+                  if (!ok) return;
                   final gps = ref.read(gpsSettingsProvider);
 
                   // 1. Comprovem si el GPS ja està configurat amb la precisió necessària

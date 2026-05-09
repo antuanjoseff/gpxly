@@ -142,6 +142,9 @@
 
 "gpsOptimizationTitle": "Optimización GPS",
 "gpsOptimizationMessage": "Para un seguimiento preciso, activaremos el modo de alta fidelidad. Esto puede aumentar el consumo de batería.",
-"confirm": "CONFIRMAR"
+"confirm": "CONFIRMAR",
  
+"notificationPermissionTitle": "Notificaciones de seguimiento",
+"notificationPermissionMessage": "Senda necesita mostrar una notificación mientras grabas la ruta. Esto evita que el sistema detenga la aplicación para ahorrar batería y garantiza que no pierdas tu track.",
+"understood": "ENTENDIDO"
 }

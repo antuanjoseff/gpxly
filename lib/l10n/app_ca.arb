@@ -143,5 +143,9 @@
 
 "gpsOptimizationTitle": "Optimització GPS",
 "gpsOptimizationMessage": "Per a un seguiment precís, cal activar el mode d'alta fidelitat. Això pot augmentar el consum de bateria.",
-"confirm": "CONFIRMAR"
+"confirm": "CONFIRMAR",
+
+"notificationPermissionTitle": "Notificacions de seguiment",
+"notificationPermissionMessage": "Senda necessita mostrar una notificació mentre graves la ruta. Això evita que el sistema aturi l'aplicació per estalviar bateria i garanteix que no perdis el teu track.",
+"understood": "ENTESOS"
 }

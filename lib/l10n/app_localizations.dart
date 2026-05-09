@@ -792,6 +792,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'CONFIRM'**
   String get confirm;
+
+  /// No description provided for @notificationPermissionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tracking Notifications'**
+  String get notificationPermissionTitle;
+
+  /// No description provided for @notificationPermissionMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Senda needs to show a notification while recording your route. This prevents the system from stopping the app to save battery and ensures you don\'t lose your track.'**
+  String get notificationPermissionMessage;
+
+  /// No description provided for @understood.
+  ///
+  /// In en, this message translates to:
+  /// **'UNDERSTOOD'**
+  String get understood;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

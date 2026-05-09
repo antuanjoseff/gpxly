@@ -142,5 +142,9 @@
 
 "gpsOptimizationTitle": "GPS Optimization",
 "gpsOptimizationMessage": "For precise tracking, high-fidelity mode will be activated. This may increase battery consumption.",
-"confirm": "CONFIRM"
+"confirm": "CONFIRM",
+
+"notificationPermissionTitle": "Tracking Notifications",
+"notificationPermissionMessage": "Senda needs to show a notification while recording your route. This prevents the system from stopping the app to save battery and ensures you don't lose your track.",
+"understood": "UNDERSTOOD"
 }
