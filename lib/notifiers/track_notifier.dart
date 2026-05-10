@@ -32,6 +32,7 @@ class TrackNotifier extends Notifier<Track> {
       coordinates: [],
       distances: [],
       altitudes: [],
+      isHgtFixed: [],
       timestamps: [],
       accuracies: [],
       speeds: [],
@@ -97,17 +98,15 @@ class TrackNotifier extends Notifier<Track> {
     final vAccuracy = data["vAccuracy"] as double;
     final satellites = data["satellites"] as int? ?? 0;
 
-    // 🔥 CORRECCIÓ HGT: Obtenim l'alçada real del mapa DEM
-    // Si el fitxer no existeix, el mètode ens retornarà rawAltitude automàticament
-    // final correctedAltitude = await _hgtService.getCorrectedElevation(
-    //   lat,
-    //   lon,
-    //   altitude,
-    // );
-    // 1. Actualitzacions immediates de la interfície (Canals ràpids)
+    final (correctedAlt, isFixed) = await HgtService().getCorrectedElevation(
+      lat,
+      lon,
+      altitude,
+    );
+
     ref.read(gpsBearingProvider.notifier).update(heading);
     ref.read(gpsAccuracyProvider.notifier).update(accuracy);
-    ref.read(gpsAltitudeProvider.notifier).update(altitude);
+    ref.read(gpsAltitudeProvider.notifier).update(correctedAlt);
 
     // 2. Actualitzar l'estat del Track (Punt blau i rumb al mapa)
     state = state.copyWith(
@@ -128,7 +127,8 @@ class TrackNotifier extends Notifier<Track> {
         lat: lat,
         lon: lon,
         accuracy: accuracy,
-        altitude: altitude,
+        altitude: correctedAlt,
+        isHgtFixed: isFixed,
         speed: speed,
         heading: heading,
         timestamp: timestamp,
@@ -143,6 +143,7 @@ class TrackNotifier extends Notifier<Track> {
     required double lon,
     required double accuracy,
     required double altitude,
+    required bool isHgtFixed,
     required double speed,
     required double heading,
     required DateTime timestamp,
@@ -202,6 +203,7 @@ class TrackNotifier extends Notifier<Track> {
         [lon, lat],
       ],
       altitudes: [...state.altitudes, altitude],
+      isHgtFixed: [...state.isHgtFixed, isHgtFixed],
       distances: newDistancesList,
       timestamps: [...state.timestamps, timestamp],
       accuracies: [...state.accuracies, accuracy],
@@ -230,6 +232,7 @@ class TrackNotifier extends Notifier<Track> {
         'coordinates': state.coordinates,
         'distances': state.distances,
         'altitudes': state.altitudes,
+        'isHgtFixed': state.isHgtFixed,
         'timestamps': state.timestamps.map((t) => t.toIso8601String()).toList(),
         'accuracies': state.accuracies,
         'speeds': state.speeds,
@@ -253,34 +256,40 @@ class TrackNotifier extends Notifier<Track> {
       final prefs = await SharedPreferences.getInstance();
       final String? rawData = prefs.getString('temp_track_data');
       if (rawData == null) return;
-      print('>>> {rawData}');
       final Map<String, dynamic> data = jsonDecode(rawData);
+
+      // Llegim les altituds primer per saber la longitud
+      final List<double> alts = List<double>.from(data['altitudes'] ?? []);
 
       state = Track(
         coordinates: (data['coordinates'] as List)
             .map((e) => List<double>.from(e))
             .toList(),
         distances: List<double>.from(data['distances'] ?? []),
-        altitudes: List<double>.from(data['altitudes']),
+        altitudes: alts,
+        // 🔥 Novetat: si no hi és al JSON, creem una llista de 'false'
+        isHgtFixed: data['isHgtFixed'] != null
+            ? List<bool>.from(data['isHgtFixed'])
+            : List.filled(alts.length, false),
         timestamps: (data['timestamps'] as List)
             .map((e) => DateTime.parse(e))
             .toList(),
-        accuracies: List<double>.from(data['accuracies']),
-        speeds: List<double>.from(data['speeds']),
-        headings: List<double>.from(data['headings']),
-        satellites: List<int>.from(data['satellites']),
-        vAccuracies: List<double>.from(data['vAccuracies']),
+        accuracies: List<double>.from(data['accuracies'] ?? []),
+        speeds: List<double>.from(data['speeds'] ?? []),
+        headings: List<double>.from(data['headings'] ?? []),
+        satellites: List<int>.from(data['satellites'] ?? []),
+        vAccuracies: List<double>.from(data['vAccuracies'] ?? []),
         recordingState: RecordingState.values[data['recordingState'] ?? 0],
         duration: Duration(seconds: data['duration'] ?? 0),
         distance: data['distance'] ?? 0.0,
         ascent: data['ascent'] ?? 0.0,
         descent: data['descent'] ?? 0.0,
-        maxElevation: (data['altitudes'] as List).cast<double>().reduce(
-          (a, b) => a > b ? a : b,
-        ),
-        minElevation: (data['altitudes'] as List).cast<double>().reduce(
-          (a, b) => a < b ? a : b,
-        ),
+        maxElevation: alts.isEmpty
+            ? -9999.0
+            : alts.reduce((a, b) => a > b ? a : b),
+        minElevation: alts.isEmpty
+            ? 9999.0
+            : alts.reduce((a, b) => a < b ? a : b),
       );
     } catch (e) {
       debugPrint("Error carregant el cache: $e");
@@ -342,6 +351,7 @@ class TrackNotifier extends Notifier<Track> {
       coordinates: [],
       distances: [],
       altitudes: [],
+      isHgtFixed: [], // 🔥 Inicialitzat buit
       timestamps: [],
       accuracies: [],
       speeds: [],
@@ -356,7 +366,6 @@ class TrackNotifier extends Notifier<Track> {
       maxElevation: -9999.0,
       minElevation: 9999.0,
     );
-
     clearCache();
   }
 }

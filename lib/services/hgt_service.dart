@@ -5,141 +5,132 @@ import 'package:http/http.dart' as http;
 import 'package:archive/archive.dart';
 
 class HgtService {
-  static const int srtm1Size = 3601; // Resolució 30m (SRTM-1)
+  // singleton clàssic: instància única i persistent
+  static final HgtService _instance = HgtService._internal();
+  factory HgtService() => _instance;
+  HgtService._internal();
+
+  static const int srtm1Size = 3601;
+  final Set<String> _downloadingFiles = {};
 
   File? _currentFile;
   String? _currentFileName;
   RandomAccessFile? _openedFile;
-  final Set<String> _downloadingFiles = {};
 
-  /// Retorna l'altitud corregida o la del GPS si no hi ha dades
-  Future<double> getCorrectedElevation(
+  /// Retorna l'altitud corregida (si el fitxer existeix) o la del GPS (si no hi és).
+  /// Si el fitxer no existeix, inicia la descàrrega en segon pla sense bloquejar.
+  /// Retorna una parella de valors: (Alçada, EstàCorregida)
+  /// Si el fitxer existeix, retorna (AlçadaHGT, true)
+  /// Si no existeix, retorna (AlçadaGPS, false)
+  // hgt_service.dart
+
+  Future<(double, bool)> getCorrectedElevation(
     double lat,
     double lon,
     double gpsAlt,
   ) async {
     final fileName = _getHgtFileName(lat, lon);
 
+    // 1. Memòria ràpida (fitxer obert)
+    if (_currentFileName == fileName && _openedFile != null) {
+      final alt = await _readFromOpenedFile(lat, lon, gpsAlt);
+      return (alt, true);
+    }
+
+    // 2. BLOQUEIG IMMEDIAT (Síncron)
+    if (_downloadingFiles.contains(fileName)) {
+      return (gpsAlt, false);
+    }
+
+    // Comprovem si el fitxer ja existeix al disc
+    final dir = await getApplicationDocumentsDirectory();
+    final file = File('${dir.path}/dem/$fileName');
+
+    if (await file.exists() && await file.length() > 2500000) {
+      // Si existeix, no fem res aquí, s'obrirà a la següent crida del GPS
+      return (gpsAlt, false);
+    }
+
+    // Si no el tenim, bloquegem i demanem
+    _downloadingFiles.add(fileName); // Marquem com a "en curs"
+    _ensureHgtFileInBackground(fileName);
+
+    return (gpsAlt, false);
+  }
+
+  // --- LÒGICA DE LECTURA ---
+  Future<double> _readFromOpenedFile(
+    double lat,
+    double lon,
+    double gpsAlt,
+  ) async {
     try {
-      if (_currentFileName != fileName) {
-        await _closeCurrentFile();
-        final file = await _ensureHgtFile(fileName);
-        if (file != null) {
-          _currentFile = file;
-          _currentFileName = fileName;
-          _openedFile = await file.open(mode: FileMode.read);
-        }
-      }
-
-      if (_openedFile == null) return gpsAlt;
-
       double fLat = lat - lat.floor();
       double fLon = lon - lon.floor();
-
       int row = (srtm1Size - 1) - (fLat * (srtm1Size - 1)).round();
       int col = (fLon * (srtm1Size - 1)).round();
       int offset = (row * srtm1Size + col) * 2;
 
       await _openedFile!.setPosition(offset);
       final bytes = await _openedFile!.read(2);
-
       if (bytes.length < 2) return gpsAlt;
 
       final data = ByteData.sublistView(bytes);
       int elevation = data.getInt16(0, Endian.big);
-
-      if (elevation == -32768) return gpsAlt;
-
-      return elevation.toDouble();
-    } catch (e) {
-      print("[SENDA-HGT] Error llegint alçada: $e");
+      return (elevation == -32768) ? gpsAlt : elevation.toDouble();
+    } catch (_) {
       return gpsAlt;
     }
   }
 
-  String _getHgtFileName(double lat, double lon) {
-    int latInt = lat.floor();
-    int lonInt = lon.floor();
-    String latPart =
-        "${latInt >= 0 ? 'N' : 'S'}${latInt.abs().toString().padLeft(2, '0')}";
-    String lonPart =
-        "${lonInt >= 0 ? 'E' : 'W'}${lonInt.abs().toString().padLeft(3, '0')}";
-    return "$latPart$lonPart.hgt";
-  }
+  // --- LÒGICA DE DESCÀRREGA (EN SEGON PLA) ---
+  Future<void> _ensureHgtFileInBackground(String fileName) async {
+    if (_downloadingFiles.contains(fileName)) return;
 
-  /// Gestiona la cau (cache) i descàrrega des d'OpenTopography (SDSC S3)
-  /// Gestiona la cau (cache) i descàrrega des d'OpenTopography (SDSC S3)
-  Future<File?> _ensureHgtFile(String fileName) async {
     final dir = await getApplicationDocumentsDirectory();
     final hgtDir = Directory('${dir.path}/dem');
     if (!await hgtDir.exists()) await hgtDir.create(recursive: true);
-
     final file = File('${hgtDir.path}/$fileName');
-
-    // 1. COMPROVACIÓ D'EXISTÈNCIA (Més conservadora)
-    if (await file.exists()) {
-      int size = await file.length();
-      // SRTM1 (30m) ocupa ~25MB, SRTM3 (90m) ocupa ~2.8MB.
-      // Posem 2.5MB com a mínim per acceptar qualsevol dels dos formats.
-      if (size > 2500000) {
-        return file;
-      }
-      // Si el fitxer és massa petit (corrupte o error d'API anterior), l'esborrem per reintentar
-      await file.delete();
-    }
-
-    // 2. EVITAR PETICIONS SIMULTÀNIES PER LA MATEIXA RAJOLA
-    if (_downloadingFiles.contains(fileName)) {
-      print("[SENDA-HGT] ⏳ Ja hi ha una descàrrega en curs per: $fileName");
-      return null;
-    }
 
     _downloadingFiles.add(fileName);
 
     try {
-      // Calculem els límits del quadrat segons el nom del fitxer (ex: N41E002)
+      // 1. EXTRACCIÓ CORRECTA (N41E002)
+      // fileName.substring(4, 7) per a "002"
       int latS =
           int.parse(fileName.substring(1, 3)) *
           (fileName.startsWith('N') ? 1 : -1);
       int lonW =
           int.parse(fileName.substring(4, 7)) *
-          (fileName.startsWith('E') ? 1 : -1);
+          (fileName.substring(3, 4) == 'E' ? 1 : -1);
 
-      final String apiKey = "1890b659ee4a822b2f9fceff967e9221";
-      // ⚠️ IMPORTANT: L'endpoint ha de ser /API/globaldem
-      final url =
-          "https://opentopography.org"
+      // 2. URL CORRECTA (Afegim /api/globaldem i paràmetres nets)
+      final urlString =
+          "https://portal.opentopography.org/API/globaldem"
           "?demtype=SRTMGL1"
           "&south=$latS"
           "&north=${latS + 1}"
           "&west=$lonW"
           "&east=${lonW + 1}"
           "&outputFormat=HGT"
-          "&API_Key=$apiKey";
+          "&API_Key=1890b659ee4a822b2f9fceff967e9221";
 
-      print("[SENDA-HGT] 🌐 Iniciant descàrrega API: $fileName");
+      print("[SENDA-HGT] 🌐 Petició REAL a: $urlString");
 
       final response = await http
-          .get(Uri.parse(url))
+          .get(Uri.parse(urlString))
           .timeout(const Duration(seconds: 45));
 
       if (response.statusCode == 200) {
+        // Si l'API respon OK, processem el ZIP
         final archive = ZipDecoder().decodeBytes(response.bodyBytes);
-
         for (final fileInZip in archive) {
           if (fileInZip.name.toLowerCase().endsWith('.hgt')) {
-            // 3. ESCRIPTURA SEGURA (Atòmica)
-            // Escrivim primer a un fitxer temporal i després el reanomenem.
-            // Així evitem que el següent 'get' llegeixi un fitxer incomplet.
             final tempFile = File('${file.path}.tmp');
             await tempFile.writeAsBytes(fileInZip.content as List<int>);
             await tempFile.rename(file.path);
-
-            print(
-              "[SENDA-HGT] ✅ GUARDAT I COMPLET: $fileName (${file.lengthSync()} bytes)",
-            );
-            await _cleanupOldFiles(hgtDir);
-            return file;
+            print("[SENDA-HGT] ✅ FITXER LLERT: $fileName");
+            return;
           }
         }
       } else {
@@ -148,39 +139,24 @@ class HgtService {
         );
       }
     } catch (e) {
-      print("[SENDA-HGT] ❌ Error en petició API: $e");
+      print("[SENDA-HGT] ❌ Error xarxa: $e");
     } finally {
-      // 4. ALLIBEREM EL BLOQUEIG SEMPRE
       _downloadingFiles.remove(fileName);
     }
+  }
+
+  // --- AUXILIARS ---
+  Future<File?> _getExistingFile(String fileName) async {
+    final dir = await getApplicationDocumentsDirectory();
+    final file = File('${dir.path}/dem/$fileName');
+    if (await file.exists() && await file.length() > 2500000) return file;
     return null;
   }
 
-  Future<void> _cleanupOldFiles(Directory hgtDir) async {
-    try {
-      List<FileSystemEntity> files = hgtDir
-          .listSync()
-          .where((f) => f.path.endsWith('.hgt'))
-          .toList();
-
-      if (files.length <= 3) return;
-
-      files.sort(
-        (a, b) => a.statSync().modified.compareTo(b.statSync().modified),
-      );
-
-      int toDelete = files.length - 3;
-      for (int i = 0; i < toDelete; i++) {
-        if (!files[i].path.contains(_currentFileName ?? "")) {
-          print(
-            "[SENDA-HGT] 🗑️ Alliberant espai: ${files[i].path.split('/').last}",
-          );
-          await files[i].delete();
-        }
-      }
-    } catch (e) {
-      print("[SENDA-HGT] Error en la neteja: $e");
-    }
+  String _getHgtFileName(double lat, double lon) {
+    int latInt = lat.floor();
+    int lonInt = lon.floor();
+    return "${latInt >= 0 ? 'N' : 'S'}${latInt.abs().toString().padLeft(2, '0')}${lonInt >= 0 ? 'E' : 'W'}${lonInt.abs().toString().padLeft(3, '0')}.hgt";
   }
 
   Future<void> _closeCurrentFile() async {
@@ -189,7 +165,5 @@ class HgtService {
     _currentFileName = null;
   }
 
-  Future<void> dispose() async {
-    await _closeCurrentFile();
-  }
+  Future<void> dispose() async => await _closeCurrentFile();
 }

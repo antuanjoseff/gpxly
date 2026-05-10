@@ -84,6 +84,7 @@ class GpxImportService {
       coordinates: coords,
       distances: distancesList,
       altitudes: alts,
+      isHgtFixed: [],
       timestamps: times,
       accuracies: [],
       speeds: [],

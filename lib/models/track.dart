@@ -10,6 +10,7 @@ class Track {
   final List<List<double>> coordinates;
   final List<double> distances;
   final List<double> altitudes;
+  final List<bool> isHgtFixed;
   final List<DateTime> timestamps;
   final List<double> accuracies;
 
@@ -41,6 +42,7 @@ class Track {
   Track({
     required this.coordinates,
     required this.altitudes,
+    required this.isHgtFixed,
     required this.timestamps,
     required this.accuracies,
     this.distances = const [],
@@ -69,6 +71,7 @@ class Track {
     List<List<double>>? coordinates,
     List<double>? distances,
     List<double>? altitudes,
+    List<bool>? isHgtFixed,
     List<DateTime>? timestamps,
     List<double>? accuracies,
     List<double>? speeds,
@@ -95,6 +98,7 @@ class Track {
       coordinates: coordinates ?? this.coordinates,
       distances: distances ?? this.distances,
       altitudes: altitudes ?? this.altitudes,
+      isHgtFixed: isHgtFixed ?? this.isHgtFixed,
       timestamps: timestamps ?? this.timestamps,
       accuracies: accuracies ?? this.accuracies,
       speeds: speeds ?? this.speeds,

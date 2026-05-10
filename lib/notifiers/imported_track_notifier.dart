@@ -24,6 +24,7 @@ class ImportedTrackNotifier extends Notifier<Track?> {
       coordinates: t.coordinates.reversed.toList(),
       distances: t.distances.reversed.toList(),
       altitudes: t.altitudes.reversed.toList(),
+      isHgtFixed: t.isHgtFixed.reversed.toList(),
       timestamps: t.timestamps.reversed.toList(),
       accuracies: t.accuracies.reversed.toList(),
       speeds: t.speeds.reversed.toList(),
