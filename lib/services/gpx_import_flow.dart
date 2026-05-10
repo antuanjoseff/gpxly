@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:senda/l10n/app_localizations.dart';
 import 'package:senda/notifiers/track_notifier.dart';
 import 'package:senda/services/gpx_import_service.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
@@ -15,7 +16,8 @@ Future<void> pickGpxAndImport({
   required WidgetRef ref,
   required MapLibreMapController? mapController,
 }) async {
-  // 1) Obrir selector de fitxers
+  final t = AppLocalizations.of(context)!;
+
   final result = await FilePicker.pickFiles(
     type: FileType.custom,
     allowedExtensions: ['gpx'],
@@ -26,53 +28,45 @@ Future<void> pickGpxAndImport({
   final path = result.files.single.path;
   if (path == null) return;
 
-  // ───────────────────────────────────────────────
-  // VALIDACIÓ DEL FITXER
-  // ───────────────────────────────────────────────
-
   // 1) Validar extensió
   if (!path.toLowerCase().endsWith(".gpx")) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("El fitxer seleccionat no és un GPX")),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(t.gpxErrorInvalidExtension)));
     return;
   }
 
-  // 2) Llegir contingut com a text
+  // 2) Llegir contingut
   String xml;
   try {
     xml = await File(path).readAsString();
   } catch (_) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("No s'ha pogut llegir el fitxer GPX")),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(t.gpxErrorRead)));
     return;
   }
 
-  // 3) Validar que és XML
+  // 3) Validar XML
   if (!xml.trim().startsWith("<")) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("El fitxer no sembla un XML GPX vàlid")),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(t.gpxErrorInvalidXml)));
     return;
   }
 
-  // 4) Validar que conté etiqueta GPX
+  // 4) Validar etiqueta GPX
   if (!xml.contains("<gpx")) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("El fitxer no conté dades GPX")),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(t.gpxErrorNoGpxTag)));
     return;
   }
 
-  // ───────────────────────────────────────────────
-  // 3) Importar GPX (servei existent)
-  // ───────────────────────────────────────────────
+  // Importar GPX
   await GpxImportService.importGpx(ref, xml);
 
-  // ───────────────────────────────────────────────
-  // 4) Centrar el mapa al track importat
-  // ───────────────────────────────────────────────
+  // Centrar mapa...
   final track = ref.read(trackProvider);
   if (track.coordinates.isEmpty || mapController == null) return;
 

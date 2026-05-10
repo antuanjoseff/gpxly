@@ -46,6 +46,7 @@ dependencies:
   flutter_foreground_task:
   cupertino_icons:
   intl: any
+  archive:
   flutter_localizations:
     sdk: flutter
 

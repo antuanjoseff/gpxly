@@ -51,6 +51,8 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
 
   bool _hasEverBeenOnTrack = false;
   bool _hasEverBeenOffTrack = false;
+  DateTime? _offTrackFirstAlertTime;
+  double? _offTrackFirstAlertDistance;
 
   bool _reverseDetectionLocked = false;
   bool _reverseDialogShown = false;
@@ -357,7 +359,7 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
           _offTrackDismissed = false;
 
           if (_hasEverBeenOnTrack) {
-            onUserDriftingAway();
+            onUserDriftingAway(dist);
           }
         }
 
@@ -372,6 +374,27 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
         newMode = FollowMode.onTrack;
         _isCurrentlyOffTrack = false;
         newIsOffTrack = false;
+      }
+      // --- SEGON AVÍS OFFTRACK AL CAP D'1 MINUT I SI ESTÀ MÉS LLUNY ---
+      if (_isCurrentlyOffTrack &&
+          _offTrackFirstAlertTime != null &&
+          _offTrackFirstAlertDistance != null) {
+        final elapsed = DateTime.now().difference(_offTrackFirstAlertTime!);
+
+        final bool oneMinutePassed = elapsed > const Duration(minutes: 1);
+        final bool isFurtherAway =
+            dist > _offTrackFirstAlertDistance! + 3; // +3m marge soroll GPS
+
+        if (oneMinutePassed && isFurtherAway) {
+          // Evitem més repeticions fins que torni a ONTRACK
+          _offTrackFirstAlertTime = null;
+          _offTrackFirstAlertDistance = null;
+
+          HapticFeedback.heavyImpact();
+          sounds.playOffTrackSound();
+
+          state = state.copyWith(showOffTrackSnackbar: true);
+        }
       }
     }
 
@@ -388,7 +411,7 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
   // ------------------------------------------------------------
   // Off-track alerts
   // ------------------------------------------------------------
-  void onUserDriftingAway() {
+  void onUserDriftingAway(double dist) {
     if (_offTrackDismissed) return;
 
     if (offtrackLogic.canSendOffTrackAlert(
@@ -399,6 +422,10 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
     )) {
       _lastOffTrackAlert = DateTime.now();
       offTrackAlertsSent++;
+      if (_offTrackFirstAlertTime == null) {
+        _offTrackFirstAlertTime = DateTime.now();
+        _offTrackFirstAlertDistance = dist;
+      }
 
       HapticFeedback.heavyImpact();
       sounds.playOffTrackSound();
@@ -413,25 +440,13 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
   void onUserBackOnTrack() {
     _offTrackDismissed = false;
     offTrackAlertsSent = 0;
+    _offTrackFirstAlertTime = null;
+    _offTrackFirstAlertDistance = null;
+
     HapticFeedback.lightImpact();
     sounds.playBackOnTrackSound();
 
     state = state.copyWith(showBackOnTrackSnackbar: true);
-  }
-
-  // ------------------------------------------------------------
-  // Reverse dialog
-  // ------------------------------------------------------------
-  void _askUserToReverseTrack() {
-    // Si ya se está mostrando el diálogo O si el usuario ya lo bloqueó
-    // en esta sesión (locked), no hacemos NADA.
-    if (_reverseDialogShown || _reverseDetectionLocked) return;
-
-    _reverseDialogShown = true;
-    _reverseDetectionLocked =
-        true; // Bloqueamos nuevas detecciones inmediatamente
-
-    state = state.copyWith(showReverseTrackDialog: true);
   }
 
   // ------------------------------------------------------------

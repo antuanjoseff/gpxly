@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/notifiers/helpers/thresholds.dart';
 import 'package:senda/services/native_gps_channel.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:async';
 
 class GpsSettings {
   final bool useTime;
@@ -35,8 +36,13 @@ class GpsSettingsNotifier extends Notifier<GpsSettings> {
   static const int minSeconds = 1;
   static const double minMeters = 1.0;
 
+  // 🎯 El "pany" per saber quan hem acabat de llegir del disc
+  final Completer<void> _initialized = Completer<void>();
+  Future<void> get initialized => _initialized.future;
+
   @override
   GpsSettings build() {
+    // Valors "falsos" temporals mentre carreguem
     final initial = GpsSettings(
       useTime: true,
       seconds: 5,
@@ -44,8 +50,16 @@ class GpsSettingsNotifier extends Notifier<GpsSettings> {
       accuracy: 30,
     );
 
-    _loadFromPrefs();
+    // Iniciem la càrrega asíncrona
+    _init();
+
     return initial;
+  }
+
+  Future<void> _init() async {
+    await _loadFromPrefs();
+    // Marquem com a llest perquè el TrackNotifier pugui avançar
+    if (!_initialized.isCompleted) _initialized.complete();
   }
 
   // -----------------------------
@@ -65,14 +79,17 @@ class GpsSettingsNotifier extends Notifier<GpsSettings> {
       meters: meters ?? state.meters,
       accuracy: accuracy ?? state.accuracy,
     );
+
+    print(
+      "[SENDA-GPS] Preferències carregades: ${state.seconds}s / ${state.meters}m",
+    );
   }
 
   // -----------------------------
-  // SAVE (només guarda, NO envia al nadiu)
+  // SAVE
   // -----------------------------
   Future<void> _saveToPrefs() async {
     final prefs = await SharedPreferences.getInstance();
-
     await prefs.setBool('gps_useTime', state.useTime);
     await prefs.setInt('gps_seconds', state.seconds);
     await prefs.setDouble('gps_meters', state.meters);
@@ -80,14 +97,12 @@ class GpsSettingsNotifier extends Notifier<GpsSettings> {
   }
 
   // -----------------------------
-  // UPDATE METHODS (només estat + prefs)
+  // UPDATE METHODS
   // -----------------------------
   void setUseTime(bool value) {
-    if (value) {
-      state = state.copyWith(useTime: true, meters: minMeters);
-    } else {
-      state = state.copyWith(useTime: false, seconds: minSeconds);
-    }
+    state = value
+        ? state.copyWith(useTime: true, meters: minMeters)
+        : state.copyWith(useTime: false, seconds: minSeconds);
     _saveToPrefs();
   }
 
@@ -107,11 +122,12 @@ class GpsSettingsNotifier extends Notifier<GpsSettings> {
   }
 
   // -----------------------------
-  // APPLY (l’únic que envia al nadiu)
+  // APPLY
   // -----------------------------
   Future<void> apply() async {
     await _saveToPrefs();
 
+    print("[SENDA-GPS] Aplicant al nadiu: ${state.seconds}s, ${state.meters}m");
     await NativeGpsChannel.start(
       useTime: state.useTime,
       seconds: state.seconds,
@@ -120,7 +136,6 @@ class GpsSettingsNotifier extends Notifier<GpsSettings> {
     );
   }
 
-  // En GpsSettingsNotifier
   Future<void> setNavigationMode() async {
     state = state.copyWith(
       useTime: true,
@@ -128,15 +143,12 @@ class GpsSettingsNotifier extends Notifier<GpsSettings> {
       meters: TrackThresholds.navGpsMeters,
       accuracy: TrackThresholds.navGpsAccuracy,
     );
-
-    // Aplicamos los cambios al canal nativo inmediatamente
     await apply();
   }
 
-  // A GpsSettingsNotifier
   Future<void> restoreDefaultMode() async {
-    await _loadFromPrefs(); // Torna a posar els valors de l'usuari a l'estat
-    await apply(); // Envia aquests valors al canal natiu
+    await _loadFromPrefs();
+    await apply();
   }
 }
 

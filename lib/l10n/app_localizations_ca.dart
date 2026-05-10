@@ -364,4 +364,16 @@ class AppLocalizationsCa extends AppLocalizations {
 
   @override
   String get understood => 'ENTESOS';
+
+  @override
+  String get gpxErrorInvalidExtension => 'El fitxer seleccionat no és un GPX';
+
+  @override
+  String get gpxErrorRead => 'No s\'ha pogut llegir el fitxer GPX';
+
+  @override
+  String get gpxErrorInvalidXml => 'El fitxer no sembla un XML GPX vàlid';
+
+  @override
+  String get gpxErrorNoGpxTag => 'El fitxer no conté dades GPX';
 }

@@ -147,5 +147,11 @@
 
 "notificationPermissionTitle": "Notificacions de seguiment",
 "notificationPermissionMessage": "Senda necessita mostrar una notificació mentre graves la ruta. Això evita que el sistema aturi l'aplicació per estalviar bateria i garanteix que no perdis el teu track.",
-"understood": "ENTESOS"
+"understood": "ENTESOS",
+
+"gpxErrorInvalidExtension": "El fitxer seleccionat no és un GPX",
+"gpxErrorRead": "No s'ha pogut llegir el fitxer GPX",
+"gpxErrorInvalidXml": "El fitxer no sembla un XML GPX vàlid",
+"gpxErrorNoGpxTag": "El fitxer no conté dades GPX"
+
 }

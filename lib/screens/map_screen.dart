@@ -678,7 +678,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
           children: [
             RepaintBoundary(
               child: Listener(
-                onPointerMove: (PointerMoveEvent event) {
+                onPointerDown: (PointerDownEvent event) {
                   if (smartCenterEnabled) {
                     setState(() => smartCenterEnabled = false);
                   }
@@ -705,16 +705,24 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     setState(() => _fullScreen = false);
                   },
                   onCameraIdle: () async {
+                    // Si el moviment l'ha fet l'app (SmartCenter), no cal actualitzar providers de posició
+                    if (isProgrammaticMove) return;
+
                     final pos = await mapController!.cameraPosition;
-                    ref.read(mapZoomProvider.notifier).update(pos!.zoom);
+                    if (pos == null) return;
+
+                    // Només actualitza si realment ha canviat significativament per evitar rebots
+                    final currentZoom = ref.read(mapZoomProvider);
+                    if ((currentZoom - pos.zoom).abs() > 0.1) {
+                      ref.read(mapZoomProvider.notifier).update(pos.zoom);
+                    }
+
+                    // El mateix per la latitud...
                     print(
                       ">>> REAL CAMERA POSITION → ${pos.target} zoom=${pos.zoom}",
                     );
-                    ref.read(mapZoomProvider.notifier).update(pos.zoom);
-                    ref
-                        .read(mapCenterLatProvider.notifier)
-                        .update(pos.target.latitude);
                   },
+
                   onMapCreated: (controller) {
                     mapController = controller;
                     controller.onFeatureTapped.add(_onFeatureTapped);

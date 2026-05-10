@@ -136,7 +136,10 @@ class SettingsScreen extends ConsumerWidget {
                       await _applyAll(ref);
 
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(t.settingsApplied)),
+                        SnackBar(
+                          backgroundColor: AppColors.primary,
+                          content: Text(t.settingsApplied),
+                        ),
                       );
                     }
                   : null,

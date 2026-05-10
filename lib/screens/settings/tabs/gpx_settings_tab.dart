@@ -24,10 +24,7 @@ class GpxSettingsTab extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F7),
-      appBar: AppBar(
-        backgroundColor: AppColors.secondary,
-        title: Text(t.gpxTab),
-      ),
+      appBar: AppBar(backgroundColor: AppColors.primary, title: Text(t.gpxTab)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

@@ -8,6 +8,7 @@ import 'package:senda/notifiers/gps_altitude_notifier.dart';
 import 'package:senda/notifiers/gps_bearing_notifier.dart';
 import 'package:senda/notifiers/gps_settings_notifier.dart';
 import 'package:senda/notifiers/track_follow_notifier.dart';
+import 'package:senda/services/hgt_service.dart';
 import 'package:senda/services/native_gps_channel.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/track.dart';
@@ -18,9 +19,15 @@ class TrackNotifier extends Notifier<Track> {
   StreamSubscription? _gpsSub;
   bool isFollowing = false;
   bool gpsActive = false;
+  // final _hgtService = HgtService();
 
   @override
   Track build() {
+    // ref.onDispose(() {
+    //   _gpsSub?.cancel();
+    //   _hgtService.dispose();
+    // });
+
     return _initialState ??= Track(
       coordinates: [],
       distances: [],
@@ -56,9 +63,17 @@ class TrackNotifier extends Notifier<Track> {
     );
     if (gpsActive) return;
 
+    // 🔥 1. ESPEREM que les preferències s'hagin carregat realment del disc
+    await ref.read(gpsSettingsProvider.notifier).initialized;
+
+    // 2. Ara sí, llegim els paràmetres Reals
     final gpsSettings = ref.read(gpsSettingsProvider);
 
-    print("[SENDA-DEBUG] TrackNotifier: Cridant NativeGpsChannel.start...");
+    print(
+      "[SENDA-DEBUG] TrackNotifier: Cridant NativeGpsChannel.start amb "
+      "S:${gpsSettings.seconds}s / M:${gpsSettings.meters}m...",
+    );
+
     await NativeGpsChannel.start(
       useTime: gpsSettings.useTime,
       seconds: gpsSettings.seconds,
@@ -71,7 +86,7 @@ class TrackNotifier extends Notifier<Track> {
     gpsActive = true;
   }
 
-  void onNativeGpsPoint(Map<String, dynamic> data) {
+  void onNativeGpsPoint(Map<String, dynamic> data) async {
     final lat = data["lat"] as double;
     final lon = data["lon"] as double;
     final accuracy = data["accuracy"] as double;
@@ -82,6 +97,13 @@ class TrackNotifier extends Notifier<Track> {
     final vAccuracy = data["vAccuracy"] as double;
     final satellites = data["satellites"] as int? ?? 0;
 
+    // 🔥 CORRECCIÓ HGT: Obtenim l'alçada real del mapa DEM
+    // Si el fitxer no existeix, el mètode ens retornarà rawAltitude automàticament
+    // final correctedAltitude = await _hgtService.getCorrectedElevation(
+    //   lat,
+    //   lon,
+    //   altitude,
+    // );
     // 1. Actualitzacions immediates de la interfície (Canals ràpids)
     ref.read(gpsBearingProvider.notifier).update(heading);
     ref.read(gpsAccuracyProvider.notifier).update(accuracy);

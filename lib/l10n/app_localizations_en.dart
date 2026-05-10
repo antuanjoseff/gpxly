@@ -364,4 +364,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get understood => 'UNDERSTOOD';
+
+  @override
+  String get gpxErrorInvalidExtension => 'The selected file is not a GPX file';
+
+  @override
+  String get gpxErrorRead => 'The GPX file could not be read';
+
+  @override
+  String get gpxErrorInvalidXml => 'The file does not appear to be valid GPX XML';
+
+  @override
+  String get gpxErrorNoGpxTag => 'The file contains no GPX data';
 }

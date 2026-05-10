@@ -810,6 +810,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'UNDERSTOOD'**
   String get understood;
+
+  /// No description provided for @gpxErrorInvalidExtension.
+  ///
+  /// In en, this message translates to:
+  /// **'The selected file is not a GPX file'**
+  String get gpxErrorInvalidExtension;
+
+  /// No description provided for @gpxErrorRead.
+  ///
+  /// In en, this message translates to:
+  /// **'The GPX file could not be read'**
+  String get gpxErrorRead;
+
+  /// No description provided for @gpxErrorInvalidXml.
+  ///
+  /// In en, this message translates to:
+  /// **'The file does not appear to be valid GPX XML'**
+  String get gpxErrorInvalidXml;
+
+  /// No description provided for @gpxErrorNoGpxTag.
+  ///
+  /// In en, this message translates to:
+  /// **'The file contains no GPX data'**
+  String get gpxErrorNoGpxTag;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
