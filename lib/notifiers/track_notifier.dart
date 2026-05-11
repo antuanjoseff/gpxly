@@ -19,14 +19,14 @@ class TrackNotifier extends Notifier<Track> {
   StreamSubscription? _gpsSub;
   bool isFollowing = false;
   bool gpsActive = false;
-  // final _hgtService = HgtService();
+  final _hgtService = HgtService();
 
   @override
   Track build() {
-    // ref.onDispose(() {
-    //   _gpsSub?.cancel();
-    //   _hgtService.dispose();
-    // });
+    ref.onDispose(() {
+      _gpsSub?.cancel();
+      _hgtService.dispose();
+    });
 
     return _initialState ??= Track(
       coordinates: [],
@@ -98,7 +98,7 @@ class TrackNotifier extends Notifier<Track> {
     final vAccuracy = data["vAccuracy"] as double;
     final satellites = data["satellites"] as int? ?? 0;
 
-    final (correctedAlt, isFixed) = await HgtService().getCorrectedElevation(
+    final (correctedAlt, isFixed) = await _hgtService.getCorrectedElevation(
       lat,
       lon,
       altitude,

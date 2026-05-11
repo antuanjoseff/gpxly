@@ -8,4 +8,6 @@ class TrackThresholds {
   static const int navGpsSeconds = 2; // Frecuencia rápida
   static const double navGpsMeters = 2.0; // Distancia mínima
   static const double navGpsAccuracy = 20.0; // Filtro de precisión
+
+  static const double reverseMinDistance = 30;
 }

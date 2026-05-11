@@ -1,5 +1,7 @@
+import 'package:flutter/material.dart';
 import 'package:senda/notifiers/helpers/closest_result.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
+import 'package:senda/notifiers/helpers/thresholds.dart';
 import 'package:senda/utils/geo_utils.dart';
 
 class ReverseDetector {
@@ -21,7 +23,7 @@ class ReverseDetector {
 
     // 🔥 FILTRE CLAU: Només comprovem si hem recorregut una distància neta raonable.
     // Això evita que salts petits del GPS mentre estàs quiet disparin l'alerta.
-    if (netDistance < 12) return false;
+    if (netDistance < TrackThresholds.reverseMinDistance) return false;
 
     // 4. Calculem el rumb real de la trajectòria (no d'un sol salt)
     final movementBearing = bearingBetween(oldPos, currPos);
