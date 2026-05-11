@@ -9,5 +9,9 @@ class TrackThresholds {
   static const double navGpsMeters = 2.0; // Distancia mínima
   static const double navGpsAccuracy = 20.0; // Filtro de precisión
 
-  static const double reverseMinDistance = 30;
+  static const double reverseMinDistance = 20;
+  static const int minimumReversedPositions = 15;
+
+  static const int minimumDitanceToGoal = 10;
+  static const int minProgressRequired = 100;
 }

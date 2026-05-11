@@ -463,13 +463,13 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
     );
 
     // 2. Umbral de proximitat a la meta (20 metres).
-    final bool isAtGoal = distanceToGoal < 20;
+    final bool isAtGoal = distanceToGoal < TrackThresholds.minimumDitanceToGoal;
 
     // 3. Progrés mínim realitzat sobre el track (100 metres).
     // Evita que el track s'aturi només començar si la sortida i meta estan juntes.
-    const double minProgressRequired = 100.0;
+
     final bool hasMinimumProgress =
-        _distanceProgressOnTrack >= minProgressRequired;
+        _distanceProgressOnTrack >= TrackThresholds.minProgressRequired;
 
     // 4. Validació per segment (estar al darrer 20% del fitxer).
     // Això garanteix que l'usuari ha recorregut la major part del fitxer de coordenades.

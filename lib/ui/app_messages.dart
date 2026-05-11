@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/l10n/app_localizations.dart';
 import 'package:senda/models/waypoint.dart';
-import 'package:senda/notifiers/elevation_progress_notifier.dart';
 import 'package:senda/notifiers/track_follow_notifier.dart';
 import 'package:senda/theme/app_colors.dart';
 
@@ -43,7 +42,7 @@ class AppMessages {
       context: context,
       barrierDismissible: barrierDismissible,
       builder: (context) => AlertDialog(
-        backgroundColor: _surfaceColor,
+        backgroundColor: AppColors.skyBlueDark,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
@@ -60,7 +59,7 @@ class AppMessages {
               child: Text(
                 title,
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: AppColors.offWhite,
                   fontWeight: FontWeight.bold,
                   fontSize: 19,
                 ),
@@ -77,7 +76,7 @@ class AppMessages {
                 Text(
                   message,
                   style: TextStyle(
-                    color: _secondaryText,
+                    color: AppColors.offWhite.withAlpha(220),
                     fontSize: 15,
                     height: 1.4,
                   ),

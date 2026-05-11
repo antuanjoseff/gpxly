@@ -11,6 +11,8 @@ class AppColors {
   static const Color mustardYellow = Color(0xFFc09b81);
   static const Color pureBlack = Color(0xFF000000);
   static const Color redAlert = Color(0xFFFF0000);
+  static const Color skyBlueDark = Color(0xFF1B4F72);
+  static const Color offWhite = Color(0xFFF1F5F9);
 
   // Opcional: paleta temàtica
   static const Color primary = skyBlue;
