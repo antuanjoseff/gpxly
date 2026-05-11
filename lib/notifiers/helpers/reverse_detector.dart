@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:senda/notifiers/helpers/closest_result.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:senda/notifiers/helpers/thresholds.dart';
@@ -7,10 +6,14 @@ import 'package:senda/utils/geo_utils.dart';
 class ReverseDetector {
   bool isReverseDirection(ClosestResult c, List<LatLng> lastUserPositions) {
     // 1. Necessitem un historial mínim per ser fiables (p. ex. 6 punts)
-    if (lastUserPositions.length < 6) return false;
+    if (lastUserPositions.length < TrackThresholds.minimumReversedPositions)
+      return false;
 
     // 2. Agafem un punt de referència més enrere (per exemple, fa 5 posicions)
-    final oldPos = lastUserPositions[lastUserPositions.length - 6];
+    final oldPos =
+        lastUserPositions[lastUserPositions.length -
+            TrackThresholds.minimumReversedPositions];
+
     final currPos = lastUserPositions.last;
 
     // 3. Calculem la distància neta recorreguda en aquest interval
