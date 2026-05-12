@@ -1,4 +1,4 @@
-package com.example.gpxly
+package app.antuanjoseff.senda
 
 import io.flutter.embedding.android.FlutterActivity
 

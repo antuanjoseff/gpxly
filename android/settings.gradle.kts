@@ -24,3 +24,5 @@ plugins {
 }
 
 include(":app")
+include(":gps_plugin")
+project(":gps_plugin").projectDir = File(rootProject.projectDir, "gps_plugin")

@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "gpxly" "\0"
+            VALUE "CompanyName", "app.antuanjoseff" "\0"
+            VALUE "FileDescription", "senda" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "gpxly" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 com.example. All rights reserved." "\0"
-            VALUE "OriginalFilename", "gpxly.exe" "\0"
-            VALUE "ProductName", "gpxly" "\0"
+            VALUE "InternalName", "senda" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 app.antuanjoseff. All rights reserved." "\0"
+            VALUE "OriginalFilename", "senda.exe" "\0"
+            VALUE "ProductName", "senda" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

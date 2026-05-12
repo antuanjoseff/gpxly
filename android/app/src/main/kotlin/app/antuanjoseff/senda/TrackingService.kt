@@ -53,7 +53,7 @@ class TrackingService : Service() {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && gnssStatusCallback != null) {
                 locationManager.registerGnssStatusCallback(gnssStatusCallback, null)
             }
-        } catch (e: SecurityException) { Log.e("GPXLY", "Error permisos GNSS") }
+        } catch (e: SecurityException) { Log.e("SENDA", "Error permisos GNSS") }
 
         callback = object : LocationCallback() {
             override fun onLocationResult(result: LocationResult) {

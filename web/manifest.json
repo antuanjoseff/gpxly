@@ -1,6 +1,6 @@
 {
-    "name": "gpxly",
-    "short_name": "gpxly",
+    "name": "senda",
+    "short_name": "senda",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

@@ -77,7 +77,7 @@ class TrackingPlugin :
         eventChannel = EventChannel(binding.binaryMessenger, "tracking/events")
 
         methodChannel.setMethodCallHandler { call, result ->
-            Log.d("GPXLY", "Method call: ${call.method}")
+            Log.d("SENDA", "Method call: ${call.method}")
 
             when (call.method) {
 
