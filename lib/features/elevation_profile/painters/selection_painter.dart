@@ -5,8 +5,9 @@ class SelectionPainter extends CustomPainter {
   final double? graphX;
   final int? graphIndex;
 
-  // Waypoints
-  final List<int>? waypointIndices;
+  // Waypoints separats per tipus
+  final List<int>? recordedWaypointIndices;
+  final List<int>? importedWaypointIndices;
 
   // Rang
   final double? startX;
@@ -14,19 +15,26 @@ class SelectionPainter extends CustomPainter {
   final double? endX;
   final int? endIndex;
 
-  // Track primari
+  // Track abstracte primari (el triat com a base pel gràfic)
   final List<double> distances;
   final List<double> altitudes;
 
-  // Track secundari
+  // Track abstracte secundari
   final List<double>? secondaryDistances;
   final List<double>? secondaryAltitudes;
 
-  // Colors
+  // Colors de les agulles
   final Color graphNeedleColor;
   final Color sliderStartNeedleColor;
   final Color sliderEndNeedleColor;
   final Color? secondaryGraphNeedleColor;
+
+  // Colors reals per als cercles dels waypoints
+  final Color recordedWaypointColor;
+  final Color importedWaypointColor;
+
+  // Indicador de control per desfer l'ambigüitat de l'ordre opcional
+  final bool primaryIsReal;
 
   static const double bottomReserved = 40.0; // per labels X
   static const double topReserved = 60.0; // espai per tooltips
@@ -44,10 +52,14 @@ class SelectionPainter extends CustomPainter {
     required this.graphNeedleColor,
     required this.sliderStartNeedleColor,
     required this.sliderEndNeedleColor,
+    required this.recordedWaypointColor,
+    required this.importedWaypointColor,
+    required this.primaryIsReal,
     this.secondaryDistances,
     this.secondaryAltitudes,
     this.secondaryGraphNeedleColor,
-    this.waypointIndices,
+    this.recordedWaypointIndices,
+    this.importedWaypointIndices,
   });
 
   @override
@@ -83,20 +95,55 @@ class SelectionPainter extends CustomPainter {
       }
     }
 
-    // --- WAYPOINTS ---
-    if (waypointIndices != null && waypointIndices!.isNotEmpty) {
-      final wpPaint = Paint()
-        ..color = Colors.orangeAccent
+    final double usableWidth = size.width - 48;
+
+    // --- 1. CERCLES DEL TRACK GRAVAT ---
+    if (recordedWaypointIndices != null &&
+        recordedWaypointIndices!.isNotEmpty) {
+      final recWpPaint = Paint()
+        ..color = recordedWaypointColor
         ..style = PaintingStyle.fill;
 
-      for (final idx in waypointIndices!) {
-        if (idx < 0 || idx >= distances.length) continue;
+      // Si primaryIsReal és cert, el gravat està a 'distances'. Si és false, a 'secondaryDistances'.
+      final List<double>? recordedDistsSource = primaryIsReal
+          ? distances
+          : secondaryDistances;
 
-        final double usableWidth = size.width - 48;
-        final double x = (distances[idx] / distances.last) * usableWidth + 24;
+      if (recordedDistsSource != null && recordedDistsSource.isNotEmpty) {
+        for (final idx in recordedWaypointIndices!) {
+          if (idx < 0 || idx >= recordedDistsSource.length) continue;
 
-        // Puntet a la base del gràfic
-        canvas.drawCircle(Offset(x, xAxisY - 4), 4, wpPaint);
+          final double x =
+              (recordedDistsSource[idx] / recordedDistsSource.last) *
+                  usableWidth +
+              24;
+          canvas.drawCircle(Offset(x, xAxisY - 4), 4, recWpPaint);
+        }
+      }
+    }
+
+    // --- 2. CERCLES DEL TRACK IMPORTAT ---
+    if (importedWaypointIndices != null &&
+        importedWaypointIndices!.isNotEmpty) {
+      final impWpPaint = Paint()
+        ..color = importedWaypointColor
+        ..style = PaintingStyle.fill;
+
+      // Si primaryIsReal és cert, l'importat està a 'secondaryDistances'. Si és false, a 'distances'.
+      final List<double>? importedDistsSource = primaryIsReal
+          ? secondaryDistances
+          : distances;
+
+      if (importedDistsSource != null && importedDistsSource.isNotEmpty) {
+        for (final idx in importedWaypointIndices!) {
+          if (idx < 0 || idx >= importedDistsSource.length) continue;
+
+          final double x =
+              (importedDistsSource[idx] / importedDistsSource.last) *
+                  usableWidth +
+              24;
+          canvas.drawCircle(Offset(x, xAxisY - 4), 4, impWpPaint);
+        }
       }
     }
 
@@ -344,11 +391,10 @@ class SelectionPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant SelectionPainter old) {
     return old.graphX != graphX ||
-        old.waypointIndices != waypointIndices ||
-        old.startX != startX ||
-        old.endX != endX ||
         old.graphIndex != graphIndex ||
+        old.startX != startX ||
         old.startIndex != startIndex ||
+        old.endX != endX ||
         old.endIndex != endIndex ||
         old.distances != distances ||
         old.altitudes != altitudes ||
@@ -357,6 +403,11 @@ class SelectionPainter extends CustomPainter {
         old.graphNeedleColor != graphNeedleColor ||
         old.sliderStartNeedleColor != sliderStartNeedleColor ||
         old.sliderEndNeedleColor != sliderEndNeedleColor ||
-        old.secondaryGraphNeedleColor != secondaryGraphNeedleColor;
+        old.secondaryGraphNeedleColor != secondaryGraphNeedleColor ||
+        old.recordedWaypointIndices != recordedWaypointIndices ||
+        old.importedWaypointIndices != importedWaypointIndices ||
+        old.recordedWaypointColor != recordedWaypointColor ||
+        old.importedWaypointColor != importedWaypointColor ||
+        old.primaryIsReal != primaryIsReal;
   }
 }

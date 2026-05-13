@@ -13,6 +13,7 @@ import 'package:senda/notifiers/imported_track_settings_notifier.dart';
 import 'package:senda/notifiers/track_notifier.dart';
 import 'package:senda/notifiers/imported_track_notifier.dart';
 import 'package:senda/notifiers/track_settings_notifier.dart';
+import 'package:senda/notifiers/waypoints_imported_notifier.dart';
 import 'package:senda/notifiers/waypoints_recorded_notifier.dart';
 import 'package:senda/utils/distance_utils.dart';
 import 'package:senda/theme/app_colors.dart';
@@ -211,7 +212,7 @@ class _ElevationProfileScreenState
     Color trackColor,
   ) {
     if (selectedIndexStart == null || selectedIndexEnd == null) {
-      return const SizedBox(height: 50);
+      return const SizedBox(height: 36); // abans 50
     }
 
     final start = selectedIndexStart! < selectedIndexEnd!
@@ -221,13 +222,13 @@ class _ElevationProfileScreenState
         ? selectedIndexEnd!
         : selectedIndexStart!;
 
-    if (end >= alts.length) return const SizedBox(height: 50);
+    if (end >= alts.length) return const SizedBox(height: 36);
 
     final distMetres = dists[end] - dists[start];
 
     double gain = 0;
     for (int i = start; i < end; i++) {
-      double diff = alts[i + 1] - alts[i];
+      final diff = alts[i + 1] - alts[i];
       if (diff > 0) gain += diff;
     }
 
@@ -244,21 +245,21 @@ class _ElevationProfileScreenState
     }
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: trackColor,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: Colors.white10),
       ),
       child: Row(
         children: [
           _tileStat(Icons.straighten, formatDistance(distMetres)),
-          _verticalDivider(),
+          _verticalDividerCompact(),
           _tileStat(Icons.timer, durationStr),
-          _verticalDivider(),
+          _verticalDividerCompact(),
           _tileStat(Icons.speed, speedStr),
-          _verticalDivider(),
+          _verticalDividerCompact(),
           _tileStat(Icons.terrain, "+${gain.toStringAsFixed(0)}m"),
         ],
       ),
@@ -270,20 +271,29 @@ class _ElevationProfileScreenState
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: Colors.white70, size: 18),
-          const SizedBox(height: 4),
+          Icon(icon, color: Colors.white70, size: 15), // abans 18
+          const SizedBox(height: 2), // abans 4
           Text(
             value,
             textAlign: TextAlign.center,
             style: const TextStyle(
               fontFamily: 'monospace',
-              fontWeight: FontWeight.w800,
-              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              fontSize: 11, // abans 12
               color: Colors.white,
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _verticalDividerCompact() {
+    return Container(
+      width: 1,
+      height: 24, // abans 32
+      color: Colors.white24,
+      margin: const EdgeInsets.symmetric(horizontal: 4),
     );
   }
 
@@ -324,69 +334,129 @@ class _ElevationProfileScreenState
 
   // 1) Substitueix el teu _buildWaypointsList per aquest:
   Widget _buildWaypointsList(BuildContext context) {
-    final waypoints = ref.watch(waypointsProvider);
+    final recorded = ref.watch(waypointsProvider);
+    final imported = ref.watch(importedWaypointsProvider);
 
-    if (waypoints.isEmpty) return const SizedBox.shrink();
+    final hasRecorded = recorded.isNotEmpty;
+    final hasImported = imported.isNotEmpty;
 
-    return GridView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisExtent: 44,
-        crossAxisSpacing: 6,
-        mainAxisSpacing: 6,
-      ),
-      itemCount: waypoints.length,
-      itemBuilder: (_, i) {
-        final wp = waypoints[i];
+    // ─────────────────────────────────────────────
+    // CAS 1: Només waypoints del track gravat
+    // ─────────────────────────────────────────────
+    if (hasRecorded && !hasImported) {
+      return ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        itemCount: recorded.length,
+        itemBuilder: (_, i) => _waypointTile(recorded[i]),
+      );
+    }
 
-        return Container(
-          padding: const EdgeInsets.only(left: 10, right: 2),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.black12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withAlpha(8),
-                blurRadius: 3,
-                offset: const Offset(0, 1),
-              ),
-            ],
-          ),
-          child: Row(
+    // ─────────────────────────────────────────────
+    // CAS 2: Només waypoints del track importat
+    // ─────────────────────────────────────────────
+    if (!hasRecorded && hasImported) {
+      return ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        itemCount: imported.length,
+        itemBuilder: (_, i) => _waypointTile(imported[i]),
+      );
+    }
+
+    // ─────────────────────────────────────────────
+    // CAS 3: Tots dos tenen waypoints → DUES COLUMNES
+    // ─────────────────────────────────────────────
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Ahora el nombre empieza directamente y tiene más espacio
-              Expanded(
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 child: Text(
-                  wp.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Color(0xFF333333),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  "Gravat",
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                 ),
               ),
-
-              // Botones grandes y ultra-compactos
-              _compactActionBtn(
-                icon: Icons.flag_circle,
-                active: selectedIndexStart == wp.trackIndex,
-                activeColor: AppColors.trackGreen,
-                onTap: () => _onSetStartFromWaypoint(wp),
-              ),
-              _compactActionBtn(
-                icon: Icons.flag,
-                active: selectedIndexEnd == wp.trackIndex,
-                activeColor: AppColors.redAlert,
-                onTap: () => _onSetEndFromWaypoint(wp),
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  itemCount: recorded.length,
+                  itemBuilder: (_, i) => _waypointTile(recorded[i]),
+                ),
               ),
             ],
           ),
-        );
-      },
+        ),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                child: Text(
+                  "Ruta",
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                ),
+              ),
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  itemCount: imported.length,
+                  itemBuilder: (_, i) => _waypointTile(imported[i]),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _waypointTile(Waypoint wp) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.only(left: 10, right: 2),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.black12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(8),
+            blurRadius: 3,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              wp.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Color(0xFF333333),
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          _compactActionBtn(
+            icon: Icons.flag_circle,
+            active: selectedIndexStart == wp.trackIndex,
+            activeColor: AppColors.trackGreen,
+            onTap: () => _onSetStartFromWaypoint(wp),
+          ),
+          _compactActionBtn(
+            icon: Icons.flag,
+            active: selectedIndexEnd == wp.trackIndex,
+            activeColor: AppColors.redAlert,
+            onTap: () => _onSetEndFromWaypoint(wp),
+          ),
+        ],
+      ),
     );
   }
 
@@ -445,7 +515,7 @@ class _ElevationProfileScreenState
     final secondaryAlts = primaryIsReal ? importedAlts : realAlts;
     final secondaryDists = primaryIsReal ? importedDists : realDists;
 
-    final chartHeight = MediaQuery.of(context).size.height * 0.3;
+    final chartHeight = MediaQuery.of(context).size.height * 0.25;
     final importedTrack = ref.watch(importedTrackProvider);
 
     final track = ref.watch(trackProvider);
@@ -459,7 +529,7 @@ class _ElevationProfileScreenState
       appBar: AppBar(title: Text(t.elevationProfile)),
       body: Column(
         children: [
-          SizedBox(height: 20),
+          SizedBox(height: 10),
 
           // ─────────────────────────────────────────────
           // 1) BLOC D’ESTADÍSTIQUES AMB ALÇADA FIXA
@@ -519,7 +589,7 @@ class _ElevationProfileScreenState
                           importedTrack.altitudes,
                           importedTrack.distances,
                           importedTrack.timestamps,
-                          AppColors.primary,
+                          importedTrackColor, // ← color personalitzat de la ruta
                         );
                       },
                     ),
@@ -528,6 +598,18 @@ class _ElevationProfileScreenState
             ),
           ),
 
+          // ─────────────────────────────────────────────
+          // 3) LLEGENDA
+          // ─────────────────────────────────────────────
+          const SizedBox(height: 10),
+          _buildLegend(
+            hasReal: real.coordinates.isNotEmpty,
+            hasImported: importedTrack?.coordinates.isNotEmpty ?? false,
+            primaryIsReal: primaryIsReal,
+            trackColor: trackColor,
+            importedTrackColor: importedTrackColor,
+            context: context,
+          ),
           const SizedBox(height: 10),
           // ─────────────────────────────────────────────
           // 2) GRÀFIC
@@ -676,14 +758,25 @@ class _ElevationProfileScreenState
                         ),
                       ),
 
-                      // Agulles
+                      // Agulles (CORREGIT)
                       Positioned.fill(
                         child: CustomPaint(
                           painter: SelectionPainter(
-                            waypointIndices: ref
+                            primaryIsReal: primaryIsReal,
+                            recordedWaypointIndices: ref
                                 .watch(waypointsProvider)
                                 .map((wp) => wp.trackIndex)
                                 .toList(),
+
+                            // 2. Enviem els índexs del track importat de manera separada
+                            importedWaypointIndices: ref
+                                .watch(importedWaypointsProvider)
+                                .map((wp) => wp.trackIndex)
+                                .toList(),
+
+                            // 3. Passem els colors obligatoris definits per l'usuari
+                            recordedWaypointColor: trackColor,
+                            importedWaypointColor: importedTrackColor,
 
                             graphX: selectedIndexGraph != null
                                 ? (primaryDists[selectedIndexGraph!] /
@@ -733,18 +826,6 @@ class _ElevationProfileScreenState
 
           const SizedBox(height: 10),
 
-          // ─────────────────────────────────────────────
-          // 3) LLEGENDA
-          // ─────────────────────────────────────────────
-          _buildLegend(
-            hasReal: real.coordinates.isNotEmpty,
-            hasImported: importedTrack?.coordinates.isNotEmpty ?? false,
-            primaryIsReal: primaryIsReal,
-            trackColor: trackColor,
-            importedTrackColor: importedTrackColor,
-            context: context,
-          ),
-
           Expanded(
             child: SafeArea(bottom: true, child: _buildWaypointsList(context)),
           ),
@@ -767,14 +848,6 @@ Widget _buildLegend({
   }
 
   final t = AppLocalizations.of(context)!;
-  final effectivePrimaryIsReal = hasReal ? primaryIsReal : false;
-
-  final primaryLabel = effectivePrimaryIsReal
-      ? t.recordingTrack
-      : t.importedTrack;
-  final secondaryLabel = effectivePrimaryIsReal
-      ? t.importedTrack
-      : t.recordingTrack;
 
   Widget legendItem(Color color, String label) {
     return Row(
@@ -806,19 +879,11 @@ Widget _buildLegend({
       spacing: 24,
       runSpacing: 8,
       children: [
-        // PRIMER ELEMENT
-        if (hasReal || hasImported)
-          legendItem(
-            effectivePrimaryIsReal ? trackColor : importedTrackColor,
-            primaryLabel,
-          ),
+        // 🔥 PRIMER: TRACK GRAVAT (si existeix)
+        if (hasReal) legendItem(trackColor, t.recordingTrack),
 
-        // SEGON ELEMENT
-        if (hasReal && hasImported)
-          legendItem(
-            effectivePrimaryIsReal ? importedTrackColor : trackColor,
-            secondaryLabel,
-          ),
+        // 🔥 SEGON: RUTA IMPORTADA (si existeix)
+        if (hasImported) legendItem(importedTrackColor, t.importedTrack),
       ],
     ),
   );
