@@ -1,8 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:maplibre_gl/maplibre_gl.dart';
+import 'package:senda/notifiers/elevation_range_notifier.dart';
 import 'package:senda/notifiers/gps_accuracy_notifier.dart';
 import 'package:senda/notifiers/gps_altitude_notifier.dart';
 import 'package:senda/notifiers/gps_bearing_notifier.dart';
@@ -11,8 +14,8 @@ import 'package:senda/notifiers/track_follow_notifier.dart';
 import 'package:senda/services/hgt_service.dart';
 import 'package:senda/services/native_gps_channel.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../models/track.dart';
-import 'package:maplibre_gl/maplibre_gl.dart';
 
 class TrackNotifier extends Notifier<Track> {
   Track? _initialState;
@@ -59,9 +62,6 @@ class TrackNotifier extends Notifier<Track> {
   }
 
   Future<void> ensureGpsStarted() async {
-    print(
-      "[SENDA-DEBUG] TrackNotifier: Dins de ensureGpsStarted (gpsActive: $gpsActive)",
-    );
     if (gpsActive) return;
 
     // 🔥 1. ESPEREM que les preferències s'hagin carregat realment del disc
@@ -70,11 +70,6 @@ class TrackNotifier extends Notifier<Track> {
     // 2. Ara sí, llegim els paràmetres Reals
     final gpsSettings = ref.read(gpsSettingsProvider);
 
-    print(
-      "[SENDA-DEBUG] TrackNotifier: Cridant NativeGpsChannel.start amb "
-      "S:${gpsSettings.seconds}s / M:${gpsSettings.meters}m...",
-    );
-
     await NativeGpsChannel.start(
       useTime: gpsSettings.useTime,
       seconds: gpsSettings.seconds,
@@ -82,7 +77,6 @@ class TrackNotifier extends Notifier<Track> {
       accuracy: gpsSettings.accuracy,
     );
 
-    print("[SENDA-DEBUG] TrackNotifier: NativeGpsChannel.start ha respost!");
     startGpsListener();
     gpsActive = true;
   }
@@ -218,6 +212,10 @@ class TrackNotifier extends Notifier<Track> {
       maxElevation: newMax,
       minElevation: newMin,
     );
+    // Actualitzar el rang d’elevacions per al gràfic si estem gravant
+    if (state.recordingState == RecordingState.recording) {
+      ref.read(elevationRangeProvider.notifier).updateWithNewAltitude(altitude);
+    }
 
     // Auto-save cada 10 punts
     if (state.coordinates.length % 10 == 0) {
@@ -313,6 +311,7 @@ class TrackNotifier extends Notifier<Track> {
       duration: Duration.zero,
       // coordinates: [], etc. (la teva lògica de reset)
     );
+    ref.read(elevationRangeProvider.notifier).reset();
   }
 
   // 2. continueRecording: Només canvia l'estat, el timer ja l'hem engegat fora

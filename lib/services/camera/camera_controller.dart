@@ -17,12 +17,10 @@ class CameraController {
   int _activeAnimations = 0;
 
   bool get isProgrammatic {
-    print("---> GET isProgrammatic = $_isProgrammatic");
     return _isProgrammatic;
   }
 
   bool get cameraDrivenByAnimation {
-    print("---> GET cameraDrivenByAnimation = $_cameraDrivenByAnimation");
     return _cameraDrivenByAnimation;
   }
 
@@ -33,23 +31,18 @@ class CameraController {
   // ------------------------------------------------------------
 
   Future<void> moveTo(LatLng target) async {
-    print("---> moveTo() START target=$target");
     _beginProgrammaticMove();
     await _map.moveCamera(CameraUpdate.newLatLng(target));
     _endProgrammaticMove();
-    print("---> moveTo() END");
   }
 
   Future<void> animateTo(LatLng target) async {
-    print("---> animateTo() START target=$target");
     _beginProgrammaticMove();
     await _map.animateCamera(CameraUpdate.newLatLng(target));
     _endProgrammaticMove();
-    print("---> animateTo() END");
   }
 
   Future<void> animateBounds(LatLngBounds bounds, {double padding = 50}) async {
-    print("---> animateBounds() START bounds=$bounds");
     _beginProgrammaticMove();
     await _map.animateCamera(
       CameraUpdate.newLatLngBounds(
@@ -61,7 +54,6 @@ class CameraController {
       ),
     );
     _endProgrammaticMove();
-    print("---> animateBounds() END");
   }
 
   // ------------------------------------------------------------
@@ -69,13 +61,11 @@ class CameraController {
   // ------------------------------------------------------------
 
   void moveDuringAnimation(LatLng target) {
-    print("---> moveDuringAnimation() target=$target");
     _cameraDrivenByAnimation = true;
     _map.moveCamera(CameraUpdate.newLatLng(target));
   }
 
   void endAnimation() {
-    print("---> endAnimation() SET anim=false");
     _cameraDrivenByAnimation = false;
   }
 
@@ -86,17 +76,14 @@ class CameraController {
   void _beginProgrammaticMove() {
     _isProgrammatic = true;
     _activeAnimations++;
-    print("---> beginProgrammaticMove() active=$_activeAnimations");
   }
 
   void _endProgrammaticMove() {
     _activeAnimations--;
-    print("---> endProgrammaticMove() active=$_activeAnimations");
 
     if (_activeAnimations <= 0) {
       _activeAnimations = 0;
       _isProgrammatic = false;
-      print("---> endProgrammaticMove() programmatic=false");
     }
   }
 }

@@ -1,8 +1,9 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:senda/ui/app_messages.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:senda/ui/app_messages.dart';
 
 enum GpsPermissionStatus { ok, gpsOff, permissionDenied }
 
@@ -158,16 +159,11 @@ class PermissionsService {
   // AFEGEIX AIXÒ AL FINAL DE LA TEVA CLASSE PermissionsService
   // Dins de ensureBasicLocation a PermissionsService.dart
   static Future<bool> ensureBasicLocation(BuildContext context) async {
-    print("[SENDA-DEBUG] PermService: Entrant a ensureBasicLocation");
-
     // Fem servir Geolocator per a la petició inicial
     LocationPermission perm = await Geolocator.checkPermission();
-    print("[SENDA-DEBUG] PermService: Status inicial (Geolocator) = $perm");
 
     if (perm == LocationPermission.denied) {
-      print("[SENDA-DEBUG] PermService: Demanant permisos via Geolocator...");
       perm = await Geolocator.requestPermission();
-      print("[SENDA-DEBUG] PermService: Nou status = $perm");
     }
 
     return perm == LocationPermission.whileInUse ||

@@ -1,8 +1,9 @@
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:path_provider/path_provider.dart';
-import 'package:http/http.dart' as http;
+
 import 'package:archive/archive.dart';
+import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
 
 class HgtService {
   // singleton clàssic: instància única i persistent
@@ -115,8 +116,6 @@ class HgtService {
           "&outputFormat=HGT"
           "&API_Key=1890b659ee4a822b2f9fceff967e9221";
 
-      print("[SENDA-HGT] 🌐 Petició REAL a: $urlString");
-
       final response = await http
           .get(Uri.parse(urlString))
           .timeout(const Duration(seconds: 45));
@@ -129,14 +128,9 @@ class HgtService {
             final tempFile = File('${file.path}.tmp');
             await tempFile.writeAsBytes(fileInZip.content as List<int>);
             await tempFile.rename(file.path);
-            print("[SENDA-HGT] ✅ FITXER LLERT: $fileName");
             return;
           }
         }
-      } else {
-        print(
-          "[SENDA-HGT] ❌ Error API (${response.statusCode}): ${response.body}",
-        );
       }
     } catch (e) {
       print("[SENDA-HGT] ❌ Error xarxa: $e");
@@ -146,13 +140,6 @@ class HgtService {
   }
 
   // --- AUXILIARS ---
-  Future<File?> _getExistingFile(String fileName) async {
-    final dir = await getApplicationDocumentsDirectory();
-    final file = File('${dir.path}/dem/$fileName');
-    if (await file.exists() && await file.length() > 2500000) return file;
-    return null;
-  }
-
   String _getHgtFileName(double lat, double lon) {
     int latInt = lat.floor();
     int lonInt = lon.floor();

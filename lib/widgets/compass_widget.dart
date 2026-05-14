@@ -1,13 +1,15 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/notifiers/gps_bearing_notifier.dart';
 import 'package:senda/notifiers/gps_speed_notifier.dart';
+import 'package:senda/notifiers/map_bearing_provider.dart';
 import 'package:senda/theme/app_colors.dart';
-import 'dart:math' as math;
 
 class CompassScalePanel extends ConsumerWidget {
-  const CompassScalePanel({super.key});
-
+  final VoidCallback? onTapCompass;
+  const CompassScalePanel({super.key, this.onTapCompass});
   String _formatMeters(double m) {
     if (m >= 1000) {
       final km = (m / 1000).round(); // sense decimals
@@ -18,7 +20,12 @@ class CompassScalePanel extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final heading = ref.watch(gpsBearingProvider);
+    final deviceHeading = ref.watch(gpsBearingProvider);
+    final mapBearing = ref.watch(mapBearingProvider);
+
+    // Rotació real de la brúixola
+    final compassRotation = (deviceHeading - mapBearing) % 360;
+
     final zoom = ref.watch(mapZoomProvider);
     final latitude = ref.watch(mapCenterLatProvider);
 
@@ -71,44 +78,48 @@ class CompassScalePanel extends ConsumerWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           // 🧭 BRÚIXOLA PETITA (32px)
-          SizedBox(
-            width: 32,
-            height: 32,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.9),
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: onTapCompass,
+            child: SizedBox(
+              width: 32,
+              height: 32,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withOpacity(0.9),
+                    ),
                   ),
-                ),
-                // Lletres més petites (size 7) i més properes al centre
-                Positioned(top: 1, child: _label("N")),
-                Positioned(bottom: 1, child: _label("S")),
-                Positioned(left: 1, child: _label("W")),
-                Positioned(right: 1, child: _label("E")),
+                  // Lletres més petites (size 7) i més properes al centre
+                  Positioned(top: 1, child: _label("N")),
+                  Positioned(bottom: 1, child: _label("S")),
+                  Positioned(left: 1, child: _label("W")),
+                  Positioned(right: 1, child: _label("E")),
 
-                AnimatedRotation(
-                  turns: heading / 360,
-                  duration: const Duration(milliseconds: 250),
-                  curve: Curves.easeOut,
-                  child: CustomPaint(
-                    size: const Size(10, 10), // Fletxa més petita
-                    painter: _CompassArrowPainter(),
+                  AnimatedRotation(
+                    turns: compassRotation / 360,
+                    duration: const Duration(milliseconds: 250),
+                    curve: Curves.easeOut,
+                    child: CustomPaint(
+                      size: const Size(10, 10), // Fletxa més petita
+                      painter: _CompassArrowPainter(),
+                    ),
                   ),
-                ),
-                Container(
-                  width: 2,
-                  height: 2,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.black,
+                  Container(
+                    width: 2,
+                    height: 2,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.black,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
 

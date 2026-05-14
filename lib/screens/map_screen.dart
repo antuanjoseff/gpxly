@@ -1,15 +1,17 @@
 import 'dart:async';
 import 'dart:math';
-import 'package:flutter/foundation.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:senda/features/elevation_profile/elevation_profile_screen.dart';
 import 'package:senda/models/track.dart';
 import 'package:senda/models/waypoint.dart';
 import 'package:senda/notifiers/gps_speed_notifier.dart';
 import 'package:senda/notifiers/imported_track_notifier.dart';
 import 'package:senda/notifiers/imported_track_settings_notifier.dart';
+import 'package:senda/notifiers/map_bearing_provider.dart';
 import 'package:senda/notifiers/permissions_notifier.dart';
 import 'package:senda/notifiers/timer_notifier.dart';
 import 'package:senda/notifiers/track_follow_notifier.dart';
@@ -19,6 +21,7 @@ import 'package:senda/notifiers/waypoints_imported_notifier.dart';
 import 'package:senda/notifiers/waypoints_recorded_notifier.dart';
 import 'package:senda/screens/settings/settings_screen.dart';
 import 'package:senda/screens/stats_screen.dart';
+import 'package:senda/services/gpx_exporter.dart';
 import 'package:senda/services/gpx_import_flow.dart';
 import 'package:senda/services/hgt_service.dart';
 import 'package:senda/services/location_permission_flow.dart';
@@ -26,7 +29,6 @@ import 'package:senda/services/permissions_service.dart';
 import 'package:senda/services/recording_handler.dart';
 import 'package:senda/theme/app_colors.dart';
 import 'package:senda/ui/app_messages.dart';
-import 'package:senda/services/gpx_exporter.dart';
 import 'package:senda/ui/bottom_bar/bottom_bar_container.dart';
 import 'package:senda/utils/color_extensions.dart';
 import 'package:senda/utils/distance_utils.dart';
@@ -35,7 +37,6 @@ import 'package:senda/utils/map_layers.dart';
 import 'package:senda/widgets/compass_widget.dart';
 import 'package:senda/widgets/gps_accuracy_bars.dart';
 import 'package:senda/widgets/recording_status_bar.dart';
-import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class MapScreen extends ConsumerStatefulWidget {
@@ -114,7 +115,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
   }
 
   void safeAnimateCamera(CameraUpdate update) {
-    print(">>> SAFE ANIMATE CAMERA");
     mapController?.animateCamera(update);
   }
 
@@ -172,9 +172,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
       await prefs.setDouble("last_lat", pos.latitude);
       await prefs.setDouble("last_lon", pos.longitude);
       _lastPrefsSave = DateTime.now(); // Actualitzem la marca de temps
-      print(
-        "[SENDA-DEBUG] Posició guardada a Prefs: ${pos.latitude}, ${pos.longitude}",
-      );
     }
   }
 
@@ -301,8 +298,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
   void _fitToBounds(List<List<double>> coords, {bool instant = false}) {
     if (coords.isEmpty || mapController == null) return;
 
-    print(">>> 📸 FitToBounds cridat amb ${coords.length} punts");
-
     final lats = coords.map((c) => c[1]).toList();
     final lons = coords.map((c) => c[0]).toList();
 
@@ -428,7 +423,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
       // Si estem important un GPX, aturem qualsevol lògica que mogui la càmera.
       if (isImportingGpx) {
-        print(">>> 🛡️ SmartCenter/Recovery bloquejat per importació activa.");
         return;
       }
 
@@ -461,7 +455,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
       if (isRecoveringTrack) {
         hasDoneRecoveryFit = true;
-        print(">>> 🔄 Recuperant track de memòria: FitToBounds");
         _fitToBounds(next.coordinates, instant: true);
         return;
       }
@@ -496,19 +489,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
           });
         }
       }
-
-      // if (smartCenterEnabled &&
-      //     next.currentPosition != null &&
-      //     !isProgrammaticMove &&
-      //     !isImportingGpx) {
-      //   isProgrammaticMove = true;
-      //   print(">>> 🎯 SmartCenter: EXECUTANT");
-      //   safeAnimateCamera(CameraUpdate.newLatLng(next.currentPosition!));
-
-      //   Future.delayed(const Duration(milliseconds: 300), () {
-      //     isProgrammaticMove = false;
-      //   });
-      // }
     });
 
     ref.listen(importedTrackProvider, (prev, next) {
@@ -545,7 +525,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
       );
 
       if (isImportingGpx) {
-        print(">>> FIT TO BOUNDS IMPORTED TRACK");
         _fitToBounds(next.coordinates);
       }
     });
@@ -715,12 +694,15 @@ class _MapScreenState extends ConsumerState<MapScreen>
           children: [
             RepaintBoundary(
               child: Listener(
+                behavior: HitTestBehavior.translucent,
+
                 onPointerDown: (PointerDownEvent event) {
                   if (smartCenterEnabled) {
                     setState(() => smartCenterEnabled = false);
                   }
                 },
                 child: MapLibreMap(
+                  tiltGesturesEnabled: false,
                   trackCameraPosition: true,
                   compassEnabled: false,
                   styleString: "assets/osm_style.json",
@@ -748,19 +730,13 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     final pos = mapController
                         ?.cameraPosition; // MapLibre ja el té, no cal 'await' normalment
                     if (pos == null) return;
-
+                    ref.read(mapBearingProvider.notifier).update(pos.bearing);
                     // 2. FILTRE DE ZOOM: Només actualitzem si el canvi és notable (> 0.2)
                     // Això evita que el build es dispari per micro-ajustaments
                     final currentZoom = ref.read(mapZoomProvider);
                     if ((currentZoom - pos.zoom).abs() > 0.2) {
                       ref.read(mapZoomProvider.notifier).update(pos.zoom);
                     }
-
-                    // 3. FILTRE DE POSICIÓ: Actualitzem el context del mapa (Providers de Lat/Lon)
-                    // Només si t'has mogut més d'un cert llindar (opcional)
-                    print(
-                      ">>> 📍 Mapa aturat a: ${pos.target.latitude}, ${pos.target.longitude}",
-                    );
 
                     // 4. GUARDAT A PREFS: Aquest és el millor lloc per fer el guardat de seguretat
                     // perquè el mapa està quiet i no bloquegem frames de moviment.
@@ -776,8 +752,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   },
 
                   onStyleLoadedCallback: () async {
-                    print(">>> STYLE LOADED (callback)");
-
                     await setupUserLocationLayer(mapController!);
                     await setupWaypointLayers(mapController!);
 
@@ -820,7 +794,12 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 right: 12,
                 child: Column(
                   children: [
-                    const CompassScalePanel(), // Aquest ja fa 62px d'ample
+                    CompassScalePanel(
+                      onTapCompass: () {
+                        mapController?.animateCamera(CameraUpdate.bearingTo(0));
+                      },
+                    ),
+
                     const SizedBox(height: 8),
 
                     // BOTÓ DE PERFIL D'ELEVACIÓ

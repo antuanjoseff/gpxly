@@ -1,22 +1,21 @@
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:fl_chart/fl_chart.dart';
-
-import 'package:senda/features/elevation_profile/painters/selection_painter.dart';
 import 'package:senda/features/elevation_profile/painters/range_highlight_painter.dart';
+import 'package:senda/features/elevation_profile/painters/selection_painter.dart';
 import 'package:senda/features/elevation_profile/utils/chart_utils.dart';
 import 'package:senda/l10n/app_localizations.dart';
 import 'package:senda/models/waypoint.dart';
-import 'package:senda/notifiers/imported_track_settings_notifier.dart';
-
-import 'package:senda/notifiers/track_notifier.dart';
+import 'package:senda/notifiers/elevation_range_notifier.dart';
 import 'package:senda/notifiers/imported_track_notifier.dart';
+import 'package:senda/notifiers/imported_track_settings_notifier.dart';
+import 'package:senda/notifiers/track_notifier.dart';
 import 'package:senda/notifiers/track_settings_notifier.dart';
 import 'package:senda/notifiers/waypoints_imported_notifier.dart';
 import 'package:senda/notifiers/waypoints_recorded_notifier.dart';
-import 'package:senda/utils/distance_utils.dart';
 import 'package:senda/theme/app_colors.dart';
+import 'package:senda/utils/distance_utils.dart';
 
 enum ActiveHandle { none, start, end }
 
@@ -59,6 +58,7 @@ class _ElevationProfileScreenState
     List<double> importedDists,
     Color trackColor,
     Color importedTrackColor,
+    ElevationRange elevationRange,
   ) {
     final colors = Theme.of(context).colorScheme;
 
@@ -76,6 +76,17 @@ class _ElevationProfileScreenState
 
     final forcedMinY = minAlt - (effectiveRange * 0.1);
     final forcedMaxY = forcedMinY + (effectiveRange * 1.2);
+
+    // Decideix quin rang vertical usar:
+    //    - si hi ha dades de gravació → provider
+    //    - si no → comportament antic
+    final double useMinY = elevationRange.hasData
+        ? elevationRange.visualMin
+        : forcedMinY;
+
+    final double useMaxY = elevationRange.hasData
+        ? elevationRange.visualMax
+        : forcedMaxY;
 
     final maxDist = [
       if (realDists.isNotEmpty) realDists.last,
@@ -95,15 +106,15 @@ class _ElevationProfileScreenState
     final List<double> secondaryAlts = primaryIsReal ? importedAlts : realAlts;
 
     return LineChartData(
-      minY: forcedMinY,
-      maxY: forcedMaxY,
+      minY: useMinY,
+      maxY: useMaxY,
       minX: 0,
       maxX: maxDist,
       gridData: const FlGridData(show: false),
       borderData: FlBorderData(show: false),
       extraLinesData: ExtraLinesData(
         horizontalLines: [
-          HorizontalLine(y: forcedMinY, color: Colors.grey, strokeWidth: 1.5),
+          HorizontalLine(y: useMinY, color: Colors.grey, strokeWidth: 1.5),
         ],
       ),
 
@@ -155,7 +166,7 @@ class _ElevationProfileScreenState
             color: (primaryIsReal ? trackColor : AppColors.primary).withAlpha(
               primaryIsReal ? 64 : 32,
             ),
-            cutOffY: forcedMinY,
+            cutOffY: useMinY,
             applyCutOffY: true,
           ),
         ),
@@ -306,29 +317,58 @@ class _ElevationProfileScreenState
     );
   }
 
-  void _onShowWaypoint(Waypoint wp) {
-    setState(() {
-      selectedIndexGraph = (selectedIndexGraph == wp.trackIndex)
-          ? null
-          : wp.trackIndex;
-    });
-  }
-
   void _onSetStartFromWaypoint(Waypoint wp) {
+    final idx = wp.trackIndex;
+
     setState(() {
-      selectedIndexStart = (selectedIndexStart == wp.trackIndex)
-          ? null
-          : wp.trackIndex;
-      selectedIndexGraph = wp.trackIndex;
+      // Si hi havia agulla → desapareix
+      selectedIndexGraph = null;
+
+      // Si hi havia final → normalitzar
+      if (selectedIndexEnd != null) {
+        final end = selectedIndexEnd!;
+        final s = idx < end ? idx : end;
+        final e = idx < end ? end : idx;
+
+        selectedIndexStart = s;
+        selectedIndexEnd = e;
+      } else {
+        // Només inici
+        selectedIndexStart = idx;
+      }
     });
   }
 
   void _onSetEndFromWaypoint(Waypoint wp) {
+    final idx = wp.trackIndex;
+
     setState(() {
-      selectedIndexEnd = (selectedIndexEnd == wp.trackIndex)
-          ? null
-          : wp.trackIndex;
-      selectedIndexGraph = wp.trackIndex;
+      // Si hi ha inici → normalitzar
+      if (selectedIndexStart != null) {
+        final start = selectedIndexStart!;
+        final s = start < idx ? start : idx;
+        final e = start < idx ? idx : start;
+
+        selectedIndexStart = s;
+        selectedIndexEnd = e;
+        selectedIndexGraph = null; // l’agulla ja no té sentit
+        return;
+      }
+
+      // Si NO hi ha inici però SÍ hi ha agulla → agulla passa a ser inici
+      if (selectedIndexGraph != null) {
+        final needle = selectedIndexGraph!;
+        final s = needle < idx ? needle : idx;
+        final e = needle < idx ? idx : needle;
+
+        selectedIndexStart = s;
+        selectedIndexEnd = e;
+        selectedIndexGraph = null; // agulla consumida
+        return;
+      }
+
+      // Només final
+      selectedIndexEnd = idx;
     });
   }
 
@@ -515,7 +555,17 @@ class _ElevationProfileScreenState
     final secondaryAlts = primaryIsReal ? importedAlts : realAlts;
     final secondaryDists = primaryIsReal ? importedDists : realDists;
 
-    final chartHeight = MediaQuery.of(context).size.height * 0.25;
+    // 🔹 Abans: final chartHeight = MediaQuery.of(context).size.height * 0.25;
+    final baseHeight = MediaQuery.of(context).size.height * 0.25;
+
+    // 🔹 Llegim el provider
+    final elevationRange = ref.watch(elevationRangeProvider);
+
+    // 🔹 Si hi ha dades i està en mode “compress”, fem servir el 40%
+    final chartHeight = elevationRange.hasData && elevationRange.isCompressed
+        ? baseHeight * 0.40
+        : baseHeight;
+
     final importedTrack = ref.watch(importedTrackProvider);
 
     final track = ref.watch(trackProvider);
@@ -725,12 +775,16 @@ class _ElevationProfileScreenState
                                 endIndex: selectedIndexEnd!,
                                 distances: primaryDists,
                                 altitudes: primaryAlts,
-                                minY: primaryAlts.reduce(
-                                  (a, b) => a < b ? a : b,
-                                ),
-                                maxY: primaryAlts.reduce(
-                                  (a, b) => a > b ? a : b,
-                                ),
+                                minY: elevationRange.hasData
+                                    ? elevationRange.visualMin
+                                    : primaryAlts.reduce(
+                                        (a, b) => a < b ? a : b,
+                                      ),
+                                maxY: elevationRange.hasData
+                                    ? elevationRange.visualMax
+                                    : primaryAlts.reduce(
+                                        (a, b) => a > b ? a : b,
+                                      ),
                                 color: Colors.orange.withAlpha(50),
                               ),
                             ),
@@ -753,6 +807,7 @@ class _ElevationProfileScreenState
                               importedDists,
                               trackColor,
                               importedTrackColor,
+                              elevationRange,
                             ),
                           ),
                         ),

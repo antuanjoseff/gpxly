@@ -1,9 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/notifiers/helpers/thresholds.dart';
 import 'package:senda/services/native_gps_channel.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:async';
-import 'package:flutter/material.dart';
 
 class GpsSettings {
   final bool useTime;
@@ -80,10 +80,6 @@ class GpsSettingsNotifier extends Notifier<GpsSettings> {
       meters: meters ?? state.meters,
       accuracy: accuracy ?? state.accuracy,
     );
-
-    print(
-      "[SENDA-GPS] Preferències carregades: ${state.seconds}s / ${state.meters}m",
-    );
   }
 
   // -----------------------------
@@ -128,7 +124,6 @@ class GpsSettingsNotifier extends Notifier<GpsSettings> {
   Future<void> apply() async {
     await _saveToPrefs();
 
-    print("[SENDA-GPS] Aplicant al nadiu: ${state.seconds}s, ${state.meters}m");
     await NativeGpsChannel.start(
       useTime: state.useTime,
       seconds: state.seconds,
