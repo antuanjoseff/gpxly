@@ -84,41 +84,54 @@ class CompassScalePanel extends ConsumerWidget {
             child: SizedBox(
               width: 32,
               height: 32,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white.withOpacity(0.9),
-                    ),
-                  ),
-                  // Lletres més petites (size 7) i més properes al centre
-                  Positioned(top: 1, child: _label("N")),
-                  Positioned(bottom: 1, child: _label("S")),
-                  Positioned(left: 1, child: _label("W")),
-                  Positioned(right: 1, child: _label("E")),
 
-                  AnimatedRotation(
-                    turns: compassRotation / 360,
-                    duration: const Duration(milliseconds: 250),
-                    curve: Curves.easeOut,
-                    child: CustomPaint(
-                      size: const Size(10, 10), // Fletxa més petita
-                      painter: _CompassArrowPainter(),
+              // 🔥 TOT EL DISC GIRA AMB EL MAPA
+              child: AnimatedRotation(
+                turns: -mapBearing / 360,
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeOut,
+
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // Cercle
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withOpacity(0.9),
+                      ),
                     ),
-                  ),
-                  Container(
-                    width: 2,
-                    height: 2,
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.black,
+
+                    // Lletres
+                    Positioned(top: 1, child: _label("N")),
+                    Positioned(bottom: 1, child: _label("S")),
+                    Positioned(left: 1, child: _label("W")),
+                    Positioned(right: 1, child: _label("E")),
+
+                    // 🔥 LA FLETXA APUNTA AL NORD REAL
+                    AnimatedRotation(
+                      turns: deviceHeading / 360,
+                      duration: const Duration(milliseconds: 250),
+                      curve: Curves.easeOut,
+                      child: CustomPaint(
+                        size: const Size(10, 10),
+                        painter: _CompassArrowPainter(),
+                      ),
                     ),
-                  ),
-                ],
+
+                    // Punt central
+                    Container(
+                      width: 2,
+                      height: 2,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
