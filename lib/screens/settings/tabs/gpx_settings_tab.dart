@@ -2,25 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/l10n/app_localizations.dart';
 import 'package:senda/notifiers/gpx_settings_notifier.dart';
-import 'package:senda/notifiers/settings_pending_notifier.dart';
 import 'package:senda/theme/app_colors.dart';
 
 class GpxSettingsTab extends ConsumerWidget {
   const GpxSettingsTab({super.key});
 
-  static void apply(WidgetRef ref) {
-    ref.read(gpxSettingsProvider.notifier).apply();
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(gpxSettingsProvider);
     final t = AppLocalizations.of(context)!;
-
-    void markPending() {
-      ref.read(settingsPendingProvider.notifier).mark();
-      ref.read(gpxPendingProvider.notifier).mark();
-    }
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F7),
@@ -47,7 +37,6 @@ class GpxSettingsTab extends ConsumerWidget {
             "accuracies",
             t.gpxAccuracyPerPoint,
             Icons.gps_fixed,
-            markPending,
           ),
           const SizedBox(height: 12),
 
@@ -58,7 +47,6 @@ class GpxSettingsTab extends ConsumerWidget {
             "speeds",
             t.gpxSpeed,
             Icons.speed,
-            markPending,
           ),
           const SizedBox(height: 12),
 
@@ -69,7 +57,6 @@ class GpxSettingsTab extends ConsumerWidget {
             "headings",
             t.gpxHeading,
             Icons.explore_outlined,
-            markPending,
           ),
           const SizedBox(height: 12),
 
@@ -80,7 +67,6 @@ class GpxSettingsTab extends ConsumerWidget {
             "satellites",
             t.gpxSatellites,
             Icons.satellite_alt,
-            markPending,
           ),
           const SizedBox(height: 12),
 
@@ -91,7 +77,6 @@ class GpxSettingsTab extends ConsumerWidget {
             "vAccuracies",
             t.gpxVerticalAccuracy,
             Icons.height,
-            markPending,
           ),
 
           const SizedBox(height: 40),
@@ -107,7 +92,6 @@ class GpxSettingsTab extends ConsumerWidget {
     String field,
     String title,
     IconData icon,
-    VoidCallback markPending,
   ) {
     final t = AppLocalizations.of(context)!;
 
@@ -127,7 +111,6 @@ class GpxSettingsTab extends ConsumerWidget {
         borderRadius: BorderRadius.circular(16),
         onTap: () {
           ref.read(gpxSettingsProvider.notifier).toggle(field, !value);
-          markPending();
         },
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),

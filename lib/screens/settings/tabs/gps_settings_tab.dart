@@ -2,25 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/l10n/app_localizations.dart';
 import 'package:senda/notifiers/gps_settings_notifier.dart';
-import 'package:senda/notifiers/settings_pending_notifier.dart';
 import 'package:senda/theme/app_colors.dart';
 
 class GpsSettingsTab extends ConsumerWidget {
   const GpsSettingsTab({super.key});
 
-  static void apply(WidgetRef ref) {
-    ref.read(gpsSettingsProvider.notifier).apply();
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final gps = ref.watch(gpsSettingsProvider);
     final t = AppLocalizations.of(context)!;
-
-    void markPending() {
-      ref.read(settingsPendingProvider.notifier).mark();
-      ref.read(gpsPendingProvider.notifier).mark();
-    }
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F7),
@@ -46,7 +36,6 @@ class GpsSettingsTab extends ConsumerWidget {
                       .read(gpsSettingsProvider.notifier)
                       .setSeconds(val.round());
                   ref.read(gpsSettingsProvider.notifier).setUseTime(true);
-                  markPending();
                 },
               ),
             ),
@@ -68,7 +57,6 @@ class GpsSettingsTab extends ConsumerWidget {
                 onChanged: (val) {
                   ref.read(gpsSettingsProvider.notifier).setMeters(val);
                   ref.read(gpsSettingsProvider.notifier).setUseTime(false);
-                  markPending();
                 },
               ),
             ),
@@ -89,7 +77,6 @@ class GpsSettingsTab extends ConsumerWidget {
                 isActive: true,
                 onChanged: (val) {
                   ref.read(gpsSettingsProvider.notifier).setAccuracy(val);
-                  markPending();
                 },
               ),
             ),

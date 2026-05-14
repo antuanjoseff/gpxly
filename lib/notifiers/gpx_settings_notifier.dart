@@ -10,9 +10,6 @@ class GpxSettingsNotifier extends Notifier<GpxSettings> {
     return initial;
   }
 
-  // -----------------------------
-  // LOAD
-  // -----------------------------
   Future<void> _loadFromPrefs() async {
     final prefs = await SharedPreferences.getInstance();
 
@@ -25,9 +22,6 @@ class GpxSettingsNotifier extends Notifier<GpxSettings> {
     );
   }
 
-  // -----------------------------
-  // SAVE
-  // -----------------------------
   Future<void> _saveToPrefs() async {
     final prefs = await SharedPreferences.getInstance();
 
@@ -38,10 +32,7 @@ class GpxSettingsNotifier extends Notifier<GpxSettings> {
     await prefs.setBool('gpx_vAccuracies', state.vAccuracies);
   }
 
-  // -----------------------------
-  // UPDATE
-  // -----------------------------
-  void toggle(String field, bool value) {
+  Future<void> toggle(String field, bool value) async {
     switch (field) {
       case 'accuracies':
         state = state.copyWith(accuracies: value);
@@ -60,11 +51,7 @@ class GpxSettingsNotifier extends Notifier<GpxSettings> {
         break;
     }
 
-    _saveToPrefs();
-  }
-
-  void apply() {
-    _saveToPrefs();
+    await _saveToPrefs();
   }
 }
 

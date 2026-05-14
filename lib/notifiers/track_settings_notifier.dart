@@ -6,56 +6,37 @@ import '../models/track_settings.dart';
 class TrackSettingsNotifier extends Notifier<TrackSettings> {
   @override
   TrackSettings build() {
-    // Estat inicial per defecte
     final initial = const TrackSettings();
-
-    // Carregar preferències guardades
     _loadFromPrefs();
-
     return initial;
   }
 
-  // -----------------------------
-  // LOAD
-  // -----------------------------
   Future<void> _loadFromPrefs() async {
     final prefs = await SharedPreferences.getInstance();
 
     final savedColor = prefs.getInt('track_color');
     final savedWidth = prefs.getDouble('track_width');
 
-    // IMPORTANT: build() ja ha retornat un estat inicial,
-    // així que aquí fem un update() del state.
     state = TrackSettings(
       color: savedColor != null ? Color(savedColor) : state.color,
       width: savedWidth ?? state.width,
     );
   }
 
-  // -----------------------------
-  // SAVE
-  // -----------------------------
   Future<void> _saveToPrefs() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('track_color', state.color.value);
     await prefs.setDouble('track_width', state.width);
   }
 
-  // -----------------------------
-  // UPDATE METHODS
-  // -----------------------------
-  void setColor(Color c) {
+  Future<void> setColor(Color c) async {
     state = state.copyWith(color: c);
-    _saveToPrefs();
+    await _saveToPrefs();
   }
 
-  void setWidth(double w) {
+  Future<void> setWidth(double w) async {
     state = state.copyWith(width: w);
-    _saveToPrefs();
-  }
-
-  void apply() {
-    _saveToPrefs();
+    await _saveToPrefs();
   }
 }
 

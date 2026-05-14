@@ -7,7 +7,6 @@ class ImportedTrackSettingsNotifier extends Notifier<TrackSettings> {
   @override
   TrackSettings build() {
     final initial = const TrackSettings();
-
     _loadFromPrefs();
     return initial;
   }
@@ -30,18 +29,14 @@ class ImportedTrackSettingsNotifier extends Notifier<TrackSettings> {
     await prefs.setDouble('imported_track_width', state.width);
   }
 
-  void setColor(Color c) {
+  Future<void> setColor(Color c) async {
     state = state.copyWith(color: c);
-    _saveToPrefs();
+    await _saveToPrefs();
   }
 
-  void setWidth(double w) {
+  Future<void> setWidth(double w) async {
     state = state.copyWith(width: w);
-    _saveToPrefs();
-  }
-
-  void apply() {
-    _saveToPrefs();
+    await _saveToPrefs();
   }
 }
 

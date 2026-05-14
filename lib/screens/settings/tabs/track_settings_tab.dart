@@ -2,26 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:senda/l10n/app_localizations.dart';
-import 'package:senda/notifiers/settings_pending_notifier.dart';
 import 'package:senda/notifiers/track_settings_notifier.dart';
 import 'package:senda/theme/app_colors.dart';
 
 class TrackSettingsTab extends ConsumerWidget {
   const TrackSettingsTab({super.key});
 
-  static void apply(WidgetRef ref) {
-    ref.read(trackSettingsProvider.notifier).apply();
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(trackSettingsProvider);
     final t = AppLocalizations.of(context)!;
-
-    void markPending() {
-      ref.read(settingsPendingProvider.notifier).mark();
-      ref.read(trackPendingProvider.notifier).mark();
-    }
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F7),
@@ -55,12 +45,8 @@ class TrackSettingsTab extends ConsumerWidget {
                       ),
                       icon: const Icon(Icons.palette_outlined),
                       label: Text(t.changeTrackColor),
-                      onPressed: () => _openColorPicker(
-                        context,
-                        ref,
-                        settings.color,
-                        markPending,
-                      ),
+                      onPressed: () =>
+                          _openColorPicker(context, ref, settings.color),
                     ),
                   ),
                 ],
@@ -100,7 +86,6 @@ class TrackSettingsTab extends ConsumerWidget {
                     divisions: 18,
                     onChanged: (v) {
                       ref.read(trackSettingsProvider.notifier).setWidth(v);
-                      markPending();
                     },
                   ),
                   const SizedBox(height: 20),
@@ -127,6 +112,10 @@ class TrackSettingsTab extends ConsumerWidget {
       ),
     );
   }
+
+  // ------------------------------
+  // UI HELPERS
+  // ------------------------------
 
   Widget _buildSettingsCard({
     required String title,
@@ -222,7 +211,6 @@ class TrackSettingsTab extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     Color currentColor,
-    VoidCallback markPending,
   ) {
     final t = AppLocalizations.of(context)!;
 
@@ -235,7 +223,6 @@ class TrackSettingsTab extends ConsumerWidget {
             pickerColor: currentColor,
             onColorChanged: (c) {
               ref.read(trackSettingsProvider.notifier).setColor(c);
-              markPending();
               Navigator.pop(context);
             },
           ),
@@ -245,7 +232,10 @@ class TrackSettingsTab extends ConsumerWidget {
   }
 }
 
-// --- Painter ---
+// ------------------------------
+// PAINTER
+// ------------------------------
+
 class TrackPathPainter extends CustomPainter {
   final Color color;
   final double strokeWidth;

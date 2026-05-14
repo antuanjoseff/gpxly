@@ -3,6 +3,7 @@ import 'package:senda/notifiers/helpers/thresholds.dart';
 import 'package:senda/services/native_gps_channel.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
+import 'package:flutter/material.dart';
 
 class GpsSettings {
   final bool useTime;

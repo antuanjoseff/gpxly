@@ -3,26 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:senda/l10n/app_localizations.dart';
 import 'package:senda/theme/app_colors.dart';
-
 import 'package:senda/notifiers/imported_track_settings_notifier.dart';
-import 'package:senda/notifiers/settings_pending_notifier.dart';
 
 class ImportedTrackSettingsTab extends ConsumerWidget {
   const ImportedTrackSettingsTab({super.key});
-
-  static void apply(WidgetRef ref) {
-    ref.read(importedTrackSettingsProvider.notifier).apply();
-  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(importedTrackSettingsProvider);
     final t = AppLocalizations.of(context)!;
-
-    void markPending() {
-      ref.read(settingsPendingProvider.notifier).mark();
-      ref.read(importedTrackPendingProvider.notifier).mark();
-    }
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F7),
@@ -56,12 +45,8 @@ class ImportedTrackSettingsTab extends ConsumerWidget {
                       ),
                       icon: const Icon(Icons.palette_outlined),
                       label: Text(t.changeTrackColor),
-                      onPressed: () => _openColorPicker(
-                        context,
-                        ref,
-                        settings.color,
-                        markPending,
-                      ),
+                      onPressed: () =>
+                          _openColorPicker(context, ref, settings.color),
                     ),
                   ),
                 ],
@@ -103,7 +88,6 @@ class ImportedTrackSettingsTab extends ConsumerWidget {
                       ref
                           .read(importedTrackSettingsProvider.notifier)
                           .setWidth(v);
-                      markPending();
                     },
                   ),
                   const SizedBox(height: 20),
@@ -130,10 +114,6 @@ class ImportedTrackSettingsTab extends ConsumerWidget {
       ),
     );
   }
-
-  // ------------------------------
-  // UI HELPERS
-  // ------------------------------
 
   Widget _buildSettingsCard({
     required String title,
@@ -229,7 +209,6 @@ class ImportedTrackSettingsTab extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     Color currentColor,
-    VoidCallback markPending,
   ) {
     final t = AppLocalizations.of(context)!;
 
@@ -242,7 +221,6 @@ class ImportedTrackSettingsTab extends ConsumerWidget {
             pickerColor: currentColor,
             onColorChanged: (c) {
               ref.read(importedTrackSettingsProvider.notifier).setColor(c);
-              markPending();
               Navigator.pop(context);
             },
           ),
@@ -251,10 +229,6 @@ class ImportedTrackSettingsTab extends ConsumerWidget {
     );
   }
 }
-
-// ------------------------------
-// PAINTER
-// ------------------------------
 
 class _TrackPreviewPainter extends CustomPainter {
   final Color color;

@@ -11,6 +11,7 @@ import 'package:senda/services/permissions_service.dart';
 import 'package:senda/theme/app_colors.dart';
 import 'package:senda/ui/app_messages.dart';
 import 'package:senda/ui/bottom_bar/pressable_scale.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class BottomBarButtons extends ConsumerWidget {
   final RecordingState state;
@@ -146,16 +147,17 @@ class BottomBarButtons extends ConsumerWidget {
                 icon: Icons.navigation_rounded,
                 color: AppColors.deepGreen,
                 onTap: () async {
-                  // Mateixa seguretat per al seguiment
+                  // 1. Permisos de localització en segon pla
                   final ok =
                       await PermissionsService.ensureBackgroundLocationWithDialog(
                         context,
                       );
                   if (!ok) return;
+
+                  // 2. Llegim la configuració actual del GPS
                   final gps = ref.read(gpsSettingsProvider);
 
-                  // 1. Comprovem si el GPS ja està configurat amb la precisió necessària
-                  // Si useTime és true i els segons són iguals o inferiors als del mode navegació
+                  // 3. Comprovem si ja està prou optimitzat per a navegació
                   final bool isAlreadyOptimized =
                       gps.useTime &&
                       gps.seconds <= TrackThresholds.navGpsSeconds &&
@@ -164,19 +166,34 @@ class BottomBarButtons extends ConsumerWidget {
                   if (isAlreadyOptimized) {
                     // Si ja és ràpid, iniciem directament
                     onFollowTrack();
-                  } else {
-                    // 2. Si és lent, demanem permís per optimitzar-lo
+                    return;
+                  }
+
+                  // 4. Si no està optimitzat, només mostrem el diàleg la PRIMERA vegada
+                  final prefs = await SharedPreferences.getInstance();
+                  final alreadyShown =
+                      prefs.getBool('follow_warning_shown') ?? false;
+
+                  if (!alreadyShown) {
+                    // Mostrar el diàleg només la primera vegada
                     final confirm = await AppMessages.showGpsOptimizationDialog(
                       context,
                     );
-                    if (confirm == true) {
-                      onFollowTrack();
+
+                    if (confirm != true) {
+                      // L’usuari ha cancel·lat → no iniciem seguiment
+                      return;
                     }
+
+                    // Marquem com vist perquè no torni a sortir
+                    await prefs.setBool('follow_warning_shown', true);
                   }
+
+                  // 5. Iniciar seguiment (sense diàleg si ja s’ha vist)
+                  onFollowTrack();
                 },
               ),
 
-              // Botó de Paperera (Eliminar)
               // Botó de Paperera (Eliminar)
               _circleButton(
                 icon: Icons.delete_outline,
