@@ -9,7 +9,7 @@ class AppLocalizationsEs extends AppLocalizations {
   AppLocalizationsEs([String locale = 'es']) : super(locale);
 
   @override
-  String get appTitle => 'GpxGo';
+  String get appTitle => 'Senda';
 
   @override
   String get startRecording => 'Grabar';
@@ -105,7 +105,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get locationPermissionMessage => 'La aplicación no tiene permisos para acceder a la ubicación. ¿Quieres abrir la configuración para concederlos?';
 
   @override
-  String get offTrack => 'Te estás alejando del track importado';
+  String get offTrack => 'Te estás alejando de la ruta';
 
   @override
   String get backOnTrack => 'Estás sobre el track';
@@ -324,7 +324,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get deleteTrackTitle => 'Eliminar ruta';
 
   @override
-  String get deleteTrackMessage => '¿Estás seguro de que quieres eliminar esta ruta importada? Esta acción no se puede deshacer.';
+  String get deleteTrackMessage => '¿Estás seguro de que quieres eliminar esta ruta? Esta acción no se puede deshacer.';
 
   @override
   String get deleteTrackConfirm => 'ELIMINAR';

@@ -100,7 +100,7 @@ abstract class AppLocalizations {
   /// No description provided for @appTitle.
   ///
   /// In en, this message translates to:
-  /// **'GpxGo'**
+  /// **'Senda'**
   String get appTitle;
 
   /// No description provided for @startRecording.
@@ -292,7 +292,7 @@ abstract class AppLocalizations {
   /// No description provided for @offTrack.
   ///
   /// In en, this message translates to:
-  /// **'You are drifting away from the imported track'**
+  /// **'You are drifting away from the route'**
   String get offTrack;
 
   /// No description provided for @backOnTrack.
@@ -730,7 +730,7 @@ abstract class AppLocalizations {
   /// No description provided for @deleteTrackMessage.
   ///
   /// In en, this message translates to:
-  /// **'Are you sure you want to delete this imported track? This action cannot be undone.'**
+  /// **'Are you sure you want to delete this route? This action cannot be undone.'**
   String get deleteTrackMessage;
 
   /// No description provided for @deleteTrackConfirm.

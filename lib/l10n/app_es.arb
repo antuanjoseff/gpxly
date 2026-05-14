@@ -1,5 +1,5 @@
 {
-  "appTitle": "GpxGo",
+  "appTitle": "Senda",
   "startRecording": "Grabar",
   "stopRecording": "Detener grabación",
   "gpsDisabled": "El GPS está desactivado",
@@ -41,7 +41,7 @@
   "locationPermissionTitle": "Permiso de ubicación",
   "locationPermissionMessage": "La aplicación no tiene permisos para acceder a la ubicación. ¿Quieres abrir la configuración para concederlos?",
 
-  "offTrack": "Te estás alejando del track importado",
+  "offTrack": "Te estás alejando de la ruta",
   "backOnTrack": "Estás sobre el track",
 
   "elevationFixing": "Corrigiendo altitudes",
@@ -130,7 +130,7 @@
 "shareTrack": "COMPARTIR",
 "continueRecording": "Continuar grabando",
 "deleteTrackTitle": "Eliminar ruta",
-"deleteTrackMessage": "¿Estás seguro de que quieres eliminar esta ruta importada? Esta acción no se puede deshacer.",
+"deleteTrackMessage": "¿Estás seguro de que quieres eliminar esta ruta? Esta acción no se puede deshacer.",
 "deleteTrackConfirm": "ELIMINAR",
 
 "waypointDetailsTitle": "Detalles del waypoint",

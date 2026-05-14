@@ -4,40 +4,56 @@ import 'package:senda/notifiers/helpers/thresholds.dart';
 import 'package:senda/utils/geo_utils.dart';
 
 class ReverseDetector {
-  bool isReverseDirection(ClosestResult c, List<LatLng> lastUserPositions) {
-    // 1. Necessitem un historial mínim per ser fiables (p. ex. 6 punts)
-    if (lastUserPositions.length < TrackThresholds.minimumReversedPositions)
-      return false;
+  bool isReverseDirection(ClosestResult c, List<LatLng> pts) {
+    // --- 1. Necessitem un mínim de punts (nivell 3) ---
+    if (pts.length < TrackThresholds.minPositionsLevel3) return false;
 
-    // 2. Agafem un punt de referència més enrere (per exemple, fa 5 posicions)
-    final oldPos =
-        lastUserPositions[lastUserPositions.length -
-            TrackThresholds.minimumReversedPositions];
+    // --- 2. Definim la finestra de càlcul ---
+    final int N = TrackThresholds.minPositionsLevel3;
+    final window = pts.sublist(pts.length - N);
 
-    final currPos = lastUserPositions.last;
+    final LatLng first = window.first;
+    final LatLng last = window.last;
 
-    // 3. Calculem la distància neta recorreguda en aquest interval
+    // --- 3. Distància neta recorreguda ---
     final netDistance = distanceBetween(
-      oldPos.latitude,
-      oldPos.longitude,
-      currPos.latitude,
-      currPos.longitude,
+      first.latitude,
+      first.longitude,
+      last.latitude,
+      last.longitude,
     );
 
-    // 🔥 FILTRE CLAU: Només comprovem si hem recorregut una distància neta raonable.
-    // Això evita que salts petits del GPS mentre estàs quiet disparin l'alerta.
+    // Si no hi ha moviment real → no hi ha reverse
     if (netDistance < TrackThresholds.reverseMinDistance) return false;
 
-    // 4. Calculem el rumb real de la trajectòria (no d'un sol salt)
-    final movementBearing = bearingBetween(oldPos, currPos);
+    // --- 4. Bearing mitjà de moviment ---
+    final movementBearing = _averageBearing(window);
 
-    // 5. Comparem amb el rumb del track
+    // --- 5. Diferència amb el bearing del track ---
     final diff = _headingDifference(c.bearing, movementBearing);
 
-    // Si la trajectòria real consolidada és oposada (>140º), és un positiu real
+    // --- 6. Condició final ---
     return diff > 140;
   }
 
+  // ------------------------------------------------------------
+  // Bearing mitjà entre punts consecutius
+  // ------------------------------------------------------------
+  double _averageBearing(List<LatLng> pts) {
+    double sum = 0;
+    int count = 0;
+
+    for (int i = 1; i < pts.length; i++) {
+      sum += bearingBetween(pts[i - 1], pts[i]);
+      count++;
+    }
+
+    return sum / count;
+  }
+
+  // ------------------------------------------------------------
+  // Diferència de heading normalitzada
+  // ------------------------------------------------------------
   double _headingDifference(double h1, double h2) {
     final diff = (h1 - h2).abs();
     return diff > 180 ? 360 - diff : diff;

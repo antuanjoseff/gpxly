@@ -221,15 +221,17 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
   // Actualitzar posició
   // ------------------------------------------------------------
   void updateUserPosition(LatLng userPos, {required double userHeading}) {
-    // <--- Afegeix el paràmetre aquí
     if (!state.isFollowing || state.isPaused) return;
 
+    // --- BUFFER DE POSICIONS ---
     _lastUserPositions.add(userPos);
-    if (_lastUserPositions.length > 10) _lastUserPositions.removeAt(0);
+    if (_lastUserPositions.length > TrackThresholds.lastNPositions) {
+      _lastUserPositions.removeAt(0);
+    }
 
-    // Minim de 5 posicions per fer càlculs
-    if (_lastUserPositions.length < 6) return;
+    final count = _lastUserPositions.length;
 
+    // --- IMPORTED TRACK ---
     final imported = ref.read(importedTrackProvider);
     if (imported == null || imported.coordinates.isEmpty) return;
 
@@ -237,6 +239,7 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
         .map((c) => LatLng(c[1], c[0]))
         .toList();
 
+    // --- NIVELL 1: CÀLCULS BÀSICS (sempre disponibles) ---
     final closest = geometry.closestPointAndSegment(
       userPos,
       importedLatLng,
@@ -245,7 +248,7 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
 
     final proj = closest.projectedPoint;
 
-    // Progressió
+    // Progressió sobre el track
     if (_lastProjectedPoint != null) {
       final step = distanceBetween(
         _lastProjectedPoint!.latitude,
@@ -260,9 +263,9 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
     _lastProjectedPoint = proj;
 
     // Final del track
-    // Extraiem la meta dinàmicament (sempre és l'últim punt del provider actual)
     final List<double> lastCoords = imported.coordinates.last;
     final LatLng goalPoint = LatLng(lastCoords[1], lastCoords[0]);
+
     if (_checkIfFinished(closest, goalPoint, imported.coordinates.length)) {
       HapticFeedback.lightImpact();
       sounds.playEndTrackSound();
@@ -271,47 +274,56 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
       return;
     }
 
-    // Distància
+    // Distància al track
     final dist = closest.distance;
     _lastDistances.add(dist);
     if (_lastDistances.length > TrackThresholds.trendWindow) {
       _lastDistances.removeAt(0);
     }
 
+    final isNear = dist < TrackThresholds.nearThreshold;
     final isFar = dist > TrackThresholds.farThreshold;
 
-    // --- REVERSED DETECTION (MODIFICADO) ---
-    // Solo comprobamos si estamos en ruta y no hay un diálogo ya en proceso o bloqueado
-    if (state.mode == FollowMode.onTrack &&
+    // --- NIVELL 2: trending away, heading wrong, offtrack bàsic ---
+    bool isTrendingAway = false;
+    bool isHeadingWrong = false;
+
+    if (count >= TrackThresholds.minPositionsLevel2) {
+      isTrendingAway = offtrackLogic.isTrendingAway(_lastDistances);
+      isHeadingWrong =
+          geometry.headingDifference(closest.bearing, closest.userBearing) > 45;
+    }
+
+    // --- NIVELL 3: reverse detection, trending robust ---
+    if (count >= TrackThresholds.minPositionsLevel3 &&
+        state.mode == FollowMode.onTrack &&
         !_reverseDialogShown &&
         !_reverseDetectionLocked) {
-      if (dist < TrackThresholds.nearThreshold &&
-          geometry.headingDifference(closest.bearing, closest.userBearing) >
-              140 &&
+      final headingDiff = geometry.headingDifference(
+        closest.bearing,
+        closest.userBearing,
+      );
+
+      if (isNear &&
+          headingDiff > 140 &&
           reverseDetector.isReverseDirection(closest, _lastUserPositions)) {
         sounds.playReversedTrackSound();
 
-        // 1. Bloqueamos inmediatamente para que el siguiente tick de GPS no entre aquí
         _reverseDialogShown = true;
         _reverseDetectionLocked = true;
 
-        // 2. Notificamos al estado para que el ref.listen del mapa abra el diálogo
         state = state.copyWith(showReverseTrackDialog: true);
-
-        // Retornamos para evitar que el autómata de estados cambie el modo a OffTrack
-        // mientras el usuario decide qué hacer con el diálogo.
         return;
       }
     }
 
-    // Autòmat
+    // --- AUTÒMAT D'ESTATS ---
     _handleFollowState(
       dist: dist,
-      isNear: dist < TrackThresholds.nearThreshold,
+      isNear: isNear,
       isFar: isFar,
-      isTrendingAway: offtrackLogic.isTrendingAway(_lastDistances),
-      isHeadingWrong:
-          geometry.headingDifference(closest.bearing, closest.userBearing) > 45,
+      isTrendingAway: isTrendingAway,
+      isHeadingWrong: isHeadingWrong,
     );
 
     state = state.copyWith(distanceToTrack: dist);
@@ -453,8 +465,7 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
   // Final del track
   // ------------------------------------------------------------
   bool _checkIfFinished(ClosestResult closest, LatLng goal, int totalPoints) {
-    // 1. Distància real (lineal) entre la teva posició projectada i l'últim punt del track.
-    // Utilitzem el punt projectat per a major precisió sobre la traça.
+    // 1. Distància real a la meta
     final double distanceToGoal = distanceBetween(
       closest.projectedPoint.latitude,
       closest.projectedPoint.longitude,
@@ -462,21 +473,14 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
       goal.longitude,
     );
 
-    // 2. Umbral de proximitat a la meta (20 metres).
     final bool isAtGoal = distanceToGoal < TrackThresholds.minimumDitanceToGoal;
 
-    // 3. Progrés mínim realitzat sobre el track (100 metres).
-    // Evita que el track s'aturi només començar si la sortida i meta estan juntes.
-
+    // 2. Progrés mínim realitzat sobre el track
     final bool hasMinimumProgress =
         _distanceProgressOnTrack >= TrackThresholds.minProgressRequired;
 
-    // 4. Validació per segment (estar al darrer 20% del fitxer).
-    // Això garanteix que l'usuari ha recorregut la major part del fitxer de coordenades.
-    final bool isLastPart = closest.segmentIndex > (totalPoints * 0.8);
-
-    // Només retornem 'true' si es compleixen totes les condicions simultàniament.
-    return isAtGoal && hasMinimumProgress && isLastPart;
+    // 3. Nova lògica: només aquestes dues condicions
+    return isAtGoal && hasMinimumProgress;
   }
 
   void togglePause() {
