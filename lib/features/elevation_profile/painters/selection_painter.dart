@@ -80,12 +80,26 @@ class SelectionPainter extends CustomPainter {
 
     final double minAlt = allAlts.reduce((a, b) => a < b ? a : b);
     final double maxAlt = allAlts.reduce((a, b) => a > b ? a : b);
+    final double diff = maxAlt - minAlt;
 
-    double diff = maxAlt - minAlt;
-    double effectiveRange = diff < 50 ? 50 : diff;
+    // Exageració progressiva
+    double exaggeration = 1.0;
 
-    final double minY = minAlt - (effectiveRange * 0.1);
-    final double maxY = minY + (effectiveRange * 1.2);
+    if (diff < 30) {
+      exaggeration = 1.8;
+    } else if (diff < 60) {
+      exaggeration = 1.4;
+    } else if (diff < 100) {
+      exaggeration = 1.2;
+    }
+
+    // Rang efectiu mínim
+    final double effectiveRange = diff < 50 ? 50 : diff;
+
+    // Aplicar exageració
+    final double minY = minAlt - (effectiveRange * 0.3 * exaggeration);
+    final double maxY = minY + (effectiveRange * 1.3 * exaggeration);
+
     final double yRange = maxY - minY;
 
     bool showRangeText = true;

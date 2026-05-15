@@ -71,11 +71,30 @@ class _ElevationProfileScreenState
     final double minAlt = allAlts.reduce((a, b) => a < b ? a : b);
     final double maxAlt = allAlts.reduce((a, b) => a > b ? a : b);
 
-    double diff = maxAlt - minAlt;
-    double effectiveRange = diff < 50 ? 50 : diff;
+    final double diff = maxAlt - minAlt;
 
-    final forcedMinY = minAlt - (effectiveRange * 0.1);
-    final forcedMaxY = forcedMinY + (effectiveRange * 1.2);
+    // ─────────────────────────────────────────────
+    // EXAGERACIÓ PROGRESSIVA (Solució PRO)
+    // ─────────────────────────────────────────────
+    // diff < 30 m → exageració forta
+    // diff < 60 m → exageració mitjana
+    // diff < 100 m → exageració suau
+    // diff >= 100 m → sense exageració
+    double exaggeration = 1.0;
+
+    if (diff < 30) {
+      exaggeration = 1.8;
+    } else if (diff < 60) {
+      exaggeration = 1.4;
+    } else if (diff < 100) {
+      exaggeration = 1.2;
+    }
+
+    // Rang efectiu mínim
+    final double effectiveRange = diff < 50 ? 50 : diff;
+
+    final forcedMinY = minAlt - (effectiveRange * 0.3 * exaggeration);
+    final forcedMaxY = forcedMinY + (effectiveRange * 1.3 * exaggeration);
 
     // Decideix quin rang vertical usar:
     //    - si hi ha dades de gravació → provider
@@ -156,7 +175,8 @@ class _ElevationProfileScreenState
             (i) => FlSpot(primaryDists[i], primaryAlts[i]),
           ),
           isCurved: true,
-          curveSmoothness: 0.5,
+          curveSmoothness: 0.12,
+          isStrokeCapRound: true,
           preventCurveOverShooting: true,
           color: primaryIsReal ? trackColor : importedTrackColor,
           barWidth: 3,

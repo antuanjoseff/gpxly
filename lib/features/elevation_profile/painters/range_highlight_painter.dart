@@ -43,8 +43,9 @@ class RangeAreaPainter extends CustomPainter {
   final int endIndex;
   final List<double> distances;
   final List<double> altitudes;
-  final double minY;
-  final double maxY;
+  final double
+  minY; // ja no s’usa directament, però el mantenim per compatibilitat
+  final double maxY; // ja no s’usa directament
   final Color color;
 
   RangeAreaPainter({
@@ -58,46 +59,85 @@ class RangeAreaPainter extends CustomPainter {
   });
 
   @override
-  @override
   void paint(Canvas canvas, Size size) {
     if (distances.isEmpty || altitudes.isEmpty) return;
 
-    // Fem servir exactament els mateixos valors de padding i alçada que el SelectionPainter
-    final double usableWidth = size.width - 48; // 24 + 24
+    // ─────────────────────────────────────────────
+    // 1) Calcular min/max reals del segment
+    // ─────────────────────────────────────────────
+    final double minAlt = altitudes.reduce((a, b) => a < b ? a : b);
+    final double maxAlt = altitudes.reduce((a, b) => a > b ? a : b);
+    final double diff = maxAlt - minAlt;
+
+    // ─────────────────────────────────────────────
+    // 2) Exageració PRO progressiva
+    // ─────────────────────────────────────────────
+    double exaggeration = 1.0;
+
+    if (diff < 30) {
+      exaggeration = 1.8;
+    } else if (diff < 60) {
+      exaggeration = 1.4;
+    } else if (diff < 100) {
+      exaggeration = 1.2;
+    }
+
+    // ─────────────────────────────────────────────
+    // 3) Rang efectiu mínim
+    // ─────────────────────────────────────────────
+    final double effectiveRange = diff < 50 ? 50 : diff;
+
+    // ─────────────────────────────────────────────
+    // 4) Aplicar exageració al rang vertical
+    // ─────────────────────────────────────────────
+    final double forcedMinY = minAlt - (effectiveRange * 0.3 * exaggeration);
+    final double forcedMaxY =
+        forcedMinY + (effectiveRange * 1.3 * exaggeration);
+
+    final double yRange = forcedMaxY - forcedMinY;
+
+    // ─────────────────────────────────────────────
+    // 5) Dimensions del gràfic
+    // ─────────────────────────────────────────────
+    final double usableWidth = size.width - 48; // padding horitzontal
     final double chartHeight = size.height - 40; // bottomReserved
     final double maxDist = distances.last;
 
-    // El yRange aquí ja ha de venir del minY i maxY calculats amb el "límit de 50m"
-    final double yRange = maxY - minY;
-
-    // 1. Ordenar índexs (per si l'usuari creua les agulles fent drag)
+    // ─────────────────────────────────────────────
+    // 6) Ordenar índexs
+    // ─────────────────────────────────────────────
     final int start = startIndex < endIndex ? startIndex : endIndex;
     final int end = startIndex < endIndex ? endIndex : startIndex;
 
     final path = Path();
 
-    // 2. Punt inicial: a la base (eix X), sota el primer punt seleccionat
+    // ─────────────────────────────────────────────
+    // 7) Punt inicial a la base
+    // ─────────────────────────────────────────────
     double firstX = (distances[start] / maxDist) * usableWidth + 24;
     path.moveTo(firstX, chartHeight);
 
-    // 3. Resseguir el perfil de la muntanya entre els dos índexs
+    // ─────────────────────────────────────────────
+    // 8) Resseguir el perfil exagerat
+    // ─────────────────────────────────────────────
     for (int i = start; i <= end; i++) {
       double x = (distances[i] / maxDist) * usableWidth + 24;
 
-      // Calculem la Y relativa fent servir el mateix minY/maxY que la resta de components
-      double relY = (altitudes[i] - minY) / yRange;
+      double relY = (altitudes[i] - forcedMinY) / yRange;
       double y = chartHeight - (relY * chartHeight);
+
       path.lineTo(x, y);
     }
 
-    // 4. Tancar el polígon baixant a la base sota l'últim punt
+    // ─────────────────────────────────────────────
+    // 9) Tancar el polígon
+    // ─────────────────────────────────────────────
     double lastX = (distances[end] / maxDist) * usableWidth + 24;
     path.lineTo(lastX, chartHeight);
     path.close();
 
     final paint = Paint()
-      ..color =
-          color // Aquí ja vindrà amb el .withAlpha(51) des del widget
+      ..color = color
       ..style = PaintingStyle.fill;
 
     canvas.drawPath(path, paint);

@@ -2,11 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/l10n/app_localizations.dart';
-import 'package:senda/screens/map_screen.dart';
-import 'package:senda/theme/app_theme.dart';
 import 'package:senda/notifiers/permissions_notifier.dart';
+import 'package:senda/screens/map_screen.dart';
+// 🔥 AFEGIT
+import 'package:senda/services/dem_loader.dart';
+import 'package:senda/theme/app_theme.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // PAS CRÍTIC: copiar els .tif dels assets a /files/dem/
+  await DemLoader.ensureDemFiles();
+
   runApp(const ProviderScope(child: GPXlyApp()));
 }
 
@@ -60,7 +67,7 @@ class _LifecycleWrapperState extends ConsumerState<_LifecycleWrapper>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      // 🔥 Solució: refrescar permisos quan tornem a l’app
+      // olució: refrescar permisos quan tornem a l’app
       ref.read(permissionsProvider.notifier).checkPermissions();
     }
   }
