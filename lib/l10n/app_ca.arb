@@ -152,6 +152,14 @@
 "gpxErrorInvalidExtension": "El fitxer seleccionat no és un GPX",
 "gpxErrorRead": "No s'ha pogut llegir el fitxer GPX",
 "gpxErrorInvalidXml": "El fitxer no sembla un XML GPX vàlid",
-"gpxErrorNoGpxTag": "El fitxer no conté dades GPX"
+"gpxErrorNoGpxTag": "El fitxer no conté dades GPX",
+
+"alarms": "Alarmes",
+"alarmsDistanceTitle": "Alarma per distància",
+"alarmsDistanceLabel": "Metres recorreguts",
+"alarmsAltitudeTitle": "Alarma per altitud",
+"alarmsAltitudeLabel": "Metres de desnivell (+/-)",
+"alarmsTimeTitle": "Alarma per temps",
+"alarmsTimeLabel": "Segons"
 
 }

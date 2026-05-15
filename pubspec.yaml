@@ -17,7 +17,6 @@ environment:
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
 
-
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
 # consider running `flutter pub upgrade --major-versions`. Alternatively,
@@ -50,8 +49,6 @@ dependencies:
   flutter_localizations:
     sdk: flutter
 
-
-
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -65,21 +62,19 @@ flutter_launcher_icons:
   ios: true
   image_path: "assets/icon/logo.png"
 
-
 flutter_native_splash:
   color: "#FFFFFF"
   background_image: assets/icon/logo.png # Una imatge que ja inclogui el logo al centre
   android: true
   ios: true
-  
+
   # Especificacions per a Android 12+
   android_12:
     image: assets/icon/logo.png
     color: "#FFFFFF"
-  
-  # A iOS, 'center' sol funcionar millor que 'scaleAspectFit' per a logos
-  ios_content_mode: center 
 
+  # A iOS, 'center' sol funcionar millor que 'scaleAspectFit' per a logos
+  ios_content_mode: center
 
 # The following section is specific to Flutter packages.
 flutter:
@@ -92,15 +87,17 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
-    - assets/osm_style.json  
+    - assets/osm_style.json
     - assets/sound/off_track.mp3
     - assets/sound/back_on_track.mp3
     - assets/sound/fireworks.mp3
     - assets/sound/fireworks2.mp3
     - assets/sound/snap_fingers.mp3
+    - assets/sound/alarm_distance.mp3
+    - assets/sound/alarm_altitude.mp3
+    - assets/sound/alarm_time.mp3
     - assets/icon/waypoint.png
     - assets/icon/waypoint_imported.png
-    
 
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg

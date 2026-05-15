@@ -376,4 +376,25 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get gpxErrorNoGpxTag => 'The file contains no GPX data';
+
+  @override
+  String get alarms => 'Alarms';
+
+  @override
+  String get alarmsDistanceTitle => 'Distance alarm';
+
+  @override
+  String get alarmsDistanceLabel => 'Meters traveled';
+
+  @override
+  String get alarmsAltitudeTitle => 'Altitude alarm';
+
+  @override
+  String get alarmsAltitudeLabel => 'Elevation change (+/-)';
+
+  @override
+  String get alarmsTimeTitle => 'Time alarm';
+
+  @override
+  String get alarmsTimeLabel => 'Seconds';
 }

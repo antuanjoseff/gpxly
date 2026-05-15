@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:senda/l10n/app_localizations.dart';
+import 'package:senda/screens/settings/tabs/alarm_settings_tab.dart';
 import 'package:senda/screens/settings/tabs/gps_settings_tab.dart';
 import 'package:senda/screens/settings/tabs/gpx_settings_tab.dart';
 import 'package:senda/screens/settings/tabs/imported_track_settings_tab.dart';
 import 'package:senda/screens/settings/tabs/track_settings_tab.dart';
 import 'package:senda/theme/app_colors.dart';
-import 'package:senda/l10n/app_localizations.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -61,6 +62,14 @@ class SettingsScreen extends ConsumerWidget {
                 MaterialPageRoute(
                   builder: (_) => const ImportedTrackSettingsTab(),
                 ),
+              ),
+            ),
+            _SettingsTile(
+              icon: Icons.alarm,
+              label: t.alarms, // afegeix-ho al teu l10n
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AlarmSettingsTab()),
               ),
             ),
           ],

@@ -1,4 +1,5 @@
 import 'dart:math';
+
 import 'package:audioplayers/audioplayers.dart';
 
 class TrackSounds {
@@ -62,6 +63,42 @@ class TrackSounds {
       await player.play(AssetSource(fileName), volume: 1.0, ctx: _alarmContext);
     } catch (e) {
       print("Error playing end-track sound: $e");
+    }
+  }
+
+  Future<void> playDistanceAlarm() async {
+    try {
+      await player.play(
+        AssetSource('sound/alarm_distance.mp3'),
+        volume: 1.0,
+        ctx: _alarmContext,
+      );
+    } catch (e) {
+      print("Error playing distance alarm: $e");
+    }
+  }
+
+  Future<void> playAltitudeAlarm() async {
+    try {
+      await player.play(
+        AssetSource('sound/alarm_altitude.mp3'),
+        volume: 1.0,
+        ctx: _alarmContext,
+      );
+    } catch (e) {
+      print("Error playing altitude alarm: $e");
+    }
+  }
+
+  Future<void> playTimeAlarm() async {
+    try {
+      await player.play(
+        AssetSource('sound/alarm_time.mp3'),
+        volume: 1.0,
+        ctx: _alarmContext,
+      );
+    } catch (e) {
+      print("Error playing time alarm: $e");
     }
   }
 }

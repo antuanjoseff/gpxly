@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
+import 'package:senda/notifiers/alarm_settings_notifier.dart';
 import 'package:senda/notifiers/elevation_range_notifier.dart';
 import 'package:senda/notifiers/gps_accuracy_notifier.dart';
 import 'package:senda/notifiers/gps_altitude_notifier.dart';
@@ -22,12 +23,16 @@ class TrackNotifier extends Notifier<Track> {
   StreamSubscription? _gpsSub;
   bool isFollowing = false;
   bool gpsActive = false;
+  final _positionStreamController = StreamController<LatLng>.broadcast();
+  Stream<LatLng> get positionStream => _positionStreamController.stream;
+
   final _hgtService = HgtService();
 
   @override
   Track build() {
     ref.onDispose(() {
       _gpsSub?.cancel();
+      _positionStreamController.close();
       _hgtService.dispose();
     });
 
@@ -107,6 +112,7 @@ class TrackNotifier extends Notifier<Track> {
       currentPosition: LatLng(lat, lon),
       currentHeading: heading,
     );
+    _positionStreamController.add(LatLng(lat, lon));
 
     // 3. SEGUIMENT: Enviem posició i rumb alhora per a màxima eficiència
     if (isFollowing) {
@@ -366,6 +372,24 @@ class TrackNotifier extends Notifier<Track> {
       minElevation: 9999.0,
     );
     clearCache();
+  }
+
+  void stopGpsIfNotNeeded() {
+    final alarms = ref.read(alarmSettingsProvider);
+
+    final anyAlarmEnabled =
+        alarms.distanceEnabled || alarms.altitudeEnabled || alarms.timeEnabled;
+
+    // Només parem el GPS si:
+    // - no estem gravant
+    // - no estem seguint un track
+    // - no hi ha alarmes actives
+    final isRecording = state.recordingState == RecordingState.recording;
+
+    if (!isRecording && !isFollowing && !anyAlarmEnabled) {
+      NativeGpsChannel.stop();
+      gpsActive = false;
+    }
   }
 }
 

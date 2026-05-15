@@ -151,6 +151,13 @@
 "gpxErrorInvalidExtension": "El archivo seleccionado no es un GPX",
 "gpxErrorRead": "No se ha podido leer el archivo GPX",
 "gpxErrorInvalidXml": "El archivo no parece ser un XML GPX válido",
-"gpxErrorNoGpxTag": "El archivo no contiene datos GPX"
+"gpxErrorNoGpxTag": "El archivo no contiene datos GPX",
 
+"alarms": "Alarmas",
+"alarmsDistanceTitle": "Alarma por distancia",
+"alarmsDistanceLabel": "Metros recorridos",
+"alarmsAltitudeTitle": "Alarma por altitud",
+"alarmsAltitudeLabel": "Metros de desnivel (+/-)",
+"alarmsTimeTitle": "Alarma por tiempo",
+"alarmsTimeLabel": "Segundos"
 }

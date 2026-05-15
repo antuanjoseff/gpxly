@@ -376,4 +376,25 @@ class AppLocalizationsCa extends AppLocalizations {
 
   @override
   String get gpxErrorNoGpxTag => 'El fitxer no conté dades GPX';
+
+  @override
+  String get alarms => 'Alarmes';
+
+  @override
+  String get alarmsDistanceTitle => 'Alarma per distància';
+
+  @override
+  String get alarmsDistanceLabel => 'Metres recorreguts';
+
+  @override
+  String get alarmsAltitudeTitle => 'Alarma per altitud';
+
+  @override
+  String get alarmsAltitudeLabel => 'Metres de desnivell (+/-)';
+
+  @override
+  String get alarmsTimeTitle => 'Alarma per temps';
+
+  @override
+  String get alarmsTimeLabel => 'Segons';
 }

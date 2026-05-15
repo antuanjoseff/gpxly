@@ -834,6 +834,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The file contains no GPX data'**
   String get gpxErrorNoGpxTag;
+
+  /// No description provided for @alarms.
+  ///
+  /// In en, this message translates to:
+  /// **'Alarms'**
+  String get alarms;
+
+  /// No description provided for @alarmsDistanceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Distance alarm'**
+  String get alarmsDistanceTitle;
+
+  /// No description provided for @alarmsDistanceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Meters traveled'**
+  String get alarmsDistanceLabel;
+
+  /// No description provided for @alarmsAltitudeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Altitude alarm'**
+  String get alarmsAltitudeTitle;
+
+  /// No description provided for @alarmsAltitudeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Elevation change (+/-)'**
+  String get alarmsAltitudeLabel;
+
+  /// No description provided for @alarmsTimeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Time alarm'**
+  String get alarmsTimeTitle;
+
+  /// No description provided for @alarmsTimeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Seconds'**
+  String get alarmsTimeLabel;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
