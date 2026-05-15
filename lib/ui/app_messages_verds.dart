@@ -9,9 +9,8 @@ class AppMessages {
   // ==========================================
   // 1. ESTILS I COLORS (Estètica de l'App)
   // ==========================================
-
-  static final Color _surfaceColor = const Color(0xFF556B2F).withAlpha(20);
-  static const Color _secondaryText = Color(0xFFFFFFFF);
+  static const Color _surfaceColor = Color(0xFF242426);
+  static final Color _secondaryText = Colors.white.withAlpha(170);
 
   static ButtonStyle _buttonStyle(Color color) => ElevatedButton.styleFrom(
     backgroundColor: color,
@@ -37,30 +36,41 @@ class AppMessages {
     List<Widget>? extraContent,
   }) {
     final t = AppLocalizations.of(context)!;
-    final Color accentColor = confirmColor ?? AppColors.skyBlue;
+
+    // Si no hi ha confirmColor, fem servir el botó fosc (gris fosc)
+    final Color effectiveConfirmColor =
+        confirmColor ?? AppColors.dialogTextDark;
 
     return showDialog<bool>(
       context: context,
       barrierDismissible: barrierDismissible,
       builder: (context) => AlertDialog(
-        backgroundColor: AppColors.skyBlueDark,
+        backgroundColor: AppColors.dialogGreen, // 🌿 Verd pastel suau
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
           side: BorderSide(color: Colors.white.withAlpha(25)),
         ),
         titlePadding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
+
+        // -------------------------
+        // TITOL + ICONA
+        // -------------------------
         title: Row(
           children: [
             if (icon != null) ...[
-              Icon(icon, color: iconColor ?? accentColor, size: 26),
+              Icon(
+                icon,
+                color: iconColor ?? AppColors.dialogTextDark,
+                size: 26,
+              ),
               const SizedBox(width: 12),
             ],
             Expanded(
               child: Text(
                 title,
                 style: const TextStyle(
-                  color: AppColors.offWhite,
+                  color: AppColors.dialogTextDark, // 🖤 Gris fosc
                   fontWeight: FontWeight.bold,
                   fontSize: 19,
                 ),
@@ -68,6 +78,10 @@ class AppMessages {
             ),
           ],
         ),
+
+        // -------------------------
+        // CONTINGUT
+        // -------------------------
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -76,8 +90,8 @@ class AppMessages {
               if (message.isNotEmpty)
                 Text(
                   message,
-                  style: TextStyle(
-                    color: AppColors.offWhite.withAlpha(220),
+                  style: const TextStyle(
+                    color: AppColors.dialogTextDark,
                     fontSize: 15,
                     height: 1.4,
                   ),
@@ -89,6 +103,10 @@ class AppMessages {
             ],
           ),
         ),
+
+        // -------------------------
+        // BOTONS
+        // -------------------------
         actionsPadding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
         actions: [
           Row(
@@ -99,12 +117,25 @@ class AppMessages {
                   onPressed: () => Navigator.pop(context, false),
                   child: Text(
                     cancelLabel,
-                    style: TextStyle(color: Colors.white.withAlpha(130)),
+                    style: const TextStyle(
+                      color: AppColors.dialogTextDark, // Gris fosc
+                    ),
                   ),
                 ),
               const SizedBox(width: 8),
               ElevatedButton(
-                style: _buttonStyle(accentColor),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: effectiveConfirmColor, // Gris fosc o vermell
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
                 onPressed: () => Navigator.pop(context, true),
                 child: Text(confirmLabel ?? t.ok),
               ),
@@ -238,6 +269,7 @@ class AppMessages {
         cancelLabel: "MANTENIR",
         barrierDismissible: false,
       );
+
   static Future<bool?> showDeleteImportedTrackDialog(BuildContext context) =>
       _showBaseDialog(
         context: context,
@@ -342,23 +374,25 @@ class AppMessages {
   static Future<String?> showStopRecordingDialog(BuildContext context) async {
     final t = AppLocalizations.of(context)!;
 
-    // IMPORTANT: Fem servir showDialog directament o un _showBaseDialog
-    // que ens permeti capturar qualsevol tipus de retorn (String)
     final dynamic result = await showDialog<dynamic>(
       context: context,
       barrierDismissible: true,
       builder: (context) => AlertDialog(
-        backgroundColor: _surfaceColor,
+        backgroundColor: AppColors.dialogGreen, // 🌿 Verd pastel
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
           side: BorderSide(color: Colors.white.withAlpha(25)),
         ),
+
+        // -------------------------
+        // TÍTOL
+        // -------------------------
         title: Row(
           children: [
             const Icon(
               Icons.stop_circle_rounded,
-              color: Colors.redAccent,
+              color: Colors.redAccent, // 🔴 Mantingut
               size: 26,
             ),
             const SizedBox(width: 12),
@@ -366,7 +400,7 @@ class AppMessages {
               child: Text(
                 t.finishRecordingTitle,
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: AppColors.dialogTextDark, // 🖤 Gris fosc
                   fontWeight: FontWeight.bold,
                   fontSize: 19,
                 ),
@@ -374,21 +408,25 @@ class AppMessages {
             ),
           ],
         ),
+
+        // -------------------------
+        // CONTINGUT
+        // -------------------------
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 t.finishRecordingMessage,
-                style: TextStyle(
-                  color: _secondaryText,
+                style: const TextStyle(
+                  color: AppColors.dialogTextDark,
                   fontSize: 15,
                   height: 1.4,
                 ),
               ),
               const SizedBox(height: 24),
 
-              // 1. COMPARTIR (Verd - Amplada total)
+              // 1. COMPARTIR (Verd fosc)
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
@@ -398,18 +436,34 @@ class AppMessages {
                     t.shareTrack,
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
-                  style: _buttonStyle(const Color(0xFF2E7D32)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(
+                      0xFF2E7D32,
+                    ), // 🟢 Verd fosc original
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
 
-              // 2. FINALITZAR (Vermell suau - Amplada total)
+              // 2. FINALITZAR (Vermell suau)
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () => Navigator.pop(context, "finish"),
-                  style: _buttonStyle(Colors.redAccent.withAlpha(40)).copyWith(
-                    foregroundColor: WidgetStateProperty.all(Colors.redAccent),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.redAccent.withAlpha(40),
+                    foregroundColor: Colors.redAccent,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
                   child: Text(
                     t.finishRecordingConfirm,
@@ -419,13 +473,13 @@ class AppMessages {
               ),
               const SizedBox(height: 16),
 
-              // 3. CONTINUAR (Text central)
+              // 3. CONTINUAR (Text gris fosc)
               TextButton(
                 onPressed: () => Navigator.pop(context, null),
                 child: Text(
                   t.continueRecording,
-                  style: TextStyle(
-                    color: Colors.white.withAlpha(120),
+                  style: const TextStyle(
+                    color: AppColors.dialogTextDark,
                     decoration: TextDecoration.underline,
                   ),
                 ),
@@ -436,7 +490,6 @@ class AppMessages {
       ),
     );
 
-    // Retornem el String directament ("share", "finish" o null)
     return result as String?;
   }
 

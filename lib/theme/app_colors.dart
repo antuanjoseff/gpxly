@@ -6,6 +6,7 @@ class AppColors {
   static const Color skyBlue = Color(0xFF4A90E2);
   // static const Color mustardYellow = Color(0xFFD9A441);
   static const Color deepGreen = Color(0xFF2F4F3E);
+  static const Color logoGreen = Color(0xFF34b20f);
   static const Color trackGreen = Color(0xFF81b841);
   static const Color trackRoute = Color(0xFFaf9d91);
   static const Color mustardYellow = Color(0xFFc09b81);
@@ -13,6 +14,8 @@ class AppColors {
   static const Color redAlert = Color(0xFFFF0000);
   static const Color skyBlueDark = Color(0xFF1B4F72);
   static const Color offWhite = Color(0xFFF1F5F9);
+  static const Color dialogGreen = Color(0xFF6CCF7A); // Verd pastel suau
+  static const Color dialogTextDark = Color(0xFF1A1A1A); // Gris fosc per text
 
   // Opcional: paleta temàtica
   static const Color primary = skyBlue;
