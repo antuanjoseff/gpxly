@@ -278,7 +278,7 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
             ],
           ),
 
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
 
           // ─────────────────────────────
           // LÍNIA 3 — BOTÓ -, SLIDER, BOTÓ +

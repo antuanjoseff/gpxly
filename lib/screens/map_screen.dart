@@ -674,37 +674,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 ),
 
                 actions: [
-                  // Botó de settings
-                  // Botó de settings amb el mateix estil que l'alarma
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const SettingsScreen(),
-                          ),
-                        );
-                      },
-                      child: Container(
-                        width: 32,
-                        height: 32,
-                        decoration: const BoxDecoration(
-                          color: Colors.white, // Cercle blanc
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.settings_outlined,
-                          color: AppColors.primary, // Skyblue
-                          size: 20,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(width: 12),
-
                   if (anyAlarmActive)
                     Padding(
                       padding: const EdgeInsets.only(right: 8),
@@ -732,6 +701,37 @@ class _MapScreenState extends ConsumerState<MapScreen>
                         ),
                       ),
                     ),
+                  const SizedBox(width: 8),
+                  // Botó de settings
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const SettingsScreen(),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        width: 32,
+                        height: 32,
+                        decoration: const BoxDecoration(
+                          color: Colors.white, // Cercle blanc
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.settings_outlined,
+                          color: AppColors.primary, // Skyblue
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(width: 8),
+
                   const GpsAccuracyBars(),
 
                   const SizedBox(width: 8),

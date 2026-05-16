@@ -125,25 +125,30 @@ class GpsAccuracyBars extends ConsumerWidget {
   }
 
   Widget _wrapWithAccuracyText({required Widget bars, double? accuracy}) {
-    return Stack(
-      alignment: Alignment.centerLeft,
-      clipBehavior: Clip.none,
-      children: [
-        if (accuracy != null)
-          Positioned(
-            top: -10,
-            left: 0,
-            child: Text(
-              "${accuracy.round()}m",
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 9,
+    return SizedBox(
+      width: 32,
+      height: 32,
+      child: Stack(
+        alignment: Alignment.center,
+        clipBehavior: Clip.none,
+        children: [
+          if (accuracy != null)
+            Positioned(
+              top: -6,
+              child: Text(
+                "${accuracy.round()}m",
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 9,
+                ),
               ),
             ),
-          ),
-        Padding(padding: const EdgeInsets.only(top: 4), child: bars),
-      ],
+
+          // Centrem les barres dins del contenidor
+          bars,
+        ],
+      ),
     );
   }
 
