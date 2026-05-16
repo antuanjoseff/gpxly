@@ -325,7 +325,11 @@ class TrackNotifier extends Notifier<Track> {
 
   void pauseRecording() {
     ref.read(timerProvider.notifier).pause();
-    state = state.copyWith(recordingState: RecordingState.paused);
+    final elapsed = ref.read(timerProvider);
+    state = state.copyWith(
+      recordingState: RecordingState.paused,
+      duration: elapsed,
+    );
   }
 
   // 2. continueRecording: Només canvia l'estat, el timer ja l'hem engegat fora

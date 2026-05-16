@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:senda/notifiers/gps_accuracy_notifier.dart';
 import 'package:senda/notifiers/permissions_notifier.dart';
-import 'package:senda/notifiers/track_notifier.dart';
 import 'package:senda/notifiers/track_follow_notifier.dart';
+import 'package:senda/notifiers/track_notifier.dart';
 import 'package:senda/services/location_permission_flow.dart';
-import '../utils/gps_accuracy.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:senda/ui/app_messages.dart';
+
+import '../utils/gps_accuracy.dart';
 
 class GpsAccuracyBars extends ConsumerWidget {
   final int totalBars;
@@ -181,7 +182,8 @@ class GpsDisabledIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(4),
+      width: 32,
+      height: 32,
       decoration: BoxDecoration(
         color: Colors.white,
         shape: BoxShape.circle,
@@ -193,7 +195,9 @@ class GpsDisabledIcon extends StatelessWidget {
           ),
         ],
       ),
-      child: const Icon(Icons.location_off, size: 14, color: Colors.redAccent),
+      child: const Center(
+        child: Icon(Icons.location_off, size: 20, color: Colors.redAccent),
+      ),
     );
   }
 }

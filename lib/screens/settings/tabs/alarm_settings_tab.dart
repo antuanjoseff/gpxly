@@ -46,19 +46,15 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
             icon: Icons.route,
             title: t.alarmsDistanceTitle,
             valueText: _formatDistance(settings.distanceMeters),
-            sliderRow: _buildSliderRow(
-              context: context,
-              value: settings.distanceMeters,
-              min: 100,
-              max: 10000,
-              divisions: 99,
-              isActive: settings.distanceEnabled,
-              onChanged: (val) {
-                ref
-                    .read(alarmSettingsProvider.notifier)
-                    .setDistanceAlarm(true, val);
-              },
-            ),
+            value: settings.distanceMeters,
+            min: 100,
+            max: 10000,
+            divisions: 99,
+            onChanged: (val) {
+              ref
+                  .read(alarmSettingsProvider.notifier)
+                  .setDistanceAlarm(true, val);
+            },
             onToggle: () {
               ref
                   .read(alarmSettingsProvider.notifier)
@@ -81,19 +77,15 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
             icon: Icons.height,
             title: t.alarmsAltitudeTitle,
             valueText: "${settings.altitudeMeters.toInt()} m",
-            sliderRow: _buildSliderRow(
-              context: context,
-              value: settings.altitudeMeters,
-              min: 0,
-              max: 500,
-              divisions: 50,
-              isActive: settings.altitudeEnabled,
-              onChanged: (val) {
-                ref
-                    .read(alarmSettingsProvider.notifier)
-                    .setAltitudeAlarm(true, val);
-              },
-            ),
+            value: settings.altitudeMeters,
+            min: 0,
+            max: 500,
+            divisions: 50,
+            onChanged: (val) {
+              ref
+                  .read(alarmSettingsProvider.notifier)
+                  .setAltitudeAlarm(true, val);
+            },
             onToggle: () {
               ref
                   .read(alarmSettingsProvider.notifier)
@@ -116,19 +108,15 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
             icon: Icons.timer,
             title: t.alarmsTimeTitle,
             valueText: _formatTime(settings.timeSeconds),
-            sliderRow: _buildSliderRow(
-              context: context,
-              value: settings.timeSeconds.toDouble(),
-              min: 60,
-              max: 3600,
-              divisions: 59,
-              isActive: settings.timeEnabled,
-              onChanged: (val) {
-                ref
-                    .read(alarmSettingsProvider.notifier)
-                    .setTimeAlarm(true, val.round());
-              },
-            ),
+            value: settings.timeSeconds.toDouble(),
+            min: 60,
+            max: 3600,
+            divisions: 59,
+            onChanged: (val) {
+              ref
+                  .read(alarmSettingsProvider.notifier)
+                  .setTimeAlarm(true, val.round());
+            },
             onToggle: () {
               ref
                   .read(alarmSettingsProvider.notifier)
@@ -183,7 +171,11 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
     required IconData icon,
     required String title,
     required String valueText,
-    required Widget sliderRow,
+    required double value,
+    required double min,
+    required double max,
+    required int divisions,
+    required ValueChanged<double> onChanged,
     required VoidCallback onToggle,
     required VoidCallback onPlaySound,
   }) {
@@ -197,7 +189,7 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(16),
@@ -218,71 +210,94 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // HEADER
+          // ─────────────────────────────
+          // LÍNIA 1 — ICONA + TÍTOL
+          // ─────────────────────────────
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Icon(
-                    icon,
-                    color: isActive ? AppColors.primary : Colors.grey,
-                    size: 24,
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: isActive ? AppColors.primary : Colors.grey,
-                    ),
-                  ),
-                ],
+              Icon(
+                icon,
+                color: isActive ? AppColors.primary : Colors.grey,
+                size: 22,
               ),
-              Switch(
-                value: isActive,
-                thumbColor: WidgetStateProperty.all(AppColors.primary),
-                trackColor: WidgetStateProperty.all(
-                  AppColors.primary.withAlpha(120),
+              const SizedBox(width: 10),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: isActive ? AppColors.primary : Colors.grey,
                 ),
-                onChanged: (_) => onToggle(),
               ),
             ],
           ),
 
-          // 🔊 SPEAKER + VALUE (progress integrat)
-          Padding(
-            padding: const EdgeInsets.only(top: 12, bottom: 12),
-            child: Row(
-              children: [
-                _buildSpeakerButton(
-                  isActive: isActive,
-                  progressValue: progressValue.toDouble(),
-                  onPressed: onPlaySound,
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  valueText,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primary,
+          const SizedBox(height: 8),
+
+          // ─────────────────────────────
+          // LÍNIA 2 — ALTAVEU + VALOR + SWITCH
+          // ─────────────────────────────
+          Row(
+            children: [
+              _buildSpeakerButton(
+                isActive: isActive,
+                progressValue: progressValue.toDouble(),
+                onPressed: onPlaySound,
+              ),
+
+              const SizedBox(width: 12),
+
+              Expanded(
+                child: Center(
+                  child: Text(
+                    valueText,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
+                    ),
                   ),
                 ),
-              ],
-            ),
+              ),
+
+              Transform.scale(
+                scale: 0.8,
+                child: Switch(
+                  value: isActive,
+                  thumbColor: WidgetStateProperty.all(
+                    isActive ? AppColors.primary : Colors.grey,
+                  ),
+                  trackColor: WidgetStateProperty.all(
+                    isActive
+                        ? AppColors.primary.withAlpha(120)
+                        : Colors.grey.withAlpha(80),
+                  ),
+                  onChanged: (_) => onToggle(),
+                ),
+              ),
+            ],
           ),
 
-          // 🎚️ SLIDER SEMPRE VISIBLE
-          Padding(padding: const EdgeInsets.only(top: 8), child: sliderRow),
+          const SizedBox(height: 8),
+
+          // ─────────────────────────────
+          // LÍNIA 3 — BOTÓ -, SLIDER, BOTÓ +
+          // ─────────────────────────────
+          _buildCompactSliderRow(
+            context: context,
+            value: value,
+            min: min,
+            max: max,
+            divisions: divisions,
+            isActive: isActive,
+            onChanged: onChanged,
+          ),
         ],
       ),
     );
   }
 
-  // 🎚️ SLIDER COMPACTE
-  Widget _buildSliderRow({
+  Widget _buildCompactSliderRow({
     required BuildContext context,
     required double value,
     required double min,
@@ -299,19 +314,24 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
 
     return Row(
       children: [
+        // Botó -
         IconButton(
+          padding: const EdgeInsets.all(2),
+          constraints: const BoxConstraints(),
           onPressed: value > min
               ? () => onChanged((value - step).clamp(min, max))
               : null,
           icon: const Icon(Icons.remove_circle_outline, size: 28),
           color: currentColor,
         ),
+
+        // Slider
         Expanded(
           child: SliderTheme(
             data: SliderTheme.of(context).copyWith(
               activeTrackColor: currentColor,
               inactiveTrackColor: colors.onSurface.withAlpha(30),
-              trackHeight: isActive ? 6 : 4,
+              trackHeight: 4,
               thumbColor: currentColor,
               thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10),
             ),
@@ -324,7 +344,11 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
             ),
           ),
         ),
+
+        // Botó +
         IconButton(
+          padding: const EdgeInsets.all(2),
+          constraints: const BoxConstraints(),
           onPressed: value < max
               ? () => onChanged((value + step).clamp(min, max))
               : null,
