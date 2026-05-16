@@ -11,6 +11,7 @@ import 'package:senda/notifiers/gps_accuracy_notifier.dart';
 import 'package:senda/notifiers/gps_altitude_notifier.dart';
 import 'package:senda/notifiers/gps_bearing_notifier.dart';
 import 'package:senda/notifiers/gps_settings_notifier.dart';
+import 'package:senda/notifiers/timer_notifier.dart';
 import 'package:senda/notifiers/track_follow_notifier.dart';
 import 'package:senda/services/hgt_service.dart';
 import 'package:senda/services/native_gps_channel.dart';
@@ -312,6 +313,8 @@ class TrackNotifier extends Notifier<Track> {
   // ───────────────────────────────────────────────
   // 1. startRecording: Ja no inicia el cronòmetre aquí, ho fa el RecordingHandler
   Future<void> startRecording(BuildContext context) async {
+    ref.read(timerProvider.notifier).reset();
+    ref.read(timerProvider.notifier).start();
     state = state.copyWith(
       recordingState: RecordingState.recording,
       duration: Duration.zero,
@@ -320,27 +323,33 @@ class TrackNotifier extends Notifier<Track> {
     ref.read(elevationRangeProvider.notifier).reset();
   }
 
+  void pauseRecording() {
+    ref.read(timerProvider.notifier).pause();
+    state = state.copyWith(recordingState: RecordingState.paused);
+  }
+
   // 2. continueRecording: Només canvia l'estat, el timer ja l'hem engegat fora
   void continueRecording() {
+    ref.read(timerProvider.notifier).resume();
+    state = state.copyWith(recordingState: RecordingState.recording);
+  }
+
+  void resumeRecording() {
+    ref.read(timerProvider.notifier).resume();
     state = state.copyWith(recordingState: RecordingState.recording);
   }
 
   // 3. stopRecording: Aquest és el canvi més important
   Future<void> stopRecording(Duration finalDuration) async {
+    final total = ref.read(timerProvider); // ja és base + elapsed
+    ref.read(timerProvider.notifier).pause();
+
     state = state.copyWith(
       recordingState: RecordingState.idle,
-      duration: finalDuration, // Guardem la durada que ens ve del timerProvider
+      duration: total,
     );
 
     await _autoSaveToPrefs();
-  }
-
-  void pauseRecording() {
-    state = state.copyWith(recordingState: RecordingState.paused);
-  }
-
-  void resumeRecording() {
-    state = state.copyWith(recordingState: RecordingState.recording);
   }
 
   // ───────────────────────────────────────────────

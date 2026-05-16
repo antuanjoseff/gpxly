@@ -93,9 +93,9 @@ flutter:
     - assets/sound/fireworks.mp3
     - assets/sound/fireworks2.mp3
     - assets/sound/snap_fingers.mp3
-    - assets/sound/alarm_distance.mp3
-    - assets/sound/alarm_altitude.mp3
-    - assets/sound/alarm_time.mp3
+    - assets/sound/sonar_sound.mp3
+    - assets/sound/owl_sound.mp3
+    - assets/sound/beep_sound.mp3
     - assets/icon/waypoint.png
     - assets/icon/waypoint_imported.png
     - assets/dem/N41E002.hgt

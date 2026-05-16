@@ -91,25 +91,28 @@ class AppMessages {
         ),
         actionsPadding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
         actions: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              if (cancelLabel != null)
-                TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  child: Text(
-                    cancelLabel,
-                    style: TextStyle(color: Colors.white.withAlpha(130)),
+          if (cancelLabel != null || confirmLabel != null)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                if (cancelLabel != null)
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: Text(
+                      cancelLabel!,
+                      style: TextStyle(color: Colors.white.withAlpha(130)),
+                    ),
                   ),
-                ),
-              const SizedBox(width: 8),
-              ElevatedButton(
-                style: _buttonStyle(accentColor),
-                onPressed: () => Navigator.pop(context, true),
-                child: Text(confirmLabel ?? t.ok),
-              ),
-            ],
-          ),
+                if (confirmLabel != null) ...[
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    style: _buttonStyle(accentColor),
+                    onPressed: () => Navigator.pop(context, true),
+                    child: Text(confirmLabel!),
+                  ),
+                ],
+              ],
+            ),
         ],
       ),
     );
@@ -342,102 +345,76 @@ class AppMessages {
   static Future<String?> showStopRecordingDialog(BuildContext context) async {
     final t = AppLocalizations.of(context)!;
 
-    // IMPORTANT: Fem servir showDialog directament o un _showBaseDialog
-    // que ens permeti capturar qualsevol tipus de retorn (String)
-    final dynamic result = await showDialog<dynamic>(
+    String? result;
+
+    await _showBaseDialog(
       context: context,
-      barrierDismissible: true,
-      builder: (context) => AlertDialog(
-        backgroundColor: _surfaceColor,
-        surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: BorderSide(color: Colors.white.withAlpha(25)),
-        ),
-        title: Row(
-          children: [
-            const Icon(
-              Icons.stop_circle_rounded,
-              color: Colors.redAccent,
-              size: 26,
+      title: t.finishRecordingTitle,
+      message: t.finishRecordingMessage,
+      icon: Icons.stop_circle_rounded,
+      iconColor: Colors.redAccent,
+      confirmLabel: null, // No fem servir el botó OK estàndard
+      cancelLabel: null, // Tampoc el cancel·la estàndard
+      extraContent: [
+        const SizedBox(height: 20),
+
+        // SHARE
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: () {
+              result = "share";
+              Navigator.pop(context, true);
+            },
+            icon: const Icon(Icons.share_rounded, size: 20),
+            label: Text(
+              t.shareTrack,
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                t.finishRecordingTitle,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 19,
-                ),
-              ),
-            ),
-          ],
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                t.finishRecordingMessage,
-                style: TextStyle(
-                  color: _secondaryText,
-                  fontSize: 15,
-                  height: 1.4,
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // 1. COMPARTIR (Verd - Amplada total)
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () => Navigator.pop(context, "share"),
-                  icon: const Icon(Icons.share_rounded, size: 20),
-                  label: Text(
-                    t.shareTrack,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  style: _buttonStyle(const Color(0xFF2E7D32)),
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              // 2. FINALITZAR (Vermell suau - Amplada total)
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.pop(context, "finish"),
-                  style: _buttonStyle(Colors.redAccent.withAlpha(40)).copyWith(
-                    foregroundColor: WidgetStateProperty.all(Colors.redAccent),
-                  ),
-                  child: Text(
-                    t.finishRecordingConfirm,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // 3. CONTINUAR (Text central)
-              TextButton(
-                onPressed: () => Navigator.pop(context, null),
-                child: Text(
-                  t.continueRecording,
-                  style: TextStyle(
-                    color: Colors.white.withAlpha(120),
-                    decoration: TextDecoration.underline,
-                  ),
-                ),
-              ),
-            ],
+            style: _buttonStyle(const Color(0xFF2E7D32)),
           ),
         ),
-      ),
+
+        const SizedBox(height: 12),
+
+        // FINISH
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: () {
+              result = "finish";
+              Navigator.pop(context, true);
+            },
+            style: _buttonStyle(
+              Colors.redAccent,
+            ).copyWith(foregroundColor: WidgetStateProperty.all(Colors.white)),
+
+            child: Text(
+              t.finishRecordingConfirm,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 16),
+
+        // CONTINUE
+        Center(
+          child: TextButton(
+            onPressed: () {
+              result = null;
+              Navigator.pop(context, true);
+            },
+            child: Text(
+              t.continueRecording,
+              style: TextStyle(color: Colors.white.withAlpha(120)),
+            ),
+          ),
+        ),
+      ],
     );
 
-    // Retornem el String directament ("share", "finish" o null)
-    return result as String?;
+    return result;
   }
 
   static Future<String?> askGpxFilename(

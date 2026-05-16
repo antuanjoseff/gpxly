@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/l10n/app_localizations.dart';
 import 'package:senda/notifiers/alarm_settings_notifier.dart';
-import 'package:senda/notifiers/helpers/alarm_engine.dart';
-import 'package:senda/notifiers/track_notifier.dart';
-import 'package:senda/services/permissions_service.dart';
 import 'package:senda/theme/app_colors.dart';
 
 class AlarmSettingsTab extends ConsumerStatefulWidget {
@@ -15,38 +12,23 @@ class AlarmSettingsTab extends ConsumerStatefulWidget {
 }
 
 class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
-  late final AlarmEngine _engine;
+  // ───────────────────────────────────────────────
+  // FORMAT HELPERS
+  // ───────────────────────────────────────────────
 
-  @override
-  void initState() {
-    super.initState();
-    _engine = AlarmEngine(ref);
+  String _formatDistance(double m) {
+    if (m < 1000) return "${m.toInt()} m";
+    return "${(m / 1000).toStringAsFixed(1)} km";
   }
 
-  @override
-  void dispose() {
-    _engine.stop();
-    super.dispose();
-  }
+  String _formatTime(int s) {
+    if (s < 60) return "$s s";
+    if (s < 3600) return "${(s / 60).round()} min";
 
-  Future<void> _handleAlarmToggle() async {
-    final settings = ref.read(alarmSettingsProvider);
-
-    final anyEnabled =
-        settings.distanceEnabled ||
-        settings.altitudeEnabled ||
-        settings.timeEnabled;
-
-    if (anyEnabled) {
-      final ok = await PermissionsService.ensureGpsReady(context);
-      if (!ok) return;
-
-      await ref.read(trackProvider.notifier).ensureGpsStarted();
-      await _engine.start();
-    } else {
-      _engine.stop();
-      ref.read(trackProvider.notifier).stopGpsIfNotNeeded();
-    }
+    final h = s ~/ 3600;
+    final m = (s % 3600) ~/ 60;
+    if (m == 0) return "$h h";
+    return "$h h ${m} min";
   }
 
   @override
@@ -60,14 +42,26 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // ───────────────────────────────────────────────
           // DISTÀNCIA
-          // ───────────────────────────────────────────────
-          _buildAlarmSwitch(
+          _buildAlarmCard(
             context: context,
-            value: settings.distanceEnabled,
+            isActive: settings.distanceEnabled,
             icon: Icons.route,
             title: t.alarmsDistanceTitle,
+            valueText: _formatDistance(settings.distanceMeters),
+            sliderRow: _buildSliderRow(
+              context: context,
+              value: settings.distanceMeters,
+              min: 100,
+              max: 10000,
+              divisions: 99,
+              isActive: settings.distanceEnabled,
+              onChanged: (val) {
+                ref
+                    .read(alarmSettingsProvider.notifier)
+                    .setDistanceAlarm(true, val);
+              },
+            ),
             onToggle: () {
               ref
                   .read(alarmSettingsProvider.notifier)
@@ -75,41 +69,33 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
                     !settings.distanceEnabled,
                     settings.distanceMeters,
                   );
-              _handleAlarmToggle();
             },
+            onPlaySound: () =>
+                ref.read(alarmEngineProvider).sounds.playDistanceAlarm(),
           ),
-          const SizedBox(height: 12),
-
-          if (settings.distanceEnabled)
-            _buildSettingsCard(
-              isActive: true,
-              title: t.alarmsDistanceTitle,
-              valueText: "${settings.distanceMeters.toInt()} m",
-              sliderRow: _buildSliderRow(
-                context: context,
-                value: settings.distanceMeters,
-                min: 100,
-                max: 10000,
-                divisions: 99,
-                isActive: true,
-                onChanged: (val) {
-                  ref
-                      .read(alarmSettingsProvider.notifier)
-                      .setDistanceAlarm(true, val);
-                },
-              ),
-            ),
 
           const SizedBox(height: 24),
 
-          // ───────────────────────────────────────────────
           // ALTITUD
-          // ───────────────────────────────────────────────
-          _buildAlarmSwitch(
+          _buildAlarmCard(
             context: context,
-            value: settings.altitudeEnabled,
+            isActive: settings.altitudeEnabled,
             icon: Icons.height,
             title: t.alarmsAltitudeTitle,
+            valueText: "${settings.altitudeMeters.toInt()} m",
+            sliderRow: _buildSliderRow(
+              context: context,
+              value: settings.altitudeMeters,
+              min: 0,
+              max: 500,
+              divisions: 50,
+              isActive: settings.altitudeEnabled,
+              onChanged: (val) {
+                ref
+                    .read(alarmSettingsProvider.notifier)
+                    .setAltitudeAlarm(true, val);
+              },
+            ),
             onToggle: () {
               ref
                   .read(alarmSettingsProvider.notifier)
@@ -117,69 +103,41 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
                     !settings.altitudeEnabled,
                     settings.altitudeMeters,
                   );
-              _handleAlarmToggle();
             },
+            onPlaySound: () =>
+                ref.read(alarmEngineProvider).sounds.playAltitudeAlarm(),
           ),
-          const SizedBox(height: 12),
-
-          if (settings.altitudeEnabled)
-            _buildSettingsCard(
-              isActive: true,
-              title: t.alarmsAltitudeTitle,
-              valueText: "${settings.altitudeMeters.toInt()} m",
-              sliderRow: _buildSliderRow(
-                context: context,
-                value: settings.altitudeMeters,
-                min: 0,
-                max: 500,
-                divisions: 50,
-                isActive: true,
-                onChanged: (val) {
-                  ref
-                      .read(alarmSettingsProvider.notifier)
-                      .setAltitudeAlarm(true, val);
-                },
-              ),
-            ),
 
           const SizedBox(height: 24),
 
-          // ───────────────────────────────────────────────
           // TEMPS
-          // ───────────────────────────────────────────────
-          _buildAlarmSwitch(
+          _buildAlarmCard(
             context: context,
-            value: settings.timeEnabled,
+            isActive: settings.timeEnabled,
             icon: Icons.timer,
             title: t.alarmsTimeTitle,
+            valueText: _formatTime(settings.timeSeconds),
+            sliderRow: _buildSliderRow(
+              context: context,
+              value: settings.timeSeconds.toDouble(),
+              min: 60,
+              max: 3600,
+              divisions: 59,
+              isActive: settings.timeEnabled,
+              onChanged: (val) {
+                ref
+                    .read(alarmSettingsProvider.notifier)
+                    .setTimeAlarm(true, val.round());
+              },
+            ),
             onToggle: () {
               ref
                   .read(alarmSettingsProvider.notifier)
                   .setTimeAlarm(!settings.timeEnabled, settings.timeSeconds);
-              _handleAlarmToggle();
             },
+            onPlaySound: () =>
+                ref.read(alarmEngineProvider).sounds.playTimeAlarm(),
           ),
-          const SizedBox(height: 12),
-
-          if (settings.timeEnabled)
-            _buildSettingsCard(
-              isActive: true,
-              title: t.alarmsTimeTitle,
-              valueText: "${settings.timeSeconds ~/ 60} min",
-              sliderRow: _buildSliderRow(
-                context: context,
-                value: settings.timeSeconds.toDouble(),
-                min: 60,
-                max: 3600,
-                divisions: 59,
-                isActive: true,
-                onChanged: (val) {
-                  ref
-                      .read(alarmSettingsProvider.notifier)
-                      .setTimeAlarm(true, val.round());
-                },
-              ),
-            ),
 
           const SizedBox(height: 40),
         ],
@@ -188,19 +146,22 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
   }
 
   // ───────────────────────────────────────────────
-  // SWITCH PERSONALITZAT (mateix estil GPX)
+  // CARD COMPACTAT (switch + valor + slider)
   // ───────────────────────────────────────────────
 
-  Widget _buildAlarmSwitch({
+  Widget _buildAlarmCard({
     required BuildContext context,
-    required bool value,
+    required bool isActive,
     required IconData icon,
     required String title,
+    required String valueText,
+    required Widget sliderRow,
     required VoidCallback onToggle,
+    required VoidCallback onPlaySound,
   }) {
-    final t = AppLocalizations.of(context)!;
-
-    return Container(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(16),
@@ -211,130 +172,95 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
             offset: const Offset(0, 4),
           ),
         ],
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: onToggle,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-          child: Row(
-            children: [
-              Icon(
-                icon,
-                color: value ? AppColors.primary : Colors.grey,
-                size: 24,
-              ),
-              const SizedBox(width: 16),
-
-              Expanded(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: value ? AppColors.primary : Colors.grey,
-                  ),
-                ),
-              ),
-
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: value ? AppColors.primary : Colors.grey,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  value ? t.switchOn : t.switchOff,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ───────────────────────────────────────────────
-  // SETTINGS CARD (reutilitzat del GPS)
-  // ───────────────────────────────────────────────
-
-  Widget _buildSettingsCard({
-    required bool isActive,
-    required String title,
-    required String valueText,
-    required Widget sliderRow,
-  }) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isActive
               ? AppColors.primary.withAlpha(80)
               : Colors.transparent,
           width: 2,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(10),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // HEADER
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: isActive ? AppColors.primary : Colors.grey[400],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: isActive ? AppColors.primary : Colors.grey[100],
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  valueText,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: isActive ? Colors.white : Colors.grey[400],
+              Row(
+                children: [
+                  Icon(
+                    icon,
+                    color: isActive ? AppColors.primary : Colors.grey,
+                    size: 24,
                   ),
-                ),
+                  const SizedBox(width: 12),
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: isActive ? AppColors.primary : Colors.grey,
+                    ),
+                  ),
+                ],
+              ),
+
+              Switch(
+                value: isActive,
+                activeColor: AppColors.primary,
+                onChanged: (_) => onToggle(),
               ),
             ],
           ),
-          const SizedBox(height: 20),
-          sliderRow,
+
+          // VALUE + SOUND
+          AnimatedCrossFade(
+            duration: const Duration(milliseconds: 200),
+            crossFadeState: isActive
+                ? CrossFadeState.showFirst
+                : CrossFadeState.showSecond,
+            firstChild: Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.volume_up),
+                    color: AppColors.primary,
+                    onPressed: onPlaySound,
+                  ),
+                  Text(
+                    valueText,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            secondChild: const SizedBox.shrink(),
+          ),
+
+          // SLIDER
+          AnimatedSize(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeInOut,
+            child: isActive
+                ? Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: sliderRow,
+                  )
+                : const SizedBox.shrink(),
+          ),
         ],
       ),
     );
   }
 
   // ───────────────────────────────────────────────
-  // SLIDER (reutilitzat del GPS)
+  // SLIDER
   // ───────────────────────────────────────────────
 
   Widget _buildSliderRow({

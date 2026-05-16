@@ -69,7 +69,7 @@ class TrackSounds {
   Future<void> playDistanceAlarm() async {
     try {
       await player.play(
-        AssetSource('sound/alarm_distance.mp3'),
+        AssetSource('sound/sonar_sound.mp3'),
         volume: 1.0,
         ctx: _alarmContext,
       );
@@ -81,7 +81,7 @@ class TrackSounds {
   Future<void> playAltitudeAlarm() async {
     try {
       await player.play(
-        AssetSource('sound/alarm_altitude.mp3'),
+        AssetSource('sound/owl_sound.mp3'),
         volume: 1.0,
         ctx: _alarmContext,
       );
@@ -93,7 +93,7 @@ class TrackSounds {
   Future<void> playTimeAlarm() async {
     try {
       await player.play(
-        AssetSource('sound/alarm_time.mp3'),
+        AssetSource('sound/beep_sound.mp3'),
         volume: 1.0,
         ctx: _alarmContext,
       );

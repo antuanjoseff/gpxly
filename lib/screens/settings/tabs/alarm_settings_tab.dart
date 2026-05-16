@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/l10n/app_localizations.dart';
+import 'package:senda/models/alarm_progress.dart';
 import 'package:senda/notifiers/alarm_settings_notifier.dart';
-import 'package:senda/notifiers/helpers/alarm_engine.dart';
-import 'package:senda/notifiers/track_notifier.dart';
-import 'package:senda/services/permissions_service.dart';
 import 'package:senda/theme/app_colors.dart';
 
 class AlarmSettingsTab extends ConsumerStatefulWidget {
@@ -15,44 +13,6 @@ class AlarmSettingsTab extends ConsumerStatefulWidget {
 }
 
 class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
-  late final AlarmEngine _engine;
-
-  @override
-  void initState() {
-    super.initState();
-    _engine = AlarmEngine(ref);
-  }
-
-  @override
-  void dispose() {
-    _engine.stop();
-    super.dispose();
-  }
-
-  Future<void> _handleAlarmToggle() async {
-    final settings = ref.read(alarmSettingsProvider);
-
-    final anyEnabled =
-        settings.distanceEnabled ||
-        settings.altitudeEnabled ||
-        settings.timeEnabled;
-
-    if (anyEnabled) {
-      final ok = await PermissionsService.ensureGpsReady(context);
-      if (!ok) return;
-
-      await ref.read(trackProvider.notifier).ensureGpsStarted();
-      await _engine.start();
-    } else {
-      _engine.stop();
-      ref.read(trackProvider.notifier).stopGpsIfNotNeeded();
-    }
-  }
-
-  // ───────────────────────────────────────────────
-  // FORMAT HELPERS
-  // ───────────────────────────────────────────────
-
   String _formatDistance(double m) {
     if (m < 1000) return "${m.toInt()} m";
     return "${(m / 1000).toStringAsFixed(1)} km";
@@ -61,17 +21,16 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
   String _formatTime(int s) {
     if (s < 60) return "$s s";
     if (s < 3600) return "${(s / 60).round()} min";
-
     final h = s ~/ 3600;
     final m = (s % 3600) ~/ 60;
-    if (m == 0) return "$h h";
-    return "$h h ${m} min";
+    return m == 0 ? "$h h" : "$h h ${m} min";
   }
 
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context)!;
     final settings = ref.watch(alarmSettingsProvider);
+    final progress = ref.watch(alarmProgressProvider).value;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F7),
@@ -79,9 +38,10 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // DISTÀNCIA
           _buildAlarmCard(
             context: context,
+            t: t,
+            progress: progress,
             isActive: settings.distanceEnabled,
             icon: Icons.route,
             title: t.alarmsDistanceTitle,
@@ -106,16 +66,17 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
                     !settings.distanceEnabled,
                     settings.distanceMeters,
                   );
-              _handleAlarmToggle();
             },
-            onPlaySound: () => _engine.sounds.playDistanceAlarm(),
+            onPlaySound: () =>
+                ref.read(alarmEngineProvider).sounds.playDistanceAlarm(),
           ),
 
           const SizedBox(height: 24),
 
-          // ALTITUD
           _buildAlarmCard(
             context: context,
+            t: t,
+            progress: progress,
             isActive: settings.altitudeEnabled,
             icon: Icons.height,
             title: t.alarmsAltitudeTitle,
@@ -140,16 +101,17 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
                     !settings.altitudeEnabled,
                     settings.altitudeMeters,
                   );
-              _handleAlarmToggle();
             },
-            onPlaySound: () => _engine.sounds.playAltitudeAlarm(),
+            onPlaySound: () =>
+                ref.read(alarmEngineProvider).sounds.playAltitudeAlarm(),
           ),
 
           const SizedBox(height: 24),
 
-          // TEMPS
           _buildAlarmCard(
             context: context,
+            t: t,
+            progress: progress,
             isActive: settings.timeEnabled,
             icon: Icons.timer,
             title: t.alarmsTimeTitle,
@@ -171,9 +133,9 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
               ref
                   .read(alarmSettingsProvider.notifier)
                   .setTimeAlarm(!settings.timeEnabled, settings.timeSeconds);
-              _handleAlarmToggle();
             },
-            onPlaySound: () => _engine.sounds.playTimeAlarm(),
+            onPlaySound: () =>
+                ref.read(alarmEngineProvider).sounds.playTimeAlarm(),
           ),
 
           const SizedBox(height: 40),
@@ -182,12 +144,41 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
     );
   }
 
-  // ───────────────────────────────────────────────
-  // CARD COMPACTAT (switch + valor + slider)
-  // ───────────────────────────────────────────────
+  // 🔊 BOTÓ DE SPEAKER AMB PROGRÉS INTEGRAT
+  Widget _buildSpeakerButton({
+    required bool isActive,
+    required double progressValue,
+    required VoidCallback onPressed,
+  }) {
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        if (isActive)
+          SizedBox(
+            width: 36,
+            height: 36,
+            child: CircularProgressIndicator(
+              value: progressValue,
+              strokeWidth: 3,
+              color: AppColors.primary,
+              backgroundColor: Colors.transparent,
+            ),
+          ),
+        IconButton(
+          icon: const Icon(Icons.volume_up),
+          color: AppColors.primary,
+          onPressed: onPressed,
+          iconSize: 28,
+        ),
+      ],
+    );
+  }
 
+  // 🟦 TARGETA D’ALARMA (OPCIÓ 4)
   Widget _buildAlarmCard({
     required BuildContext context,
+    required AppLocalizations t,
+    required AlarmProgress? progress,
     required bool isActive,
     required IconData icon,
     required String title,
@@ -196,6 +187,14 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
     required VoidCallback onToggle,
     required VoidCallback onPlaySound,
   }) {
+    final progressValue = progress == null
+        ? 0
+        : (title == t.alarmsDistanceTitle
+              ? progress.distance
+              : title == t.alarmsAltitudeTitle
+              ? progress.altitude
+              : progress.time);
+
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       padding: const EdgeInsets.all(16),
@@ -241,65 +240,48 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
                   ),
                 ],
               ),
-
               Switch(
                 value: isActive,
-                activeColor: AppColors.primary,
+                thumbColor: WidgetStateProperty.all(AppColors.primary),
+                trackColor: WidgetStateProperty.all(
+                  AppColors.primary.withAlpha(120),
+                ),
                 onChanged: (_) => onToggle(),
               ),
             ],
           ),
 
-          // VALUE + SOUND
-          AnimatedCrossFade(
-            duration: const Duration(milliseconds: 200),
-            crossFadeState: isActive
-                ? CrossFadeState.showFirst
-                : CrossFadeState.showSecond,
-            firstChild: Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.volume_up),
+          // 🔊 SPEAKER + VALUE (progress integrat)
+          Padding(
+            padding: const EdgeInsets.only(top: 12, bottom: 12),
+            child: Row(
+              children: [
+                _buildSpeakerButton(
+                  isActive: isActive,
+                  progressValue: progressValue.toDouble(),
+                  onPressed: onPlaySound,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  valueText,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
                     color: AppColors.primary,
-                    onPressed: onPlaySound,
                   ),
-                  Text(
-                    valueText,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-            secondChild: const SizedBox.shrink(),
           ),
 
-          // SLIDER
-          AnimatedSize(
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeInOut,
-            child: isActive
-                ? Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: sliderRow,
-                  )
-                : const SizedBox.shrink(),
-          ),
+          // 🎚️ SLIDER SEMPRE VISIBLE
+          Padding(padding: const EdgeInsets.only(top: 8), child: sliderRow),
         ],
       ),
     );
   }
 
-  // ───────────────────────────────────────────────
-  // SLIDER
-  // ───────────────────────────────────────────────
-
+  // 🎚️ SLIDER COMPACTE
   Widget _buildSliderRow({
     required BuildContext context,
     required double value,

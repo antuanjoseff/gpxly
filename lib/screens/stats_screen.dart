@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/l10n/app_localizations.dart';
-import 'package:senda/notifiers/track_notifier.dart';
+import 'package:senda/models/track.dart';
 import 'package:senda/notifiers/imported_track_notifier.dart';
+import 'package:senda/notifiers/timer_notifier.dart';
+import 'package:senda/notifiers/track_notifier.dart';
 import 'package:senda/theme/app_colors.dart';
 
 class TrackStatsScreen extends ConsumerWidget {
@@ -14,6 +16,7 @@ class TrackStatsScreen extends ConsumerWidget {
 
     final real = ref.watch(trackProvider);
     final imported = ref.watch(importedTrackProvider);
+    final liveDuration = ref.watch(timerProvider);
 
     final hasImported = imported != null && imported.coordinates.isNotEmpty;
     // ... dins del ListView ...
@@ -92,9 +95,24 @@ class TrackStatsScreen extends ConsumerWidget {
           _buildStatTile(
             icon: Icons.timer_outlined,
             label: t.statTime,
-            value1: real.coordinates.isNotEmpty && real.hasTimeData
-                ? real.formattedDuration
-                : "---",
+
+            // Nova lògica per mostrar el temps segons l'estat
+            value1: () {
+              final state = real.recordingState;
+              if (state == RecordingState.recording) {
+                // Temps en viu mentre grava
+                return _formatDuration(liveDuration);
+              }
+
+              if (state == RecordingState.paused) {
+                // Temps acumulat fins al moment de pausar
+                return real.formattedDuration;
+              }
+
+              // Estat stopped o sense dades
+              return real.hasTimeData ? real.formattedDuration : "---";
+            }(),
+
             value2: hasImported && imported.hasTimeData
                 ? imported.formattedDuration
                 : null,
@@ -260,5 +278,12 @@ class TrackStatsScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  String _formatDuration(Duration d) {
+    final h = d.inHours.toString().padLeft(2, '0');
+    final m = (d.inMinutes % 60).toString().padLeft(2, '0');
+    final s = (d.inSeconds % 60).toString().padLeft(2, '0');
+    return "$h:$m:$s";
   }
 }

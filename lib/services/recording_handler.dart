@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:senda/notifiers/permissions_notifier.dart';
 import 'package:senda/notifiers/timer_notifier.dart';
 import 'package:senda/notifiers/track_notifier.dart';
 import 'package:senda/notifiers/waypoints_recorded_notifier.dart';
-import 'package:senda/notifiers/permissions_notifier.dart';
 import 'package:senda/services/permissions_service.dart';
 import 'package:senda/ui/app_messages.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -37,7 +37,7 @@ class RecordingHandler {
         );
         if (!ok) return;
 
-        track.continueRecording();
+        track.resumeRecording();
         ref.read(timerProvider.notifier).start();
         await track.ensureGpsStarted(); // Engega el NativeGpsChannel
 

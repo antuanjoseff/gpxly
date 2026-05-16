@@ -1,4 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:senda/models/alarm_progress.dart';
+import 'package:senda/notifiers/helpers/alarm_engine.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AlarmSettings {
@@ -39,6 +41,18 @@ class AlarmSettings {
   }
 }
 
+// ───────────────────────────────────────────────
+// PROVIDER GLOBAL DEL MOTOR D’ALARMES
+// ───────────────────────────────────────────────
+
+final alarmEngineProvider = Provider<AlarmEngine>((ref) {
+  return AlarmEngine(ref);
+});
+
+// ───────────────────────────────────────────────
+// NOTIFIER
+// ───────────────────────────────────────────────
+
 class AlarmSettingsNotifier extends Notifier<AlarmSettings> {
   late final Future<void> initialized;
 
@@ -46,6 +60,14 @@ class AlarmSettingsNotifier extends Notifier<AlarmSettings> {
   AlarmSettings build() {
     initialized = _loadFromPrefs();
     return const AlarmSettings();
+  }
+
+  // ───────────────────────────────────────────────
+  // HELPERS
+  // ───────────────────────────────────────────────
+
+  bool _anyEnabled(AlarmSettings s) {
+    return s.distanceEnabled || s.altitudeEnabled || s.timeEnabled;
   }
 
   Future<void> _loadFromPrefs() async {
@@ -83,32 +105,75 @@ class AlarmSettingsNotifier extends Notifier<AlarmSettings> {
     await prefs.setInt('alarm_time_seconds', state.timeSeconds);
   }
 
+  void _handleEngineTransition(bool before, bool after) {
+    final engine = ref.read(alarmEngineProvider);
+
+    if (!before && after) {
+      // 0 → 1 alarmes actives
+      engine.start();
+    } else if (before && !after) {
+      // 1 → 0 alarmes actives
+      engine.stop();
+    }
+  }
+
   // ───────────────────────────────────────────────
-  // SETTERS
+  // SETTERS AMB START/STOP AUTOMÀTIC
   // ───────────────────────────────────────────────
 
   void setDistanceAlarm(bool enabled, double meters) {
+    final before = _anyEnabled(state);
+
     state = state.copyWith(distanceEnabled: enabled, distanceMeters: meters);
+
     _saveToPrefs();
+
+    final after = _anyEnabled(state);
+    _handleEngineTransition(before, after);
   }
 
   void setAltitudeAlarm(bool enabled, double meters) {
+    final before = _anyEnabled(state);
+
     state = state.copyWith(altitudeEnabled: enabled, altitudeMeters: meters);
+
     _saveToPrefs();
+
+    final after = _anyEnabled(state);
+    _handleEngineTransition(before, after);
   }
 
   void setTimeAlarm(bool enabled, int seconds) {
+    final before = _anyEnabled(state);
+
     state = state.copyWith(timeEnabled: enabled, timeSeconds: seconds);
+
     _saveToPrefs();
+
+    final after = _anyEnabled(state);
+    _handleEngineTransition(before, after);
   }
 
   void reset() {
+    final before = _anyEnabled(state);
+
     state = const AlarmSettings();
     _saveToPrefs();
+
+    final after = _anyEnabled(state);
+    _handleEngineTransition(before, after);
   }
 }
+
+// ───────────────────────────────────────────────
+// PROVIDER FINAL
+// ───────────────────────────────────────────────
 
 final alarmSettingsProvider =
     NotifierProvider<AlarmSettingsNotifier, AlarmSettings>(
       AlarmSettingsNotifier.new,
     );
+
+final alarmProgressProvider = StreamProvider<AlarmProgress>((ref) {
+  return ref.read(alarmEngineProvider).progressStream;
+});

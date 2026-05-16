@@ -8,6 +8,7 @@ import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:senda/features/elevation_profile/elevation_profile_screen.dart';
 import 'package:senda/models/track.dart';
 import 'package:senda/models/waypoint.dart';
+import 'package:senda/notifiers/alarm_settings_notifier.dart';
 import 'package:senda/notifiers/gps_speed_notifier.dart';
 import 'package:senda/notifiers/imported_track_notifier.dart';
 import 'package:senda/notifiers/imported_track_settings_notifier.dart';
@@ -20,6 +21,7 @@ import 'package:senda/notifiers/track_settings_notifier.dart';
 import 'package:senda/notifiers/waypoints_imported_notifier.dart';
 import 'package:senda/notifiers/waypoints_recorded_notifier.dart';
 import 'package:senda/screens/settings/settings_screen.dart';
+import 'package:senda/screens/settings/tabs/alarm_settings_tab.dart';
 import 'package:senda/screens/stats_screen.dart';
 import 'package:senda/services/gpx_exporter.dart';
 import 'package:senda/services/gpx_import_flow.dart';
@@ -630,6 +632,11 @@ class _MapScreenState extends ConsumerState<MapScreen>
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
+    // 🔔 ICONA D’ALARMES ACTIVES
+    final alarms = ref.watch(alarmSettingsProvider);
+    final anyAlarmActive =
+        alarms.distanceEnabled || alarms.altitudeEnabled || alarms.timeEnabled;
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
@@ -683,7 +690,33 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
                   const SizedBox(width: 12),
 
-                  // 👉 Ara sí: GpsAccuracyBars a la dreta del tot
+                  if (anyAlarmActive)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const AlarmSettingsTab(),
+                            ),
+                          );
+                        },
+                        child: Container(
+                          width: 32,
+                          height: 32,
+                          decoration: const BoxDecoration(
+                            color: Colors.white, // Cercle blanc
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.notifications_active,
+                            color: Colors.red, // Icona vermella
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                    ),
                   const GpsAccuracyBars(),
 
                   const SizedBox(width: 8),
