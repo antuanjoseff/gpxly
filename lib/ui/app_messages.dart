@@ -99,7 +99,7 @@ class AppMessages {
                   TextButton(
                     onPressed: () => Navigator.pop(context, false),
                     child: Text(
-                      cancelLabel!,
+                      cancelLabel,
                       style: TextStyle(color: Colors.white.withAlpha(130)),
                     ),
                   ),
@@ -108,7 +108,7 @@ class AppMessages {
                   ElevatedButton(
                     style: _buttonStyle(accentColor),
                     onPressed: () => Navigator.pop(context, true),
-                    child: Text(confirmLabel!),
+                    child: Text(confirmLabel),
                   ),
                 ],
               ],
@@ -183,6 +183,7 @@ class AppMessages {
         icon: Icons.stop_circle_outlined,
         iconColor: Colors.redAccent,
         confirmLabel: AppLocalizations.of(context)!.stopFollowing,
+        cancelLabel: AppLocalizations.of(context)!.cancel,
       );
   static Future<bool?> showPermissionExplanation(BuildContext context) =>
       _showBaseDialog(
@@ -275,6 +276,7 @@ class AppMessages {
       message: "",
       icon: Icons.place_rounded,
       iconColor: AppColors.skyBlue,
+      confirmLabel: AppLocalizations.of(context)!.ok,
       extraContent: [
         _buildDetailItem(t.waypointName, wp.name, Icons.label_outline),
         _buildDetailItem(
@@ -437,8 +439,8 @@ class AppMessages {
           decoration: InputDecoration(
             labelText: t.gpxFilenameLabel,
             suffixText: '.gpx',
-            labelStyle: TextStyle(color: AppColors.skyBlue),
-            enabledBorder: UnderlineInputBorder(
+            labelStyle: const TextStyle(color: AppColors.skyBlue),
+            enabledBorder: const UnderlineInputBorder(
               borderSide: BorderSide(color: Colors.white24),
             ),
           ),
@@ -459,6 +461,8 @@ class AppMessages {
       title: t.waypointNameTitle,
       message: "",
       icon: Icons.add_location_alt_outlined,
+      confirmLabel: AppLocalizations.of(context)!.ok,
+      cancelLabel: AppLocalizations.of(context)!.cancel,
       extraContent: [
         TextField(
           controller: controller,
