@@ -44,11 +44,11 @@ class TrackSounds {
 
   Future<void> playReversedTrackSound() async {
     try {
-      await player.play(
-        AssetSource('sound/snap_fingers.mp3'),
-        volume: 1.0,
-        ctx: _alarmContext,
-      );
+      final fileName = _random.nextInt(2) == 0
+          ? 'sound/five_door_knocks.mp3'
+          : 'sound/metal_hammer';
+
+      await player.play(AssetSource(fileName), volume: 1.0, ctx: _alarmContext);
     } catch (e) {
       print("Error playing reversed-track sound: $e");
     }

@@ -160,6 +160,10 @@
 "alarmsAltitudeTitle": "Alarma per altitud",
 "alarmsAltitudeLabel": "Metres de desnivell (+/-)",
 "alarmsTimeTitle": "Alarma per temps",
-"alarmsTimeLabel": "Segons"
+"alarmsTimeLabel": "Segons",
+"gpsAutoConfigInfo": "Quan segueixes un track o actives l’alarma per distància, el GPS s’autoconfigura per millorar la precisió.",
 
+"gpsLockedMessage": "Configuració bloquejada: Seguiment o Alarma activa",
+"reasonAlarm": "Alarma activa",
+"reasonTrack": "Seguiment en curs"
 }

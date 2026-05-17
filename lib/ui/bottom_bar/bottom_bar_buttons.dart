@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/l10n/app_localizations.dart';
 import 'package:senda/models/track.dart';
-import 'package:senda/notifiers/gps_settings_notifier.dart';
-import 'package:senda/notifiers/helpers/thresholds.dart';
 import 'package:senda/notifiers/imported_track_notifier.dart';
 import 'package:senda/notifiers/track_follow_notifier.dart';
 import 'package:senda/notifiers/waypoints_imported_notifier.dart';
@@ -11,7 +9,6 @@ import 'package:senda/services/permissions_service.dart';
 import 'package:senda/theme/app_colors.dart';
 import 'package:senda/ui/app_messages.dart';
 import 'package:senda/ui/bottom_bar/pressable_scale.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class BottomBarButtons extends ConsumerWidget {
   final RecordingState state;
@@ -154,42 +151,7 @@ class BottomBarButtons extends ConsumerWidget {
                       );
                   if (!ok) return;
 
-                  // 2. Llegim la configuració actual del GPS
-                  final gps = ref.read(gpsSettingsProvider);
-
-                  // 3. Comprovem si ja està prou optimitzat per a navegació
-                  final bool isAlreadyOptimized =
-                      gps.useTime &&
-                      gps.seconds <= TrackThresholds.navGpsSeconds &&
-                      gps.meters <= TrackThresholds.navGpsMeters;
-
-                  if (isAlreadyOptimized) {
-                    // Si ja és ràpid, iniciem directament
-                    onFollowTrack();
-                    return;
-                  }
-
-                  // 4. Si no està optimitzat, només mostrem el diàleg la PRIMERA vegada
-                  final prefs = await SharedPreferences.getInstance();
-                  final alreadyShown =
-                      prefs.getBool('follow_warning_shown') ?? false;
-
-                  if (!alreadyShown) {
-                    // Mostrar el diàleg només la primera vegada
-                    final confirm = await AppMessages.showGpsOptimizationDialog(
-                      context,
-                    );
-
-                    if (confirm != true) {
-                      // L’usuari ha cancel·lat → no iniciem seguiment
-                      return;
-                    }
-
-                    // Marquem com vist perquè no torni a sortir
-                    await prefs.setBool('follow_warning_shown', true);
-                  }
-
-                  // 5. Iniciar seguiment (sense diàleg si ja s’ha vist)
+                  // 2. Iniciar seguiment (sense diàleg si ja s’ha vist)
                   onFollowTrack();
                 },
               ),

@@ -19,6 +19,34 @@ class GpsSettingsTab extends ConsumerWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
+            // --- INFO BANNER: GPS AUTOCONFIG ---
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.blue.shade200),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.info_outline, color: Colors.blue.shade700),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      t.gpsAutoConfigInfo,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.blue.shade900,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
             // --- TEMPS ---
             _buildSettingsCard(
               isActive: gps.useTime,

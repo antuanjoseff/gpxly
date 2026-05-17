@@ -397,4 +397,16 @@ class AppLocalizationsCa extends AppLocalizations {
 
   @override
   String get alarmsTimeLabel => 'Segons';
+
+  @override
+  String get gpsAutoConfigInfo => 'Quan segueixes un track o actives l’alarma per distància, el GPS s’autoconfigura per millorar la precisió.';
+
+  @override
+  String get gpsLockedMessage => 'Configuració bloquejada: Seguiment o Alarma activa';
+
+  @override
+  String get reasonAlarm => 'Alarma activa';
+
+  @override
+  String get reasonTrack => 'Seguiment en curs';
 }

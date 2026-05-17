@@ -397,4 +397,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get alarmsTimeLabel => 'Seconds';
+
+  @override
+  String get gpsAutoConfigInfo => 'When following a track or enabling the distance alarm, the GPS automatically adjusts to improve accuracy.';
+
+  @override
+  String get gpsLockedMessage => 'Settings locked: Tracking or Alarm active';
+
+  @override
+  String get reasonAlarm => 'Alarm active';
+
+  @override
+  String get reasonTrack => 'Tracking in progress';
 }

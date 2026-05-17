@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:senda/models/alarm_progress.dart';
 import 'package:senda/notifiers/alarm_settings_notifier.dart';
+import 'package:senda/notifiers/gps_altitude_notifier.dart';
 import 'package:senda/notifiers/helpers/track_sounds.dart';
 import 'package:senda/notifiers/track_notifier.dart';
 
@@ -77,11 +78,11 @@ class AlarmEngine {
     }
 
     // Altitud (HGT ja corregida al track)
+    // Altitud real del dispositiu (corregida amb HGT per TrackNotifier)
     if (settings.altitudeEnabled) {
-      final track = ref.read(trackProvider);
-      final alt = track.altitudes.isNotEmpty ? track.altitudes.last : null;
-      if (alt != null) {
-        _checkAltitudeAlarm(alt, settings.altitudeMeters);
+      final gpsAltitude = ref.read(gpsAltitudeProvider);
+      if (gpsAltitude != null) {
+        _checkAltitudeAlarm(gpsAltitude, settings.altitudeMeters);
       }
     }
 

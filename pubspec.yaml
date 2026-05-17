@@ -92,7 +92,8 @@ flutter:
     - assets/sound/back_on_track.mp3
     - assets/sound/fireworks.mp3
     - assets/sound/fireworks2.mp3
-    - assets/sound/snap_fingers.mp3
+    - assets/sound/metal_hammer.mp3
+    - assets/sound/five_door_knocks.mp3
     - assets/sound/sonar_sound.mp3
     - assets/sound/owl_sound.mp3
     - assets/sound/beep_sound.mp3

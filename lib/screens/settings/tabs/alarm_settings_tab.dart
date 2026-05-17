@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/l10n/app_localizations.dart';
 import 'package:senda/models/alarm_progress.dart';
@@ -13,6 +14,10 @@ class AlarmSettingsTab extends ConsumerStatefulWidget {
 }
 
 class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
+  // ───────────────────────────────────────────────
+  // FORMAT HELPERS
+  // ───────────────────────────────────────────────
+
   String _formatDistance(double m) {
     if (m < 1000) return "${m.toInt()} m";
     return "${(m / 1000).toStringAsFixed(1)} km";
@@ -23,7 +28,8 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
     if (s < 3600) return "${(s / 60).round()} min";
     final h = s ~/ 3600;
     final m = (s % 3600) ~/ 60;
-    return m == 0 ? "$h h" : "$h h ${m} min";
+    if (m == 0) return "$h h";
+    return "$h h ${m} min";
   }
 
   @override
@@ -34,10 +40,15 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F7),
-      appBar: AppBar(backgroundColor: AppColors.primary, title: Text(t.alarms)),
+      appBar: AppBar(
+        backgroundColor: AppColors.primary,
+        title: Text(t.alarms, style: const TextStyle(color: Colors.white)),
+        elevation: 0,
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          // --- DISTÀNCIA ---
           _buildAlarmCard(
             context: context,
             t: t,
@@ -53,7 +64,7 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
             onChanged: (val) {
               ref
                   .read(alarmSettingsProvider.notifier)
-                  .setDistanceAlarm(true, val);
+                  .setDistanceAlarm(settings.distanceEnabled, val);
             },
             onToggle: () {
               ref
@@ -67,8 +78,9 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
                 ref.read(alarmEngineProvider).sounds.playDistanceAlarm(),
           ),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
 
+          // --- ALTITUD ---
           _buildAlarmCard(
             context: context,
             t: t,
@@ -84,7 +96,7 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
             onChanged: (val) {
               ref
                   .read(alarmSettingsProvider.notifier)
-                  .setAltitudeAlarm(true, val);
+                  .setAltitudeAlarm(settings.altitudeEnabled, val);
             },
             onToggle: () {
               ref
@@ -98,8 +110,9 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
                 ref.read(alarmEngineProvider).sounds.playAltitudeAlarm(),
           ),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
 
+          // --- TEMPS ---
           _buildAlarmCard(
             context: context,
             t: t,
@@ -115,7 +128,7 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
             onChanged: (val) {
               ref
                   .read(alarmSettingsProvider.notifier)
-                  .setTimeAlarm(true, val.round());
+                  .setTimeAlarm(settings.timeEnabled, val.round());
             },
             onToggle: () {
               ref
@@ -132,37 +145,10 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
     );
   }
 
-  // 🔊 BOTÓ DE SPEAKER AMB PROGRÉS INTEGRAT
-  Widget _buildSpeakerButton({
-    required bool isActive,
-    required double progressValue,
-    required VoidCallback onPressed,
-  }) {
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        if (isActive)
-          SizedBox(
-            width: 36,
-            height: 36,
-            child: CircularProgressIndicator(
-              value: progressValue,
-              strokeWidth: 3,
-              color: AppColors.primary,
-              backgroundColor: Colors.transparent,
-            ),
-          ),
-        IconButton(
-          icon: const Icon(Icons.volume_up),
-          color: AppColors.primary,
-          onPressed: onPressed,
-          iconSize: 28,
-        ),
-      ],
-    );
-  }
+  // ───────────────────────────────────────────────
+  // TARGETA D’ALARMA (AMB EL CÀLCUL ANTIC)
+  // ───────────────────────────────────────────────
 
-  // 🟦 TARGETA D’ALARMA (OPCIÓ 4)
   Widget _buildAlarmCard({
     required BuildContext context,
     required AppLocalizations t,
@@ -179,16 +165,19 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
     required VoidCallback onToggle,
     required VoidCallback onPlaySound,
   }) {
-    final progressValue = progress == null
-        ? 0
+    final step = (max - min) / divisions;
+    final Color currentColor = isActive ? AppColors.primary : Colors.grey;
+
+    // AQUESTA ÉS LA LÒGICA DEL CODI ANTIC QUE SÍ QUE FUNCIONA
+    final double progressValue = progress == null
+        ? 0.0
         : (title == t.alarmsDistanceTitle
               ? progress.distance
               : title == t.alarmsAltitudeTitle
               ? progress.altitude
               : progress.time);
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
+    return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.white,
@@ -210,152 +199,129 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ─────────────────────────────
-          // LÍNIA 1 — ICONA + TÍTOL
-          // ─────────────────────────────
+          // HEADER: ICONA + PROGRÉS + TÍTOL + SWITCH
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Icon(
-                icon,
-                color: isActive ? AppColors.primary : Colors.grey,
-                size: 22,
-              ),
-              const SizedBox(width: 10),
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                  color: isActive ? AppColors.primary : Colors.grey,
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 8),
-
-          // ─────────────────────────────
-          // LÍNIA 2 — ALTAVEU + VALOR + SWITCH
-          // ─────────────────────────────
-          Row(
-            children: [
-              _buildSpeakerButton(
-                isActive: isActive,
-                progressValue: progressValue.toDouble(),
-                onPressed: onPlaySound,
-              ),
-
-              const SizedBox(width: 12),
-
-              Expanded(
-                child: Center(
-                  child: Text(
-                    valueText,
-                    style: const TextStyle(
-                      fontSize: 14,
+              Row(
+                children: [
+                  Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      SizedBox(
+                        width: 42,
+                        height: 42,
+                        child: CircularProgressIndicator(
+                          value: progressValue.toDouble().clamp(0.0, 1.0),
+                          strokeWidth: 3,
+                          backgroundColor: Colors.grey.withAlpha(30),
+                          color: currentColor,
+                        ),
+                      ),
+                      IconButton(
+                        icon: Icon(icon),
+                        color: currentColor,
+                        onPressed: onPlaySound,
+                        iconSize: 22,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.primary,
+                      color: currentColor,
                     ),
                   ),
-                ),
+                ],
               ),
-
-              Transform.scale(
-                scale: 0.8,
-                child: Switch(
-                  value: isActive,
-                  thumbColor: WidgetStateProperty.all(
-                    isActive ? AppColors.primary : Colors.grey,
-                  ),
-                  trackColor: WidgetStateProperty.all(
-                    isActive
-                        ? AppColors.primary.withAlpha(120)
-                        : Colors.grey.withAlpha(80),
-                  ),
-                  onChanged: (_) => onToggle(),
-                ),
+              Switch.adaptive(
+                value: isActive,
+                activeTrackColor: AppColors.primary,
+                onChanged: (_) => onToggle(),
               ),
             ],
           ),
 
-          const SizedBox(height: 4),
+          const SizedBox(height: 12),
+          const Divider(),
+          const SizedBox(height: 16),
 
-          // ─────────────────────────────
-          // LÍNIA 3 — BOTÓ -, SLIDER, BOTÓ +
-          // ─────────────────────────────
-          _buildCompactSliderRow(
-            context: context,
-            value: value,
-            min: min,
-            max: max,
-            divisions: divisions,
-            isActive: isActive,
-            onChanged: onChanged,
+          // CONTROLS: - [BURBULLA + SLIDER] +
+          Row(
+            children: [
+              IconButton(
+                onPressed: value > min
+                    ? () {
+                        HapticFeedback.selectionClick();
+                        onChanged((value - step).clamp(min, max));
+                      }
+                    : null,
+                icon: const Icon(Icons.remove_circle_outline, size: 28),
+                color: currentColor,
+              ),
+              Expanded(
+                child: Column(
+                  children: [
+                    // Burbulla estil GPS Settings
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: currentColor,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        valueText,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    SliderTheme(
+                      data: SliderTheme.of(context).copyWith(
+                        activeTrackColor: currentColor,
+                        inactiveTrackColor: Colors.grey.withAlpha(30),
+                        trackHeight: 6,
+                        thumbColor: currentColor,
+                        thumbShape: const RoundSliderThumbShape(
+                          enabledThumbRadius: 10,
+                        ),
+                      ),
+                      child: Slider(
+                        value: value.clamp(min, max),
+                        min: min,
+                        max: max,
+                        divisions: divisions,
+                        onChanged: (val) {
+                          HapticFeedback.selectionClick();
+                          onChanged(val);
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                onPressed: value < max
+                    ? () {
+                        HapticFeedback.selectionClick();
+                        onChanged((value + step).clamp(min, max));
+                      }
+                    : null,
+                icon: const Icon(Icons.add_circle_outline, size: 28),
+                color: currentColor,
+              ),
+            ],
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildCompactSliderRow({
-    required BuildContext context,
-    required double value,
-    required double min,
-    required double max,
-    required int divisions,
-    required bool isActive,
-    required ValueChanged<double> onChanged,
-  }) {
-    final colors = Theme.of(context).colorScheme;
-    final currentColor = isActive
-        ? AppColors.primary
-        : colors.onSurface.withAlpha(40);
-    final step = (max - min) / divisions;
-
-    return Row(
-      children: [
-        // Botó -
-        IconButton(
-          padding: const EdgeInsets.all(2),
-          constraints: const BoxConstraints(),
-          onPressed: value > min
-              ? () => onChanged((value - step).clamp(min, max))
-              : null,
-          icon: const Icon(Icons.remove_circle_outline, size: 28),
-          color: currentColor,
-        ),
-
-        // Slider
-        Expanded(
-          child: SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              activeTrackColor: currentColor,
-              inactiveTrackColor: colors.onSurface.withAlpha(30),
-              trackHeight: 4,
-              thumbColor: currentColor,
-              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10),
-            ),
-            child: Slider(
-              value: value.clamp(min, max),
-              min: min,
-              max: max,
-              divisions: divisions,
-              onChanged: onChanged,
-            ),
-          ),
-        ),
-
-        // Botó +
-        IconButton(
-          padding: const EdgeInsets.all(2),
-          constraints: const BoxConstraints(),
-          onPressed: value < max
-              ? () => onChanged((value + step).clamp(min, max))
-              : null,
-          icon: const Icon(Icons.add_circle_outline, size: 28),
-          color: currentColor,
-        ),
-      ],
     );
   }
 }

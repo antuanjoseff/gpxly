@@ -876,6 +876,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Seconds'**
   String get alarmsTimeLabel;
+
+  /// No description provided for @gpsAutoConfigInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'When following a track or enabling the distance alarm, the GPS automatically adjusts to improve accuracy.'**
+  String get gpsAutoConfigInfo;
+
+  /// No description provided for @gpsLockedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings locked: Tracking or Alarm active'**
+  String get gpsLockedMessage;
+
+  /// No description provided for @reasonAlarm.
+  ///
+  /// In en, this message translates to:
+  /// **'Alarm active'**
+  String get reasonAlarm;
+
+  /// No description provided for @reasonTrack.
+  ///
+  /// In en, this message translates to:
+  /// **'Tracking in progress'**
+  String get reasonTrack;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -67,6 +67,49 @@ class TrackNotifier extends Notifier<Track> {
     });
   }
 
+  Future<void> applyGpsMode() async {
+    final alarms = ref.read(alarmSettingsProvider);
+    final gpsSettings = ref.read(gpsSettingsProvider);
+
+    final hasDistanceAlarm = alarms.distanceEnabled;
+    final hasAltitudeAlarm = alarms.altitudeEnabled;
+    final hasAlarms = hasDistanceAlarm || hasAltitudeAlarm;
+
+    // 1) PRIORITAT MÀXIMA: SEGUIR UN TRACK → GPS cada 2 segons
+    if (isFollowing) {
+      await NativeGpsChannel.start(
+        useTime: true,
+        seconds: 2,
+        meters: 0,
+        accuracy: gpsSettings.accuracy,
+      );
+      gpsActive = true;
+      return;
+    }
+
+    // 2) PRIORITAT SEGÜENT: ALARMES DE DISTÀNCIA O ALÇADA → GPS cada 5 metres
+    if (hasAlarms) {
+      await NativeGpsChannel.start(
+        useTime: false,
+        seconds: 0,
+        meters: 5,
+        accuracy: gpsSettings.accuracy,
+      );
+      gpsActive = true;
+      return;
+    }
+
+    // 3) MODE NORMAL: RESTAURAR CONFIGURACIÓ DE L’USUARI (prefs)
+    await NativeGpsChannel.start(
+      useTime: gpsSettings.useTime,
+      seconds: gpsSettings.seconds,
+      meters: gpsSettings.meters,
+      accuracy: gpsSettings.accuracy,
+    );
+
+    gpsActive = true;
+  }
+
   Future<void> ensureGpsStarted() async {
     if (gpsActive) return;
 
@@ -108,21 +151,18 @@ class TrackNotifier extends Notifier<Track> {
     ref.read(gpsAccuracyProvider.notifier).update(accuracy);
     ref.read(gpsAltitudeProvider.notifier).update(correctedAlt);
 
-    // 2. Actualitzar l'estat del Track (Punt blau i rumb al mapa)
     state = state.copyWith(
       currentPosition: LatLng(lat, lon),
       currentHeading: heading,
     );
     _positionStreamController.add(LatLng(lat, lon));
 
-    // 3. SEGUIMENT: Enviem posició i rumb alhora per a màxima eficiència
     if (isFollowing) {
       ref
           .read(trackFollowNotifierProvider.notifier)
           .updateUserPosition(LatLng(lat, lon), userHeading: heading);
     }
 
-    // 4. GRAVACIÓ: Si l'usuari ha premut "Rec"
     if (state.recordingState == RecordingState.recording) {
       addPointFromRaw(
         lat: lat,
@@ -306,6 +346,7 @@ class TrackNotifier extends Notifier<Track> {
   // ───────────────────────────────────────────────
   void setFollowing(bool value) {
     isFollowing = value;
+    applyGpsMode();
   }
 
   // ───────────────────────────────────────────────
@@ -402,7 +443,11 @@ class TrackNotifier extends Notifier<Track> {
     if (!isRecording && !isFollowing && !anyAlarmEnabled) {
       NativeGpsChannel.stop();
       gpsActive = false;
+      return; // Important: no apliquem modes si l’hem parat
     }
+
+    // Si no complim les condicions per parar-lo, apliquem el mode correcte
+    applyGpsMode();
   }
 }
 

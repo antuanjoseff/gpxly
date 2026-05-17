@@ -159,5 +159,10 @@
 "alarmsAltitudeTitle": "Altitude alarm",
 "alarmsAltitudeLabel": "Elevation change (+/-)",
 "alarmsTimeTitle": "Time alarm",
-"alarmsTimeLabel": "Seconds"
+"alarmsTimeLabel": "Seconds",
+"gpsAutoConfigInfo": "When following a track or enabling the distance alarm, the GPS automatically adjusts to improve accuracy.",
+
+"gpsLockedMessage": "Settings locked: Tracking or Alarm active",
+"reasonAlarm": "Alarm active",
+"reasonTrack": "Tracking in progress"
 }
