@@ -20,7 +20,7 @@ class AlarmEngine {
   double _distanceAccumulated = 0.0;
 
   // Altitud (per trams / buckets)
-  int? _lastAltitudeBucket;
+  int? _lastAltitudeRange;
 
   // Temps
   DateTime? _lastTimeAlarm;
@@ -125,16 +125,48 @@ class AlarmEngine {
   void _checkAltitudeAlarm(double altitude, double thresholdMeters) {
     if (thresholdMeters <= 0) return;
 
-    final currentBucket = (altitude / thresholdMeters).floor();
+    // Hysteresis: marge per evitar rebotar entre rangs
+    const double hysteresis = 5.0; // metres de marge
 
-    if (_lastAltitudeBucket == null) {
-      _lastAltitudeBucket = currentBucket;
+    // Rang actual (base matemàtica)
+    final int currentRange = (altitude / thresholdMeters).floor();
+    final double rangeBase = currentRange * thresholdMeters;
+
+    // Límits reals amb marge
+    final double upperLimit = rangeBase + thresholdMeters + hysteresis;
+    final double lowerLimit = rangeBase - hysteresis;
+
+    // Inicialització: anclar al rang actual
+    if (_lastAltitudeRange == null) {
+      _lastAltitudeRange = currentRange;
       return;
     }
 
-    if (currentBucket != _lastAltitudeBucket) {
-      _lastAltitudeBucket = currentBucket;
+    final int last = _lastAltitudeRange!;
+
+    // ───────────────────────────────────────────────
+    // PUJADA (només si superes el límit superior + marge)
+    // ───────────────────────────────────────────────
+    if (currentRange == last + 1 && altitude >= upperLimit) {
+      _lastAltitudeRange = currentRange;
       sounds.playAltitudeAlarm();
+      return;
+    }
+
+    // ───────────────────────────────────────────────
+    // BAIXADA (només si baixes del límit inferior - marge)
+    // ───────────────────────────────────────────────
+    if (currentRange == last - 1 && altitude <= lowerLimit) {
+      _lastAltitudeRange = currentRange;
+      sounds.playAltitudeAlarm();
+      return;
+    }
+
+    // ───────────────────────────────────────────────
+    // Si hi ha un salt gran o fluctuació → actualitzar però NO sonar
+    // ───────────────────────────────────────────────
+    if (currentRange != last) {
+      _lastAltitudeRange = currentRange;
     }
   }
 
@@ -227,7 +259,7 @@ class AlarmEngine {
   void _resetInternalState() {
     _lastPos = null;
     _distanceAccumulated = 0.0;
-    _lastAltitudeBucket = null;
+    _lastAltitudeRange = null;
     _lastTimeAlarm = null;
   }
 }
