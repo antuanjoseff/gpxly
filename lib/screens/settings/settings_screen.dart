@@ -4,6 +4,7 @@ import 'package:senda/l10n/app_localizations.dart';
 import 'package:senda/notifiers/alarm_settings_notifier.dart';
 import 'package:senda/notifiers/track_follow_notifier.dart';
 import 'package:senda/screens/settings/tabs/alarm_settings_tab.dart';
+import 'package:senda/screens/settings/tabs/barometer_settings_tab.dart';
 import 'package:senda/screens/settings/tabs/gps_settings_tab.dart';
 import 'package:senda/screens/settings/tabs/gpx_settings_tab.dart';
 import 'package:senda/screens/settings/tabs/imported_track_settings_tab.dart';
@@ -89,6 +90,20 @@ class SettingsScreen extends ConsumerWidget {
                 context,
                 MaterialPageRoute(builder: (_) => const AlarmSettingsTab()),
               ),
+            ),
+            _SettingsTile(
+              icon: Icons
+                  .device_thermostat_rounded, // Icona que suggereix relleu/alçada
+              label: t.barometerTitle,
+              t: t,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const BarometerSettingsTab(),
+                  ),
+                );
+              },
             ),
           ],
         ),

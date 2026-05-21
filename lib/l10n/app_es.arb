@@ -154,15 +154,28 @@
 "gpxErrorNoGpxTag": "El archivo no contiene datos GPX",
 
 "alarms": "Alarmas",
-"alarmsDistanceTitle": "Alarma por distancia",
+"alarmsDistanceTitle": "Distancia",
 "alarmsDistanceLabel": "Metros recorridos",
-"alarmsAltitudeTitle": "Alarma por altitud",
+"alarmsAltitudeTitle": "Altitud",
 "alarmsAltitudeLabel": "Metros de desnivel (+/-)",
-"alarmsTimeTitle": "Alarma por tiempo",
+"alarmsTimeTitle": "Tiempo",
 "alarmsTimeLabel": "Segundos",
 "gpsAutoConfigInfo": "Cuando sigues un track o activas la alarma por distancia, el GPS se autoconfigura para mejorar la precisión.",
 
 "gpsLockedMessage": "Configuración bloqueada: Seguimiento o Alarma activa",
 "reasonAlarm": "Alarma activa",
-"reasonTrack": "Seguimiento en curso"
+"reasonTrack": "Seguimiento en curso",
+
+"barometerTitle": "Barómetro",
+"fusedAltitude": "Altitud corregida",
+"manualCalibration": "Calibración manual",
+"recalibrateGpsDem": "Recalibrar con GPS/DEM",
+"currentGpsAccuracy": "Precisión GPS actual",
+"insufficientCoverage": "Cobertura insuficiente para calibrar bien.",
+"waitingValidAltitude": "Esperando señal de altitud válida...",
+"barometerCalibratedSuccess": "Barómetro calibrado con éxito",
+"autoCalibrationInterval": "Intervalo de calibración automático",
+"howOften": "¿Cada cuánto tiempo?",
+"barometerExplanation": "El barómetro se recalibrará automáticamente cada vez que pase este tiempo, siempre que la cobertura GPS sea buena."
+
 }

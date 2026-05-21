@@ -4,15 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/l10n/app_localizations.dart';
 import 'package:senda/notifiers/permissions_notifier.dart';
 import 'package:senda/screens/map_screen.dart';
-// 🔥 AFEGIT
-import 'package:senda/services/dem_loader.dart';
 import 'package:senda/theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // PAS CRÍTIC: copiar els .tif dels assets a /files/dem/
-  await DemLoader.ensureDemFiles();
+  // await DemLoader.ensureDemFiles();
 
   runApp(const ProviderScope(child: GPXlyApp()));
 }

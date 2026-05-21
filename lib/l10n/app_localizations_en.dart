@@ -381,19 +381,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get alarms => 'Alarms';
 
   @override
-  String get alarmsDistanceTitle => 'Distance alarm';
+  String get alarmsDistanceTitle => 'Distance';
 
   @override
   String get alarmsDistanceLabel => 'Meters traveled';
 
   @override
-  String get alarmsAltitudeTitle => 'Altitude alarm';
+  String get alarmsAltitudeTitle => 'Altitude';
 
   @override
   String get alarmsAltitudeLabel => 'Elevation change (+/-)';
 
   @override
-  String get alarmsTimeTitle => 'Time alarm';
+  String get alarmsTimeTitle => 'Time';
 
   @override
   String get alarmsTimeLabel => 'Seconds';
@@ -409,4 +409,37 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reasonTrack => 'Tracking in progress';
+
+  @override
+  String get barometerTitle => 'Barometer';
+
+  @override
+  String get fusedAltitude => 'Corrected Altitude';
+
+  @override
+  String get manualCalibration => 'Manual calibration';
+
+  @override
+  String get recalibrateGpsDem => 'Recalibrate with GPS/DEM';
+
+  @override
+  String get currentGpsAccuracy => 'Current GPS accuracy';
+
+  @override
+  String get insufficientCoverage => 'Insufficient coverage to calibrate properly.';
+
+  @override
+  String get waitingValidAltitude => 'Waiting for valid altitude signal...';
+
+  @override
+  String get barometerCalibratedSuccess => 'Barometer calibrated successfully';
+
+  @override
+  String get autoCalibrationInterval => 'Auto calibration interval';
+
+  @override
+  String get howOften => 'How often?';
+
+  @override
+  String get barometerExplanation => 'The barometer will automatically recalibrate after this time, provided GPS coverage is good.';
 }

@@ -13,7 +13,7 @@ import 'package:senda/notifiers/gps_bearing_notifier.dart';
 import 'package:senda/notifiers/gps_settings_notifier.dart';
 import 'package:senda/notifiers/timer_notifier.dart';
 import 'package:senda/notifiers/track_follow_notifier.dart';
-import 'package:senda/services/hgt_service.dart';
+import 'package:senda/services/cog_service.dart';
 import 'package:senda/services/native_gps_channel.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -27,14 +27,14 @@ class TrackNotifier extends Notifier<Track> {
   final _positionStreamController = StreamController<LatLng>.broadcast();
   Stream<LatLng> get positionStream => _positionStreamController.stream;
 
-  final _hgtService = HgtService();
+  final _cogService = CogService();
 
   @override
   Track build() {
     ref.onDispose(() {
       _gpsSub?.cancel();
       _positionStreamController.close();
-      _hgtService.dispose();
+      _cogService.dispose();
     });
 
     return _initialState ??= Track(
@@ -141,15 +141,11 @@ class TrackNotifier extends Notifier<Track> {
     final vAccuracy = data["vAccuracy"] as double;
     final satellites = data["satellites"] as int? ?? 0;
 
-    final (correctedAlt, isFixed) = await _hgtService.getCorrectedElevation(
-      lat,
-      lon,
-      altitude,
-    );
-
+    // --- MEJORA DE FLUIDEZ ---
+    // Actualizamos la posición en el mapa ANTES del await.
+    // Así la flecha se mueve al instante sin esperar a la descarga.
     ref.read(gpsBearingProvider.notifier).update(heading);
     ref.read(gpsAccuracyProvider.notifier).update(accuracy);
-    ref.read(gpsAltitudeProvider.notifier).update(correctedAlt);
 
     state = state.copyWith(
       currentPosition: LatLng(lat, lon),
@@ -163,13 +159,26 @@ class TrackNotifier extends Notifier<Track> {
           .updateUserPosition(LatLng(lat, lon), userHeading: heading);
     }
 
+    // --- CORRECCIÓN ASÍNCRONA ---
+    // Desestructuramos la tupla (altura, booleano) correctamente
+    final (correctedAlt, isFixed) = await _cogService.getCorrectedElevation(
+      lat,
+      lon,
+      altitude,
+    );
+
+    // Ahora sí pasamos el double (correctedAlt) al provider
+    ref
+        .read(gpsAltitudeProvider.notifier)
+        .update(correctedAlt, horizontalAccuracy: accuracy);
+
     if (state.recordingState == RecordingState.recording) {
       addPointFromRaw(
         lat: lat,
         lon: lon,
         accuracy: accuracy,
-        altitude: correctedAlt,
-        isHgtFixed: isFixed,
+        altitude: correctedAlt, // Pasamos el double corregido
+        isHgtFixed: isFixed, // Pasamos el booleano
         speed: speed,
         heading: heading,
         timestamp: timestamp,

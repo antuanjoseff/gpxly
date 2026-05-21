@@ -98,7 +98,8 @@ class FloatingRoutePanel extends ConsumerWidget {
   }
 }
 
-class AnimatedAltitudeText extends StatelessWidget {
+class AnimatedAltitudeText extends ConsumerWidget {
+  // 👈 Cambiado a ConsumerWidget
   final double altitude;
   final Color textColor;
 
@@ -109,10 +110,15 @@ class AnimatedAltitudeText extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final String altitudeStr = altitude != 0.0
+  Widget build(BuildContext context, WidgetRef ref) {
+    // 🔍 Leemos si el barómetro ya ha sido calibrado por el GPS/COG
+    final isCalibrated = ref.watch(gpsAltitudeProvider.notifier).isCalibrated;
+
+    // 💡 LÓGICA: Si no está calibrado o el valor es 0, mostramos "--m"
+    // Esto evita mostrar los -27m iniciales de Girona.
+    final String altitudeStr = (isCalibrated && altitude != 0.0)
         ? "${altitude.toStringAsFixed(0)}m"
-        : "?m";
+        : "--m";
 
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 300),
@@ -134,7 +140,8 @@ class AnimatedAltitudeText extends StatelessWidget {
           fontFamily: 'monospace',
           fontWeight: FontWeight.w800,
           fontSize: 13,
-          color: textColor, // 🔥 ara segueix l’estat
+          // Si no está calibrado, atenuamos un poco el color para dar feedback visual
+          color: isCalibrated ? textColor : textColor.withAlpha(120),
         ),
       ),
     );

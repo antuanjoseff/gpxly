@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/l10n/app_localizations.dart';
 import 'package:senda/notifiers/gps_settings_notifier.dart';
 import 'package:senda/theme/app_colors.dart';
+import 'package:senda/widgets/custom_settings_card.dart';
 
 class GpsSettingsTab extends ConsumerWidget {
   const GpsSettingsTab({super.key});
@@ -14,229 +15,105 @@ class GpsSettingsTab extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F7),
-      appBar: AppBar(backgroundColor: AppColors.primary, title: Text(t.gpsTab)),
-      body: SingleChildScrollView(
+      appBar: AppBar(
+        backgroundColor: AppColors.primary,
+        title: Text(t.gpsTab, style: const TextStyle(color: Colors.white)),
+        elevation: 0,
+      ),
+      body: ListView(
+        // Canviat SingleChildScrollView per ListView per consistència
         padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            // --- INFO BANNER: GPS AUTOCONFIG ---
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(14),
-              margin: const EdgeInsets.only(bottom: 20),
-              decoration: BoxDecoration(
-                color: Colors.blue.shade50,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.blue.shade200),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(Icons.info_outline, color: Colors.blue.shade700),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      t.gpsAutoConfigInfo,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.blue.shade900,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+        children: [
+          // --- INFO BANNER ---
+          _buildInfoBanner(t.gpsAutoConfigInfo),
 
-            // --- TEMPS ---
-            _buildSettingsCard(
-              isActive: gps.useTime,
-              title: t.gpsRecordByTime,
-              valueText: "${gps.seconds} s",
-              sliderRow: _buildSliderRow(
-                context: context,
-                value: gps.seconds.toDouble(),
-                min: 2,
-                max: 60,
-                divisions: 58,
-                isActive: gps.useTime,
-                onChanged: (val) {
-                  ref
-                      .read(gpsSettingsProvider.notifier)
-                      .setSeconds(val.round());
-                  ref.read(gpsSettingsProvider.notifier).setUseTime(true);
-                },
-              ),
-            ),
+          const SizedBox(height: 8),
 
-            const SizedBox(height: 16),
+          // --- SECCIÓ MÈTODE DE REGISTRE ---
+          const SectionTitle(
+            "Mètode de registre",
+          ), // Pots traduir aquesta clau si la tens a l10n
+          // --- TEMPS ---
+          SettingsCard(
+            isActive: gps.useTime,
+            title: t.gpsRecordByTime,
+            valueText: "${gps.seconds} s",
+            value: gps.seconds.toDouble(),
+            min: 2,
+            max: 60,
+            divisions: 58,
+            onChanged: (val) {
+              ref.read(gpsSettingsProvider.notifier).setSeconds(val.round());
+              ref.read(gpsSettingsProvider.notifier).setUseTime(true);
+            },
+          ),
 
-            // --- METRES ---
-            _buildSettingsCard(
-              isActive: !gps.useTime,
-              title: t.gpsRecordByDistance,
-              valueText: "${gps.meters.toInt()} m",
-              sliderRow: _buildSliderRow(
-                context: context,
-                value: gps.meters,
-                min: 1,
-                max: 100,
-                divisions: 99,
-                isActive: !gps.useTime,
-                onChanged: (val) {
-                  ref.read(gpsSettingsProvider.notifier).setMeters(val);
-                  ref.read(gpsSettingsProvider.notifier).setUseTime(false);
-                },
-              ),
-            ),
+          const SizedBox(height: 16),
 
-            const SizedBox(height: 16),
+          // --- METRES ---
+          SettingsCard(
+            isActive: !gps.useTime,
+            title: t.gpsRecordByDistance,
+            valueText: "${gps.meters.toInt()} m",
+            value: gps.meters,
+            min: 1,
+            max: 100,
+            divisions: 99,
+            onChanged: (val) {
+              ref.read(gpsSettingsProvider.notifier).setMeters(val);
+              ref.read(gpsSettingsProvider.notifier).setUseTime(false);
+            },
+          ),
 
-            // --- ACCURACY ---
-            _buildSettingsCard(
-              isActive: true,
-              title: t.gpsMaxAccuracy,
-              valueText: "${gps.accuracy.toInt()} m",
-              sliderRow: _buildSliderRow(
-                context: context,
-                value: gps.accuracy,
-                min: 5,
-                max: 100,
-                divisions: 19,
-                isActive: true,
-                onChanged: (val) {
-                  ref.read(gpsSettingsProvider.notifier).setAccuracy(val);
-                },
-              ),
-            ),
+          const SizedBox(height: 8),
+          const SectionTitle("Qualitat del senyal"),
 
-            const SizedBox(height: 40),
-          ],
-        ),
+          // --- ACCURACY ---
+          SettingsCard(
+            isActive: true,
+            title: t.gpsMaxAccuracy,
+            valueText: "${gps.accuracy.toInt()} m",
+            value: gps.accuracy,
+            min: 5,
+            max: 100,
+            divisions: 19,
+            onChanged: (val) {
+              ref.read(gpsSettingsProvider.notifier).setAccuracy(val);
+            },
+          ),
+
+          const SizedBox(height: 40),
+        ],
       ),
     );
   }
 
-  // ------------------------------
-  // UI HELPERS
-  // ------------------------------
-
-  Widget _buildSettingsCard({
-    required bool isActive,
-    required String title,
-    required String valueText,
-    required Widget sliderRow,
-  }) {
+  Widget _buildInfoBanner(String message) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isActive
-              ? AppColors.primary.withAlpha(80)
-              : Colors.transparent,
-          width: 2,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(10),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        color: Colors.blue.shade50,
+        borderRadius: BorderRadius.circular(16), // Unificat a 16 com les cards
+        border: Border.all(color: Colors.blue.shade200),
       ),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: isActive ? AppColors.primary : Colors.grey[400],
-                ),
+          Icon(Icons.info_outline, color: Colors.blue.shade700),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.blue.shade900,
+                height: 1.3,
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: isActive ? AppColors.primary : Colors.grey[100],
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  valueText,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: isActive ? Colors.white : Colors.grey[400],
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
-          const SizedBox(height: 20),
-          sliderRow,
         ],
       ),
-    );
-  }
-
-  Widget _buildSliderRow({
-    required BuildContext context,
-    required double value,
-    required double min,
-    required double max,
-    required int divisions,
-    required bool isActive,
-    required ValueChanged<double> onChanged,
-  }) {
-    final colors = Theme.of(context).colorScheme;
-    final currentColor = isActive
-        ? AppColors.primary
-        : colors.onSurface.withAlpha(40);
-    final step = (max - min) / divisions;
-
-    return Row(
-      children: [
-        IconButton(
-          onPressed: value > min
-              ? () => onChanged((value - step).clamp(min, max))
-              : null,
-          icon: const Icon(Icons.remove_circle_outline, size: 28),
-          color: currentColor,
-        ),
-        Expanded(
-          child: SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              activeTrackColor: currentColor,
-              inactiveTrackColor: colors.onSurface.withAlpha(30),
-              trackHeight: isActive ? 6 : 4,
-              thumbColor: currentColor,
-              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10),
-            ),
-            child: Slider(
-              value: value.clamp(min, max),
-              min: min,
-              max: max,
-              divisions: divisions,
-              onChanged: onChanged,
-            ),
-          ),
-        ),
-        IconButton(
-          onPressed: value < max
-              ? () => onChanged((value + step).clamp(min, max))
-              : null,
-          icon: const Icon(Icons.add_circle_outline, size: 28),
-          color: currentColor,
-        ),
-      ],
     );
   }
 }

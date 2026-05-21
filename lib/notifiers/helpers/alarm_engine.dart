@@ -125,18 +125,9 @@ class AlarmEngine {
   void _checkAltitudeAlarm(double altitude, double thresholdMeters) {
     if (thresholdMeters <= 0) return;
 
-    // Hysteresis: marge per evitar rebotar entre rangs
-    const double hysteresis = 5.0; // metres de marge
-
-    // Rang actual (base matemàtica)
+    // 1. Rang actual segons l'alçada real
     final int currentRange = (altitude / thresholdMeters).floor();
-    final double rangeBase = currentRange * thresholdMeters;
 
-    // Límits reals amb marge
-    final double upperLimit = rangeBase + thresholdMeters + hysteresis;
-    final double lowerLimit = rangeBase - hysteresis;
-
-    // Inicialització: anclar al rang actual
     if (_lastAltitudeRange == null) {
       _lastAltitudeRange = currentRange;
       return;
@@ -144,29 +135,25 @@ class AlarmEngine {
 
     final int last = _lastAltitudeRange!;
 
-    // ───────────────────────────────────────────────
-    // PUJADA (només si superes el límit superior + marge)
-    // ───────────────────────────────────────────────
-    if (currentRange == last + 1 && altitude >= upperLimit) {
-      _lastAltitudeRange = currentRange;
-      sounds.playAltitudeAlarm();
-      return;
-    }
+    // 2. Definim una histèresi segura (en metres)
+    // Un valor d'entre 1.0 i 2.0 metres és ideal per a baròmetres de mòbil
+    const double hysteresis = 5;
 
-    // ───────────────────────────────────────────────
-    // BAIXADA (només si baixes del límit inferior - marge)
-    // ───────────────────────────────────────────────
-    if (currentRange == last - 1 && altitude <= lowerLimit) {
-      _lastAltitudeRange = currentRange;
-      sounds.playAltitudeAlarm();
-      return;
-    }
-
-    // ───────────────────────────────────────────────
-    // Si hi ha un salt gran o fluctuació → actualitzar però NO sonar
-    // ───────────────────────────────────────────────
-    if (currentRange != last) {
-      _lastAltitudeRange = currentRange;
+    // 3. Lògica de pas de frontera
+    if (currentRange > last) {
+      // Cas de PUJADA: Hem de superar la frontera + el marge d'histèresi
+      double boundary = currentRange * thresholdMeters;
+      if (altitude >= (boundary + hysteresis)) {
+        _lastAltitudeRange = currentRange;
+        sounds.playAltitudeAlarm();
+      }
+    } else if (currentRange < last) {
+      // Cas de BAIXADA: Hem de baixar de la frontera - el marge d'histèresi
+      double boundary = (currentRange + 1) * thresholdMeters;
+      if (altitude <= (boundary - hysteresis)) {
+        _lastAltitudeRange = currentRange;
+        sounds.playAltitudeAlarm();
+      }
     }
   }
 
@@ -213,10 +200,8 @@ class AlarmEngine {
     final s = ref.read(alarmSettingsProvider);
     if (!s.altitudeEnabled || s.altitudeMeters <= 0) return 0;
 
-    final track = ref.read(trackProvider);
-    if (track.altitudes.isEmpty) return 0;
+    final alt = ref.read(gpsAltitudeProvider);
 
-    final alt = track.altitudes.last;
     return ((alt % s.altitudeMeters) / s.altitudeMeters).clamp(0, 1);
   }
 

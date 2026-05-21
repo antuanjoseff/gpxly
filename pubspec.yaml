@@ -99,10 +99,10 @@ flutter:
     - assets/sound/beep_sound.mp3
     - assets/icon/waypoint.png
     - assets/icon/waypoint_imported.png
-    - assets/dem/N41E002.hgt
-    - assets/dem/N41E003.hgt
-    - assets/dem/N42E002.hgt
-    - assets/dem/N42E003.hgt
+    # - assets/dem/N41E002.hgt
+    # - assets/dem/N41E003.hgt
+    # - assets/dem/N42E002.hgt
+    # - assets/dem/N42E003.hgt
 
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg

@@ -20,6 +20,7 @@ import 'package:senda/notifiers/track_notifier.dart';
 import 'package:senda/notifiers/track_settings_notifier.dart';
 import 'package:senda/notifiers/waypoints_imported_notifier.dart';
 import 'package:senda/notifiers/waypoints_recorded_notifier.dart';
+import 'package:senda/providers/barometer_provider.dart';
 import 'package:senda/screens/settings/settings_screen.dart';
 import 'package:senda/screens/settings/tabs/alarm_settings_tab.dart';
 import 'package:senda/screens/stats_screen.dart';
@@ -27,6 +28,7 @@ import 'package:senda/services/gpx_exporter.dart';
 import 'package:senda/services/gpx_import_flow.dart';
 import 'package:senda/services/hgt_service.dart';
 import 'package:senda/services/location_permission_flow.dart';
+import 'package:senda/services/native_barometer_channel.dart';
 import 'package:senda/services/permissions_service.dart';
 import 'package:senda/services/recording_handler.dart';
 import 'package:senda/theme/app_colors.dart';
@@ -86,7 +88,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
   @override
   void initState() {
     super.initState();
-
+    NativeBarometerChannel.start();
     // 1. Carreguem la posició guardada al disc immediatament.
     // Això fa que _initialCameraTarget deixi de ser null i el mapa s'infli ja mateix.
     _loadLastPosition();
@@ -164,6 +166,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this); // Limpieza del observer
+    NativeBarometerChannel.stop();
     super.dispose();
   }
 
@@ -403,6 +406,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final hasImportedTrack =
         importedTrack != null && importedTrack.coordinates.isNotEmpty;
     final trackFollowState = ref.watch(trackFollowNotifierProvider);
+
+    final pressure = ref.watch(barometerProvider).value;
+    final altBaro = ref.watch(baroAltitudeProvider);
 
     ref.listen(trackProvider, (prev, next) async {
       if (!styleInitialized || mapController == null) return;
@@ -674,6 +680,23 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 ),
 
                 actions: [
+                  if (pressure != null)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                      child: Text(
+                        "${pressure.toStringAsFixed(1)} hPa",
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                    ),
+
+                  if (altBaro != null)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                      child: Text(
+                        "${altBaro.toStringAsFixed(0)} m",
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                    ),
                   if (anyAlarmActive)
                     Padding(
                       padding: const EdgeInsets.only(right: 8),

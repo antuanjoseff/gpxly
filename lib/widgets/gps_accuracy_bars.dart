@@ -96,7 +96,7 @@ class GpsAccuracyBars extends ConsumerWidget {
     late int activeBars;
 
     switch (level) {
-      case GpsAccuracyLevel.excellent:
+      case GpsAccuracyLevel.high:
         color = const Color(0xFF00FF66);
         activeBars = totalBars;
         break;

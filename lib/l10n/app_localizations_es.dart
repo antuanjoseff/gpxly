@@ -381,19 +381,19 @@ class AppLocalizationsEs extends AppLocalizations {
   String get alarms => 'Alarmas';
 
   @override
-  String get alarmsDistanceTitle => 'Alarma por distancia';
+  String get alarmsDistanceTitle => 'Distancia';
 
   @override
   String get alarmsDistanceLabel => 'Metros recorridos';
 
   @override
-  String get alarmsAltitudeTitle => 'Alarma por altitud';
+  String get alarmsAltitudeTitle => 'Altitud';
 
   @override
   String get alarmsAltitudeLabel => 'Metros de desnivel (+/-)';
 
   @override
-  String get alarmsTimeTitle => 'Alarma por tiempo';
+  String get alarmsTimeTitle => 'Tiempo';
 
   @override
   String get alarmsTimeLabel => 'Segundos';
@@ -409,4 +409,37 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get reasonTrack => 'Seguimiento en curso';
+
+  @override
+  String get barometerTitle => 'Barómetro';
+
+  @override
+  String get fusedAltitude => 'Altitud corregida';
+
+  @override
+  String get manualCalibration => 'Calibración manual';
+
+  @override
+  String get recalibrateGpsDem => 'Recalibrar con GPS/DEM';
+
+  @override
+  String get currentGpsAccuracy => 'Precisión GPS actual';
+
+  @override
+  String get insufficientCoverage => 'Cobertura insuficiente para calibrar bien.';
+
+  @override
+  String get waitingValidAltitude => 'Esperando señal de altitud válida...';
+
+  @override
+  String get barometerCalibratedSuccess => 'Barómetro calibrado con éxito';
+
+  @override
+  String get autoCalibrationInterval => 'Intervalo de calibración automático';
+
+  @override
+  String get howOften => '¿Cada cuánto tiempo?';
+
+  @override
+  String get barometerExplanation => 'El barómetro se recalibrará automáticamente cada vez que pase este tiempo, siempre que la cobertura GPS sea buena.';
 }

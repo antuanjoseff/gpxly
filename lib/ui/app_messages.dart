@@ -519,6 +519,7 @@ class AppMessages {
         backgroundColor: Colors.green.shade700,
         icon: Icons.check_circle,
       );
+
   static void showErrorSnackBar(BuildContext context, String msg) =>
       _showCustomSnackBar(
         context,

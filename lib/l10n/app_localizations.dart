@@ -844,7 +844,7 @@ abstract class AppLocalizations {
   /// No description provided for @alarmsDistanceTitle.
   ///
   /// In en, this message translates to:
-  /// **'Distance alarm'**
+  /// **'Distance'**
   String get alarmsDistanceTitle;
 
   /// No description provided for @alarmsDistanceLabel.
@@ -856,7 +856,7 @@ abstract class AppLocalizations {
   /// No description provided for @alarmsAltitudeTitle.
   ///
   /// In en, this message translates to:
-  /// **'Altitude alarm'**
+  /// **'Altitude'**
   String get alarmsAltitudeTitle;
 
   /// No description provided for @alarmsAltitudeLabel.
@@ -868,7 +868,7 @@ abstract class AppLocalizations {
   /// No description provided for @alarmsTimeTitle.
   ///
   /// In en, this message translates to:
-  /// **'Time alarm'**
+  /// **'Time'**
   String get alarmsTimeTitle;
 
   /// No description provided for @alarmsTimeLabel.
@@ -900,6 +900,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tracking in progress'**
   String get reasonTrack;
+
+  /// No description provided for @barometerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Barometer'**
+  String get barometerTitle;
+
+  /// No description provided for @fusedAltitude.
+  ///
+  /// In en, this message translates to:
+  /// **'Corrected Altitude'**
+  String get fusedAltitude;
+
+  /// No description provided for @manualCalibration.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual calibration'**
+  String get manualCalibration;
+
+  /// No description provided for @recalibrateGpsDem.
+  ///
+  /// In en, this message translates to:
+  /// **'Recalibrate with GPS/DEM'**
+  String get recalibrateGpsDem;
+
+  /// No description provided for @currentGpsAccuracy.
+  ///
+  /// In en, this message translates to:
+  /// **'Current GPS accuracy'**
+  String get currentGpsAccuracy;
+
+  /// No description provided for @insufficientCoverage.
+  ///
+  /// In en, this message translates to:
+  /// **'Insufficient coverage to calibrate properly.'**
+  String get insufficientCoverage;
+
+  /// No description provided for @waitingValidAltitude.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for valid altitude signal...'**
+  String get waitingValidAltitude;
+
+  /// No description provided for @barometerCalibratedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Barometer calibrated successfully'**
+  String get barometerCalibratedSuccess;
+
+  /// No description provided for @autoCalibrationInterval.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto calibration interval'**
+  String get autoCalibrationInterval;
+
+  /// No description provided for @howOften.
+  ///
+  /// In en, this message translates to:
+  /// **'How often?'**
+  String get howOften;
+
+  /// No description provided for @barometerExplanation.
+  ///
+  /// In en, this message translates to:
+  /// **'The barometer will automatically recalibrate after this time, provided GPS coverage is good.'**
+  String get barometerExplanation;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

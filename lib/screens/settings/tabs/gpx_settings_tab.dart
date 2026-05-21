@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/l10n/app_localizations.dart';
 import 'package:senda/notifiers/gpx_settings_notifier.dart';
 import 'package:senda/theme/app_colors.dart';
+// Assegura't que el path sigui el correcte on tinguis el SectionTitle i SettingsCard
+import 'package:senda/widgets/custom_settings_card.dart';
 
 class GpxSettingsTab extends ConsumerWidget {
   const GpxSettingsTab({super.key});
@@ -14,69 +16,74 @@ class GpxSettingsTab extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F7),
-      appBar: AppBar(backgroundColor: AppColors.primary, title: Text(t.gpxTab)),
+      appBar: AppBar(
+        backgroundColor: AppColors.primary,
+        elevation: 0,
+        centerTitle: false, // Consistència amb Baròmetre
+        iconTheme: const IconThemeData(color: Colors.white),
+        title: Text(
+          t.gpxTab,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Padding(
-            padding: const EdgeInsets.only(left: 4, bottom: 12, top: 8),
-            child: Text(
-              t.gpxIncludeExtraData,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey,
-              ),
-            ),
-          ),
+          // --- TÍTOL DE SECCIÓ UNIFICAT ---
+          // Utilitzem el widget que ja té el format 12, bold, grey i majúscules
+          SectionTitle(t.gpxIncludeExtraData),
 
-          _buildCustomSwitch(
-            context,
-            ref,
-            settings.accuracies,
-            "accuracies",
-            t.gpxAccuracyPerPoint,
-            Icons.gps_fixed,
+          _buildGpxSwitchCard(
+            ref: ref,
+            value: settings.accuracies,
+            field: "accuracies",
+            title: t.gpxAccuracyPerPoint,
+            icon: Icons.gps_fixed,
+            t: t,
           ),
           const SizedBox(height: 12),
 
-          _buildCustomSwitch(
-            context,
-            ref,
-            settings.speeds,
-            "speeds",
-            t.gpxSpeed,
-            Icons.speed,
+          _buildGpxSwitchCard(
+            ref: ref,
+            value: settings.speeds,
+            field: "speeds",
+            title: t.gpxSpeed,
+            icon: Icons.speed,
+            t: t,
           ),
           const SizedBox(height: 12),
 
-          _buildCustomSwitch(
-            context,
-            ref,
-            settings.headings,
-            "headings",
-            t.gpxHeading,
-            Icons.explore_outlined,
+          _buildGpxSwitchCard(
+            ref: ref,
+            value: settings.headings,
+            field: "headings",
+            title: t.gpxHeading,
+            icon: Icons.explore_outlined,
+            t: t,
           ),
           const SizedBox(height: 12),
 
-          _buildCustomSwitch(
-            context,
-            ref,
-            settings.satellites,
-            "satellites",
-            t.gpxSatellites,
-            Icons.satellite_alt,
+          _buildGpxSwitchCard(
+            ref: ref,
+            value: settings.satellites,
+            field: "satellites",
+            title: t.gpxSatellites,
+            icon: Icons.satellite_alt,
+            t: t,
           ),
           const SizedBox(height: 12),
 
-          _buildCustomSwitch(
-            context,
-            ref,
-            settings.vAccuracies,
-            "vAccuracies",
-            t.gpxVerticalAccuracy,
-            Icons.height,
+          _buildGpxSwitchCard(
+            ref: ref,
+            value: settings.vAccuracies,
+            field: "vAccuracies",
+            title: t.gpxVerticalAccuracy,
+            icon: Icons.height,
+            t: t,
           ),
 
           const SizedBox(height: 40),
@@ -85,20 +92,24 @@ class GpxSettingsTab extends ConsumerWidget {
     );
   }
 
-  Widget _buildCustomSwitch(
-    BuildContext context,
-    WidgetRef ref,
-    bool value,
-    String field,
-    String title,
-    IconData icon,
-  ) {
-    final t = AppLocalizations.of(context)!;
+  Widget _buildGpxSwitchCard({
+    required WidgetRef ref,
+    required bool value,
+    required String field,
+    required String title,
+    required IconData icon,
+    required AppLocalizations t,
+  }) {
+    final Color currentColor = value ? AppColors.primary : Colors.grey;
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: value ? AppColors.primary.withAlpha(80) : Colors.transparent,
+          width: 2,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withAlpha(10),
@@ -109,18 +120,13 @@ class GpxSettingsTab extends ConsumerWidget {
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        onTap: () {
-          ref.read(gpxSettingsProvider.notifier).toggle(field, !value);
-        },
+        onTap: () =>
+            ref.read(gpxSettingsProvider.notifier).toggle(field, !value),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
           child: Row(
             children: [
-              Icon(
-                icon,
-                color: value ? AppColors.primary : Colors.grey,
-                size: 24,
-              ),
+              Icon(icon, color: currentColor, size: 24),
               const SizedBox(width: 16),
               Expanded(
                 child: Text(
@@ -132,20 +138,19 @@ class GpxSettingsTab extends ConsumerWidget {
                   ),
                 ),
               ),
-
               Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
+                  horizontal: 12,
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: value ? AppColors.primary : Colors.grey,
+                  color: currentColor,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
                   value ? t.switchOn : t.switchOff,
                   style: const TextStyle(
-                    fontSize: 12,
+                    fontSize: 11, // Mantenim l'estil dels badges petits
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),

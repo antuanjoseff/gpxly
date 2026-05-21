@@ -155,15 +155,27 @@
 "gpxErrorNoGpxTag": "El fitxer no conté dades GPX",
 
 "alarms": "Alarmes",
-"alarmsDistanceTitle": "Alarma per distància",
+"alarmsDistanceTitle": "Distància",
 "alarmsDistanceLabel": "Metres recorreguts",
-"alarmsAltitudeTitle": "Alarma per altitud",
+"alarmsAltitudeTitle": "Altitud",
 "alarmsAltitudeLabel": "Metres de desnivell (+/-)",
-"alarmsTimeTitle": "Alarma per temps",
+"alarmsTimeTitle": "Temps",
 "alarmsTimeLabel": "Segons",
 "gpsAutoConfigInfo": "Quan segueixes un track o actives l’alarma per distància, el GPS s’autoconfigura per millorar la precisió.",
 
 "gpsLockedMessage": "Configuració bloquejada: Seguiment o Alarma activa",
 "reasonAlarm": "Alarma activa",
-"reasonTrack": "Seguiment en curs"
+"reasonTrack": "Seguiment en curs",
+
+"barometerTitle": "Baròmetre",
+"fusedAltitude": "Altitud corregida",
+"manualCalibration": "Calibratge manual",
+"recalibrateGpsDem": "Recalibrar amb GPS/DEM",
+"currentGpsAccuracy": "Precisió GPS actual",
+"insufficientCoverage": "Cobertura insuficient per calibrar bé.",
+"waitingValidAltitude": "Esperant senyal d'altitud vàlida...",
+"barometerCalibratedSuccess": "Baròmetre calibrat amb èxit",
+"autoCalibrationInterval": "Interval de calibratge automàtic",
+"howOften": "Cada quant temps?",
+"barometerExplanation": "El baròmetre es recalibrarà automàticament cada cop que passi aquest temps, sempre que la cobertura GPS sigui bona."
 }
