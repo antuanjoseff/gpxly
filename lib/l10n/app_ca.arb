@@ -177,5 +177,18 @@
 "barometerCalibratedSuccess": "Baròmetre calibrat amb èxit",
 "autoCalibrationInterval": "Interval de calibratge automàtic",
 "howOften": "Cada quant temps?",
-"barometerExplanation": "El baròmetre es recalibrarà automàticament cada cop que passi aquest temps, sempre que la cobertura GPS sigui bona."
+"barometerExplanation": "El baròmetre es recalibrarà automàticament cada cop que passi aquest temps, sempre que la cobertura GPS sigui bona.",
+
+"statDetailRecordingData": "Dades de la gravació",
+"statDetailRealTrackSubtitle": "Track en temps real",
+"statDetailReferenceData": "Dades de referència",
+"statDetailImportedTrackSubtitle": "Track importat",
+"statDetailBackButton": "TORNAR A ESTADÍSTIQUES",
+"statDetailChartTitle": "PERFIL DE {label}",
+"statDetailChartProfile": "PERFIL DE {label}",
+"@statDetailChartProfile": {
+  "placeholders": {
+    "label": { "type": "String" }
+  }
+}
 }

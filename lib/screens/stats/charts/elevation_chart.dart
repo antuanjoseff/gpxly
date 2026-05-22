@@ -2,16 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:senda/models/track.dart';
 import 'package:senda/theme/app_colors.dart';
 
-class ElevationChart extends StatelessWidget {
+class ElevationChart extends StatefulWidget {
   final Track? real;
   final Track? imported;
 
   const ElevationChart({super.key, this.real, this.imported});
 
   @override
+  State<ElevationChart> createState() => _ElevationChartState();
+}
+
+class _ElevationChartState extends State<ElevationChart> {
+  final ValueNotifier<double?> needleXNotifier = ValueNotifier<double?>(null);
+
+  @override
   Widget build(BuildContext context) {
-    final hasReal = real != null && real!.distances.length > 1;
-    final hasImported = imported != null && imported!.distances.length > 1;
+    final hasReal = widget.real != null && widget.real!.distances.length > 1;
+    final hasImported =
+        widget.imported != null && widget.imported!.distances.length > 1;
 
     if (!hasReal && !hasImported) {
       return const Center(
@@ -22,115 +30,262 @@ class ElevationChart extends StatelessWidget {
       );
     }
 
-    return CustomPaint(
-      painter: _ElevationPainter(real: real, imported: imported),
-      size: const Size(double.infinity, 160),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        const totalH = 240.0;
+        const chartH = 150.0;
+
+        return SizedBox(
+          width: width,
+          height: totalH,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onHorizontalDragUpdate: (d) =>
+                needleXNotifier.value = d.localPosition.dx,
+            onTapDown: (d) => needleXNotifier.value = d.localPosition.dx,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                // 1. CAPA ESTÀTICA (Perfil)
+                Positioned(
+                  top: 60,
+                  left: 0,
+                  right: 0,
+                  height: chartH,
+                  child: RepaintBoundary(
+                    child: CustomPaint(
+                      size: Size(width, chartH),
+                      painter: _ElevationBackgroundPainter(
+                        real: widget.real,
+                        imported: widget.imported,
+                      ),
+                    ),
+                  ),
+                ),
+                // 2. CAPA DINÀMICA (Interacció)
+                Positioned(
+                  top: 60,
+                  left: 0,
+                  right: 0,
+                  height: chartH,
+                  child: ValueListenableBuilder<double?>(
+                    valueListenable: needleXNotifier,
+                    builder: (context, val, _) {
+                      return CustomPaint(
+                        size: Size(width, chartH),
+                        painter: _ElevationInteractivePainter(
+                          needleX: val,
+                          real: widget.real,
+                          imported: widget.imported,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
 
-class _ElevationPainter extends CustomPainter {
+class _ElevationBackgroundPainter extends CustomPainter {
   final Track? real;
   final Track? imported;
 
-  _ElevationPainter({this.real, this.imported});
+  _ElevationBackgroundPainter({this.real, this.imported});
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paintReal = Paint()
-      ..color = AppColors.redAlert
-      ..strokeWidth = 2
-      ..style = PaintingStyle.stroke;
-
-    final paintImported = Paint()
-      ..color = AppColors.trackGreen
-      ..strokeWidth = 2
-      ..style = PaintingStyle.stroke;
-
-    // --- TRACKS ---
-    final tracks = [
-      if (real != null && real!.distances.length > 1) real!,
-      if (imported != null && imported!.distances.length > 1) imported!,
-    ];
-
-    if (tracks.isEmpty) return;
-
-    // --- DISTÀNCIA MÀXIMA ---
-    final maxDist = tracks
-        .map((t) => t.distances.last)
-        .fold(0.0, (a, b) => a > b ? a : b);
-
-    if (maxDist == 0) return;
-
-    // --- ALTITUD MIN/MAX ---
+    final tracks = [if (real != null) real!, if (imported != null) imported!];
     final allAlts = tracks.expand((t) => t.altitudes).toList();
-    final minAlt = allAlts.reduce((a, b) => a < b ? a : b);
-    final maxAlt = allAlts.reduce((a, b) => a > b ? a : b);
-    final altRange = (maxAlt - minAlt).abs();
+    if (allAlts.isEmpty) return;
 
-    double x(double dist) => (dist / maxDist) * size.width;
+    final maxD = _getMaxDist();
+    final minA = allAlts.reduce((a, b) => a < b ? a : b);
+    final maxA = allAlts.reduce((a, b) => a > b ? a : b);
+    final rangeA = (maxA - minA).abs() == 0 ? 1.0 : (maxA - minA).abs();
 
-    double y(double alt) {
-      if (altRange == 0) return size.height * 0.5;
-      return size.height - ((alt - minAlt) / altRange) * size.height;
-    }
+    double x(double d) => (d / maxD) * size.width;
+    double y(double a) => size.height - ((a - minA) / rangeA) * size.height;
 
-    // --- GRID + TEXT ---
-    final gridPaint = Paint()
-      ..color = Colors.grey.withOpacity(0.2)
+    final pGrid = Paint()
+      ..color = Colors.grey.withAlpha(40)
       ..strokeWidth = 1;
+    canvas.drawLine(Offset(0, y(maxA)), Offset(size.width, y(maxA)), pGrid);
+    canvas.drawLine(Offset(0, y(minA)), Offset(size.width, y(minA)), pGrid);
 
-    final textPainter = TextPainter(
-      textAlign: TextAlign.left,
-      textDirection: TextDirection.ltr,
-    );
-
-    // línia superior
-    canvas.drawLine(
-      Offset(0, y(maxAlt)),
-      Offset(size.width, y(maxAlt)),
-      gridPaint,
-    );
-
-    // línia inferior
-    canvas.drawLine(
-      Offset(0, y(minAlt)),
-      Offset(size.width, y(minAlt)),
-      gridPaint,
-    );
-
-    // text max
-    textPainter.text = TextSpan(
-      text: "${maxAlt.toStringAsFixed(0)} m",
-      style: const TextStyle(fontSize: 10, color: Colors.grey),
-    );
-    textPainter.layout();
-    textPainter.paint(canvas, Offset(0, y(maxAlt) - 12));
-
-    // text min
-    textPainter.text = TextSpan(
-      text: "${minAlt.toStringAsFixed(0)} m",
-      style: const TextStyle(fontSize: 10, color: Colors.grey),
-    );
-    textPainter.layout();
-    textPainter.paint(canvas, Offset(0, y(minAlt) - 12));
-
-    // --- DIBUIXAR TRACK ---
-    void drawTrack(Track t, Paint p) {
+    void draw(Track t, Color c) {
+      if (t.distances.isEmpty) return;
       final path = Path()..moveTo(x(t.distances.first), y(t.altitudes.first));
-
-      for (int i = 1; i < t.distances.length; i++) {
+      for (int i = 1; i < t.distances.length; i++)
         path.lineTo(x(t.distances[i]), y(t.altitudes[i]));
-      }
-
-      canvas.drawPath(path, p);
+      canvas.drawPath(
+        path,
+        Paint()
+          ..color = c
+          ..strokeWidth = 2
+          ..style = PaintingStyle.stroke,
+      );
     }
 
-    for (final t in tracks) {
-      drawTrack(t, t == real ? paintReal : paintImported);
-    }
+    if (imported != null) draw(imported!, AppColors.trackGreen.withAlpha(100));
+    if (real != null) draw(real!, AppColors.redAlert);
+  }
+
+  double _getMaxDist() {
+    double d = real?.distances.isNotEmpty == true ? real!.distances.last : 0;
+    if (imported?.distances.isNotEmpty == true && imported!.distances.last > d)
+      d = imported!.distances.last;
+    return d == 0 ? 1 : d;
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+  bool shouldRepaint(covariant CustomPainter old) => false;
+}
+
+class _ElevationInteractivePainter extends CustomPainter {
+  final double? needleX;
+  final Track? real;
+  final Track? imported;
+
+  _ElevationInteractivePainter({this.needleX, this.real, this.imported});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final tracks = [if (real != null) real!, if (imported != null) imported!];
+    final allAlts = tracks.expand((t) => t.altitudes).toList();
+    if (allAlts.isEmpty) return;
+
+    final minA = allAlts.reduce((a, b) => a < b ? a : b);
+    final maxA = allAlts.reduce((a, b) => a > b ? a : b);
+    final rangeA = (maxA - minA).abs() == 0 ? 1.0 : (maxA - minA).abs();
+    double getY(double a) => size.height - ((a - minA) / rangeA) * size.height;
+
+    _drawL(canvas, "${maxA.toStringAsFixed(0)} m", -15, size.width);
+    _drawL(canvas, "${minA.toStringAsFixed(0)} m", size.height + 5, size.width);
+
+    if (needleX == null) return;
+    final xPos = needleX!.clamp(0.0, size.width);
+    final currentDist = (xPos / size.width) * _getMaxDist();
+
+    canvas.drawLine(
+      Offset(xPos, -25),
+      Offset(xPos, size.height + 15),
+      Paint()..color = Colors.black12,
+    );
+
+    double? rVal, iVal;
+    if (real != null && real!.altitudes.isNotEmpty) {
+      rVal = _findValue(real!, currentDist);
+      _drawPoint(canvas, xPos, getY(rVal), AppColors.redAlert);
+    }
+    if (imported != null && imported!.altitudes.isNotEmpty) {
+      iVal = _findValue(imported!, currentDist);
+      _drawPoint(canvas, xPos, getY(iVal), AppColors.trackGreen);
+    }
+
+    _drawUnifiedTooltip(canvas, size, xPos, rVal, iVal);
+  }
+
+  void _drawPoint(Canvas canvas, double x, double y, Color color) {
+    canvas.drawCircle(Offset(x, y), 5, Paint()..color = color);
+    canvas.drawCircle(
+      Offset(x, y),
+      5,
+      Paint()
+        ..color = Colors.white
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2,
+    );
+  }
+
+  void _drawUnifiedTooltip(
+    Canvas canvas,
+    Size size,
+    double x,
+    double? r,
+    double? i,
+  ) {
+    final spans = <TextSpan>[
+      if (r != null)
+        TextSpan(
+          text: "REAL: ${r.toStringAsFixed(0)}m",
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 10,
+          ),
+        ),
+      if (r != null && i != null)
+        const TextSpan(
+          text: "  |  ",
+          style: TextStyle(color: Colors.white54, fontSize: 10),
+        ),
+      if (i != null)
+        TextSpan(
+          text: "IMP: ${i.toStringAsFixed(0)}m",
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 10,
+          ),
+        ),
+    ];
+
+    if (spans.isEmpty) return;
+    final tp = TextPainter(
+      text: TextSpan(children: spans),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    final rw = tp.width + 16;
+    final tx = (x - rw / 2).clamp(0.0, size.width - rw);
+
+    canvas.drawRRect(
+      RRect.fromLTRBR(
+        tx,
+        -52,
+        tx + rw,
+        -52 + tp.height + 10,
+        const Radius.circular(8),
+      ),
+      Paint()..color = AppColors.primary,
+    );
+    tp.paint(canvas, Offset(tx + 8, -47));
+  }
+
+  double _getMaxDist() {
+    double d = real?.distances.isNotEmpty == true ? real!.distances.last : 0;
+    if (imported?.distances.isNotEmpty == true && imported!.distances.last > d)
+      d = imported!.distances.last;
+    return d == 0 ? 1 : d;
+  }
+
+  double _findValue(Track t, double d) {
+    for (int i = 0; i < t.distances.length; i++)
+      if (t.distances[i] >= d) return t.altitudes[i];
+    return t.altitudes.isNotEmpty ? t.altitudes.last : 0.0;
+  }
+
+  void _drawL(Canvas canvas, String txt, double y, double w) {
+    final tp = TextPainter(
+      text: TextSpan(
+        text: txt,
+        style: const TextStyle(
+          color: Colors.grey,
+          fontSize: 9,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    tp.paint(canvas, Offset(w - tp.width, y));
+  }
+
+  @override
+  bool shouldRepaint(_ElevationInteractivePainter old) =>
+      old.needleX != needleX;
 }

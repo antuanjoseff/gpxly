@@ -442,4 +442,29 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get barometerExplanation => 'The barometer will automatically recalibrate after this time, provided GPS coverage is good.';
+
+  @override
+  String get statDetailRecordingData => 'Recording data';
+
+  @override
+  String get statDetailRealTrackSubtitle => 'Real-time track';
+
+  @override
+  String get statDetailReferenceData => 'Reference data';
+
+  @override
+  String get statDetailImportedTrackSubtitle => 'Imported track';
+
+  @override
+  String get statDetailBackButton => 'BACK TO STATISTICS';
+
+  @override
+  String statDetailChartTitle(Object label) {
+    return '$label PROFILE';
+  }
+
+  @override
+  String statDetailChartProfile(String label) {
+    return '$label PROFILE';
+  }
 }

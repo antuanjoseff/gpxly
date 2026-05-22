@@ -442,4 +442,29 @@ class AppLocalizationsCa extends AppLocalizations {
 
   @override
   String get barometerExplanation => 'El baròmetre es recalibrarà automàticament cada cop que passi aquest temps, sempre que la cobertura GPS sigui bona.';
+
+  @override
+  String get statDetailRecordingData => 'Dades de la gravació';
+
+  @override
+  String get statDetailRealTrackSubtitle => 'Track en temps real';
+
+  @override
+  String get statDetailReferenceData => 'Dades de referència';
+
+  @override
+  String get statDetailImportedTrackSubtitle => 'Track importat';
+
+  @override
+  String get statDetailBackButton => 'TORNAR A ESTADÍSTIQUES';
+
+  @override
+  String statDetailChartTitle(Object label) {
+    return 'PERFIL DE $label';
+  }
+
+  @override
+  String statDetailChartProfile(String label) {
+    return 'PERFIL DE $label';
+  }
 }

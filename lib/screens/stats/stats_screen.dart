@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/l10n/app_localizations.dart';
@@ -5,10 +6,10 @@ import 'package:senda/models/track.dart';
 import 'package:senda/notifiers/imported_track_notifier.dart';
 import 'package:senda/notifiers/timer_notifier.dart';
 import 'package:senda/notifiers/track_notifier.dart';
+import 'package:senda/screens/stats/models/stat_chart_type.dart';
+import 'package:senda/screens/stats/stats_detail_screen.dart';
 import 'package:senda/screens/stats/widgets/stat_header.dart';
 import 'package:senda/theme/app_colors.dart';
-
-import 'widgets/stat_modal.dart';
 
 class TrackStatsScreen extends ConsumerWidget {
   const TrackStatsScreen({super.key});
@@ -45,7 +46,7 @@ class TrackStatsScreen extends ConsumerWidget {
                 ? imported.formattedDuration
                 : null,
             chartType: StatChartType.speed, // velocitat vs distància
-            onTap: () => _openModal(
+            onTap: () => _navigateToDetail(
               context,
               icon: Icons.timer_outlined,
               label: t.statTime,
@@ -68,7 +69,7 @@ class TrackStatsScreen extends ConsumerWidget {
                 ? "${(imported!.distance / 1000).toStringAsFixed(2)} km"
                 : null,
             chartType: StatChartType.slope,
-            onTap: () => _openModal(
+            onTap: () => _navigateToDetail(
               context,
               icon: Icons.straighten_rounded,
               label: t.statDistance,
@@ -93,7 +94,7 @@ class TrackStatsScreen extends ConsumerWidget {
                 ? "${imported.averageSpeed.toStringAsFixed(1)} km/h"
                 : null,
             chartType: StatChartType.speed,
-            onTap: () => _openModal(
+            onTap: () => _navigateToDetail(
               context,
               icon: Icons.speed_rounded,
               label: t.statSpeed,
@@ -123,7 +124,7 @@ class TrackStatsScreen extends ConsumerWidget {
                 ? "${imported.maxElevation.toStringAsFixed(0)} m"
                 : null,
             chartType: StatChartType.elevation,
-            onTap: () => _openModal(
+            onTap: () => _navigateToDetail(
               context,
               icon: Icons.terrain_rounded,
               label: t.statMaxElevation,
@@ -150,7 +151,7 @@ class TrackStatsScreen extends ConsumerWidget {
                 ? "${imported.minElevation.toStringAsFixed(0)} m"
                 : null,
             chartType: StatChartType.elevation,
-            onTap: () => _openModal(
+            onTap: () => _navigateToDetail(
               context,
               icon: Icons.south_east_rounded,
               label: t.statMinElevation,
@@ -174,7 +175,7 @@ class TrackStatsScreen extends ConsumerWidget {
                 ? "${imported.ascent.toStringAsFixed(0)} m"
                 : null,
             chartType: StatChartType.elevation,
-            onTap: () => _openModal(
+            onTap: () => _navigateToDetail(
               context,
               icon: Icons.unfold_less_rounded,
               label: t.statAscent,
@@ -198,7 +199,7 @@ class TrackStatsScreen extends ConsumerWidget {
                 ? "${imported.descent.toStringAsFixed(0)} m"
                 : null,
             chartType: StatChartType.elevation,
-            onTap: () => _openModal(
+            onTap: () => _navigateToDetail(
               context,
               icon: Icons.unfold_more_rounded,
               label: t.statDescent,
@@ -271,8 +272,9 @@ class TrackStatsScreen extends ConsumerWidget {
     );
   }
 
-  // --- MODAL ---
-  void _openModal(
+  // --- NEW SCREEN ---
+  // --- NAVEGACIÓ AMB EFECTE SWAP ---
+  void _navigateToDetail(
     BuildContext context, {
     required IconData icon,
     required String label,
@@ -282,19 +284,19 @@ class TrackStatsScreen extends ConsumerWidget {
     Track? imported,
     String? valueImported,
   }) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (_) => StatModal(
-        icon: icon,
-        label: label,
-        valueReal: valueReal,
-        valueImported: valueImported,
-        chartType: chartType,
-        realTrack: real,
-        importedTrack: imported,
+    Navigator.push(
+      context,
+      CupertinoPageRoute(
+        // <--- Això activa el gest de swipe lateral
+        builder: (context) => StatDetailScreen(
+          icon: icon,
+          label: label,
+          valueReal: valueReal,
+          valueImported: valueImported,
+          chartType: chartType,
+          realTrack: real,
+          importedTrack: imported,
+        ),
       ),
     );
   }

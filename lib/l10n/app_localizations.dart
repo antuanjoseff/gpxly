@@ -966,6 +966,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The barometer will automatically recalibrate after this time, provided GPS coverage is good.'**
   String get barometerExplanation;
+
+  /// No description provided for @statDetailRecordingData.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording data'**
+  String get statDetailRecordingData;
+
+  /// No description provided for @statDetailRealTrackSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Real-time track'**
+  String get statDetailRealTrackSubtitle;
+
+  /// No description provided for @statDetailReferenceData.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference data'**
+  String get statDetailReferenceData;
+
+  /// No description provided for @statDetailImportedTrackSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Imported track'**
+  String get statDetailImportedTrackSubtitle;
+
+  /// No description provided for @statDetailBackButton.
+  ///
+  /// In en, this message translates to:
+  /// **'BACK TO STATISTICS'**
+  String get statDetailBackButton;
+
+  /// No description provided for @statDetailChartTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{label} PROFILE'**
+  String statDetailChartTitle(Object label);
+
+  /// No description provided for @statDetailChartProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'{label} PROFILE'**
+  String statDetailChartProfile(String label);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

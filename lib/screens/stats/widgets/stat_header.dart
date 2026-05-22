@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:senda/screens/stats/models/stat_chart_type.dart';
 import 'package:senda/theme/app_colors.dart';
-
-enum StatChartType { elevation, speed, slope }
 
 class StatTile extends StatelessWidget {
   final IconData icon;
@@ -23,85 +22,135 @@ class StatTile extends StatelessWidget {
     required this.onTap,
     this.valueImported,
   });
+  // ... (les teves variables es mantenen igual)
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 4),
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          children: [
-            // Icona + etiqueta
-            SizedBox(
-              width: 46,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
+    return Container(
+      margin: const EdgeInsets.symmetric(
+        vertical: 8,
+        horizontal: 2,
+      ), // Més espai entre elles
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        // 1. OMBRA MÉS DEFINIDA: Per donar sensació de botó elevat
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(25),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+        // 2. VORA SUBTIL: Perquè la targeta no es perdi en fons blancs
+        border: Border.all(color: Colors.grey.withAlpha(30), width: 1),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            // 3. COLOR DE PRESIÓ: Fem que el feedback visual sigui més fort
+            splashColor: AppColors.primary.withAlpha(30),
+            highlightColor: AppColors.primary.withAlpha(10),
+            child: Padding(
+              padding: const EdgeInsets.all(
+                16,
+              ), // Més padding per fer-ho "gran"
+              child: Row(
                 children: [
-                  Icon(icon, color: Colors.grey.shade600, size: 22),
-                  const SizedBox(height: 4),
-                  Text(
-                    label,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey.shade700,
+                  // ICONA AMB MÉS FORÇA
+                  SizedBox(
+                    width: 52,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          icon,
+                          color: AppColors
+                              .primary, // Blau sòlid per a més visibilitat
+                          size: 26,
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          label
+                              .toUpperCase(), // Majúscules per estil "instrument"
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w900, // Pes màxim
+                            color: Colors.grey.shade800,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
+
+                  const SizedBox(width: 16),
+
+                  // VALORS (Més grans i definits)
+                  Expanded(
+                    child: _valueBox(
+                      value: valueReal,
+                      color: AppColors.redAlert,
+                      label: "REAL",
+                    ),
+                  ),
+
+                  if (valueImported != null) ...[
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _valueBox(
+                        value: valueImported!,
+                        color: AppColors.trackGreen,
+                        label: "IMP.",
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
-
-            const SizedBox(width: 12),
-
-            // Valor real (vermell)
-            Expanded(
-              child: _valueBox(value: valueReal, color: AppColors.redAlert),
-            ),
-
-            // Valor importat (verd)
-            if (valueImported != null) ...[
-              const SizedBox(width: 8),
-              Expanded(
-                child: _valueBox(
-                  value: valueImported!,
-                  color: AppColors.trackGreen,
-                ),
-              ),
-            ],
-          ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _valueBox({required String value, required Color color}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      decoration: BoxDecoration(
-        color: color.withAlpha(25),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withAlpha(40), width: 1),
-      ),
-      child: Center(
-        child: Text(
-          value,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-            fontFamily: 'monospace',
-            letterSpacing: 0.3,
-            color: color,
+  // Box de valor millorada per semblar un "display" digital
+  Widget _valueBox({
+    required String value,
+    required Color color,
+    required String label,
+  }) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: color.withAlpha(25), // Fons una mica més saturat
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: color.withAlpha(60),
+              width: 1.5,
+            ), // Vora més gruixuda
+          ),
+          child: Center(
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 16, // Text una mica més gran
+                fontWeight: FontWeight.w900,
+                fontFamily: 'monospace',
+                color: color,
+              ),
+            ),
           ),
         ),
-      ),
+      ],
     );
   }
 }

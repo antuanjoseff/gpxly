@@ -1,12 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:senda/screens/stats/models/stat_chart_type.dart';
 import 'package:senda/theme/app_colors.dart';
-
-/// Tipus de gràfic que pot obrir un StatTile
-enum StatChartType {
-  elevation,
-  speed,
-  slope, // 👈 substitueix distance
-}
 
 class StatTile extends StatelessWidget {
   final IconData icon;

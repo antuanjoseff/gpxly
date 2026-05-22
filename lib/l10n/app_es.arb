@@ -176,6 +176,19 @@
 "barometerCalibratedSuccess": "Barómetro calibrado con éxito",
 "autoCalibrationInterval": "Intervalo de calibración automático",
 "howOften": "¿Cada cuánto tiempo?",
-"barometerExplanation": "El barómetro se recalibrará automáticamente cada vez que pase este tiempo, siempre que la cobertura GPS sea buena."
+"barometerExplanation": "El barómetro se recalibrará automáticamente cada vez que pase este tiempo, siempre que la cobertura GPS sea buena.",
+
+"statDetailRecordingData": "Datos de la grabación",
+"statDetailRealTrackSubtitle": "Track en tiempo real",
+"statDetailReferenceData": "Datos de referencia",
+"statDetailImportedTrackSubtitle": "Track importado",
+"statDetailBackButton": "VOLVER A ESTADÍSTICAS",
+"statDetailChartTitle": "PERFIL DE {label}",
+"statDetailChartProfile": "PERFIL DE {label}",
+"@statDetailChartProfile": {
+  "placeholders": {
+    "label": { "type": "String" }
+  }
+}
 
 }
