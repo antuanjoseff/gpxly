@@ -23,7 +23,7 @@ import 'package:senda/notifiers/waypoints_recorded_notifier.dart';
 import 'package:senda/providers/barometer_provider.dart';
 import 'package:senda/screens/settings/settings_screen.dart';
 import 'package:senda/screens/settings/tabs/alarm_settings_tab.dart';
-import 'package:senda/screens/stats_screen.dart';
+import 'package:senda/screens/stats/stats_screen.dart';
 import 'package:senda/services/gpx_exporter.dart';
 import 'package:senda/services/gpx_import_flow.dart';
 import 'package:senda/services/hgt_service.dart';
