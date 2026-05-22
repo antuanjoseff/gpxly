@@ -125,7 +125,6 @@ class AlarmEngine {
   void _checkAltitudeAlarm(double altitude, double thresholdMeters) {
     if (thresholdMeters <= 0) return;
 
-    // 1. Rang actual segons l'alçada real
     final int currentRange = (altitude / thresholdMeters).floor();
 
     if (_lastAltitudeRange == null) {
@@ -134,26 +133,26 @@ class AlarmEngine {
     }
 
     final int last = _lastAltitudeRange!;
+    const double hysteresis = 5.0;
 
-    // 2. Definim una histèresi segura (en metres)
-    // Un valor d'entre 1.0 i 2.0 metres és ideal per a baròmetres de mòbil
-    const double hysteresis = 5;
-
-    // 3. Lògica de pas de frontera
+    // Si canviem de bucket → comprovem histèresi
     if (currentRange > last) {
-      // Cas de PUJADA: Hem de superar la frontera + el marge d'histèresi
-      double boundary = currentRange * thresholdMeters;
-      if (altitude >= (boundary + hysteresis)) {
+      // PUJADA
+      final double boundary = currentRange * thresholdMeters;
+      if (altitude >= boundary + hysteresis) {
         _lastAltitudeRange = currentRange;
         sounds.playAltitudeAlarm();
       }
     } else if (currentRange < last) {
-      // Cas de BAIXADA: Hem de baixar de la frontera - el marge d'histèresi
-      double boundary = (currentRange + 1) * thresholdMeters;
-      if (altitude <= (boundary - hysteresis)) {
+      // BAIXADA
+      final double boundary = (currentRange + 1) * thresholdMeters;
+      if (altitude <= boundary - hysteresis) {
         _lastAltitudeRange = currentRange;
         sounds.playAltitudeAlarm();
       }
+    } else {
+      // MATEIX BUCKET → actualitzem igualment per evitar bloquejos
+      _lastAltitudeRange = currentRange;
     }
   }
 

@@ -16,6 +16,10 @@ class NativeBarometerChannel {
     await _methods.invokeMethod('stop');
   }
 
+  static Future<bool> hasBarometer() async {
+    return await _methods.invokeMethod<bool>('hasBarometer') ?? false;
+  }
+
   static Stream<double> pressureStream() {
     _pressureStream ??= _events.receiveBroadcastStream().map(
       (event) => event as double,

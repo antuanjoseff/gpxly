@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/l10n/app_localizations.dart';
 import 'package:senda/notifiers/alarm_settings_notifier.dart';
+import 'package:senda/notifiers/barometer_settings_notifier.dart';
 import 'package:senda/notifiers/track_follow_notifier.dart';
 import 'package:senda/screens/settings/tabs/alarm_settings_tab.dart';
 import 'package:senda/screens/settings/tabs/barometer_settings_tab.dart';
@@ -26,6 +27,9 @@ class SettingsScreen extends ConsumerWidget {
         alarms.distanceEnabled || alarms.altitudeEnabled || alarms.timeEnabled;
     final isTrackActive = followingTrack.isFollowing;
     final gpsLocked = isAlarmActive || isTrackActive;
+
+    final baro = ref.watch(barometerSettingsProvider);
+    final hasBarometer = baro.hasBarometer;
 
     return Scaffold(
       backgroundColor: AppColors.white,
@@ -96,7 +100,9 @@ class SettingsScreen extends ConsumerWidget {
                   .device_thermostat_rounded, // Icona que suggereix relleu/alçada
               label: t.barometerTitle,
               t: t,
+              enabled: hasBarometer,
               onTap: () {
+                if (!hasBarometer) return;
                 Navigator.push(
                   context,
                   MaterialPageRoute(

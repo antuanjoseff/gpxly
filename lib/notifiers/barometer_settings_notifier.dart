@@ -1,23 +1,28 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:senda/services/native_barometer_channel.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // 1. Definim l'estat (simple o complex segons vulguis)
 class BarometerSettingsState {
   final int calibrationInterval;
   final bool isInitialized; // Per saber si ja hem llegit del disc
+  final bool hasBarometer;
 
   BarometerSettingsState({
     required this.calibrationInterval,
     this.isInitialized = false,
+    this.hasBarometer = true,
   });
 
   BarometerSettingsState copyWith({
     int? calibrationInterval,
     bool? isInitialized,
+    bool? hasBarometer,
   }) {
     return BarometerSettingsState(
       calibrationInterval: calibrationInterval ?? this.calibrationInterval,
       isInitialized: isInitialized ?? this.isInitialized,
+      hasBarometer: hasBarometer ?? this.hasBarometer,
     );
   }
 }
@@ -35,10 +40,14 @@ class BarometerSettingsNotifier extends Notifier<BarometerSettingsState> {
 
   // Càrrega asíncrona des del disc
   Future<void> _loadSettings() async {
+    final hasBaro = await NativeBarometerChannel.hasBarometer();
+
     final prefs = await SharedPreferences.getInstance();
     final savedInterval = prefs.getInt(_prefKey) ?? 5;
+
     state = state.copyWith(
       calibrationInterval: savedInterval,
+      hasBarometer: hasBaro,
       isInitialized: true,
     );
   }

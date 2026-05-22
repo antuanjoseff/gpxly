@@ -37,6 +37,10 @@
             methodChannel = MethodChannel(binding.binaryMessenger, "barometer_methods")
             methodChannel.setMethodCallHandler { call, result ->
                 when (call.method) {
+                    "hasBarometer" -> {
+                        result.success(pressureSensor != null)
+                    }
+                                        
                     "start" -> {
                         pressureSensor?.also {
                             sensorManager.registerListener(
