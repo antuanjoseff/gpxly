@@ -182,7 +182,7 @@
 "statDetailRecordingData": "Dades de la gravació",
 "statDetailRealTrackSubtitle": "Track en temps real",
 "statDetailReferenceData": "Dades de referència",
-"statDetailImportedTrackSubtitle": "Track importat",
+"statDetailImportedTrackSubtitle": "Ruta",
 "statDetailBackButton": "TORNAR A ESTADÍSTIQUES",
 "statDetailChartTitle": "PERFIL DE {label}",
 "statDetailChartProfile": "PERFIL DE {label}",
@@ -190,5 +190,9 @@
   "placeholders": {
     "label": { "type": "String" }
   }
-}
+},
+
+"waypointsRecorded": "Waypoints track",
+"waypointsImported": "Waypoints ruta"
+
 }

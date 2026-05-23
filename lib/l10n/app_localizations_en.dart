@@ -467,4 +467,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String statDetailChartProfile(String label) {
     return '$label PROFILE';
   }
+
+  @override
+  String get waypointsRecorded => 'Track waypoints';
+
+  @override
+  String get waypointsImported => 'Route waypoints';
 }

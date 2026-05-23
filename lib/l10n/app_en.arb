@@ -189,5 +189,9 @@
   "placeholders": {
     "label": { "type": "String" }
   }
-}
+},
+
+"waypointsRecorded": "Track waypoints",
+"waypointsImported": "Route waypoints"
+
 }

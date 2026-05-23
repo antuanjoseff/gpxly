@@ -453,7 +453,7 @@ class AppLocalizationsCa extends AppLocalizations {
   String get statDetailReferenceData => 'Dades de referència';
 
   @override
-  String get statDetailImportedTrackSubtitle => 'Track importat';
+  String get statDetailImportedTrackSubtitle => 'Ruta';
 
   @override
   String get statDetailBackButton => 'TORNAR A ESTADÍSTIQUES';
@@ -467,4 +467,10 @@ class AppLocalizationsCa extends AppLocalizations {
   String statDetailChartProfile(String label) {
     return 'PERFIL DE $label';
   }
+
+  @override
+  String get waypointsRecorded => 'Waypoints track';
+
+  @override
+  String get waypointsImported => 'Waypoints ruta';
 }

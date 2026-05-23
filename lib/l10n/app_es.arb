@@ -189,6 +189,10 @@
   "placeholders": {
     "label": { "type": "String" }
   }
-}
+},
+
+"waypointsRecorded": "Waypoints track",
+"waypointsImported": "Waypoints ruta"
+
 
 }

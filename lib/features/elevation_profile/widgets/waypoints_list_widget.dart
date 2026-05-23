@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:senda/l10n/app_localizations.dart';
 import 'package:senda/models/waypoint.dart';
 import 'package:senda/theme/app_colors.dart';
 
@@ -32,6 +33,8 @@ class _WaypointsListWidgetState extends State<WaypointsListWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
+
     final hasRecorded = widget.recorded.isNotEmpty;
     final hasImported = widget.imported.isNotEmpty;
 
@@ -43,7 +46,7 @@ class _WaypointsListWidgetState extends State<WaypointsListWidget> {
       children: [
         if (hasRecorded)
           _section(
-            title: "Waypoints gravats",
+            title: t.waypointsRecorded,
             expanded: expandRecorded,
             onToggle: () => setState(() => expandRecorded = !expandRecorded),
             children: widget.recorded.map((wp) => _waypointTile(wp)).toList(),
@@ -51,7 +54,7 @@ class _WaypointsListWidgetState extends State<WaypointsListWidget> {
 
         if (hasImported)
           _section(
-            title: "Waypoints importats",
+            title: t.waypointsImported,
             expanded: expandImported,
             onToggle: () => setState(() => expandImported = !expandImported),
             children: widget.imported.map((wp) => _waypointTile(wp)).toList(),
@@ -72,10 +75,18 @@ class _WaypointsListWidgetState extends State<WaypointsListWidget> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.black12),
+        color: const Color(0xFFFAFAFA),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.black.withAlpha(13)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(8),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
+
       child: Column(
         children: [
           // Header
@@ -88,9 +99,11 @@ class _WaypointsListWidgetState extends State<WaypointsListWidget> {
                   Expanded(
                     child: Text(
                       title,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                        color: Colors.grey.shade700,
+                        letterSpacing: 0.3,
                       ),
                     ),
                   ),
@@ -122,16 +135,17 @@ class _WaypointsListWidgetState extends State<WaypointsListWidget> {
       padding: const EdgeInsets.only(left: 10, right: 2),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: Colors.black12),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.black.withAlpha(13)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(8),
-            blurRadius: 3,
-            offset: const Offset(0, 1),
+            color: Colors.black.withAlpha(10),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
+
       child: Row(
         children: [
           Expanded(
@@ -139,9 +153,9 @@ class _WaypointsListWidgetState extends State<WaypointsListWidget> {
               wp.name,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: Color(0xFF333333),
-                fontSize: 12,
+              style: TextStyle(
+                color: Colors.grey.shade800,
+                fontSize: 13,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -179,7 +193,8 @@ class _WaypointsListWidgetState extends State<WaypointsListWidget> {
       iconSize: 22,
       padding: EdgeInsets.zero,
       constraints: const BoxConstraints(minWidth: 24, minHeight: 32),
-      icon: Icon(icon, color: active ? activeColor : Colors.black26),
+      icon: Icon(icon, size: 20, color: active ? activeColor : Colors.black26),
+
       onPressed: onTap,
     );
   }

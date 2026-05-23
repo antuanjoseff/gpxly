@@ -92,11 +92,10 @@ class TrackStatsScreen extends ConsumerWidget {
               context,
               icon: Icons.terrain_rounded,
               label: "Altimetria",
-              valueReal:
-                  currentRealElev, // Passem l'altura màxima com a valor principal
               chartType: StatChartType.elevation,
               real: real,
               imported: imported,
+              valueReal: currentRealElev,
               valueImported: hasImported
                   ? "${imported!.maxElevation.toStringAsFixed(0)} m"
                   : null,
@@ -104,30 +103,54 @@ class TrackStatsScreen extends ConsumerWidget {
             rows: [
               _StatRow(
                 label: t.statMaxElevation,
-                valueReal: currentRealElev,
+                valueReal: _formatElevation(
+                  value: real.maxElevation,
+                  hasElevationData: _trackHasElevation(real),
+                ),
                 valueImported: hasImported
-                    ? "${imported!.maxElevation.toStringAsFixed(0)} m"
+                    ? _formatElevation(
+                        value: imported.maxElevation,
+                        hasElevationData: _trackHasElevation(imported),
+                      )
                     : null,
               ),
               _StatRow(
                 label: t.statMinElevation,
-                valueReal: "${real.minElevation.toStringAsFixed(0)} m",
+                valueReal: _formatElevation(
+                  value: real.minElevation,
+                  hasElevationData: _trackHasElevation(real),
+                ),
                 valueImported: hasImported
-                    ? "${imported!.minElevation.toStringAsFixed(0)} m"
+                    ? _formatElevation(
+                        value: imported.minElevation,
+                        hasElevationData: _trackHasElevation(imported),
+                      )
                     : null,
               ),
               _StatRow(
                 label: t.statAscent,
-                valueReal: "${real.ascent.toStringAsFixed(0)} m",
+                valueReal: _formatElevation(
+                  value: real.ascent,
+                  hasElevationData: _trackHasElevation(real),
+                ),
                 valueImported: hasImported
-                    ? "${imported!.ascent.toStringAsFixed(0)} m"
+                    ? _formatElevation(
+                        value: imported.ascent,
+                        hasElevationData: _trackHasElevation(imported),
+                      )
                     : null,
               ),
               _StatRow(
                 label: t.statDescent,
-                valueReal: "${real.descent.toStringAsFixed(0)} m",
+                valueReal: _formatElevation(
+                  value: real.descent,
+                  hasElevationData: _trackHasElevation(real),
+                ),
                 valueImported: hasImported
-                    ? "${imported!.descent.toStringAsFixed(0)} m"
+                    ? _formatElevation(
+                        value: imported.descent,
+                        hasElevationData: _trackHasElevation(imported),
+                      )
                     : null,
               ),
             ],
@@ -246,6 +269,16 @@ class TrackStatsScreen extends ConsumerWidget {
     final m = (d.inMinutes % 60).toString().padLeft(2, '0');
     final s = (d.inSeconds % 60).toString().padLeft(2, '0');
     return "$h:$m:$s";
+  }
+
+  bool _trackHasElevation(Track t) {
+    return t.altitudes.isNotEmpty;
+  }
+
+  String _formatElevation({required value, required bool hasElevationData}) {
+    if (!hasElevationData) return "---";
+    if (value <= -9000 || value >= 9000) return "---";
+    return "${value.toStringAsFixed(0)} m";
   }
 }
 

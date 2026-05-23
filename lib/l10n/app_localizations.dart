@@ -1008,6 +1008,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{label} PROFILE'**
   String statDetailChartProfile(String label);
+
+  /// No description provided for @waypointsRecorded.
+  ///
+  /// In en, this message translates to:
+  /// **'Track waypoints'**
+  String get waypointsRecorded;
+
+  /// No description provided for @waypointsImported.
+  ///
+  /// In en, this message translates to:
+  /// **'Route waypoints'**
+  String get waypointsImported;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
