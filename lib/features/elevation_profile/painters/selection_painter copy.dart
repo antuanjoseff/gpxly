@@ -5,7 +5,7 @@ class SelectionPainter extends CustomPainter {
   final double? graphX;
   final int? graphIndex;
 
-  // Waypoints
+  // Waypoints separats per tipus
   final List<int>? recordedWaypointIndices;
   final List<int>? importedWaypointIndices;
 
@@ -15,26 +15,29 @@ class SelectionPainter extends CustomPainter {
   final double? endX;
   final int? endIndex;
 
-  // Tracks
+  // Track abstracte primari (el triat com a base pel gràfic)
   final List<double> distances;
   final List<double> altitudes;
 
+  // Track abstracte secundari
   final List<double>? secondaryDistances;
   final List<double>? secondaryAltitudes;
 
-  // Colors
+  // Colors de les agulles
   final Color graphNeedleColor;
   final Color sliderStartNeedleColor;
   final Color sliderEndNeedleColor;
   final Color? secondaryGraphNeedleColor;
 
+  // Colors reals per als cercles dels waypoints
   final Color recordedWaypointColor;
   final Color importedWaypointColor;
 
+  // Indicador de control per desfer l'ambigüitat de l'ordre opcional
   final bool primaryIsReal;
 
-  static const double bottomReserved = 40.0;
-  static const double topReserved = 60.0;
+  static const double bottomReserved = 40.0; // per labels X
+  static const double topReserved = 60.0; // espai per tooltips
   static const double dotRadius = 5.0;
 
   SelectionPainter({
@@ -63,7 +66,10 @@ class SelectionPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (distances.isEmpty || altitudes.isEmpty) return;
 
+    // Alçada real del gràfic (sense tooltips ni labels)
     final chartHeight = size.height - bottomReserved - topReserved;
+
+    // Posició de l’eix X (base del perfil)
     final xAxisY = topReserved + chartHeight;
 
     // Rang vertical combinat
@@ -76,7 +82,9 @@ class SelectionPainter extends CustomPainter {
     final double maxAlt = allAlts.reduce((a, b) => a > b ? a : b);
     final double diff = maxAlt - minAlt;
 
+    // Exageració progressiva
     double exaggeration = 1.0;
+
     if (diff < 30) {
       exaggeration = 1.8;
     } else if (diff < 60) {
@@ -85,21 +93,32 @@ class SelectionPainter extends CustomPainter {
       exaggeration = 1.2;
     }
 
+    // Rang efectiu mínim
     final double effectiveRange = diff < 50 ? 50 : diff;
 
+    // Aplicar exageració
     final double minY = minAlt - (effectiveRange * 0.3 * exaggeration);
     final double maxY = minY + (effectiveRange * 1.3 * exaggeration);
+
     final double yRange = maxY - minY;
+
+    bool showRangeText = true;
+    if (startX != null && endX != null) {
+      if ((endX! - startX!).abs() < 60) {
+        showRangeText = false;
+      }
+    }
 
     final double usableWidth = size.width - 48;
 
-    // WAYPOINTS GRAVATS
+    // --- 1. CERCLES DEL TRACK GRAVAT ---
     if (recordedWaypointIndices != null &&
         recordedWaypointIndices!.isNotEmpty) {
       final recWpPaint = Paint()
         ..color = recordedWaypointColor
         ..style = PaintingStyle.fill;
 
+      // Si primaryIsReal és cert, el gravat està a 'distances'. Si és false, a 'secondaryDistances'.
       final List<double>? recordedDistsSource = primaryIsReal
           ? distances
           : secondaryDistances;
@@ -117,13 +136,14 @@ class SelectionPainter extends CustomPainter {
       }
     }
 
-    // WAYPOINTS IMPORTATS
+    // --- 2. CERCLES DEL TRACK IMPORTAT ---
     if (importedWaypointIndices != null &&
         importedWaypointIndices!.isNotEmpty) {
       final impWpPaint = Paint()
         ..color = importedWaypointColor
         ..style = PaintingStyle.fill;
 
+      // Si primaryIsReal és cert, l'importat està a 'secondaryDistances'. Si és false, a 'distances'.
       final List<double>? importedDistsSource = primaryIsReal
           ? secondaryDistances
           : distances;
@@ -141,51 +161,7 @@ class SelectionPainter extends CustomPainter {
       }
     }
 
-    // ─────────────────────────────────────────────
-    // DADES DEL RANG
-    // ─────────────────────────────────────────────
-    final int? sIndex = startIndex;
-    final int? eIndex = endIndex;
-    final double? sX = startX;
-    final double? eX = endX;
-
-    // EVITAR SOLAPAMENT TOOLTIP START/END
-    double dxStart = 0;
-    double dxEnd = 0;
-    const double tooltipWidth = 80;
-
-    if (sX != null && eX != null) {
-      if (_tooltipsOverlap(sX, eX, tooltipWidth)) {
-        if (sX < eX) {
-          dxStart = -tooltipWidth / 2;
-          dxEnd = tooltipWidth / 2;
-        } else {
-          dxStart = tooltipWidth / 2;
-          dxEnd = -tooltipWidth / 2;
-        }
-      }
-    }
-
-    // ─────────────────────────────────────────────
-    // CALCULAR SI EL RANG ESTÀ INVERTIT (per ALTITUD)
-    // ─────────────────────────────────────────────
-    bool inverted = false;
-    if (sIndex != null &&
-        eIndex != null &&
-        sIndex >= 0 &&
-        eIndex >= 0 &&
-        sIndex < altitudes.length &&
-        eIndex < altitudes.length) {
-      final startAlt = altitudes[sIndex];
-      final endAlt = altitudes[eIndex];
-
-      // 🔥 Si el final és més baix → invertit
-      inverted = endAlt < startAlt;
-    }
-
-    // ─────────────────────────────────────────────
-    // AGULLA PRINCIPAL
-    // ─────────────────────────────────────────────
+    // --- AGULLA PRINCIPAL ---
     if (graphX != null && graphIndex != null) {
       _paintMainNeedle(
         canvas: canvas,
@@ -195,56 +171,43 @@ class SelectionPainter extends CustomPainter {
         yRange: yRange,
         chartHeight: chartHeight,
         xAxisY: xAxisY,
-        tooltipColor: graphNeedleColor.withAlpha(230),
       );
     }
 
-    // ─────────────────────────────────────────────
-    // AGULLA INICI RANG (colors GIRATS)
-    // ─────────────────────────────────────────────
-    if (sX != null && sIndex != null) {
+    // --- AGULLA INICI RANG ---
+    if (startX != null && startIndex != null) {
       _paintRangeNeedle(
         canvas,
-        sX,
-        sIndex,
-        inverted ? sliderStartNeedleColor : sliderEndNeedleColor, // 🔥 girat
+        startX!,
+        startIndex!,
+        sliderStartNeedleColor,
         minY,
         yRange,
         chartHeight,
         xAxisY,
-        dx: dxStart,
-        showTooltip: true,
-        tooltipColor: inverted
-            ? Colors.green.withAlpha(230)
-            : Colors.red.withAlpha(230), // 🔥 girat
+        showText: showRangeText,
       );
     }
 
-    // ─────────────────────────────────────────────
-    // AGULLA FINAL RANG (colors GIRATS)
-    // ─────────────────────────────────────────────
-    if (eX != null && eIndex != null) {
+    // --- AGULLA FINAL RANG ---
+    if (endX != null && endIndex != null) {
       _paintRangeNeedle(
         canvas,
-        eX,
-        eIndex,
-        inverted ? sliderEndNeedleColor : sliderStartNeedleColor, // 🔥 girat
+        endX!,
+        endIndex!,
+        sliderEndNeedleColor,
         minY,
         yRange,
         chartHeight,
         xAxisY,
-        dx: dxEnd,
-        showTooltip: true,
-        tooltipColor: inverted
-            ? Colors.red.withAlpha(230)
-            : Colors.green.withAlpha(230), // 🔥 girat
+        showText: showRangeText,
       );
     }
   }
 
-  // ─────────────────────────────────────────────
-  // AGULLA PRINCIPAL + TOOLTIP
-  // ─────────────────────────────────────────────
+  // ------------------------------------------------------------
+  //  AGULLA PRINCIPAL
+  // ------------------------------------------------------------
   void _paintMainNeedle({
     required Canvas canvas,
     required double x,
@@ -253,7 +216,6 @@ class SelectionPainter extends CustomPainter {
     required double yRange,
     required double chartHeight,
     required double xAxisY,
-    required Color tooltipColor,
   }) {
     if (index < 0 || index >= altitudes.length) return;
 
@@ -265,11 +227,13 @@ class SelectionPainter extends CustomPainter {
     final double dyPrimary =
         topReserved + (chartHeight - (relPrimary * chartHeight));
 
+    // Línia vertical
     final linePaint = Paint()
       ..color = graphNeedleColor.withAlpha(150)
       ..strokeWidth = 2;
     canvas.drawLine(Offset(x, xAxisY), Offset(x, dyPrimary), linePaint);
 
+    // Punt principal
     final dotPaintPrimary = Paint()..color = graphNeedleColor;
     final dotBorderPaint = Paint()
       ..color = Colors.white
@@ -279,18 +243,67 @@ class SelectionPainter extends CustomPainter {
     canvas.drawCircle(Offset(x, dyPrimary), dotRadius, dotPaintPrimary);
     canvas.drawCircle(Offset(x, dyPrimary), dotRadius, dotBorderPaint);
 
-    // Tooltip principal
-    _paintTooltipBox(
-      canvas,
-      x,
-      "${altPrimary.toStringAsFixed(0)} m\n${distKm.toStringAsFixed(2)} km",
-      tooltipColor,
+    // Punt secundari
+    if (secondaryDistances != null &&
+        secondaryAltitudes != null &&
+        secondaryGraphNeedleColor != null) {
+      final double? altSecondary = _interpolateAltitude(
+        secondaryDistances!,
+        secondaryAltitudes!,
+        distMeters,
+      );
+
+      if (altSecondary != null) {
+        final double relSec = (altSecondary - minY) / yRange;
+        final double dySec =
+            topReserved + (chartHeight - (relSec * chartHeight));
+
+        final dotPaintSecondary = Paint()..color = secondaryGraphNeedleColor!;
+        canvas.drawCircle(Offset(x, dySec), dotRadius, dotPaintSecondary);
+        canvas.drawCircle(Offset(x, dySec), dotRadius, dotBorderPaint);
+      }
+    }
+
+    // TOOLTIP
+    final String text =
+        "${altPrimary.toStringAsFixed(0)} m\n${distKm.toStringAsFixed(2)} km";
+
+    final textSpan = TextSpan(
+      text: text,
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 12,
+        fontWeight: FontWeight.bold,
+        height: 1.2,
+      ),
     );
+
+    final textPainter = TextPainter(
+      text: textSpan,
+      textAlign: TextAlign.center,
+      textDirection: TextDirection.ltr,
+    )..layout();
+
+    final rectW = textPainter.width + 14;
+    final rectH = textPainter.height + 10;
+    final rectX = x - rectW / 2;
+    double rectY = dyPrimary - rectH - 14;
+
+    if (rectY < 4) rectY = 4;
+
+    final bgPaint = Paint()..color = graphNeedleColor.withAlpha(230);
+    final rRect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(rectX, rectY, rectW, rectH),
+      const Radius.circular(6),
+    );
+
+    canvas.drawRRect(rRect, bgPaint);
+    textPainter.paint(canvas, Offset(rectX + 7, rectY + 5));
   }
 
-  // ─────────────────────────────────────────────
-  // AGULLES DE RANG + TOOLTIP
-  // ─────────────────────────────────────────────
+  // ------------------------------------------------------------
+  //  AGULLES DE RANG
+  // ------------------------------------------------------------
   void _paintRangeNeedle(
     Canvas canvas,
     double x,
@@ -300,9 +313,7 @@ class SelectionPainter extends CustomPainter {
     double yRange,
     double chartHeight,
     double xAxisY, {
-    double dx = 0,
-    bool showTooltip = true,
-    required Color tooltipColor,
+    required bool showText,
   }) {
     if (index < 0 || index >= altitudes.length) return;
 
@@ -318,70 +329,99 @@ class SelectionPainter extends CustomPainter {
       ..strokeWidth = 2;
     canvas.drawLine(Offset(x, xAxisY), Offset(x, dy), linePaint);
 
+    if (showText) {
+      final String text =
+          "${alt.toStringAsFixed(0)} m\n${distKm.toStringAsFixed(2)} km";
+
+      final textSpan = TextSpan(
+        text: text,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          height: 1.2,
+        ),
+      );
+
+      final textPainter = TextPainter(
+        text: textSpan,
+        textAlign: TextAlign.center,
+        textDirection: TextDirection.ltr,
+      )..layout();
+
+      final rectW = textPainter.width + 14;
+      final rectH = textPainter.height + 10;
+      final rectX = x - rectW / 2;
+      double rectY = dy - rectH - 14;
+
+      if (rectY < 4) rectY = 4;
+
+      final bgPaint = Paint()..color = color.withAlpha(230);
+      final rRect = RRect.fromRectAndRadius(
+        Rect.fromLTWH(rectX, rectY, rectW, rectH),
+        const Radius.circular(6),
+      );
+
+      canvas.drawRRect(rRect, bgPaint);
+      textPainter.paint(canvas, Offset(rectX + 7, rectY + 5));
+    }
+
     final dotPaint = Paint()..color = color;
-    final dotBorder = Paint()
+    final dotBorderPaint = Paint()
       ..color = Colors.white
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke;
 
     canvas.drawCircle(Offset(x, dy), dotRadius, dotPaint);
-    canvas.drawCircle(Offset(x, dy), dotRadius, dotBorder);
+    canvas.drawCircle(Offset(x, dy), dotRadius, dotBorderPaint);
+  }
 
-    if (showTooltip) {
-      _paintTooltipBox(
-        canvas,
-        x + dx,
-        "${alt.toStringAsFixed(0)} m\n${distKm.toStringAsFixed(2)} km",
-        tooltipColor,
-      );
+  // ------------------------------------------------------------
+  //  INTERPOLACIÓ ALTITUD TRACK SECUNDARI
+  // ------------------------------------------------------------
+  double? _interpolateAltitude(
+    List<double> dists,
+    List<double> alts,
+    double target,
+  ) {
+    if (target < dists.first || target > dists.last) return null;
+
+    int i = 0;
+    while (i < dists.length - 1 && dists[i + 1] < target) {
+      i++;
     }
-  }
 
-  // ─────────────────────────────────────────────
-  // TOOLTIP COMÚ
-  // ─────────────────────────────────────────────
-  void _paintTooltipBox(Canvas canvas, double x, String text, Color bgColor) {
-    final textPainter = TextPainter(
-      text: TextSpan(
-        text: text,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          height: 1.2,
-        ),
-      ),
-      textAlign: TextAlign.center,
-      textDirection: TextDirection.ltr,
-    )..layout();
+    final d1 = dists[i];
+    final d2 = dists[i + 1];
+    final a1 = alts[i];
+    final a2 = alts[i + 1];
 
-    final double w = textPainter.width + 16;
-    final double h = textPainter.height + 12;
+    if ((d2 - d1).abs() < 0.0001) return a1;
 
-    double rectX = x - w / 2;
-    double rectY = 4;
-
-    final rrect = RRect.fromRectAndRadius(
-      Rect.fromLTWH(rectX, rectY, w, h),
-      const Radius.circular(8),
-    );
-
-    final bg = Paint()
-      ..color = bgColor
-      ..style = PaintingStyle.fill
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
-
-    canvas.drawRRect(rrect, bg);
-    textPainter.paint(canvas, Offset(rectX + 8, rectY + 6));
-  }
-
-  // ─────────────────────────────────────────────
-  // OVERLAP TOOLTIP
-  // ─────────────────────────────────────────────
-  bool _tooltipsOverlap(double x1, double x2, double width) {
-    return (x1 - x2).abs() < width;
+    final t = (target - d1) / (d2 - d1);
+    return a1 + (a2 - a1) * t;
   }
 
   @override
-  bool shouldRepaint(covariant SelectionPainter old) => true;
+  bool shouldRepaint(covariant SelectionPainter old) {
+    return old.graphX != graphX ||
+        old.graphIndex != graphIndex ||
+        old.startX != startX ||
+        old.startIndex != startIndex ||
+        old.endX != endX ||
+        old.endIndex != endIndex ||
+        old.distances != distances ||
+        old.altitudes != altitudes ||
+        old.secondaryDistances != secondaryDistances ||
+        old.secondaryAltitudes != secondaryAltitudes ||
+        old.graphNeedleColor != graphNeedleColor ||
+        old.sliderStartNeedleColor != sliderStartNeedleColor ||
+        old.sliderEndNeedleColor != sliderEndNeedleColor ||
+        old.secondaryGraphNeedleColor != secondaryGraphNeedleColor ||
+        old.recordedWaypointIndices != recordedWaypointIndices ||
+        old.importedWaypointIndices != importedWaypointIndices ||
+        old.recordedWaypointColor != recordedWaypointColor ||
+        old.importedWaypointColor != importedWaypointColor ||
+        old.primaryIsReal != primaryIsReal;
+  }
 }

@@ -186,9 +186,8 @@ class _ElevationProfileScreenState
             hasReal: hasReal,
             hasImported: hasImported,
             primaryIsReal: primaryIsReal,
-            rangeDistance: segDist,
-            rangeAscent: segAscent,
-            rangeDuration: segDur,
+            rangeStartIndex: selectedIndexStart,
+            rangeEndIndex: selectedIndexEnd,
           ),
 
           const SizedBox(height: 8),
@@ -196,45 +195,51 @@ class _ElevationProfileScreenState
           // ------------------------------------------------------------
           // GRÀFIC
           // ------------------------------------------------------------
-          SizedBox(
-            height: MediaQuery.of(context).size.height * 0.32,
-            child: ElevationChartWidget(
-              realAlts: realAlts,
-              realDists: realDists,
-              importedAlts: importedAlts,
-              importedDists: importedDists,
-              primaryIsReal: primaryIsReal,
-              selectedIndexStart: selectedIndexStart,
-              selectedIndexEnd: selectedIndexEnd,
-              selectedIndexGraph: selectedIndexGraph,
-              recordedWaypointIndices: recordedWps
-                  .map((wp) => wp.trackIndex)
-                  .toList(),
-              importedWaypointIndices: importedWps
-                  .map((wp) => wp.trackIndex)
-                  .toList(),
-              realColor: trackColor,
-              importedColor: importedColor,
-              graphNeedleColor: Colors.black,
-              sliderStartNeedleColor: AppColors.trackGreen,
-              sliderEndNeedleColor: AppColors.redAlert,
-              onNeedleMove: (idx) {
-                setState(() => selectedIndexGraph = idx);
-              },
-              onRangeSelected: (s, e) {
-                setState(() {
-                  selectedIndexStart = s;
-                  selectedIndexEnd = e;
-                  selectedIndexGraph = null;
-                });
-              },
-              onClearSelection: () {
-                setState(() {
-                  selectedIndexStart = null;
-                  selectedIndexEnd = null;
-                  selectedIndexGraph = null;
-                });
-              },
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.black12),
+            ),
+            child: SizedBox(
+              height: MediaQuery.of(context).size.height * 0.32,
+              child: ElevationChartWidget(
+                realAlts: realAlts,
+                realDists: realDists,
+                importedAlts: importedAlts,
+                importedDists: importedDists,
+                primaryIsReal: primaryIsReal,
+                selectedIndexStart: selectedIndexStart,
+                selectedIndexEnd: selectedIndexEnd,
+                selectedIndexGraph: selectedIndexGraph,
+                recordedWaypointIndices: recordedWps
+                    .map((wp) => wp.trackIndex)
+                    .toList(),
+                importedWaypointIndices: importedWps
+                    .map((wp) => wp.trackIndex)
+                    .toList(),
+                realColor: trackColor,
+                importedColor: importedColor,
+                graphNeedleColor: Theme.of(context).colorScheme.primary,
+                sliderStartNeedleColor: AppColors.trackGreen,
+                sliderEndNeedleColor: AppColors.redAlert,
+                onNeedleMove: (idx) => setState(() => selectedIndexGraph = idx),
+                onRangeSelected: (s, e) {
+                  setState(() {
+                    selectedIndexStart = s;
+                    selectedIndexEnd = e;
+                    selectedIndexGraph = null;
+                  });
+                },
+                onClearSelection: () {
+                  setState(() {
+                    selectedIndexStart = null;
+                    selectedIndexEnd = null;
+                    selectedIndexGraph = null;
+                  });
+                },
+              ),
             ),
           ),
 

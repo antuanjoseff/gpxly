@@ -12,7 +12,6 @@ class GpsSettingsTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final gps = ref.watch(gpsSettingsProvider);
     final isFollowing = gps.isFollowing;
-
     final t = AppLocalizations.of(context)!;
 
     return Scaffold(
@@ -23,21 +22,18 @@ class GpsSettingsTab extends ConsumerWidget {
         elevation: 0,
       ),
       body: ListView(
-        // Canviat SingleChildScrollView per ListView per consistència
         padding: const EdgeInsets.all(16),
         children: [
-          // --- INFO BANNER ---
           _buildInfoBanner(t.gpsAutoConfigInfo),
-
           const SizedBox(height: 8),
+          const SectionTitle("Mètode de registre"),
 
-          // --- SECCIÓ MÈTODE DE REGISTRE ---
-          const SectionTitle(
-            "Mètode de registre",
-          ), // Pots traduir aquesta clau si la tens a l10n
-          // --- TEMPS ---
+          // --- BLOC TEMPS ---
           SettingsCard(
-            isActive: !isFollowing && gps.useTime,
+            // Es pot moure si no seguim un track
+            isActive: !isFollowing,
+            // Es veu blau si no seguim i és el mètode seleccionat
+            isStyleActive: !isFollowing && gps.useTime,
             title: t.gpsRecordByTime,
             valueText: "${gps.seconds} s",
             value: gps.seconds.toDouble(),
@@ -45,19 +41,22 @@ class GpsSettingsTab extends ConsumerWidget {
             max: 60,
             divisions: 58,
             onChanged: (val) {
-              ref.read(gpsSettingsProvider.notifier).setSeconds(val.round());
+              ref.read(gpsSettingsProvider.notifier).setSeconds(val.toInt());
               ref.read(gpsSettingsProvider.notifier).setUseTime(true);
             },
           ),
 
           const SizedBox(height: 16),
 
-          // --- METRES ---
+          // --- BLOC DISTÀNCIA ---
           SettingsCard(
-            isActive: !isFollowing && gps.useTime,
+            // Es pot moure si no seguim un track
+            isActive: !isFollowing,
+            // Es veu blau si no seguim i NO és mode temps
+            isStyleActive: !isFollowing && !gps.useTime,
             title: t.gpsRecordByDistance,
             valueText: "${gps.meters.toInt()} m",
-            value: gps.meters,
+            value: gps.meters.toDouble(),
             min: 1,
             max: 100,
             divisions: 99,
@@ -70,9 +69,9 @@ class GpsSettingsTab extends ConsumerWidget {
           const SizedBox(height: 8),
           const SectionTitle("Qualitat del senyal"),
 
-          // --- ACCURACY ---
           SettingsCard(
-            isActive: true,
+            isActive: !isFollowing,
+            isStyleActive: !isFollowing, // Sempre blau si no seguim
             title: t.gpsMaxAccuracy,
             valueText: "${gps.accuracy.toInt()} m",
             value: gps.accuracy,
@@ -83,7 +82,6 @@ class GpsSettingsTab extends ConsumerWidget {
               ref.read(gpsSettingsProvider.notifier).setAccuracy(val);
             },
           ),
-
           const SizedBox(height: 40),
         ],
       ),

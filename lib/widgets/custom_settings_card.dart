@@ -8,10 +8,11 @@ class SettingsCard extends StatelessWidget {
   final double min;
   final double max;
   final int divisions;
-  final bool isActive;
+  final bool isActive; // Controla si l'slider es pot moure (onChanged != null)
+  final bool isStyleActive; // Controla si el bloc es pinta de blau o de gris
   final ValueChanged<double> onChanged;
   final IconData? icon;
-  final Widget? extraChild; // Per a previsualitzacions com la del track
+  final Widget? extraChild;
 
   const SettingsCard({
     super.key,
@@ -22,6 +23,7 @@ class SettingsCard extends StatelessWidget {
     required this.max,
     this.divisions = 20,
     this.isActive = true,
+    this.isStyleActive = true, // Nova propietat
     required this.onChanged,
     this.icon,
     this.extraChild,
@@ -29,7 +31,17 @@ class SettingsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color currentColor = isActive ? AppColors.primary : Colors.grey;
+    // El color de tots els elements depèn de isStyleActive
+    final Color currentColor = isStyleActive ? AppColors.primary : Colors.grey;
+    final Color textColor = isStyleActive
+        ? AppColors.primary
+        : Colors.grey[600]!;
+    final Color badgeColor = isStyleActive
+        ? AppColors.primary
+        : Colors.grey[200]!;
+    final Color badgeTextColor = isStyleActive
+        ? Colors.white
+        : Colors.grey[600]!;
 
     return Container(
       width: double.infinity,
@@ -38,7 +50,7 @@ class SettingsCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isActive
+          color: isStyleActive
               ? AppColors.primary.withAlpha(80)
               : Colors.transparent,
           width: 2,
@@ -54,7 +66,6 @@ class SettingsCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Capçalera: Títol + Badge
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -70,7 +81,7 @@ class SettingsCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: isActive ? AppColors.primary : Colors.grey[600],
+                        color: textColor,
                       ),
                     ),
                   ],
@@ -82,7 +93,7 @@ class SettingsCard extends StatelessWidget {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: isActive ? AppColors.primary : Colors.grey[200],
+                  color: badgeColor,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -90,17 +101,14 @@ class SettingsCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
-                    color: isActive ? Colors.white : Colors.grey[600],
+                    color: badgeTextColor,
                   ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 20),
-
-          // Slider amb botons +/-
           _buildSliderRow(context, currentColor),
-
           if (extraChild != null) ...[const SizedBox(height: 16), extraChild!],
         ],
       ),
@@ -133,6 +141,7 @@ class SettingsCard extends StatelessWidget {
               min: min,
               max: max,
               divisions: divisions,
+              // HABILITACIÓ REAL: Només depèn de isActive
               onChanged: isActive ? onChanged : null,
             ),
           ),

@@ -12,22 +12,19 @@ class HeaderLegendWidget extends ConsumerWidget {
   final bool hasImported;
   final bool primaryIsReal;
 
-  final double? rangeDistance;
-  final double? rangeAscent;
-  final Duration? rangeDuration;
+  final int? rangeStartIndex;
+  final int? rangeEndIndex;
 
   const HeaderLegendWidget({
     super.key,
     required this.hasReal,
     required this.hasImported,
     required this.primaryIsReal,
-    this.rangeDistance,
-    this.rangeAscent,
-    this.rangeDuration,
+    this.rangeStartIndex,
+    this.rangeEndIndex,
   });
 
-  bool get hasRange =>
-      rangeDistance != null && rangeAscent != null && rangeDuration != null;
+  bool get hasRange => rangeStartIndex != null && rangeEndIndex != null;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -37,6 +34,23 @@ class HeaderLegendWidget extends ConsumerWidget {
 
     final realDur = _realDuration(real, live);
     final impDur = imported?.duration ?? Duration.zero;
+
+    // ─────────────────────────────────────────────
+    // CÀLCUL DEL RANG PER CADA TRACK
+    // ─────────────────────────────────────────────
+    _RangeStats? realRange;
+    _RangeStats? importedRange;
+
+    if (hasRange) {
+      final s = rangeStartIndex!;
+      final e = rangeEndIndex!;
+
+      realRange = _computeRange(real, s, e);
+
+      if (imported != null) {
+        importedRange = _computeRange(imported, s, e);
+      }
+    }
 
     return Card(
       elevation: 2,
@@ -52,10 +66,10 @@ class HeaderLegendWidget extends ConsumerWidget {
                 context,
                 color: AppColors.recordingTrackColor,
                 label: "Gravat",
-                distance: hasRange ? rangeDistance! : real.distance,
-                ascent: hasRange ? rangeAscent! : real.ascent,
-                descent: real.descent,
-                duration: hasRange ? rangeDuration! : realDur,
+                distance: realRange?.distance ?? real.distance,
+                ascent: realRange?.ascent ?? real.ascent,
+                descent: realRange?.descent ?? real.descent,
+                duration: realRange?.duration ?? realDur,
               ),
 
             if (hasImported && imported != null)
@@ -63,14 +77,50 @@ class HeaderLegendWidget extends ConsumerWidget {
                 context,
                 color: AppColors.routeTrackColor,
                 label: "Ruta",
-                distance: hasRange ? rangeDistance! : imported.distance,
-                ascent: hasRange ? rangeAscent! : imported.ascent,
-                descent: imported.descent,
-                duration: hasRange ? rangeDuration! : impDur,
+                distance: importedRange?.distance ?? imported.distance,
+                ascent: importedRange?.ascent ?? imported.ascent,
+                descent: importedRange?.descent ?? imported.descent,
+                duration: importedRange?.duration ?? impDur,
               ),
           ],
         ),
       ),
+    );
+  }
+
+  // ─────────────────────────────────────────────
+  // CÀLCUL DEL RANG PER UN TRACK
+  // ─────────────────────────────────────────────
+  _RangeStats _computeRange(Track t, int s, int e) {
+    if (s < 0 || e >= t.distances.length) {
+      return const _RangeStats.empty();
+    }
+
+    final dist = (t.distances[e] - t.distances[s]).abs();
+
+    double ascent = 0;
+    double descent = 0;
+
+    for (int i = s + 1; i <= e; i++) {
+      final diff = t.altitudes[i] - t.altitudes[i - 1];
+      if (diff > 0)
+        ascent += diff;
+      else
+        descent += diff.abs();
+    }
+
+    // Durada proporcional (simple i suficient)
+    final duration = Duration(
+      seconds:
+          (t.duration.inSeconds * (dist / t.distance.clamp(1, double.infinity)))
+              .round(),
+    );
+
+    return _RangeStats(
+      distance: dist,
+      ascent: ascent,
+      descent: descent,
+      duration: duration,
     );
   }
 
@@ -182,7 +232,7 @@ class HeaderLegendWidget extends ConsumerWidget {
 
                   Expanded(
                     child: Text(
-                      "${speed.toStringAsFixed(1)} km/h",
+                      "${_speed(distance, duration).toStringAsFixed(1)} km/h",
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -274,4 +324,24 @@ class HeaderLegendWidget extends ConsumerWidget {
       "${d.inHours.toString().padLeft(2, '0')}:"
       "${(d.inMinutes % 60).toString().padLeft(2, '0')}:"
       "${(d.inSeconds % 60).toString().padLeft(2, '0')}";
+}
+
+class _RangeStats {
+  final double distance;
+  final double ascent;
+  final double descent;
+  final Duration duration;
+
+  const _RangeStats({
+    required this.distance,
+    required this.ascent,
+    required this.descent,
+    required this.duration,
+  });
+
+  const _RangeStats.empty()
+    : distance = 0,
+      ascent = 0,
+      descent = 0,
+      duration = Duration.zero;
 }

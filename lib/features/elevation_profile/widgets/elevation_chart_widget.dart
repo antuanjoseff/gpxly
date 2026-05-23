@@ -229,7 +229,39 @@ class _ElevationChartWidgetState extends State<ElevationChartWidget> {
           child: Stack(
             children: [
               // ─────────────────────────────────────────────
-              // ÀREA DE RANG SOTA EL PERFIL (RangeAreaPainter)
+              // 1) BASE: FLCHART (perfil d’elevació)
+              // ─────────────────────────────────────────────
+              Positioned.fill(
+                child: Padding(
+                  padding: const EdgeInsets.only(
+                    top: SelectionPainter.topReserved,
+                  ),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: LineChart(
+                      _buildChartData(
+                        context: context,
+                        primaryAlts: primaryAlts,
+                        primaryDists: primaryDists,
+                        secondaryAlts: secondaryAlts,
+                        secondaryDists: secondaryDists,
+                        trackColor: widget.primaryIsReal
+                            ? AppColors.recordingTrackColor
+                            : AppColors.routeTrackColor,
+                        importedTrackColor: widget.primaryIsReal
+                            ? widget.importedColor
+                            : widget.realColor,
+                        forcedMinY: forcedMinY,
+                        forcedMaxY: forcedMaxY,
+                        maxDist: maxDist,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+              // ─────────────────────────────────────────────
+              // 2) ÀREA DEL RANG (RangeAreaPainter)
               // ─────────────────────────────────────────────
               if (widget.selectedIndexStart != null &&
                   widget.selectedIndexEnd != null)
@@ -253,37 +285,7 @@ class _ElevationChartWidgetState extends State<ElevationChartWidget> {
                 ),
 
               // ─────────────────────────────────────────────
-              // FLCHART (perfil + eix X + etiquetes)
-              // ─────────────────────────────────────────────
-              Padding(
-                padding: const EdgeInsets.only(
-                  top: SelectionPainter.topReserved,
-                ),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: LineChart(
-                    _buildChartData(
-                      context: context,
-                      primaryAlts: primaryAlts,
-                      primaryDists: primaryDists,
-                      secondaryAlts: secondaryAlts,
-                      secondaryDists: secondaryDists,
-                      trackColor: widget.primaryIsReal
-                          ? AppColors.recordingTrackColor
-                          : AppColors.routeTrackColor,
-                      importedTrackColor: widget.primaryIsReal
-                          ? widget.importedColor
-                          : widget.realColor,
-                      forcedMinY: forcedMinY,
-                      forcedMaxY: forcedMaxY,
-                      maxDist: maxDist,
-                    ),
-                  ),
-                ),
-              ),
-
-              // ─────────────────────────────────────────────
-              // SELECTIONPAINTER (agulles + waypoints)
+              // 3) SELECTIONPAINTER (agulles + waypoints + línies min/max + tooltip)
               // ─────────────────────────────────────────────
               Positioned.fill(
                 child: CustomPaint(
@@ -365,16 +367,45 @@ class _ElevationChartWidgetState extends State<ElevationChartWidget> {
             interval: maxDist > 0 ? maxDist / 2 : 1.0,
             getTitlesWidget: (value, meta) {
               if (value > maxDist + 0.1) return const SizedBox();
-              return SideTitleWidget(
-                meta: meta,
-                space: 10,
-                child: Text(
-                  formatDistance(value),
+
+              final isLast = (maxDist - value).abs() < 0.001;
+
+              final text = formatDistance(value);
+
+              // Mesurem l’amplada del text
+              final tp = TextPainter(
+                text: TextSpan(
+                  text: text,
                   style: TextStyle(
                     color: colors.onSurface,
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
                     fontFamily: 'monospace',
+                  ),
+                ),
+                textDirection: TextDirection.ltr,
+              )..layout();
+
+              double dx = 0;
+
+              if (isLast) {
+                // Moure l’etiqueta cap a l’esquerra exactament
+                dx = -(tp.width / 2);
+              }
+
+              return SideTitleWidget(
+                meta: meta,
+                space: 10,
+                child: Transform.translate(
+                  offset: Offset(dx, 0),
+                  child: Text(
+                    text,
+                    style: TextStyle(
+                      color: colors.onSurface,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'monospace',
+                    ),
                   ),
                 ),
               );
