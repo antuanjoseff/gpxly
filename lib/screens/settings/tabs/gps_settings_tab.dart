@@ -11,6 +11,8 @@ class GpsSettingsTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final gps = ref.watch(gpsSettingsProvider);
+    final isFollowing = gps.isFollowing;
+
     final t = AppLocalizations.of(context)!;
 
     return Scaffold(
@@ -35,7 +37,7 @@ class GpsSettingsTab extends ConsumerWidget {
           ), // Pots traduir aquesta clau si la tens a l10n
           // --- TEMPS ---
           SettingsCard(
-            isActive: gps.useTime,
+            isActive: !isFollowing && gps.useTime,
             title: t.gpsRecordByTime,
             valueText: "${gps.seconds} s",
             value: gps.seconds.toDouble(),
@@ -52,7 +54,7 @@ class GpsSettingsTab extends ConsumerWidget {
 
           // --- METRES ---
           SettingsCard(
-            isActive: !gps.useTime,
+            isActive: !isFollowing && gps.useTime,
             title: t.gpsRecordByDistance,
             valueText: "${gps.meters.toInt()} m",
             value: gps.meters,

@@ -1,24 +1,25 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:senda/models/track_follow_state.dart';
 import 'package:senda/notifiers/gps_settings_notifier.dart';
 import 'package:senda/notifiers/imported_track_notifier.dart';
 import 'package:senda/notifiers/track_notifier.dart';
 import 'package:senda/services/permissions_service.dart';
 import 'package:senda/utils/geo_utils.dart';
-import 'package:maplibre_gl/maplibre_gl.dart';
-import 'package:flutter/services.dart';
 
+import 'helpers/closest_result.dart';
 // Helpers
 import 'helpers/geometry_utils.dart';
-import 'helpers/reverse_detector.dart';
 import 'helpers/offtrack_logic.dart';
 import 'helpers/progress_tracker.dart';
-import 'helpers/track_sounds.dart';
-import 'helpers/track_debug.dart';
-import 'helpers/closest_result.dart';
+import 'helpers/reverse_detector.dart';
 import 'helpers/thresholds.dart';
+import 'helpers/track_debug.dart';
+import 'helpers/track_sounds.dart';
 
 enum FollowMode { notFollowing, initializing, onTrack, offTrack }
 
@@ -142,7 +143,7 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
     // 2. Activar mode "following" al TrackNotifier
     // Ponemos el GPS en modo "Navegación" usando los umbrales centralizados
     await ref.read(gpsSettingsProvider.notifier).setNavigationMode();
-    ref.read(trackProvider.notifier).setFollowing(true);
+    ref.read(gpsSettingsProvider.notifier).setFollowing(true);
 
     // 3. Estat intern
     state = state.copyWith(isFollowing: true, mode: FollowMode.initializing);
@@ -188,7 +189,7 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
   // Aturar seguiment
   // ------------------------------------------------------------
   void stopFollowing() {
-    ref.read(trackProvider.notifier).setFollowing(false);
+    ref.read(gpsSettingsProvider.notifier).setFollowing(false);
 
     // 1. Restaurar la configuració del GPS original de l'usuari
     // Carreguem de Prefs i apliquem al canal natiu

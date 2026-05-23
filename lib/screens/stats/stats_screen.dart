@@ -87,20 +87,23 @@ class TrackStatsScreen extends ConsumerWidget {
           StatTile(
             icon: Icons.speed_rounded,
             label: t.statSpeed,
-            valueReal: real.hasTimeData
-                ? "${real.averageSpeed.toStringAsFixed(1)} km/h"
+            valueReal: _hasTimeDataFromTimestamps(real)
+                ? "${_averageSpeedFromTimestamps(real).toStringAsFixed(1)} km/h"
                 : "---",
-            valueImported: hasImported && imported!.hasTimeData
-                ? "${imported.averageSpeed.toStringAsFixed(1)} km/h"
+            valueImported: hasImported && _hasTimeDataFromTimestamps(imported!)
+                ? "${_averageSpeedFromTimestamps(imported!).toStringAsFixed(1)} km/h"
                 : null,
             chartType: StatChartType.speed,
             onTap: () => _navigateToDetail(
               context,
               icon: Icons.speed_rounded,
               label: t.statSpeed,
-              valueReal: "${real.averageSpeed.toStringAsFixed(1)} km/h",
-              valueImported: hasImported
-                  ? "${imported!.averageSpeed.toStringAsFixed(1)} km/h"
+              valueReal: _hasTimeDataFromTimestamps(real)
+                  ? "${_averageSpeedFromTimestamps(real).toStringAsFixed(1)} km/h"
+                  : "---",
+              valueImported:
+                  hasImported && _hasTimeDataFromTimestamps(imported!)
+                  ? "${_averageSpeedFromTimestamps(imported!).toStringAsFixed(1)} km/h"
                   : null,
               chartType: StatChartType.speed,
               real: real,
@@ -318,5 +321,22 @@ class TrackStatsScreen extends ConsumerWidget {
     final m = (d.inMinutes % 60).toString().padLeft(2, '0');
     final s = (d.inSeconds % 60).toString().padLeft(2, '0');
     return "$h:$m:$s";
+  }
+
+  double _averageSpeedFromTimestamps(Track t) {
+    if (t.timestamps.length < 2) return 0;
+
+    final seconds = t.timestamps.last.difference(t.timestamps.first).inSeconds;
+
+    if (seconds <= 0) return 0;
+
+    final hours = seconds / 3600.0;
+    final km = t.distance / 1000.0;
+
+    return km / hours;
+  }
+
+  bool _hasTimeDataFromTimestamps(Track t) {
+    return t.timestamps.length >= 2;
   }
 }

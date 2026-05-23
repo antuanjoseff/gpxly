@@ -22,7 +22,6 @@ import '../models/track.dart';
 class TrackNotifier extends Notifier<Track> {
   Track? _initialState;
   StreamSubscription? _gpsSub;
-  bool isFollowing = false;
   bool gpsActive = false;
   final _positionStreamController = StreamController<LatLng>.broadcast();
   Stream<LatLng> get positionStream => _positionStreamController.stream;
@@ -68,63 +67,17 @@ class TrackNotifier extends Notifier<Track> {
   }
 
   Future<void> applyGpsMode() async {
-    final alarms = ref.read(alarmSettingsProvider);
-    final gpsSettings = ref.read(gpsSettingsProvider);
-
-    final hasDistanceAlarm = alarms.distanceEnabled;
-    final hasAltitudeAlarm = alarms.altitudeEnabled;
-    final hasAlarms = hasDistanceAlarm || hasAltitudeAlarm;
-
-    // 1) PRIORITAT MÀXIMA: SEGUIR UN TRACK → GPS cada 2 segons
-    if (isFollowing) {
-      await NativeGpsChannel.start(
-        useTime: true,
-        seconds: 2,
-        meters: 0,
-        accuracy: gpsSettings.accuracy,
-      );
-      gpsActive = true;
-      return;
-    }
-
-    // 2) PRIORITAT SEGÜENT: ALARMES DE DISTÀNCIA O ALÇADA → GPS cada 5 metres
-    if (hasAlarms) {
-      await NativeGpsChannel.start(
-        useTime: false,
-        seconds: 0,
-        meters: 5,
-        accuracy: gpsSettings.accuracy,
-      );
-      gpsActive = true;
-      return;
-    }
-
-    // 3) MODE NORMAL: RESTAURAR CONFIGURACIÓ DE L’USUARI (prefs)
-    await NativeGpsChannel.start(
-      useTime: gpsSettings.useTime,
-      seconds: gpsSettings.seconds,
-      meters: gpsSettings.meters,
-      accuracy: gpsSettings.accuracy,
-    );
-
-    gpsActive = true;
+    // Ara la configuració del GPS la fa gpsSettingsProvider
+    await ref.read(gpsSettingsProvider.notifier).apply();
   }
 
   Future<void> ensureGpsStarted() async {
     if (gpsActive) return;
 
-    // 🔥 1. ESPEREM que les preferències s'hagin carregat realment del disc
     await ref.read(gpsSettingsProvider.notifier).initialized;
 
-    // 2. Ara sí, llegim els paràmetres Reals
-    final gpsSettings = ref.read(gpsSettingsProvider);
-
-    await NativeGpsChannel.start(
-      useTime: gpsSettings.useTime,
-      seconds: gpsSettings.seconds,
-      meters: gpsSettings.meters,
-      accuracy: gpsSettings.accuracy,
-    );
+    // 🔥 Deixa que gpsSettingsProvider decideixi com iniciar el GPS
+    await ref.read(gpsSettingsProvider.notifier).apply();
 
     startGpsListener();
     gpsActive = true;
@@ -153,7 +106,8 @@ class TrackNotifier extends Notifier<Track> {
     );
     _positionStreamController.add(LatLng(lat, lon));
 
-    if (isFollowing) {
+    final gps = ref.read(gpsSettingsProvider);
+    if (gps.isFollowing) {
       ref
           .read(trackFollowNotifierProvider.notifier)
           .updateUserPosition(LatLng(lat, lon), userHeading: heading);
@@ -351,14 +305,6 @@ class TrackNotifier extends Notifier<Track> {
   }
 
   // ───────────────────────────────────────────────
-  // 2) CONTROL DE SEGUIMENT
-  // ───────────────────────────────────────────────
-  void setFollowing(bool value) {
-    isFollowing = value;
-    applyGpsMode();
-  }
-
-  // ───────────────────────────────────────────────
   // 3) CONTROL DE GRAVACIÓ (igual que abans)
   // ───────────────────────────────────────────────
   // 1. startRecording: Ja no inicia el cronòmetre aquí, ho fa el RecordingHandler
@@ -439,24 +385,22 @@ class TrackNotifier extends Notifier<Track> {
 
   void stopGpsIfNotNeeded() {
     final alarms = ref.read(alarmSettingsProvider);
+    final gps = ref.read(gpsSettingsProvider);
 
     final anyAlarmEnabled =
         alarms.distanceEnabled || alarms.altitudeEnabled || alarms.timeEnabled;
 
-    // Només parem el GPS si:
-    // - no estem gravant
-    // - no estem seguint un track
-    // - no hi ha alarmes actives
     final isRecording = state.recordingState == RecordingState.recording;
 
-    if (!isRecording && !isFollowing && !anyAlarmEnabled) {
+    if (!isRecording && !gps.isFollowing && !anyAlarmEnabled) {
       NativeGpsChannel.stop();
+      _gpsSub?.cancel();
       gpsActive = false;
-      return; // Important: no apliquem modes si l’hem parat
+      return;
     }
 
-    // Si no complim les condicions per parar-lo, apliquem el mode correcte
-    applyGpsMode();
+    // Deixa que gpsSettingsProvider decideixi la configuració
+    ref.read(gpsSettingsProvider.notifier).apply();
   }
 }
 

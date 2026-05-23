@@ -10,12 +10,14 @@ class GpsSettings {
   final int seconds;
   final double meters;
   final double accuracy;
+  final bool isFollowing;
 
   GpsSettings({
     required this.useTime,
     required this.seconds,
     required this.meters,
     required this.accuracy,
+    required this.isFollowing,
   });
 
   GpsSettings copyWith({
@@ -23,12 +25,14 @@ class GpsSettings {
     int? seconds,
     double? meters,
     double? accuracy,
+    bool? isFollowing,
   }) {
     return GpsSettings(
       useTime: useTime ?? this.useTime,
       seconds: seconds ?? this.seconds,
       meters: meters ?? this.meters,
       accuracy: accuracy ?? this.accuracy,
+      isFollowing: isFollowing ?? this.isFollowing,
     );
   }
 }
@@ -49,6 +53,7 @@ class GpsSettingsNotifier extends Notifier<GpsSettings> {
       seconds: 5,
       meters: 10,
       accuracy: 30,
+      isFollowing: false,
     );
 
     // Iniciem la càrrega asíncrona
@@ -61,6 +66,17 @@ class GpsSettingsNotifier extends Notifier<GpsSettings> {
     await _loadFromPrefs();
     // Marquem com a llest perquè el TrackNotifier pugui avançar
     if (!_initialized.isCompleted) _initialized.complete();
+  }
+
+  void setFollowing(bool value) {
+    state = state.copyWith(isFollowing: value);
+
+    if (value) {
+      // Mode seguiment: GPS cada 2s
+      state = state.copyWith(useTime: true, seconds: 2, meters: 0);
+    }
+
+    apply();
   }
 
   // -----------------------------
