@@ -6,12 +6,9 @@ import 'package:senda/theme/app_colors.dart';
 class WaypointsListWidget extends StatefulWidget {
   final List<Waypoint> recorded;
   final List<Waypoint> imported;
-
   final int? selectedStartIndex;
   final int? selectedEndIndex;
-
-  final void Function(Waypoint wp) onSetStart;
-  final void Function(Waypoint wp) onSetEnd;
+  final void Function(Waypoint wp) onToggleWaypoint;
 
   const WaypointsListWidget({
     super.key,
@@ -19,8 +16,7 @@ class WaypointsListWidget extends StatefulWidget {
     required this.imported,
     required this.selectedStartIndex,
     required this.selectedEndIndex,
-    required this.onSetStart,
-    required this.onSetEnd,
+    required this.onToggleWaypoint,
   });
 
   @override
@@ -34,168 +30,146 @@ class _WaypointsListWidgetState extends State<WaypointsListWidget> {
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context)!;
-
-    final hasRecorded = widget.recorded.isNotEmpty;
-    final hasImported = widget.imported.isNotEmpty;
-
-    if (!hasRecorded && !hasImported) {
+    if (widget.recorded.isEmpty && widget.imported.isEmpty)
       return const SizedBox.shrink();
-    }
 
     return Column(
       children: [
-        if (hasRecorded)
+        if (widget.recorded.isNotEmpty)
           _section(
             title: t.waypointsRecorded,
             expanded: expandRecorded,
             onToggle: () => setState(() => expandRecorded = !expandRecorded),
-            children: widget.recorded.map((wp) => _waypointTile(wp)).toList(),
+            children: [
+              for (int i = 0; i < widget.recorded.length; i++)
+                _tile(
+                  widget.recorded[i],
+                  widget.recorded[i].trackIndex,
+                  i == widget.recorded.length - 1,
+                ),
+            ],
           ),
-
-        if (hasImported)
+        if (widget.imported.isNotEmpty)
           _section(
             title: t.waypointsImported,
             expanded: expandImported,
             onToggle: () => setState(() => expandImported = !expandImported),
-            children: widget.imported.map((wp) => _waypointTile(wp)).toList(),
+            children: [
+              for (int i = 0; i < widget.imported.length; i++)
+                _tile(
+                  widget.imported[i],
+                  widget.imported[i].trackIndex,
+                  i == widget.imported.length - 1,
+                ),
+            ],
           ),
       ],
     );
   }
 
-  // ─────────────────────────────────────────────
-  // SECCIÓ PLEGABLE
-  // ─────────────────────────────────────────────
   Widget _section({
     required String title,
     required bool expanded,
     required VoidCallback onToggle,
     required List<Widget> children,
   }) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFAFAFA),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.black.withAlpha(13)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(8),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-
-      child: Column(
-        children: [
-          // Header
-          InkWell(
-            onTap: onToggle,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      title,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13,
-                        color: Colors.grey.shade700,
-                        letterSpacing: 0.3,
-                      ),
-                    ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        InkWell(
+          onTap: onToggle,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 16, 8),
+            child: Row(
+              children: [
+                Text(
+                  title.toUpperCase(),
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey,
                   ),
-                  Icon(
-                    expanded ? Icons.expand_less : Icons.expand_more,
-                    size: 22,
-                  ),
-                ],
-              ),
+                ),
+                const SizedBox(width: 6),
+                Icon(
+                  expanded
+                      ? Icons.keyboard_arrow_up
+                      : Icons.keyboard_arrow_down,
+                  size: 14,
+                  color: Colors.grey,
+                ),
+              ],
             ),
           ),
-
-          // Contingut
-          if (expanded) Column(children: children),
-        ],
-      ),
+        ),
+        if (expanded)
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withAlpha(8),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(children: children),
+          ),
+      ],
     );
   }
 
-  // ─────────────────────────────────────────────
-  // TILE DE WAYPOINT
-  // ─────────────────────────────────────────────
-  Widget _waypointTile(Waypoint wp) {
-    final isStart = widget.selectedStartIndex == wp.trackIndex;
-    final isEnd = widget.selectedEndIndex == wp.trackIndex;
+  Widget _tile(Waypoint wp, int idx, bool isLast) {
+    final bool isStart = widget.selectedStartIndex == idx;
+    final bool isEnd = widget.selectedEndIndex == idx;
+    final bool isSelected = isStart || isEnd;
+    final Color activeColor = isStart
+        ? Colors.green
+        : (isEnd ? Colors.red : AppColors.primary);
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      padding: const EdgeInsets.only(left: 10, right: 2),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.black.withAlpha(13)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(10),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+    return Column(
+      children: [
+        ListTile(
+          onTap: () => widget.onToggleWaypoint(wp),
+          visualDensity: VisualDensity.compact,
+          leading: Icon(
+            isSelected
+                ? (isStart ? Icons.play_circle_fill : Icons.stop_circle)
+                : Icons.location_on_outlined,
+            color: isSelected ? activeColor : Colors.black12,
+            size: 22,
           ),
-        ],
-      ),
-
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              wp.name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: Colors.grey.shade800,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
+          title: Text(
+            wp.name,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+              color: isSelected ? activeColor : Colors.black87,
             ),
           ),
-
-          _actionBtn(
-            icon: Icons.flag_circle,
-            active: isStart,
-            activeColor: AppColors.trackGreen,
-            onTap: () => widget.onSetStart(wp),
+          trailing: isSelected
+              ? Icon(
+                  Icons.check_circle,
+                  color: activeColor.withAlpha(80),
+                  size: 16,
+                )
+              : const Icon(
+                  Icons.chevron_right,
+                  size: 14,
+                  color: Colors.black12,
+                ),
+        ),
+        if (!isLast)
+          Divider(
+            height: 1,
+            indent: 52,
+            endIndent: 12,
+            color: Colors.grey.withAlpha(30),
           ),
-
-          _actionBtn(
-            icon: Icons.flag,
-            active: isEnd,
-            activeColor: AppColors.redAlert,
-            onTap: () => widget.onSetEnd(wp),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ─────────────────────────────────────────────
-  // BOTÓ COMPACTE
-  // ─────────────────────────────────────────────
-  Widget _actionBtn({
-    required IconData icon,
-    required bool active,
-    required Color activeColor,
-    required VoidCallback onTap,
-  }) {
-    return IconButton(
-      visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
-      iconSize: 22,
-      padding: EdgeInsets.zero,
-      constraints: const BoxConstraints(minWidth: 24, minHeight: 32),
-      icon: Icon(icon, size: 20, color: active ? activeColor : Colors.black26),
-
-      onPressed: onTap,
+      ],
     );
   }
 }

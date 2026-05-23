@@ -24,240 +24,143 @@ class ElevationProfileScreen extends ConsumerStatefulWidget {
 
 class _ElevationProfileScreenState
     extends ConsumerState<ElevationProfileScreen> {
-  int? selectedIndexGraph;
   int? selectedIndexStart;
   int? selectedIndexEnd;
+  int? selectedIndexGraph;
 
-  // ------------------------------------------------------------
-  // Helpers per calcular stats del segment
-  // ------------------------------------------------------------
-  double? _calcSegmentDistance(List<double> dists) {
-    if (selectedIndexStart == null || selectedIndexEnd == null) return null;
-    final s = selectedIndexStart!;
-    final e = selectedIndexEnd!;
-    if (s < 0 || e < 0 || s >= dists.length || e >= dists.length) return null;
-    return (dists[e] - dists[s]).abs();
-  }
-
-  double? _calcSegmentAscent(List<double> alts) {
-    if (selectedIndexStart == null || selectedIndexEnd == null) return null;
-    final s = selectedIndexStart!;
-    final e = selectedIndexEnd!;
-    if (s < 0 || e < 0 || s >= alts.length || e >= alts.length) return null;
-
-    double gain = 0;
-    final start = s < e ? s : e;
-    final end = s < e ? e : s;
-
-    for (int i = start; i < end; i++) {
-      final diff = alts[i + 1] - alts[i];
-      if (diff > 0) gain += diff;
-    }
-    return gain;
-  }
-
-  Duration? _calcSegmentDuration(List<DateTime>? times) {
-    if (times == null) return null;
-    if (selectedIndexStart == null || selectedIndexEnd == null) return null;
-
-    final s = selectedIndexStart!;
-    final e = selectedIndexEnd!;
-    if (s < 0 || e < 0 || s >= times.length || e >= times.length) return null;
-
-    final start = s < e ? s : e;
-    final end = s < e ? e : s;
-
-    return times[end].difference(times[start]);
-  }
-
-  double? _calcAvgSpeed(double? distMeters, Duration? dur) {
-    if (distMeters == null || dur == null) return null;
-    final hours = dur.inSeconds / 3600.0;
-    if (hours <= 0) return null;
-    return (distMeters / 1000.0) / hours;
-  }
-
-  // ------------------------------------------------------------
-  // Waypoints → callbacks
-  // ------------------------------------------------------------
-  void _onSetStartFromWaypoint(Waypoint wp) {
+  void _onToggleWaypoint(Waypoint wp) {
+    final int idx = wp.trackIndex;
     setState(() {
       selectedIndexGraph = null;
-      if (selectedIndexEnd != null) {
-        final end = selectedIndexEnd!;
-        final s = wp.trackIndex < end ? wp.trackIndex : end;
-        final e = wp.trackIndex < end ? end : wp.trackIndex;
-        selectedIndexStart = s;
-        selectedIndexEnd = e;
+      if (selectedIndexStart == idx) {
+        selectedIndexStart = null;
+      } else if (selectedIndexEnd == idx) {
+        selectedIndexEnd = null;
+      } else if (selectedIndexStart == null) {
+        selectedIndexStart = idx;
+      } else if (selectedIndexEnd == null) {
+        selectedIndexEnd = idx;
       } else {
-        selectedIndexStart = wp.trackIndex;
+        selectedIndexEnd = idx;
+      }
+
+      if (selectedIndexStart != null && selectedIndexEnd != null) {
+        if (selectedIndexStart! > selectedIndexEnd!) {
+          final temp = selectedIndexStart;
+          selectedIndexStart = selectedIndexEnd;
+          selectedIndexEnd = temp;
+        }
       }
     });
   }
 
-  void _onSetEndFromWaypoint(Waypoint wp) {
-    setState(() {
-      if (selectedIndexStart != null) {
-        final start = selectedIndexStart!;
-        final s = start < wp.trackIndex ? start : wp.trackIndex;
-        final e = start < wp.trackIndex ? wp.trackIndex : start;
-        selectedIndexStart = s;
-        selectedIndexEnd = e;
-        selectedIndexGraph = null;
-        return;
-      }
-
-      if (selectedIndexGraph != null) {
-        final needle = selectedIndexGraph!;
-        final s = needle < wp.trackIndex ? needle : wp.trackIndex;
-        final e = needle < wp.trackIndex ? wp.trackIndex : needle;
-        selectedIndexStart = s;
-        selectedIndexEnd = e;
-        selectedIndexGraph = null;
-        return;
-      }
-
-      selectedIndexEnd = wp.trackIndex;
-    });
-  }
-
-  // ------------------------------------------------------------
-  // BUILD
-  // ------------------------------------------------------------
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context)!;
-
     final real = ref.watch(trackProvider);
     final imported = ref.watch(importedTrackProvider);
 
     final realAlts = real.altitudes;
     final realDists = calculateDistances(real.coordinates);
-
-    final importedAlts = imported?.altitudes ?? <double>[];
+    final importedAlts = imported?.altitudes ?? [];
     final importedDists = calculateDistances(imported?.coordinates ?? []);
 
-    final hasReal = realAlts.isNotEmpty;
-    final hasImported = importedAlts.isNotEmpty;
+    final recordedWps = ref.watch(waypointsProvider);
+    final importedWps = ref.watch(importedWaypointsProvider);
 
-    if (!hasReal && !hasImported) {
-      return Scaffold(
-        appBar: AppBar(title: Text(t.elevationProfile)),
-        body: Center(child: Text(t.noData)),
-      );
-    }
+    final trackColor = ref.watch(trackSettingsProvider).color;
+    final importedTrackColor = ref.watch(importedTrackSettingsProvider).color;
 
     final primaryIsReal =
         realDists.isNotEmpty &&
         (importedDists.isEmpty || realDists.last >= importedDists.last);
 
-    final primaryAlts = primaryIsReal ? realAlts : importedAlts;
-    final primaryDists = primaryIsReal ? realDists : importedDists;
-
-    final secondaryAlts = primaryIsReal ? importedAlts : realAlts;
-    final secondaryDists = primaryIsReal ? importedDists : realDists;
-
-    final trackColor = ref.watch(trackSettingsProvider).color;
-    final importedColor = ref.watch(importedTrackSettingsProvider).color;
-
-    final recordedWps = ref.watch(waypointsProvider);
-    final importedWps = ref.watch(importedWaypointsProvider);
-
-    // ------------------------------------------------------------
-    // Calcular stats del segment
-    // ------------------------------------------------------------
-    final segDist = _calcSegmentDistance(primaryDists);
-    final segAscent = _calcSegmentAscent(primaryAlts);
-    final segDur = _calcSegmentDuration(
-      primaryIsReal ? real.timestamps : imported?.timestamps,
-    );
-    final segSpeed = _calcAvgSpeed(segDist, segDur);
-
     return Scaffold(
-      appBar: AppBar(title: Text(t.elevationProfile)),
-      body: Column(
+      backgroundColor: const Color(0xFFF5F5F7),
+      appBar: AppBar(
+        title: Text(
+          t.elevationProfile,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+        backgroundColor: AppColors.primary,
+        elevation: 0,
+      ),
+      body: ListView(
         children: [
-          const SizedBox(height: 8),
-
-          // ------------------------------------------------------------
-          // HEADER + LLEGENDA
-          // ------------------------------------------------------------
+          const SizedBox(height: 12),
           HeaderLegendWidget(
-            hasReal: hasReal,
-            hasImported: hasImported,
+            hasReal: realAlts.isNotEmpty,
+            hasImported: importedAlts.isNotEmpty,
             primaryIsReal: primaryIsReal,
             rangeStartIndex: selectedIndexStart,
             rangeEndIndex: selectedIndexEnd,
           ),
-
-          const SizedBox(height: 8),
-
-          // ------------------------------------------------------------
-          // GRÀFIC
-          // ------------------------------------------------------------
           Container(
-            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            margin: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.black12),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withAlpha(10),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
-            child: SizedBox(
-              height: MediaQuery.of(context).size.height * 0.32,
-              child: ElevationChartWidget(
-                realAlts: realAlts,
-                realDists: realDists,
-                importedAlts: importedAlts,
-                importedDists: importedDists,
-                primaryIsReal: primaryIsReal,
-                selectedIndexStart: selectedIndexStart,
-                selectedIndexEnd: selectedIndexEnd,
-                selectedIndexGraph: selectedIndexGraph,
-                recordedWaypointIndices: recordedWps
-                    .map((wp) => wp.trackIndex)
-                    .toList(),
-                importedWaypointIndices: importedWps
-                    .map((wp) => wp.trackIndex)
-                    .toList(),
-                realColor: trackColor,
-                importedColor: importedColor,
-                graphNeedleColor: Theme.of(context).colorScheme.primary,
-                sliderStartNeedleColor: AppColors.trackGreen,
-                sliderEndNeedleColor: AppColors.redAlert,
-                onNeedleMove: (idx) => setState(() => selectedIndexGraph = idx),
-                onRangeSelected: (s, e) {
-                  setState(() {
-                    selectedIndexStart = s;
-                    selectedIndexEnd = e;
-                    selectedIndexGraph = null;
-                  });
-                },
-                onClearSelection: () {
-                  setState(() {
-                    selectedIndexStart = null;
-                    selectedIndexEnd = null;
-                    selectedIndexGraph = null;
-                  });
-                },
-              ),
-            ),
-          ),
+            height: MediaQuery.of(context).size.height * 0.32,
 
-          // ------------------------------------------------------------
-          // WAYPOINTS
-          // ------------------------------------------------------------
-          Expanded(
-            child: SingleChildScrollView(
-              child: WaypointsListWidget(
-                recorded: recordedWps,
-                imported: importedWps,
-                selectedStartIndex: selectedIndexStart,
-                selectedEndIndex: selectedIndexEnd,
-                onSetStart: _onSetStartFromWaypoint,
-                onSetEnd: _onSetEndFromWaypoint,
-              ),
+            // Dins del Container que conté l'ElevationChartWidget
+            child: ElevationChartWidget(
+              realAlts: realAlts,
+              realDists: realDists,
+              importedAlts: importedAlts,
+              importedDists: importedDists,
+              primaryIsReal: primaryIsReal,
+              selectedIndexStart: selectedIndexStart,
+              selectedIndexEnd: selectedIndexEnd,
+              selectedIndexGraph: selectedIndexGraph,
+              recordedWaypointIndices: recordedWps
+                  .map((wp) => wp.trackIndex)
+                  .toList(),
+              importedWaypointIndices: importedWps
+                  .map((wp) => wp.trackIndex)
+                  .toList(),
+              realColor: trackColor,
+              importedColor: importedTrackColor,
+              graphNeedleColor: AppColors.primary,
+              sliderStartNeedleColor: Colors.green,
+              sliderEndNeedleColor: Colors.red,
+
+              // CALLBACKS REQUERITS CORREGITS:
+              onNeedleMove: (idx) => setState(() {
+                selectedIndexGraph = idx;
+              }),
+              onRangeSelected: (start, end) => setState(() {
+                selectedIndexStart = start;
+                selectedIndexEnd = end;
+                selectedIndexGraph = null;
+              }),
+              onClearSelection: () => setState(() {
+                selectedIndexStart = null;
+                selectedIndexEnd = null;
+                selectedIndexGraph = null;
+              }),
             ),
           ),
+          WaypointsListWidget(
+            recorded: recordedWps,
+            imported: importedWps,
+            selectedStartIndex: selectedIndexStart,
+            selectedEndIndex: selectedIndexEnd,
+            onToggleWaypoint: _onToggleWaypoint,
+          ),
+          const SizedBox(height: 40),
         ],
       ),
     );
