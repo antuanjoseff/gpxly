@@ -170,17 +170,8 @@ class SelectionPainter extends CustomPainter {
     // CALCULAR SI EL RANG ESTÀ INVERTIT (per ALTITUD)
     // ─────────────────────────────────────────────
     bool inverted = false;
-    if (sIndex != null &&
-        eIndex != null &&
-        sIndex >= 0 &&
-        eIndex >= 0 &&
-        sIndex < altitudes.length &&
-        eIndex < altitudes.length) {
-      final startAlt = altitudes[sIndex];
-      final endAlt = altitudes[eIndex];
-
-      // 🔥 Si el final és més baix → invertit
-      inverted = endAlt < startAlt;
+    if (sIndex != null && eIndex != null) {
+      inverted = sIndex > eIndex;
     }
 
     // ─────────────────────────────────────────────
@@ -189,6 +180,7 @@ class SelectionPainter extends CustomPainter {
     if (graphX != null && graphIndex != null) {
       _paintMainNeedle(
         canvas: canvas,
+        size: size,
         x: graphX!,
         index: graphIndex!,
         minY: minY,
@@ -202,12 +194,13 @@ class SelectionPainter extends CustomPainter {
     // ─────────────────────────────────────────────
     // AGULLA INICI RANG (colors GIRATS)
     // ─────────────────────────────────────────────
-    if (sX != null && sIndex != null) {
+    if (startX != null && startIndex != null) {
       _paintRangeNeedle(
         canvas,
-        sX,
-        sIndex,
-        inverted ? sliderStartNeedleColor : sliderEndNeedleColor, // 🔥 girat
+        size,
+        startX!,
+        startIndex!,
+        inverted ? sliderEndNeedleColor : sliderStartNeedleColor,
         minY,
         yRange,
         chartHeight,
@@ -215,20 +208,21 @@ class SelectionPainter extends CustomPainter {
         dx: dxStart,
         showTooltip: true,
         tooltipColor: inverted
-            ? Colors.green.withAlpha(230)
-            : Colors.red.withAlpha(230), // 🔥 girat
+            ? Colors.red.withAlpha(230)
+            : Colors.green.withAlpha(230),
       );
     }
 
     // ─────────────────────────────────────────────
     // AGULLA FINAL RANG (colors GIRATS)
     // ─────────────────────────────────────────────
-    if (eX != null && eIndex != null) {
+    if (endX != null && endIndex != null) {
       _paintRangeNeedle(
         canvas,
-        eX,
-        eIndex,
-        inverted ? sliderEndNeedleColor : sliderStartNeedleColor, // 🔥 girat
+        size,
+        endX!,
+        endIndex!,
+        inverted ? sliderStartNeedleColor : sliderEndNeedleColor,
         minY,
         yRange,
         chartHeight,
@@ -236,8 +230,8 @@ class SelectionPainter extends CustomPainter {
         dx: dxEnd,
         showTooltip: true,
         tooltipColor: inverted
-            ? Colors.red.withAlpha(230)
-            : Colors.green.withAlpha(230), // 🔥 girat
+            ? Colors.green.withAlpha(230)
+            : Colors.red.withAlpha(230),
       );
     }
   }
@@ -247,6 +241,7 @@ class SelectionPainter extends CustomPainter {
   // ─────────────────────────────────────────────
   void _paintMainNeedle({
     required Canvas canvas,
+    required Size size,
     required double x,
     required int index,
     required double minY,
@@ -279,9 +274,9 @@ class SelectionPainter extends CustomPainter {
     canvas.drawCircle(Offset(x, dyPrimary), dotRadius, dotPaintPrimary);
     canvas.drawCircle(Offset(x, dyPrimary), dotRadius, dotBorderPaint);
 
-    // Tooltip principal
     _paintTooltipBox(
       canvas,
+      size,
       x,
       "${altPrimary.toStringAsFixed(0)} m\n${distKm.toStringAsFixed(2)} km",
       tooltipColor,
@@ -293,6 +288,7 @@ class SelectionPainter extends CustomPainter {
   // ─────────────────────────────────────────────
   void _paintRangeNeedle(
     Canvas canvas,
+    Size size,
     double x,
     int index,
     Color color,
@@ -330,6 +326,7 @@ class SelectionPainter extends CustomPainter {
     if (showTooltip) {
       _paintTooltipBox(
         canvas,
+        size,
         x + dx,
         "${alt.toStringAsFixed(0)} m\n${distKm.toStringAsFixed(2)} km",
         tooltipColor,
@@ -340,7 +337,13 @@ class SelectionPainter extends CustomPainter {
   // ─────────────────────────────────────────────
   // TOOLTIP COMÚ
   // ─────────────────────────────────────────────
-  void _paintTooltipBox(Canvas canvas, double x, String text, Color bgColor) {
+  void _paintTooltipBox(
+    Canvas canvas,
+    Size size,
+    double x,
+    String text,
+    Color bgColor,
+  ) {
     final textPainter = TextPainter(
       text: TextSpan(
         text: text,
@@ -360,6 +363,9 @@ class SelectionPainter extends CustomPainter {
 
     double rectX = x - w / 2;
     double rectY = 4;
+
+    // 🔥 CLAMP CORRECTE
+    rectX = rectX.clamp(0, size.width - w);
 
     final rrect = RRect.fromRectAndRadius(
       Rect.fromLTWH(rectX, rectY, w, h),
