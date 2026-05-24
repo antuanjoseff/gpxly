@@ -5,9 +5,45 @@ Waypoints: Selecció per índex (Verd = inici, Vermell = final) comparant autom�
 
 
 
+///////////////////////////////////////////////////////////////////////
+// EXPLICAR CONTEXT DISSENY A IA
+///////////////////////////////////////////////////////////////////////
 La proposta per a Waypoints (Senda Compact):
 
 Contenidor Únic: En lloc de fer una targeta elevada per a cada punt (que genera massa "soroll" visual i espai perdut), fem servir una sola targeta blanca per a tota la secció.
 Separadors Fins: Dins d'aquesta targeta, els waypoints es separen amb un Divider gairebé invisible (com hem fet avui), guanyant molt espai vertical.
 Sense Ombra Individual: Eliminem l'elevació de cada fila. L'ombra només la té el bloc sencer.
 Visual Density: Apliquem VisualDensity.compact de forma agressiva perquè la llista es pugui llegir ràpidament sense fer un scroll infinit.
+
+///////////////////////////////////////////////////////////////////////
+// OPTIMITZACIÓ DE BATERIA
+///////////////////////////////////////////////////////////////////////
+
+Context del Projecte:
+Estem desenvolupant "Senda", una app de seguiment de muntanya en Flutter/Riverpod. L'app fusiona dades de GPS, Baròmetre i fitxers DEM (HGT) mitjançant un CogService per obtenir altituds precises.
+Estat actual de la implementació:
+
+    Motor d'Alarmes (AlarmEngine):
+        Lògica dual activa: Desnivell Acumulat (metres reals pujats/baixats) i Cotes Absolutes (llindars fixos com 1000m, 2000m).
+        Utilitza un filtre EMA (Exponential Moving Average) per suavitzar el soroll del GPS.
+        Emet un stream de AlarmProgress amb els camps: distance, accProgress, cotaProgress i time.
+    Sistema de Simulació:
+        Capacitat de reproduir tracks importats injectant punts al flux real del GPS.
+        Inclou controls de Pausa i Represa (_isSimulationPaused).
+        Bypass de Seguretat: Durant la simulació, se salta la correcció asíncrona del CogService per mantenir la sincronia total entre posició i altitud.
+        Silenci Baromètric: El GpsAltitudeNotifier té un mode isSimulating que bloqueja el sensor real del mòbil perquè no interfereixi amb el track.
+    Interfície d'Usuari (UI):
+        Targeta d'altitud integrada amb un SegmentedButton per canviar entre vistes.
+        Persistència: El model AlarmSettings recorda l'última pestanya oberta (currentViewMode).
+        Sliders de precisió amb botons + i - i salts (steps) personalitzats: Desnivell (salt 50m, 50-1000m) i Cotes (salt 10m, 10-5000m).
+    Correccions Crítiques Realitzades:
+        S'ha eliminat el "Problema del Zero" sincronitzant l'enviament de la posició després de la correcció de l'altitud.
+        El motor d'alarmes ara s'inicia/atura dinàmicament des del Notifier segons si hi ha alarmes actives, però sempre arrenca en OFF per seguretat.
+
+Proper Objectiu:
+
+    Optimització de Bateria: Implementar estratègies per reduir el consum del GPS i la CPU, com el seguiment adaptatiu (basat en distància mínima o canvis d'activitat) i l'optimització de la freqüència de processament del motor d'alarmes.
+
+Instruccions per a la IA:
+Utilitza aquesta estructura per analitzar qualsevol nou fragment de codi o per proposar millores en l'estalvi d'energia sense trencar la sincronització entre la simulació i el motor real.
+Consell: Guarda aquest text en un fitxer anomenat context_senda.txt o a les teves notes. Quan vulguis continuar, només l'has d'enganxar i la IA sabrà fins i tot quins rangs tenen els teus sliders! 🏔️✨

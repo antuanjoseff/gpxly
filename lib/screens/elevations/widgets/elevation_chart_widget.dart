@@ -120,8 +120,8 @@ class _ElevationChartWidgetState extends State<ElevationChartWidget> {
         // Map X original
         double mapX(double dist) {
           final maxD = primaryDists.last;
-          if (maxD == 0) return 24;
-          return (dist / maxD) * (width - 48) + 24;
+          if (maxD == 0) return 0;
+          return (dist / maxD) * width;
         }
 
         final graphX = widget.selectedIndexGraph != null
@@ -237,7 +237,7 @@ class _ElevationChartWidgetState extends State<ElevationChartWidget> {
                     top: SelectionPainter.topReserved,
                   ),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    padding: const EdgeInsets.symmetric(horizontal: 0),
                     child: LineChart(
                       _buildChartData(
                         context: context,
@@ -368,44 +368,54 @@ class _ElevationChartWidgetState extends State<ElevationChartWidget> {
             getTitlesWidget: (value, meta) {
               if (value > maxDist + 0.1) return const SizedBox();
 
+              final isFirst = value == 0;
               final isLast = (maxDist - value).abs() < 0.001;
 
-              final text = formatDistance(value);
+              // 1. Separem el text (ex: "24.5 km") en dues parts
+              final fullText = formatDistance(value);
+              final parts = fullText.split(' ');
+              final numberPart = parts.isNotEmpty ? parts[0] : fullText;
+              final unitPart = parts.length > 1 ? parts[1] : '';
 
-              // Mesurem l’amplada del text
+              final textStyle = TextStyle(
+                color: colors.onSurface,
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'monospace',
+              );
+
+              // 2. Calculem l'amplada real del bloc per al desplaçament lateral
               final tp = TextPainter(
-                text: TextSpan(
-                  text: text,
-                  style: TextStyle(
-                    color: colors.onSurface,
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'monospace',
-                  ),
-                ),
+                text: TextSpan(text: numberPart, style: textStyle),
                 textDirection: TextDirection.ltr,
               )..layout();
 
               double dx = 0;
-
-              if (isLast) {
-                // Moure l’etiqueta cap a l’esquerra exactament
+              if (isFirst) {
+                dx = tp.width / 2;
+              } else if (isLast) {
                 dx = -(tp.width / 2);
               }
 
               return SideTitleWidget(
                 meta: meta,
-                space: 10,
+                space: 6, // Reduït una mica perquè el Column ja ocupa espai
                 child: Transform.translate(
                   offset: Offset(dx, 0),
-                  child: Text(
-                    text,
-                    style: TextStyle(
-                      color: colors.onSurface,
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'monospace',
-                    ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(numberPart, style: textStyle),
+                      if (unitPart.isNotEmpty)
+                        Text(
+                          unitPart,
+                          style: textStyle.copyWith(
+                            fontSize: 9, // Més petita per estètica
+                            fontWeight: FontWeight.normal,
+                            height: 0.8, // Atansa la unitat al número
+                          ),
+                        ),
+                    ],
                   ),
                 ),
               );

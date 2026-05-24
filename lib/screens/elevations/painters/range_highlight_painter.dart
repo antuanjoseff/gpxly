@@ -59,69 +59,54 @@ class RangeAreaPainter extends CustomPainter {
   });
 
   @override
+  @override
   void paint(Canvas canvas, Size size) {
     if (distances.isEmpty || altitudes.isEmpty) return;
 
     // ─────────────────────────────────────────────
-    // 1) Calcular min/max reals del segment
+    // 1) Lògica de rang vertical (Mantenim igual per coherència)
     // ─────────────────────────────────────────────
     final double minAlt = altitudes.reduce((a, b) => a < b ? a : b);
     final double maxAlt = altitudes.reduce((a, b) => a > b ? a : b);
     final double diff = maxAlt - minAlt;
 
-    // ─────────────────────────────────────────────
-    // 2) Exageració PRO progressiva
-    // ─────────────────────────────────────────────
     double exaggeration = 1.0;
-
-    if (diff < 30) {
+    if (diff < 30)
       exaggeration = 1.8;
-    } else if (diff < 60) {
+    else if (diff < 60)
       exaggeration = 1.4;
-    } else if (diff < 100) {
+    else if (diff < 100)
       exaggeration = 1.2;
-    }
 
-    // ─────────────────────────────────────────────
-    // 3) Rang efectiu mínim
-    // ─────────────────────────────────────────────
     final double effectiveRange = diff < 50 ? 50 : diff;
-
-    // ─────────────────────────────────────────────
-    // 4) Aplicar exageració al rang vertical
-    // ─────────────────────────────────────────────
     final double forcedMinY = minAlt - (effectiveRange * 0.3 * exaggeration);
     final double forcedMaxY =
         forcedMinY + (effectiveRange * 1.3 * exaggeration);
-
     final double yRange = forcedMaxY - forcedMinY;
 
     // ─────────────────────────────────────────────
-    // 5) Dimensions del gràfic
+    // 2) Ajust d'amplada (CANVIS AQUÍ)
     // ─────────────────────────────────────────────
-    final double usableWidth = size.width - 48; // padding horitzontal
+    final double usableWidth = size.width; // 👈 100% de l'amplada
     final double chartHeight = size.height - 40; // bottomReserved
     final double maxDist = distances.last;
 
-    // ─────────────────────────────────────────────
-    // 6) Ordenar índexs
-    // ─────────────────────────────────────────────
     final int start = startIndex < endIndex ? startIndex : endIndex;
     final int end = startIndex < endIndex ? endIndex : startIndex;
 
     final path = Path();
 
     // ─────────────────────────────────────────────
-    // 7) Punt inicial a la base
+    // 3) Dibuix del Path (SENSE OFFSETS)
     // ─────────────────────────────────────────────
-    double firstX = (distances[start] / maxDist) * usableWidth + 24;
+
+    // Punt inicial a la base (X corregida)
+    double firstX = (distances[start] / maxDist) * usableWidth;
     path.moveTo(firstX, chartHeight);
 
-    // ─────────────────────────────────────────────
-    // 8) Resseguir el perfil exagerat
-    // ─────────────────────────────────────────────
+    // Resseguir el perfil
     for (int i = start; i <= end; i++) {
-      double x = (distances[i] / maxDist) * usableWidth + 24;
+      double x = (distances[i] / maxDist) * usableWidth; // 👈 Sense el + 24
 
       double relY = (altitudes[i] - forcedMinY) / yRange;
       double y = chartHeight - (relY * chartHeight);
@@ -129,10 +114,8 @@ class RangeAreaPainter extends CustomPainter {
       path.lineTo(x, y);
     }
 
-    // ─────────────────────────────────────────────
-    // 9) Tancar el polígon
-    // ─────────────────────────────────────────────
-    double lastX = (distances[end] / maxDist) * usableWidth + 24;
+    // Tancar el polígon a la base (X corregida)
+    double lastX = (distances[end] / maxDist) * usableWidth;
     path.lineTo(lastX, chartHeight);
     path.close();
 

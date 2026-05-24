@@ -91,7 +91,7 @@ class SelectionPainter extends CustomPainter {
     final double maxY = minY + (effectiveRange * 1.3 * exaggeration);
     final double yRange = maxY - minY;
 
-    final double usableWidth = size.width - 48;
+    final double usableWidth = size.width;
 
     // WAYPOINTS GRAVATS
     if (recordedWaypointIndices != null &&
@@ -110,8 +110,7 @@ class SelectionPainter extends CustomPainter {
 
           final double x =
               (recordedDistsSource[idx] / recordedDistsSource.last) *
-                  usableWidth +
-              24;
+              usableWidth;
           canvas.drawCircle(Offset(x, xAxisY - 4), 4, recWpPaint);
         }
       }
@@ -364,8 +363,9 @@ class SelectionPainter extends CustomPainter {
     double rectX = x - w / 2;
     double rectY = 4;
 
-    // 🔥 CLAMP CORRECTE
-    rectX = rectX.clamp(0, size.width - w);
+    // CLAMP CORRECTE
+    const double padding = 4.0;
+    rectX = rectX.clamp(padding, size.width - w - padding);
 
     final rrect = RRect.fromRectAndRadius(
       Rect.fromLTWH(rectX, rectY, w, h),
