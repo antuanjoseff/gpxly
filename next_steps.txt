@@ -1,0 +1,13 @@
+Estil Senda: Fons gris (0xFFF5F5F7), targetes blanques amb ràdio de 16-20px i ombra suau (black.withAlpha(10)). AppBars de 18px, semibold i blanques.
+Res de 'creativitat' amb el codi: No t'inventis noms de paràmetres, classes ni constructors. Si el codi que et passo navega cap a una altra pantalla o usa un widget que no veus, atura't i demana'm el constructor abans de proposar res.
+Funcionalitat intocable: Manté la lògica de Riverpod, els càlculs i els mètodes privats exactament com estan al fitxer original. Només vull que polis la interfície (UI).
+Waypoints: Selecció per índex (Verd = inici, Vermell = final) comparant automàticament els trackIndex."
+
+
+
+La proposta per a Waypoints (Senda Compact):
+
+Contenidor Únic: En lloc de fer una targeta elevada per a cada punt (que genera massa "soroll" visual i espai perdut), fem servir una sola targeta blanca per a tota la secció.
+Separadors Fins: Dins d'aquesta targeta, els waypoints es separen amb un Divider gairebé invisible (com hem fet avui), guanyant molt espai vertical.
+Sense Ombra Individual: Eliminem l'elevació de cada fila. L'ombra només la té el bloc sencer.
+Visual Density: Apliquem VisualDensity.compact de forma agressiva perquè la llista es pugui llegir ràpidament sense fer un scroll infinit.

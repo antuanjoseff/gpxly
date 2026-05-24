@@ -1,9 +1,9 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:senda/features/elevation_profile/painters/range_highlight_painter.dart'
+import 'package:senda/screens/elevations/painters/range_highlight_painter.dart'
     show RangeAreaPainter;
-import 'package:senda/features/elevation_profile/painters/selection_painter.dart';
-import 'package:senda/features/elevation_profile/utils/chart_utils.dart';
+import 'package:senda/screens/elevations/painters/selection_painter.dart';
+import 'package:senda/screens/elevations/utils/chart_utils.dart';
 import 'package:senda/theme/app_colors.dart';
 import 'package:senda/utils/distance_utils.dart';
 

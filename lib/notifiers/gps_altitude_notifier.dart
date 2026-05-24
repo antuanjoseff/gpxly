@@ -9,8 +9,7 @@ class GpsAltitudeNotifier extends Notifier<double> {
   double _lastBaroAlt = 0.0;
   double _offset = 0.0;
   bool _hasBarometer = false;
-
-  // 🔥 Nuevo: Control para evitar mostrar altitudes negativas al arrancar
+  bool isSimulating = false;
   bool _isCalibrated = false;
 
   DateTime? _lastCalibrationTime;
@@ -40,6 +39,12 @@ class GpsAltitudeNotifier extends Notifier<double> {
   bool get isCalibrated => _isCalibrated;
 
   void update(double cogValue, {required double horizontalAccuracy}) {
+    if (isSimulating) {
+      _isCalibrated = true;
+      state = cogValue;
+      _isCalibrated = true;
+      return;
+    }
     final now = DateTime.now();
 
     // 🔥 LEEMOS EL INTERVALO real que el usuario ha puesto en el Slider
@@ -72,6 +77,7 @@ class GpsAltitudeNotifier extends Notifier<double> {
   }
 
   void _updateState() {
+    if (isSimulating) return;
     if (_hasBarometer) {
       // NOMÉS actualitzem l'estat si ja hem calibrat almenys un cop.
       // Si no, mantenim l'estat en 0.0 (que la UI convertirà en --m)

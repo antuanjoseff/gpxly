@@ -3,40 +3,61 @@ import 'package:senda/models/alarm_progress.dart';
 import 'package:senda/notifiers/helpers/alarm_engine.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+// 1. Primer definim l'enum fora de la classe (o importa'l si ja el tens en un fitxer de models)
+enum AltitudeViewMode { accumulated, absolute }
+
 class AlarmSettings {
   final bool distanceEnabled;
   final double distanceMeters;
 
-  final bool altitudeEnabled;
-  final double altitudeMeters;
+  // Altitud Desnivel (Acumulado)
+  final bool accEnabled;
+  final double accMeters;
+
+  // Altitud Cotes (Absoluto)
+  final bool cotaEnabled;
+  final double cotaMeters;
 
   final bool timeEnabled;
   final int timeSeconds;
 
+  final AltitudeViewMode currentViewMode;
+
   const AlarmSettings({
     this.distanceEnabled = false,
     this.distanceMeters = 100.0,
-    this.altitudeEnabled = false,
-    this.altitudeMeters = 10.0,
+    this.accEnabled = false,
+    this.accMeters = 100.0,
+    this.cotaEnabled = false,
+    this.cotaMeters = 500.0,
     this.timeEnabled = false,
     this.timeSeconds = 60,
+    // Per defecte obrim desnivell
+    this.currentViewMode = AltitudeViewMode.accumulated,
   });
 
   AlarmSettings copyWith({
     bool? distanceEnabled,
     double? distanceMeters,
-    bool? altitudeEnabled,
-    double? altitudeMeters,
+    bool? accEnabled,
+    double? accMeters,
+    bool? cotaEnabled,
+    double? cotaMeters,
     bool? timeEnabled,
     int? timeSeconds,
+    AltitudeViewMode? currentViewMode, // 🔥 Afegit al copyWith
   }) {
     return AlarmSettings(
       distanceEnabled: distanceEnabled ?? this.distanceEnabled,
       distanceMeters: distanceMeters ?? this.distanceMeters,
-      altitudeEnabled: altitudeEnabled ?? this.altitudeEnabled,
-      altitudeMeters: altitudeMeters ?? this.altitudeMeters,
+      accEnabled: accEnabled ?? this.accEnabled,
+      accMeters: accMeters ?? this.accMeters,
+      cotaEnabled: cotaEnabled ?? this.cotaEnabled,
+      cotaMeters: cotaMeters ?? this.cotaMeters,
       timeEnabled: timeEnabled ?? this.timeEnabled,
       timeSeconds: timeSeconds ?? this.timeSeconds,
+      currentViewMode:
+          currentViewMode ?? this.currentViewMode, // 🔥 Afegit aquí
     );
   }
 }
@@ -52,7 +73,6 @@ final alarmEngineProvider = Provider<AlarmEngine>((ref) {
 // ───────────────────────────────────────────────
 // NOTIFIER
 // ───────────────────────────────────────────────
-
 class AlarmSettingsNotifier extends Notifier<AlarmSettings> {
   late final Future<void> initialized;
 
@@ -62,106 +82,99 @@ class AlarmSettingsNotifier extends Notifier<AlarmSettings> {
     return const AlarmSettings();
   }
 
-  // ───────────────────────────────────────────────
-  // HELPERS
-  // ───────────────────────────────────────────────
-
   bool _anyEnabled(AlarmSettings s) {
-    return s.distanceEnabled || s.altitudeEnabled || s.timeEnabled;
+    return s.distanceEnabled || s.accEnabled || s.cotaEnabled || s.timeEnabled;
   }
 
   Future<void> _loadFromPrefs() async {
     final prefs = await SharedPreferences.getInstance();
 
-    final distanceEnabled = prefs.getBool('alarm_distance_enabled') ?? false;
-    final distanceMeters = prefs.getDouble('alarm_distance_meters') ?? 100.0;
-
-    final altitudeEnabled = prefs.getBool('alarm_altitude_enabled') ?? false;
-    final altitudeMeters = prefs.getDouble('alarm_altitude_meters') ?? 10.0;
-
-    final timeEnabled = prefs.getBool('alarm_time_enabled') ?? false;
-    final timeSeconds = prefs.getInt('alarm_time_seconds') ?? 60;
+    // Llegim l'index de l'enum (0 per desnivell, 1 per cotes)
+    final viewIndex = prefs.getInt('alarm_altitude_view_mode') ?? 0;
+    final savedViewMode = AltitudeViewMode.values[viewIndex];
 
     state = AlarmSettings(
-      distanceEnabled: distanceEnabled,
-      distanceMeters: distanceMeters,
-      altitudeEnabled: altitudeEnabled,
-      altitudeMeters: altitudeMeters,
-      timeEnabled: timeEnabled,
-      timeSeconds: timeSeconds,
+      distanceEnabled: false,
+      distanceMeters: prefs.getDouble('alarm_distance_meters') ?? 100.0,
+      accEnabled: false,
+      accMeters: prefs.getDouble('alarm_acc_meters') ?? 100.0,
+      cotaEnabled: false,
+      cotaMeters: prefs.getDouble('alarm_cota_meters') ?? 500.0,
+      timeEnabled: false,
+      timeSeconds: prefs.getInt('alarm_time_seconds') ?? 60,
+      currentViewMode: savedViewMode,
     );
   }
 
+  // 2. Guardem només quan l'usuari canvia el valor (no quan activa/desactiva)
   Future<void> _saveToPrefs() async {
     final prefs = await SharedPreferences.getInstance();
-
-    await prefs.setBool('alarm_distance_enabled', state.distanceEnabled);
     await prefs.setDouble('alarm_distance_meters', state.distanceMeters);
-
-    await prefs.setBool('alarm_altitude_enabled', state.altitudeEnabled);
-    await prefs.setDouble('alarm_altitude_meters', state.altitudeMeters);
-
-    await prefs.setBool('alarm_time_enabled', state.timeEnabled);
+    await prefs.setDouble('alarm_acc_meters', state.accMeters);
+    await prefs.setDouble('alarm_cota_meters', state.cotaMeters);
     await prefs.setInt('alarm_time_seconds', state.timeSeconds);
+    await prefs.setInt('alarm_altitude_view_mode', state.currentViewMode.index);
   }
 
   void _handleEngineTransition(bool before, bool after) {
     final engine = ref.read(alarmEngineProvider);
-
-    if (!before && after) {
-      // 0 → 1 alarmes actives
+    if (!before && after)
       engine.start();
-    } else if (before && !after) {
-      // 1 → 0 alarmes actives
+    else if (before && !after)
       engine.stop();
-    }
   }
 
-  // ───────────────────────────────────────────────
-  // SETTERS AMB START/STOP AUTOMÀTIC
-  // ───────────────────────────────────────────────
+  // --- SETTERS ---
 
   void setDistanceAlarm(bool enabled, double meters) {
     final before = _anyEnabled(state);
-
     state = state.copyWith(distanceEnabled: enabled, distanceMeters: meters);
-
     _saveToPrefs();
-
-    final after = _anyEnabled(state);
-    _handleEngineTransition(before, after);
+    _handleEngineTransition(before, _anyEnabled(state));
   }
 
-  void setAltitudeAlarm(bool enabled, double meters) {
+  void setAccAlarm(bool enabled, double meters) {
     final before = _anyEnabled(state);
+    final wasActive = state.accEnabled; // Guardem si ja estava activa
 
-    state = state.copyWith(altitudeEnabled: enabled, altitudeMeters: meters);
-
+    state = state.copyWith(accEnabled: enabled, accMeters: meters);
     _saveToPrefs();
 
-    final after = _anyEnabled(state);
-    _handleEngineTransition(before, after);
+    // 🔥 Millora: Si el valor ha canviat i l'alarma ja estava activa,
+    // reiniciem el motor per netejar els acumuladors vells
+    if (wasActive && enabled) {
+      ref.read(alarmEngineProvider).stop();
+      ref.read(alarmEngineProvider).start();
+    } else {
+      _handleEngineTransition(before, _anyEnabled(state));
+    }
+  }
+
+  void setCotaAlarm(bool enabled, double meters) {
+    final before = _anyEnabled(state);
+    final wasActive = state.cotaEnabled;
+
+    state = state.copyWith(cotaEnabled: enabled, cotaMeters: meters);
+    _saveToPrefs();
+
+    if (wasActive && enabled) {
+      ref.read(alarmEngineProvider).stop();
+      ref.read(alarmEngineProvider).start();
+    } else {
+      _handleEngineTransition(before, _anyEnabled(state));
+    }
   }
 
   void setTimeAlarm(bool enabled, int seconds) {
     final before = _anyEnabled(state);
-
     state = state.copyWith(timeEnabled: enabled, timeSeconds: seconds);
-
     _saveToPrefs();
-
-    final after = _anyEnabled(state);
-    _handleEngineTransition(before, after);
+    _handleEngineTransition(before, _anyEnabled(state));
   }
 
-  void reset() {
-    final before = _anyEnabled(state);
-
-    state = const AlarmSettings();
-    _saveToPrefs();
-
-    final after = _anyEnabled(state);
-    _handleEngineTransition(before, after);
+  void setAltitudeViewMode(AltitudeViewMode mode) {
+    state = state.copyWith(currentViewMode: mode);
+    _saveToPrefs(); // Guardem la preferència visual
   }
 }
 

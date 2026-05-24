@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // Per al feedback hàptic
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/l10n/app_localizations.dart';
 import 'package:senda/notifiers/alarm_settings_notifier.dart';
@@ -14,7 +14,6 @@ class AlarmSettingsTab extends ConsumerStatefulWidget {
 }
 
 class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
-  // Helpers de format (mantenim els teus)
   String _formatDistance(double m) {
     if (m < 1000) return "${m.toInt()} m";
     return "${(m / 1000).toStringAsFixed(1)} km";
@@ -33,7 +32,6 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context)!;
     final settings = ref.watch(alarmSettingsProvider);
-    // Recuperem el progrés en temps real
     final progress = ref.watch(alarmProgressProvider).value;
 
     return Scaffold(
@@ -53,6 +51,7 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          // DISTÀNCIA
           _buildCompactAlarmCard(
             isActive: settings.distanceEnabled,
             progressValue: (progress != null && settings.distanceEnabled)
@@ -64,7 +63,7 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
             value: settings.distanceMeters,
             min: 100,
             max: 10000,
-            divisions: 99,
+            step: 100,
             onChanged: (val) => ref
                 .read(alarmSettingsProvider.notifier)
                 .setDistanceAlarm(settings.distanceEnabled, val),
@@ -80,33 +79,12 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
                 ref.read(alarmEngineProvider).sounds.playDistanceAlarm(),
           ),
           const SizedBox(height: 16),
-          _buildCompactAlarmCard(
-            isActive: settings.altitudeEnabled,
-            progressValue: (progress != null && settings.altitudeEnabled)
-                ? progress.altitude
-                : 0.0,
-            icon: Icons.height,
-            title: t.alarmsAltitudeTitle,
-            valueText: "${settings.altitudeMeters.toInt()} m",
-            value: settings.altitudeMeters,
-            min: 10,
-            max: 500,
-            divisions: 49,
-            onChanged: (val) => ref
-                .read(alarmSettingsProvider.notifier)
-                .setAltitudeAlarm(settings.altitudeEnabled, val),
-            onToggle: () => _handleToggle(
-              () => ref
-                  .read(alarmSettingsProvider.notifier)
-                  .setAltitudeAlarm(
-                    !settings.altitudeEnabled,
-                    settings.altitudeMeters,
-                  ),
-            ),
-            onPlaySound: () =>
-                ref.read(alarmEngineProvider).sounds.playAltitudeAlarm(),
-          ),
+
+          // ALTITUD INTEGRADA (Adaptada al teu Notifier actual)
+          _buildAltitudeIntegratedCard(settings, progress, t),
           const SizedBox(height: 16),
+
+          // TEMPS
           _buildCompactAlarmCard(
             isActive: settings.timeEnabled,
             progressValue: (progress != null && settings.timeEnabled)
@@ -118,7 +96,7 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
             value: settings.timeSeconds.toDouble(),
             min: 60,
             max: 3600,
-            divisions: 59,
+            step: 60,
             onChanged: (val) => ref
                 .read(alarmSettingsProvider.notifier)
                 .setTimeAlarm(settings.timeEnabled, val.round()),
@@ -135,11 +113,246 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
     );
   }
 
-  Future<void> _handleToggle(VoidCallback action) async {
-    if (await PermissionsService.ensurePermissions(context)) {
-      HapticFeedback.mediumImpact(); // Afegim feedback físic
-      action();
-    }
+  Widget _buildAltitudeIntegratedCard(settings, progress, t) {
+    final isAccMode = settings.currentViewMode == AltitudeViewMode.accumulated;
+
+    // Ara mirem els booleans individuals que hem creat al model
+    final isCurrentModeActive = isAccMode
+        ? settings.accEnabled
+        : settings.cotaEnabled;
+
+    // Fem servir els camps nous d'AlarmProgress (accProgress i cotaProgress)
+    final progressValue = isAccMode
+        ? (progress?.accProgress ?? 0.0)
+        : (progress?.cotaProgress ?? 0.0);
+    final valueText = isAccMode
+        ? "+ ${settings.accMeters.toInt()} m"
+        : "Cota ${settings.cotaMeters.toInt()} m";
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: (settings.accEnabled || settings.cotaEnabled)
+              ? AppColors.primary.withAlpha(80)
+              : Colors.transparent,
+          width: 2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(10),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              _buildProgressIcon(
+                isCurrentModeActive,
+                progressValue,
+                isAccMode ? Icons.trending_up : Icons.layers,
+                () {
+                  // Pots triar quin so provar segons el mode
+                  ref.read(alarmEngineProvider).sounds.playAltitudeAlarm();
+                },
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                "Altitud",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const Spacer(),
+              Switch(
+                value: isCurrentModeActive,
+                onChanged: (_) => _handleToggle(() {
+                  // CRIDA ALS MÈTODES REALS DEL NOTIFIER
+                  if (isAccMode) {
+                    ref
+                        .read(alarmSettingsProvider.notifier)
+                        .setAccAlarm(!settings.accEnabled, settings.accMeters);
+                  } else {
+                    ref
+                        .read(alarmSettingsProvider.notifier)
+                        .setCotaAlarm(
+                          !settings.cotaEnabled,
+                          settings.cotaMeters,
+                        );
+                  }
+                }),
+                activeTrackColor: AppColors.primary.withAlpha(
+                  150,
+                ), // Color del fons
+                thumbColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                  if (states.contains(WidgetState.selected))
+                    return AppColors.primary; // Botó blau fort
+                  return null;
+                }),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SegmentedButton<AltitudeViewMode>(
+            segments: [
+              ButtonSegment(
+                value: AltitudeViewMode.accumulated,
+                label: const Text("Desnivell"),
+                icon: settings.accEnabled
+                    ? const Icon(Icons.check_circle, size: 14)
+                    : const Icon(Icons.show_chart, size: 16),
+              ),
+              ButtonSegment(
+                value: AltitudeViewMode.absolute,
+                label: const Text("Cotes"),
+                icon: settings.cotaEnabled
+                    ? const Icon(Icons.check_circle, size: 14)
+                    : const Icon(Icons.straighten, size: 16),
+              ),
+            ],
+            // LLEGIM DEL NOTIFIER
+            selected: {settings.currentViewMode},
+            // ESCRIVIM AL NOTIFIER
+            onSelectionChanged: (newSelection) {
+              HapticFeedback.selectionClick();
+              ref
+                  .read(alarmSettingsProvider.notifier)
+                  .setAltitudeViewMode(newSelection.first);
+            },
+            style: SegmentedButton.styleFrom(
+              visualDensity: VisualDensity.compact,
+              selectedBackgroundColor: AppColors.primary,
+              selectedForegroundColor: Colors.white,
+            ),
+          ),
+
+          const SizedBox(height: 16),
+          _buildSliderSection(
+            isActive: isCurrentModeActive,
+            valueText: valueText,
+            value: isAccMode ? settings.accMeters : settings.cotaMeters,
+
+            // 🏔️ DESNIVELL: Min 50, Max 1000 | 📍 COTA: Min 10, Max 5000
+            min: isAccMode ? 50.0 : 10.0,
+            max: isAccMode ? 1000.0 : 5000.0,
+
+            // 🏔️ DESNIVELL: Steps de 50 | 📍 COTA: Steps de 10
+            step: isAccMode ? 50.0 : 10.0,
+
+            onChanged: (val) {
+              if (isAccMode) {
+                ref
+                    .read(alarmSettingsProvider.notifier)
+                    .setAccAlarm(settings.accEnabled, val);
+              } else {
+                ref
+                    .read(alarmSettingsProvider.notifier)
+                    .setCotaAlarm(settings.cotaEnabled, val);
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProgressIcon(
+    bool isActive,
+    double progress,
+    IconData icon,
+    VoidCallback onTap,
+  ) {
+    final color = isActive ? AppColors.primary : Colors.grey;
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        SizedBox(
+          width: 40,
+          height: 40,
+          child: CircularProgressIndicator(
+            value: progress.clamp(0.0, 1.0),
+            strokeWidth: 3,
+            backgroundColor: Colors.grey.withAlpha(30),
+            color: color,
+          ),
+        ),
+        IconButton(icon: Icon(icon, size: 20), color: color, onPressed: onTap),
+      ],
+    );
+  }
+
+  Widget _buildSliderSection({
+    required bool isActive,
+    required String valueText,
+    required double value,
+    required double min,
+    required double max,
+    required ValueChanged<double> onChanged,
+    required double step,
+  }) {
+    // Definim el color dels botons segons si l'alarma està activa
+    final buttonColor = isActive ? AppColors.primary : Colors.grey.shade400;
+
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          decoration: BoxDecoration(
+            color: isActive ? AppColors.primary : Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(
+            valueText,
+            style: TextStyle(
+              color: isActive ? Colors.white : Colors.grey.shade600,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        Row(
+          children: [
+            IconButton(
+              icon: const Icon(Icons.remove_circle_outline),
+              color: buttonColor, // Color dinàmic
+              onPressed: isActive && value > min
+                  ? () {
+                      HapticFeedback.lightImpact();
+                      // Calculem el nou valor sense baixar del mínim
+                      final newVal = (value - 10).clamp(min, max);
+                      onChanged(newVal);
+                    }
+                  : null,
+            ),
+            Expanded(
+              child: Slider(
+                value: value.clamp(min, max),
+                min: min,
+                max: max,
+                divisions: ((max - min) / step).round(),
+                activeColor: AppColors.primary,
+                inactiveColor: AppColors.primary.withAlpha(30),
+                onChanged: isActive ? onChanged : null,
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.add_circle_outline),
+              color: buttonColor, // Color dinàmic
+              onPressed: isActive && value < max
+                  ? () {
+                      HapticFeedback.lightImpact();
+                      // Calculem el nou valor sense passar del màxim
+                      final newVal = (value + 10).clamp(min, max);
+                      onChanged(newVal);
+                    }
+                  : null,
+            ),
+          ],
+        ),
+      ],
+    );
   }
 
   Widget _buildCompactAlarmCard({
@@ -151,13 +364,11 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
     required double value,
     required double min,
     required double max,
-    required int divisions,
     required ValueChanged<double> onChanged,
     required VoidCallback onToggle,
     required VoidCallback onPlaySound,
+    required double step,
   }) {
-    final currentColor = isActive ? AppColors.primary : Colors.grey;
-
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -181,30 +392,7 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
         children: [
           Row(
             children: [
-              // Recuperem l'indicador circular de progrés amb el botó de so
-              Stack(
-                alignment: Alignment.center,
-                children: [
-                  SizedBox(
-                    width: 40,
-                    height: 40,
-                    child: CircularProgressIndicator(
-                      value: progressValue.clamp(0.0, 1.0),
-                      strokeWidth: 3,
-                      backgroundColor: Colors.grey.withAlpha(30),
-                      color: currentColor,
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(icon, size: 20),
-                    color: currentColor,
-                    onPressed: () {
-                      HapticFeedback.lightImpact();
-                      onPlaySound();
-                    },
-                  ),
-                ],
-              ),
+              _buildProgressIcon(isActive, progressValue, icon, onPlaySound),
               const SizedBox(width: 12),
               Text(
                 title,
@@ -218,88 +406,36 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
               Switch(
                 value: isActive,
                 onChanged: (_) => onToggle(),
-                activeColor: AppColors.primary,
+                activeTrackColor: AppColors.primary.withAlpha(
+                  150,
+                ), // Color del fons
+                thumbColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                  if (states.contains(WidgetState.selected))
+                    return AppColors.primary; // Botó blau fort
+                  return null;
+                }),
               ),
             ],
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              decoration: BoxDecoration(
-                color: isActive ? AppColors.primary : Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                valueText,
-                style: TextStyle(
-                  color: isActive ? Colors.white : Colors.grey.shade700,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
+          const SizedBox(height: 8),
+          _buildSliderSection(
+            isActive: isActive,
+            valueText: valueText,
+            value: value,
+            min: min,
+            max: max,
+            step: step,
+            onChanged: onChanged,
           ),
-          _buildSliderRow(value, min, max, divisions, onChanged, isActive),
         ],
       ),
     );
   }
 
-  Widget _buildSliderRow(
-    double value,
-    double min,
-    double max,
-    int divisions,
-    ValueChanged<double> onChanged,
-    bool isActive,
-  ) {
-    final step = (max - min) / divisions;
-    return Row(
-      children: [
-        IconButton(
-          onPressed: value > min
-              ? () {
-                  HapticFeedback.selectionClick();
-                  onChanged((value - step).clamp(min, max));
-                }
-              : null,
-          icon: const Icon(Icons.remove_circle_outline),
-          color: isActive ? AppColors.primary : Colors.grey,
-        ),
-        Expanded(
-          child: SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              activeTrackColor: isActive
-                  ? AppColors.primary
-                  : Colors.grey.shade300,
-              thumbColor: isActive ? AppColors.primary : Colors.grey.shade400,
-              trackHeight: 4,
-            ),
-            child: Slider(
-              value: value.clamp(min, max),
-              min: min,
-              max: max,
-              divisions: divisions,
-              onChanged: (val) {
-                if ((val - value).abs() > step / 2)
-                  HapticFeedback.selectionClick();
-                onChanged(val);
-              },
-            ),
-          ),
-        ),
-        IconButton(
-          onPressed: value < max
-              ? () {
-                  HapticFeedback.selectionClick();
-                  onChanged((value + step).clamp(min, max));
-                }
-              : null,
-          icon: const Icon(Icons.add_circle_outline),
-          color: isActive ? AppColors.primary : Colors.grey,
-        ),
-      ],
-    );
+  Future<void> _handleToggle(VoidCallback action) async {
+    if (await PermissionsService.ensurePermissions(context)) {
+      HapticFeedback.mediumImpact();
+      action();
+    }
   }
 }

@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:senda/features/elevation_profile/widgets/elevation_chart_widget.dart';
-import 'package:senda/features/elevation_profile/widgets/header_legend_widget.dart';
-import 'package:senda/features/elevation_profile/widgets/waypoints_list_widget.dart';
 import 'package:senda/l10n/app_localizations.dart';
 import 'package:senda/models/waypoint.dart';
 import 'package:senda/notifiers/imported_track_notifier.dart';
@@ -11,6 +8,9 @@ import 'package:senda/notifiers/track_notifier.dart';
 import 'package:senda/notifiers/track_settings_notifier.dart';
 import 'package:senda/notifiers/waypoints_imported_notifier.dart';
 import 'package:senda/notifiers/waypoints_recorded_notifier.dart';
+import 'package:senda/screens/elevations/widgets/elevation_chart_widget.dart';
+import 'package:senda/screens/elevations/widgets/header_legend_widget.dart';
+import 'package:senda/screens/elevations/widgets/waypoints_list_widget.dart';
 import 'package:senda/theme/app_colors.dart';
 import 'package:senda/utils/distance_utils.dart';
 

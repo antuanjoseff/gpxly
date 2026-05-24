@@ -24,7 +24,11 @@ class SettingsScreen extends ConsumerWidget {
     final followingTrack = ref.watch(trackFollowNotifierProvider);
 
     final isAlarmActive =
-        alarms.distanceEnabled || alarms.altitudeEnabled || alarms.timeEnabled;
+        alarms.distanceEnabled ||
+        alarms.accEnabled ||
+        alarms.cotaEnabled ||
+        alarms.timeEnabled;
+
     final isTrackActive = followingTrack.isFollowing;
     final gpsLocked = isAlarmActive || isTrackActive;
 

@@ -13,6 +13,50 @@ import 'package:senda/theme/app_colors.dart';
 class TrackStatsScreen extends ConsumerWidget {
   const TrackStatsScreen({super.key});
 
+  // --- Mètodes de suport (Originals mantinguts) ---
+  String _timeFor(Track real, Duration liveDuration) {
+    if (real.coordinates.isEmpty) return "00:00:00";
+    return liveDuration.toString().split('.').first.padLeft(8, "0");
+  }
+
+  bool _trackHasElevation(Track? track) {
+    return track != null && track.altitudes.isNotEmpty;
+  }
+
+  String _formatElevation({
+    required double value,
+    required bool hasElevationData,
+  }) {
+    return hasElevationData ? "${value.toStringAsFixed(0)} m" : "---";
+  }
+
+  void _navigateToDetail(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required String valueReal,
+    required StatChartType chartType,
+    Track? real,
+    Track? imported,
+    String? valueImported,
+  }) {
+    Navigator.push(
+      context,
+      CupertinoPageRoute(
+        // <--- Això activa el gest de swipe lateral
+        builder: (context) => StatDetailScreen(
+          icon: icon,
+          label: label,
+          valueReal: valueReal,
+          valueImported: valueImported,
+          chartType: chartType,
+          realTrack: real,
+          importedTrack: imported,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = AppLocalizations.of(context)!;
@@ -22,7 +66,6 @@ class TrackStatsScreen extends ConsumerWidget {
 
     final hasImported = imported != null && imported.coordinates.isNotEmpty;
 
-    // Valors calculats per passar a la navegació
     final currentRealTime = _timeFor(real, liveDuration);
     final currentRealElev = "${real.maxElevation.toStringAsFixed(0)} m";
 
@@ -30,25 +73,32 @@ class TrackStatsScreen extends ConsumerWidget {
       backgroundColor: const Color(0xFFF5F5F7),
       appBar: AppBar(
         backgroundColor: AppColors.primary,
-        title: Text(t.trackStatsTitle),
+        title: Text(
+          t.trackStatsTitle,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           _buildHeader(t, hasImported),
-
           const SizedBox(height: 8),
 
           // --- BLOC 1: RENDIMENT ---
           _StatGroupCard(
             title: t.statTime.toUpperCase(),
+            icon: Icons.speed_rounded,
             onTap: () => _navigateToDetail(
               context,
               icon: Icons.speed_rounded,
               label: "Rendiment",
-              valueReal:
-                  currentRealTime, // Passem el temps com a valor principal
+              valueReal: currentRealTime,
               chartType: StatChartType.speed,
               real: real,
               imported: imported,
@@ -88,6 +138,7 @@ class TrackStatsScreen extends ConsumerWidget {
           // --- BLOC 2: ALTIMETRIA ---
           _StatGroupCard(
             title: t.statMaxElevation.toUpperCase(),
+            icon: Icons.terrain_rounded,
             onTap: () => _navigateToDetail(
               context,
               icon: Icons.terrain_rounded,
@@ -159,168 +210,116 @@ class TrackStatsScreen extends ConsumerWidget {
       ),
     );
   }
-  // (Manté els mètodes privats _buildHeader, _timeFor, _navigateToDetail igual)
 
-  // --- CAPÇALERA ---
-  // --- CAPÇALERA ALINEADA ---
   Widget _buildHeader(AppLocalizations t, bool hasImported) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
-          // Mateix espai que l'etiqueta de la fila (flex: 3)
           const Expanded(flex: 3, child: SizedBox.shrink()),
-
-          // Columna Track Real (flex: 2)
-          Expanded(
-            flex: 2,
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              decoration: BoxDecoration(
-                color: AppColors.redAlert.withAlpha(30),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                t.recordingTrack.toUpperCase(),
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.redAlert,
-                  letterSpacing: 0.5,
-                ),
-              ),
-            ),
-          ),
-
-          const SizedBox(width: 8), // Petit espai entre columnes
-          // Columna Track Importat (flex: 2)
+          _HeaderLabel(label: t.recordingTrack, color: AppColors.redAlert),
+          const SizedBox(width: 8),
           if (hasImported)
-            Expanded(
-              flex: 2,
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.trackGreen.withAlpha(30),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  t.importedTrack.toUpperCase(),
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.trackGreen,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ),
-            )
+            _HeaderLabel(label: t.importedTrack, color: AppColors.trackGreen)
           else
             const Expanded(flex: 2, child: SizedBox.shrink()),
         ],
       ),
     );
   }
+}
 
-  // --- NEW SCREEN ---
-  // --- NAVEGACIÓ AMB EFECTE SWAP ---
-  void _navigateToDetail(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required String valueReal,
-    required StatChartType chartType,
-    Track? real,
-    Track? imported,
-    String? valueImported,
-  }) {
-    Navigator.push(
-      context,
-      CupertinoPageRoute(
-        // <--- Això activa el gest de swipe lateral
-        builder: (context) => StatDetailScreen(
-          icon: icon,
-          label: label,
-          valueReal: valueReal,
-          valueImported: valueImported,
-          chartType: chartType,
-          realTrack: real,
-          importedTrack: imported,
+// --- Components de suport per mantenir el codi net ---
+
+class _HeaderLabel extends StatelessWidget {
+  final String label;
+  final Color color;
+  const _HeaderLabel({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      flex: 2,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        decoration: BoxDecoration(
+          color: color.withAlpha(30),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Text(
+          label.toUpperCase(),
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w800,
+            color: color,
+            letterSpacing: 0.5,
+          ),
         ),
       ),
     );
-  }
-
-  // --- TEMPS ---
-  String _timeFor(Track t, Duration live) {
-    switch (t.recordingState) {
-      case RecordingState.recording:
-        return _formatDuration(live);
-      case RecordingState.paused:
-        return t.formattedDuration;
-      default:
-        return "---";
-    }
-  }
-
-  String _formatDuration(Duration d) {
-    final h = d.inHours.toString().padLeft(2, '0');
-    final m = (d.inMinutes % 60).toString().padLeft(2, '0');
-    final s = (d.inSeconds % 60).toString().padLeft(2, '0');
-    return "$h:$m:$s";
-  }
-
-  bool _trackHasElevation(Track t) {
-    return t.altitudes.isNotEmpty;
-  }
-
-  String _formatElevation({required value, required bool hasElevationData}) {
-    if (!hasElevationData) return "---";
-    if (value <= -9000 || value >= 9000) return "---";
-    return "${value.toStringAsFixed(0)} m";
   }
 }
 
 class _StatGroupCard extends StatelessWidget {
   final String title;
-  final List<_StatRow> rows;
+  final List<Widget> rows;
   final VoidCallback onTap;
+  final IconData icon;
 
   const _StatGroupCard({
     required this.title,
     required this.rows,
     required this.onTap,
+    required this.icon,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: const [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 4,
-              offset: Offset(0, 2),
-            ),
-          ],
-        ),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(10),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Petit indicador que es pot clicar (opcional)
-            const Align(
-              alignment: Alignment.topRight,
-              child: Padding(
-                padding: EdgeInsets.all(8),
-                child: Icon(Icons.show_chart, size: 16, color: Colors.grey),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Row(
+                children: [
+                  Icon(icon, size: 18, color: AppColors.primary),
+                  const SizedBox(width: 8),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const Spacer(),
+                  const Icon(
+                    Icons.chevron_right,
+                    size: 18,
+                    color: Colors.black12,
+                  ),
+                ],
               ),
             ),
             ...rows,
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
           ],
         ),
       ),
@@ -342,44 +341,35 @@ class _StatRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: Row(
         children: [
-          // Etiqueta (flex: 3)
           Expanded(
             flex: 3,
             child: Text(
               label,
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+              style: const TextStyle(fontSize: 14, color: Colors.black54),
             ),
           ),
-
-          // Valor Real (flex: 2) - Color RedAlert per sincronitzar amb header
           Expanded(
             flex: 2,
             child: Text(
               valueReal,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                color: AppColors.redAlert, // Sincronitzat amb el header
                 fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
               ),
             ),
           ),
-
-          // Valor Importat (flex: 2)
           if (valueImported != null)
             Expanded(
               flex: 2,
               child: Text(
                 valueImported!,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.trackGreen,
-                  fontSize: 15,
-                ),
+                style: const TextStyle(fontSize: 14, color: Colors.black38),
               ),
             )
           else

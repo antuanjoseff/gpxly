@@ -11,6 +11,7 @@ import 'package:senda/notifiers/gps_accuracy_notifier.dart';
 import 'package:senda/notifiers/gps_altitude_notifier.dart';
 import 'package:senda/notifiers/gps_bearing_notifier.dart';
 import 'package:senda/notifiers/gps_settings_notifier.dart';
+import 'package:senda/notifiers/imported_track_notifier.dart';
 import 'package:senda/notifiers/timer_notifier.dart';
 import 'package:senda/notifiers/track_follow_notifier.dart';
 import 'package:senda/services/cog_service.dart';
@@ -23,10 +24,17 @@ class TrackNotifier extends Notifier<Track> {
   Track? _initialState;
   StreamSubscription? _gpsSub;
   bool gpsActive = false;
+  bool _isSimulationRunning = false;
+  bool _isSimulationPaused = false;
+  bool _stopSimulation = false;
+
   final _positionStreamController = StreamController<LatLng>.broadcast();
   Stream<LatLng> get positionStream => _positionStreamController.stream;
 
   final _cogService = CogService();
+
+  bool get isSimulationPaused => _isSimulationPaused;
+  bool get isSimulationRunning => _isSimulationRunning;
 
   @override
   Track build() {
@@ -56,6 +64,67 @@ class TrackNotifier extends Notifier<Track> {
       minElevation: 9999.0,
       currentPosition: null,
     );
+  }
+
+  void toggleSimulationPause() {
+    _isSimulationPaused = !_isSimulationPaused;
+  }
+
+  void simulateImportedTrack() async {
+    final importedTrack = ref.read(importedTrackProvider);
+    if (importedTrack == null || importedTrack.coordinates.isEmpty) return;
+    if (_isSimulationRunning) return; // Evitem llançar-la dues vegades
+
+    _isSimulationRunning = true;
+    _isSimulationPaused = false;
+
+    // 1. 🔥 PAUSEM el listener real del GPS
+    final wasGpsActive = gpsActive;
+    _gpsSub?.pause();
+
+    ref.read(gpsAltitudeProvider.notifier).isSimulating = true;
+    gpsActive = true;
+
+    for (int i = 0; i < importedTrack.coordinates.length; i++) {
+      // Si prems el botó de STOP (gpsActive = false), sortim
+      if (!gpsActive) break;
+
+      // ⏸️ BUCLE D'ESPERA SI ESTÀ EN PAUSA
+      while (_isSimulationPaused && gpsActive) {
+        await Future.delayed(const Duration(milliseconds: 500));
+      }
+
+      final coords = importedTrack.coordinates[i];
+      final alt = importedTrack.altitudes[i];
+
+      final mockData = {
+        "lat": coords[1],
+        "lon": coords[0],
+        "altitude": alt,
+        "accuracy": 5.0,
+        "speed": 1.5,
+        "heading": 0.0,
+        "timestamp": DateTime.now().millisecondsSinceEpoch,
+        "vAccuracy": 2.0,
+        "satellites": 10,
+      };
+
+      // 2. Inyectem la dada
+      onNativeGpsPoint(mockData);
+
+      await Future.delayed(const Duration(milliseconds: 100));
+    }
+
+    // 3. NETEJA
+    _isSimulationRunning = false;
+    _isSimulationPaused = false;
+    ref.read(gpsAltitudeProvider.notifier).isSimulating = false;
+
+    if (wasGpsActive) {
+      _gpsSub?.resume();
+    } else {
+      gpsActive = false;
+    }
   }
 
   void startGpsListener() {
@@ -94,9 +163,7 @@ class TrackNotifier extends Notifier<Track> {
     final vAccuracy = data["vAccuracy"] as double;
     final satellites = data["satellites"] as int? ?? 0;
 
-    // --- MEJORA DE FLUIDEZ ---
-    // Actualizamos la posición en el mapa ANTES del await.
-    // Así la flecha se mueve al instante sin esperar a la descarga.
+    // 1. Actualitzacions visuals immediates (Fletxa i Mapa)
     ref.read(gpsBearingProvider.notifier).update(heading);
     ref.read(gpsAccuracyProvider.notifier).update(accuracy);
 
@@ -104,7 +171,6 @@ class TrackNotifier extends Notifier<Track> {
       currentPosition: LatLng(lat, lon),
       currentHeading: heading,
     );
-    _positionStreamController.add(LatLng(lat, lon));
 
     final gps = ref.read(gpsSettingsProvider);
     if (gps.isFollowing) {
@@ -113,26 +179,44 @@ class TrackNotifier extends Notifier<Track> {
           .updateUserPosition(LatLng(lat, lon), userHeading: heading);
     }
 
-    // --- CORRECCIÓN ASÍNCRONA ---
-    // Desestructuramos la tupla (altura, booleano) correctamente
-    final (correctedAlt, isFixed) = await _cogService.getCorrectedElevation(
-      lat,
-      lon,
-      altitude,
-    );
+    // --- 🔥 BYPASS DE SIMULACIÓ ---
+    double finalAlt;
+    bool finalIsFixed;
 
-    // Ahora sí pasamos el double (correctedAlt) al provider
+    // Comprovem si estem en mode simulació
+    final isSimulating = ref.read(gpsAltitudeProvider.notifier).isSimulating;
+
+    if (isSimulating) {
+      // En simulació, donem l'altitud del track per bona directament (Síncron)
+      finalAlt = altitude;
+      finalIsFixed = true;
+    } else {
+      // En mode real, cridem la correcció asíncrona (DEM/Baròmetre)
+      final (correctedAlt, isFixed) = await _cogService.getCorrectedElevation(
+        lat,
+        lon,
+        altitude,
+      );
+      finalAlt = correctedAlt;
+      finalIsFixed = isFixed;
+    }
+
+    // 2. Actualitzem el provider d'altitud (Ja amb la dada bona)
     ref
         .read(gpsAltitudeProvider.notifier)
-        .update(correctedAlt, horizontalAccuracy: accuracy);
+        .update(finalAlt, horizontalAccuracy: accuracy);
 
+    // 3. Notifiquem l'AlarmEngine (Ara ja té l'altitud actualitzada al provider)
+    _positionStreamController.add(LatLng(lat, lon));
+
+    // 4. Gravació del track (si escau)
     if (state.recordingState == RecordingState.recording) {
       addPointFromRaw(
         lat: lat,
         lon: lon,
         accuracy: accuracy,
-        altitude: correctedAlt, // Pasamos el double corregido
-        isHgtFixed: isFixed, // Pasamos el booleano
+        altitude: finalAlt,
+        isHgtFixed: finalIsFixed,
         speed: speed,
         heading: heading,
         timestamp: timestamp,
@@ -387,8 +471,12 @@ class TrackNotifier extends Notifier<Track> {
     final alarms = ref.read(alarmSettingsProvider);
     final gps = ref.read(gpsSettingsProvider);
 
+    // Actualitzem la comprovació amb els nous camps
     final anyAlarmEnabled =
-        alarms.distanceEnabled || alarms.altitudeEnabled || alarms.timeEnabled;
+        alarms.distanceEnabled ||
+        alarms.accEnabled ||
+        alarms.cotaEnabled ||
+        alarms.timeEnabled;
 
     final isRecording = state.recordingState == RecordingState.recording;
 

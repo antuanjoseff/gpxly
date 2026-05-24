@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
-import 'package:senda/features/elevation_profile/elevation_profile_screen.dart';
 import 'package:senda/models/track.dart';
 import 'package:senda/models/waypoint.dart';
 import 'package:senda/notifiers/alarm_settings_notifier.dart';
@@ -21,6 +20,7 @@ import 'package:senda/notifiers/track_settings_notifier.dart';
 import 'package:senda/notifiers/waypoints_imported_notifier.dart';
 import 'package:senda/notifiers/waypoints_recorded_notifier.dart';
 import 'package:senda/providers/barometer_provider.dart';
+import 'package:senda/screens/elevations/elevation_profile_screen.dart';
 import 'package:senda/screens/settings/settings_screen.dart';
 import 'package:senda/screens/settings/tabs/alarm_settings_tab.dart';
 import 'package:senda/screens/stats/stats_screen.dart';
@@ -410,6 +410,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final pressure = ref.watch(barometerProvider).value;
     final altBaro = ref.watch(baroAltitudeProvider);
 
+    final isRunning = ref.watch(trackProvider.notifier).isSimulationRunning;
+    final isPaused = ref.watch(trackProvider.notifier).isSimulationPaused;
+
     ref.listen(trackProvider, (prev, next) async {
       if (!styleInitialized || mapController == null) return;
 
@@ -640,8 +643,12 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
     // 🔔 ICONA D’ALARMES ACTIVES
     final alarms = ref.watch(alarmSettingsProvider);
+
     final anyAlarmActive =
-        alarms.distanceEnabled || alarms.altitudeEnabled || alarms.timeEnabled;
+        alarms.distanceEnabled ||
+        alarms.accEnabled ||
+        alarms.cotaEnabled ||
+        alarms.timeEnabled;
 
     return PopScope(
       canPop: false,
@@ -680,6 +687,42 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 ),
 
                 actions: [
+                  // Dins de l'actions de l'AppBar:
+                  if (ref.watch(importedTrackProvider) != null)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: GestureDetector(
+                        onTap: () {
+                          final notifier = ref.read(trackProvider.notifier);
+                          if (!isRunning) {
+                            notifier.simulateImportedTrack();
+                          } else {
+                            notifier.toggleSimulationPause();
+                          }
+                        },
+                        child: Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: isRunning
+                                ? (isPaused
+                                      ? Colors.blue
+                                      : Colors
+                                            .orange) // Blau si pausa, taronja si corre
+                                : Colors.amber,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            !isRunning
+                                ? Icons.play_arrow
+                                : (isPaused ? Icons.play_arrow : Icons.pause),
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                    ),
+
                   if (pressure != null)
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 6),
@@ -689,14 +732,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
                       ),
                     ),
 
-                  if (altBaro != null)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 6),
-                      child: Text(
-                        "${altBaro.toStringAsFixed(0)} m",
-                        style: const TextStyle(color: Colors.white),
-                      ),
-                    ),
                   if (anyAlarmActive)
                     Padding(
                       padding: const EdgeInsets.only(right: 8),
