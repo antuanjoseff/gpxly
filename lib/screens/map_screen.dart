@@ -198,7 +198,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
           RecordingHandler.start(context, ref);
         } else if (permState.shouldResumeFollowing) {
           notifier.consumeFollowSignal();
-          _onFollowTrack(); // Esta es la función que ya tienes definida más arriba
+          _onFollowTrack();
         }
       }
     }
@@ -398,11 +398,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
       trackProvider.select((t) => t.recordingState),
     );
 
-    // Si necessites saber si hi ha coordenades (per mostrar botons, etc.)
-    final hasCoordinates = ref.watch(
-      trackProvider.select((t) => t.coordinates.isNotEmpty),
-    );
-
     // 2. La resta de providers es mantenen igual perquè no canvien cada segon
     final trackSettings = ref.watch(trackSettingsProvider);
     final importedTrack = ref.watch(importedTrackProvider);
@@ -411,8 +406,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final trackFollowState = ref.watch(trackFollowNotifierProvider);
 
     final pressure = ref.watch(barometerProvider).value;
-    final altBaro = ref.watch(baroAltitudeProvider);
-
     final isRunning = ref.watch(trackProvider.notifier).isSimulationRunning;
     final isPaused = ref.watch(trackProvider.notifier).isSimulationPaused;
 
