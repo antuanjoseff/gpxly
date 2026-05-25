@@ -88,9 +88,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     NativeBarometerChannel.start();
-    // 1. Carreguem la posició guardada al disc immediatament.
-    // Això fa que _initialCameraTarget deixi de ser null i el mapa s'infli ja mateix.
+    // Carreguem la posició guardada al disc immediatament.
     _loadLastPosition();
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -181,22 +181,25 @@ class _MapScreenState extends ConsumerState<MapScreen>
   }
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    // 🔥 Quan l'usuari torna a l'app (resumed)
+  void didChangeAppLifecycleState(AppLifecycleState state) async {
+    // Aquest mètode es dispara sol quan l'usuari torna de "Ajustos"
     if (state == AppLifecycleState.resumed) {
-      // 1. Forcem que els permisos i el GPS s'actualitzin al moment
-      ref.read(permissionsProvider.notifier).checkPermissions();
-      ref.read(permissionsProvider.notifier).checkServiceStatus();
+      // 1. Actualitzem l'estat dels permisos al provider
+      final notifier = ref.read(permissionsProvider.notifier);
+      await notifier.checkServiceStatus();
+      await notifier.checkPermissions();
 
-      // 2. Mirem si veníem d'intentar gravar (pendent d'activar GPS)
+      // 2. Mirem si teníem l'acció pendent
       final permState = ref.read(permissionsProvider);
 
-      if (permState.serviceEnabled && permState.shouldResumeRecording) {
-        // Netegem el senyal perquè no ho torni a fer sol
-        ref.read(permissionsProvider.notifier).consumeSignal();
-
-        // EXECUTEM la gravació: aquí és on sortirà el diàleg de recuperar!
-        RecordingHandler.start(context, ref);
+      if (permState.serviceEnabled) {
+        if (permState.shouldResumeRecording) {
+          notifier.consumeSignal();
+          RecordingHandler.start(context, ref);
+        } else if (permState.shouldResumeFollowing) {
+          notifier.consumeFollowSignal();
+          _onFollowTrack(); // Esta es la función que ya tienes definida más arriba
+        }
       }
     }
   }

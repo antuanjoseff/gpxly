@@ -23,28 +23,34 @@ class PermissionsNotifier extends Notifier<GpsPermissionState> {
     );
   }
 
+  void setPendingAction(bool pending) {
+    state = state.copyWith(shouldResumeRecording: pending);
+  }
+
+  void setPendingFollowing(bool pending) {
+    state = state.copyWith(shouldResumeFollowing: pending);
+  }
+
   Future<void> _init() async {
-    // 1. Llegim l'estat inicial de forma atòmica
     await checkPermissions();
     await checkServiceStatus();
 
-    // 2. Escoltem els canvis futurs del xip GPS
     _serviceSub = geo.Geolocator.getServiceStatusStream().listen((status) {
-      // Millor usar l'enum ServiceStatus en lloc de .toString().contains(...)
       final bool enabled = status == geo.ServiceStatus.enabled;
 
-      // Només actualitzem si l'estat realment ha canviat per estalviar redibuixats
       if (state.serviceEnabled != enabled) {
-        state = state.copyWith(serviceEnabled: enabled);
-        if (enabled && _pendingStartAfterGpsOn) {
-          _pendingStartAfterGpsOn = false;
-          state = state.copyWith(shouldResumeRecording: true);
-        }
+        // Si el GPS s'encén, mirem si hi havia alguna cosa pendent a l'estat
+        state = state.copyWith(
+          serviceEnabled: enabled,
+          // Si teníem la "intenció" guardada, la mantenim perquè el MapScreen la llegeixi
+        );
       }
     });
   }
 
-  void setPendingAction(bool pending) => _pendingStartAfterGpsOn = pending;
+  void consumeFollowSignal() {
+    state = state.copyWith(shouldResumeFollowing: false);
+  }
 
   Future<void> checkPermissions() async {
     // Comprovem tots dos nivells
