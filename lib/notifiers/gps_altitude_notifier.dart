@@ -71,7 +71,7 @@ class GpsAltitudeNotifier extends Notifier<double> {
   void forceCalibration(double cogValue) {
     _offset = cogValue - _lastBaroAlt;
     _lastCalibrationTime = DateTime.now();
-    _isCalibrated = true; // 🔥 Marcamos que el sistema ya es fiable
+    _isCalibrated = true;
     _updateState();
     print("🎯 CALIBRAT: Nou offset $_offset");
   }
@@ -84,7 +84,7 @@ class GpsAltitudeNotifier extends Notifier<double> {
       if (_isCalibrated) {
         state = _lastBaroAlt + _offset;
       } else {
-        state = 0.0;
+        state = _lastBaroAlt + _offset;
       }
     }
   }

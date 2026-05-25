@@ -32,7 +32,6 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context)!;
     final settings = ref.watch(alarmSettingsProvider);
-    final progress = ref.watch(alarmProgressProvider).value;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F7),
@@ -54,9 +53,6 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
           // DISTÀNCIA
           _buildCompactAlarmCard(
             isActive: settings.distanceEnabled,
-            progressValue: (progress != null && settings.distanceEnabled)
-                ? progress.distance
-                : 0.0,
             icon: Icons.route,
             title: t.alarmsDistanceTitle,
             valueText: _formatDistance(settings.distanceMeters),
@@ -81,15 +77,13 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
           const SizedBox(height: 16),
 
           // ALTITUD INTEGRADA (Adaptada al teu Notifier actual)
-          _buildAltitudeIntegratedCard(settings, progress, t),
+          _buildAltitudeIntegratedCard(settings, t),
+
           const SizedBox(height: 16),
 
           // TEMPS
           _buildCompactAlarmCard(
             isActive: settings.timeEnabled,
-            progressValue: (progress != null && settings.timeEnabled)
-                ? progress.time
-                : 0.0,
             icon: Icons.timer,
             title: t.alarmsTimeTitle,
             valueText: _formatTime(settings.timeSeconds),
@@ -113,7 +107,7 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
     );
   }
 
-  Widget _buildAltitudeIntegratedCard(settings, progress, t) {
+  Widget _buildAltitudeIntegratedCard(settings, t) {
     final isAccMode = settings.currentViewMode == AltitudeViewMode.accumulated;
 
     // Ara mirem els booleans individuals que hem creat al model
@@ -121,10 +115,6 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
         ? settings.accEnabled
         : settings.cotaEnabled;
 
-    // Fem servir els camps nous d'AlarmProgress (accProgress i cotaProgress)
-    final progressValue = isAccMode
-        ? (progress?.accProgress ?? 0.0)
-        : (progress?.cotaProgress ?? 0.0);
     final valueText = isAccMode
         ? "+ ${settings.accMeters.toInt()} m"
         : "Cota ${settings.cotaMeters.toInt()} m";
@@ -152,15 +142,28 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
         children: [
           Row(
             children: [
-              _buildProgressIcon(
-                isCurrentModeActive,
-                progressValue,
-                isAccMode ? Icons.trending_up : Icons.layers,
-                () {
-                  // Pots triar quin so provar segons el mode
-                  ref.read(alarmEngineProvider).sounds.playAltitudeAlarm();
+              // Dins del Row de _buildAltitudeIntegratedCard:
+              Consumer(
+                builder: (context, ref, child) {
+                  // Escoltem el progrés només aquí dins per no molestar la resta
+                  final progress = ref.watch(alarmProgressProvider).value;
+
+                  // Triem el valor segons si estem en mode Desnivell o Cotes
+                  final progressValue = isAccMode
+                      ? (progress?.accProgress ?? 0.0)
+                      : (progress?.cotaProgress ?? 0.0);
+
+                  return _buildProgressIcon(
+                    isCurrentModeActive,
+                    progressValue,
+                    isAccMode ? Icons.trending_up : Icons.layers,
+                    () {
+                      ref.read(alarmEngineProvider).sounds.playAltitudeAlarm();
+                    },
+                  );
                 },
               ),
+
               const SizedBox(width: 12),
               const Text(
                 "Altitud",
@@ -357,7 +360,6 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
 
   Widget _buildCompactAlarmCard({
     required bool isActive,
-    required double progressValue,
     required IconData icon,
     required String title,
     required String valueText,
@@ -392,7 +394,23 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
         children: [
           Row(
             children: [
-              _buildProgressIcon(isActive, progressValue, icon, onPlaySound),
+              // Dins del Row de _buildCompactAlarmCard:
+              Consumer(
+                builder: (context, ref, child) {
+                  // Escoltem el progrés aquí dins
+                  final progress = ref.watch(alarmProgressProvider).value;
+
+                  // Decidim quin valor mostrar segons la icona de la targeta
+                  double pVal = 0.0;
+                  if (isActive && progress != null) {
+                    if (icon == Icons.route) pVal = progress.distance;
+                    if (icon == Icons.timer) pVal = progress.time;
+                  }
+
+                  return _buildProgressIcon(isActive, pVal, icon, onPlaySound);
+                },
+              ),
+
               const SizedBox(width: 12),
               Text(
                 title,
