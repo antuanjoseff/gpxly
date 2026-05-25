@@ -41,6 +41,35 @@ Requerimientos de Diseño:
 Objetivo: Crear una estructura de widgets limpia, reactiva y fácil de leer en movimiento, similar a la experiencia de usuario de Wikiloc o Strava.
 
 ///////////////////////////////////////////////////////////////////////
+// GRÀFIC ALTIMETRIA. HISTÒRIC + PROJECCIÓ FUTURA
+///////////////////////////////////////////////////////////////////////
+El objetivo es adaptar un CustomPainter de Flutter para mostrar un gráfico de altimetría dinámico que combine la realidad grabada con la predicción de ruta.
+🛠️ Conceptos Técnicos Acordados
+
+    Punto 0 (Eje X): Coincide siempre con el inicio de la grabación actual (el pasado).
+    Eje X Dinámico: El ancho total del gráfico representa la suma de la distancia ya recorrida + la distancia que falta de la guía.
+    Punto de Anclaje: Cuando el estado es ontrack, el gráfico sincroniza la grabación con la guía usando el punto de la ruta guía más cercano a la posición GPS actual.
+
+🚥 Lógica de Navegación (Estados)
+
+    ONTRACK: El gráfico proyecta el futuro. El punto del GPS une el final de la línea sólida (grabación) con el inicio de la línea proyectada (guía).
+    OFFTRACK: Se detiene la proyección de la guía. El gráfico solo muestra el histórico grabado hasta que el usuario reingrese a la ruta.
+    ENDOFTRACK: El gráfico vuelve a ser 100% histórico.
+
+🎨 Requerimientos Visuales para el SelectionPainter
+
+    Track Grabado: Línea sólida y gruesa (color a definir, ej. rojo/naranja).
+    Track Guía (Futuro): Línea punteada o semitransparente que sale desde la posición actual.
+    Waypoints: Mostrar solo los que están "por delante" de la posición actual en el tramo de guía.
+    Herramientas: Mantener las agujas de rango (SelectionPainter) para análisis de segmentos específicos.
+
+📝 Prompt para continuar:
+
+    "Retomamos el proyecto de la App de Tracking en Flutter. Ya tenemos definido el SelectionPainter con soporte para Waypoints y agujas de rango. El siguiente paso es adaptar el código para que el eje X comience en el inicio de la grabación y proyecte el futuro de la ruta guía solo cuando el estado sea ontrack, usando el punto de anclaje geográfico. Estoy listo para mostrarte los archivos de código para realizar la adaptación."
+
+
+
+///////////////////////////////////////////////////////////////////////
 // OPTIMITZACIÓ DE BATERIA
 ///////////////////////////////////////////////////////////////////////
 
