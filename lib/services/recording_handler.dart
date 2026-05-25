@@ -12,6 +12,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class RecordingHandler {
   static Future<void> start(BuildContext context, WidgetRef ref) async {
+    print("🔴 [HANDLER] Iniciant funcio start..."); // 👈 PRINT
+
     final track = ref.read(trackProvider.notifier);
     final wpNotifier = ref.read(waypointsProvider.notifier);
     final prefs = await SharedPreferences.getInstance();
@@ -23,6 +25,7 @@ class RecordingHandler {
     // 1. RECUPERAR TRACK + WAYPOINTS
     // ───────────────────────────────────────────────
     if (hasTrackCache || hasWpCache) {
+      print("🔴 [HANDLER] Detectada cache de track."); // 👈 PRINT
       if (!context.mounted) return;
 
       final recuperar = await AppMessages.showRecoverTrackDialog(context);
@@ -57,6 +60,9 @@ class RecordingHandler {
     // A) Comprovar si el xip GPS està encès
     final serviceStatus = await Permission.location.serviceStatus;
     if (!serviceStatus.isEnabled) {
+      print(
+        "🔴 [HANDLER] GPS apagat. Aturant i demanant activació.",
+      ); // 👈 PRINT
       if (!context.mounted) return;
       final go = await AppMessages.showGpsDisabledDialog(context);
       if (go == true) {
@@ -88,6 +94,8 @@ class RecordingHandler {
 
     // Actualitzem l'estat visual dels permisos al Notifier
     ref.read(permissionsProvider.notifier).checkPermissions();
+
+    print("🔴 [HANDLER] Tot OK. Començant gravació neta."); // 👈 PRINT
   }
 
   // ───────────────────────────────────────────────

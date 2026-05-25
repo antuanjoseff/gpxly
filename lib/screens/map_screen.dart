@@ -182,22 +182,22 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) async {
-    // Aquest mètode es dispara sol quan l'usuari torna de "Ajustos"
     if (state == AppLifecycleState.resumed) {
-      // 1. Actualitzem l'estat dels permisos al provider
-      final notifier = ref.read(permissionsProvider.notifier);
-      await notifier.checkServiceStatus();
-      await notifier.checkPermissions();
+      // 1. Simplement digues al provider que s'actualitzi
+      await ref.read(permissionsProvider.notifier).checkServiceStatus();
 
-      // 2. Mirem si teníem l'acció pendent
-      final permState = ref.read(permissionsProvider);
+      // 2. Un petit respir perquè el provider actualitzi l'estat
+      await Future.delayed(const Duration(milliseconds: 300));
 
-      if (permState.serviceEnabled) {
-        if (permState.shouldResumeRecording) {
-          notifier.consumeSignal();
+      final perm = ref.read(permissionsProvider);
+
+      // 3. Execució directa
+      if (perm.serviceEnabled) {
+        if (perm.shouldResumeRecording) {
+          ref.read(permissionsProvider.notifier).consumeSignal();
           RecordingHandler.start(context, ref);
-        } else if (permState.shouldResumeFollowing) {
-          notifier.consumeFollowSignal();
+        } else if (perm.shouldResumeFollowing) {
+          ref.read(permissionsProvider.notifier).consumeFollowSignal();
           _onFollowTrack();
         }
       }

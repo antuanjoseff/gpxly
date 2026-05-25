@@ -16,6 +16,31 @@ Sense Ombra Individual: Eliminem l'elevació de cada fila. L'ombra només la té
 Visual Density: Apliquem VisualDensity.compact de forma agressiva perquè la llista es pugui llegir ràpidament sense fer un scroll infinit.
 
 ///////////////////////////////////////////////////////////////////////
+// STATS PAGE
+///////////////////////////////////////////////////////////////////////
+Proyecto: Interfaz de Estadísticas para App de Tracking (Flutter).
+Escenario:
+Página dedicada (fuera del mapa) que muestra datos de hasta dos tracks simultáneos y opcionales:
+
+    Track Grabado: Datos generados en tiempo real por el usuario.
+    Track Seguido: Datos de una ruta cargada como referencia.
+
+Datos a mostrar (Modelo Track disponible):
+
+    Tiempo: Total grabado y tiempo parado.
+    Movimiento: Distancia total, velocidad actual, velocidad media y heading (rumbo).
+    Relieve: Altura actual, máxima, mínima, desnivel positivo acumulado (+) y negativo acumulado (-).
+
+Requerimientos de Diseño:
+
+    Modularidad: Uso de tarjetas (Cards) para agrupar datos por categorías (Tiempos, Velocidades, Altimetría).
+    Interactividad: Implementar carruseles horizontales (PageView) en secciones específicas para permitir "hacer swap" entre datos relacionados (ej. alternar entre velocidad actual y media) sin alargar la página.
+    Lógica Adaptativa: La UI debe detectar si hay un track, ambos o ninguno, y diferenciar visualmente los datos del grabado vs. el seguido (mediante colores o etiquetas claras).
+    UX: Priorizar legibilidad de datos críticos (tiempo/distancia) con fuentes grandes y usar una rejilla (Grid) para los datos estadísticos de altura.
+
+Objetivo: Crear una estructura de widgets limpia, reactiva y fácil de leer en movimiento, similar a la experiencia de usuario de Wikiloc o Strava.
+
+///////////////////////////////////////////////////////////////////////
 // OPTIMITZACIÓ DE BATERIA
 ///////////////////////////////////////////////////////////////////////
 

@@ -4,10 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/models/gps_permission.dart';
 import 'package:permission_handler/permission_handler.dart' as perm;
 import 'package:geolocator/geolocator.dart' as geo;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class PermissionsNotifier extends Notifier<GpsPermissionState> {
   StreamSubscription? _serviceSub;
-  bool _pendingStartAfterGpsOn = false;
 
   @override
   GpsPermissionState build() {
@@ -23,12 +23,48 @@ class PermissionsNotifier extends Notifier<GpsPermissionState> {
     );
   }
 
-  void setPendingAction(bool pending) {
-    state = state.copyWith(shouldResumeRecording: pending);
+  void setPendingFollowing(bool pending) async {
+    state = state.copyWith(shouldResumeFollowing: pending);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('pending_follow', pending); // Persistència també aquí
   }
 
-  void setPendingFollowing(bool pending) {
-    state = state.copyWith(shouldResumeFollowing: pending);
+  void setPendingAction(bool pending) async {
+    print("🔵 [NOTIFIER] Guardant pendent a disc: $pending");
+    state = state.copyWith(shouldResumeRecording: pending);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('pending_rec', pending); // 💾 Guardem
+  }
+
+  void consumeSignal() async {
+    print("🟢 [NOTIFIER] Consumint senyal (neteja disc)");
+    state = state.copyWith(shouldResumeRecording: false);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('pending_rec'); // 🗑️ Netegem
+  }
+
+  Future<void> checkServiceStatus() async {
+    final enabled = await geo.Geolocator.isLocationServiceEnabled();
+    final prefs = await SharedPreferences.getInstance();
+
+    // Llegim els pendents del disc
+    final bool pRec = prefs.getBool('pending_rec') ?? false;
+    final bool pFol = prefs.getBool('pending_follow') ?? false;
+
+    state = state.copyWith(
+      serviceEnabled: enabled,
+      shouldResumeRecording: pRec,
+      shouldResumeFollowing: pFol,
+    );
+
+    // 🎯 LA CLAU: Si el GPS s'acaba d'activar i teníem pendent, forçem el "true"
+    if (enabled && (pRec || pFol)) {
+      print("🎯 [NOTIFIER] GPS detectat i acció pendent. Forçant senyal.");
+      state = state.copyWith(
+        shouldResumeRecording: pRec,
+        shouldResumeFollowing: pFol,
+      );
+    }
   }
 
   Future<void> _init() async {
@@ -76,15 +112,6 @@ class PermissionsNotifier extends Notifier<GpsPermissionState> {
       final statusAlways = await perm.Permission.locationAlways.request();
       state = state.copyWith(hasPermission: statusAlways.isGranted);
     }
-  }
-
-  Future<void> checkServiceStatus() async {
-    final enabled = await geo.Geolocator.isLocationServiceEnabled();
-    state = state.copyWith(serviceEnabled: enabled);
-  }
-
-  void consumeSignal() {
-    state = state.copyWith(shouldResumeRecording: false);
   }
 }
 
