@@ -80,14 +80,14 @@ class GpsAccuracyBars extends ConsumerWidget {
     // 3. ESTADO ACTIVO: Grabando O Siguiendo
     // ───────────────────────────────────────────────
     // Antes solo miraba track.recording. Ahora mira ambos.
-    final bool isActive = track.recording || followState.isFollowing;
+    // final bool isActive = track.recording || followState.isFollowing;
 
-    if (!isActive) {
-      return _wrapWithAccuracyText(
-        bars: _buildBars(0, Colors.white),
-        accuracy: null,
-      );
-    }
+    // if (!isActive) {
+    //   return _wrapWithAccuracyText(
+    //     bars: _buildBars(0, Colors.white),
+    //     accuracy: null,
+    //   );
+    // }
 
     // ───────────────────────────────────────────────
     // 4. LÒGICA NORMAL D’ACCURACY (Se activa si isActive es true)

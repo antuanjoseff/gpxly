@@ -1020,6 +1020,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Route waypoints'**
   String get waypointsImported;
+
+  /// No description provided for @noRecordedTrack.
+  ///
+  /// In en, this message translates to:
+  /// **'No track available'**
+  String get noRecordedTrack;
+
+  /// No description provided for @usingImportedTrack.
+  ///
+  /// In en, this message translates to:
+  /// **'Showing imported route'**
+  String get usingImportedTrack;
+
+  /// No description provided for @statTimeTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Total time'**
+  String get statTimeTotal;
+
+  /// No description provided for @statTimeMoving.
+  ///
+  /// In en, this message translates to:
+  /// **'Moving time'**
+  String get statTimeMoving;
+
+  /// No description provided for @statTimeStopped.
+  ///
+  /// In en, this message translates to:
+  /// **'Stopped time'**
+  String get statTimeStopped;
+
+  /// No description provided for @statSpeedCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Current speed'**
+  String get statSpeedCurrent;
+
+  /// No description provided for @statSpeedAverage.
+  ///
+  /// In en, this message translates to:
+  /// **'Average speed'**
+  String get statSpeedAverage;
+
+  /// No description provided for @statElevation.
+  ///
+  /// In en, this message translates to:
+  /// **'Elevation'**
+  String get statElevation;
+
+  /// No description provided for @statElevationCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Current elevation'**
+  String get statElevationCurrent;
+
+  /// No description provided for @statGps.
+  ///
+  /// In en, this message translates to:
+  /// **'GPS'**
+  String get statGps;
+
+  /// No description provided for @statHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Heading'**
+  String get statHeading;
+
+  /// No description provided for @statSatellites.
+  ///
+  /// In en, this message translates to:
+  /// **'Satellites'**
+  String get statSatellites;
+
+  /// No description provided for @statAccuracy.
+  ///
+  /// In en, this message translates to:
+  /// **'Accuracy'**
+  String get statAccuracy;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

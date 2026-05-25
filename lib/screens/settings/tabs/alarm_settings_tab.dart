@@ -239,11 +239,11 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
             value: isAccMode ? settings.accMeters : settings.cotaMeters,
 
             // 🏔️ DESNIVELL: Min 50, Max 1000 | 📍 COTA: Min 10, Max 5000
-            min: isAccMode ? 50.0 : 10.0,
+            min: isAccMode ? 10.0 : 50.0,
             max: isAccMode ? 1000.0 : 5000.0,
 
             // 🏔️ DESNIVELL: Steps de 50 | 📍 COTA: Steps de 10
-            step: isAccMode ? 50.0 : 10.0,
+            step: isAccMode ? 10.0 : 50.0,
 
             onChanged: (val) {
               if (isAccMode) {

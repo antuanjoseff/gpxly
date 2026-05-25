@@ -473,4 +473,43 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get waypointsImported => 'Waypoints ruta';
+
+  @override
+  String get noRecordedTrack => 'No hay ningún track disponible';
+
+  @override
+  String get usingImportedTrack => 'Mostrando ruta importada';
+
+  @override
+  String get statTimeTotal => 'Tiempo total';
+
+  @override
+  String get statTimeMoving => 'Tiempo en movimiento';
+
+  @override
+  String get statTimeStopped => 'Tiempo detenido';
+
+  @override
+  String get statSpeedCurrent => 'Velocidad actual';
+
+  @override
+  String get statSpeedAverage => 'Velocidad media';
+
+  @override
+  String get statElevation => 'Altitud';
+
+  @override
+  String get statElevationCurrent => 'Altitud actual';
+
+  @override
+  String get statGps => 'GPS';
+
+  @override
+  String get statHeading => 'Rumbo';
+
+  @override
+  String get statSatellites => 'Satélites';
+
+  @override
+  String get statAccuracy => 'Precisión';
 }

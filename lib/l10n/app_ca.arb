@@ -193,6 +193,24 @@
 },
 
 "waypointsRecorded": "Waypoints track",
-"waypointsImported": "Waypoints ruta"
+"waypointsImported": "Waypoints ruta",
 
+"noRecordedTrack": "No hi ha cap track disponible",
+"usingImportedTrack": "Mostrant ruta importada",
+
+"statTimeTotal": "Temps total",
+"statTimeMoving": "Temps en moviment",
+"statTimeStopped": "Temps aturat",
+
+"statSpeedCurrent": "Velocitat actual",
+"statSpeedAverage": "Velocitat mitjana",
+
+"statElevation": "Altitud",
+"statElevationCurrent": "Altitud actual",
+
+"statGps": "GPS",
+"statHeading": "Rumb",
+"statSatellites": "Satèl·lits",
+"statAccuracy": "Precisió"
 }
+  

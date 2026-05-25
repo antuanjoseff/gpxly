@@ -10,6 +10,11 @@ import 'package:senda/theme/app_colors.dart';
 class TrackStatsScreen extends ConsumerWidget {
   const TrackStatsScreen({super.key});
 
+  String _formatDuration(Duration d) =>
+      d.toString().split('.').first.padLeft(8, "0");
+
+  String _formatElevation(double v) => "${v.toStringAsFixed(0)} m";
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = AppLocalizations.of(context)!;
@@ -18,339 +23,358 @@ class TrackStatsScreen extends ConsumerWidget {
     final imported = ref.watch(importedTrackProvider);
     final liveDuration = ref.watch(timerProvider);
 
-    final hasImported = imported != null && imported.coordinates.isNotEmpty;
+    Track? track;
+    if (real.coordinates.isNotEmpty) {
+      track = real;
+    } else if (imported != null && imported.coordinates.isNotEmpty) {
+      track = imported;
+    }
 
-    bool isValidElev(double elevation) => elevation.abs() < 9000;
-
-    const headerStyleRec = TextStyle(
-      fontSize: 12,
-      fontWeight: FontWeight.w700,
-      color: AppColors.redAlert,
-      letterSpacing: 0.8,
-    );
-
-    const headerStyleImp = TextStyle(
-      fontSize: 12,
-      fontWeight: FontWeight.w700,
-      color: AppColors.trackGreen,
-      letterSpacing: 0.8,
-    );
-
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: AppColors.primary,
-        title: Text(t.trackStatsTitle),
-        elevation: 0,
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // --- CAPÇALERA DE COLUMNES ---
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Row(
-              children: [
-                const SizedBox(width: 54),
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.redAlert.withAlpha(20),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Center(
-                      child: Text(
-                        t.recordingTrack.toUpperCase(),
-                        style: headerStyleRec,
-                      ),
-                    ),
-                  ),
-                ),
-                if (hasImported) ...[
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
-                      decoration: BoxDecoration(
-                        color: AppColors.trackGreen.withAlpha(20),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Center(
-                        child: Text(
-                          t.importedTrack.toUpperCase(),
-                          style: headerStyleImp,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ],
+    if (track == null) {
+      return Scaffold(
+        appBar: AppBar(
+          elevation: 0,
+          backgroundColor: AppColors.primary,
+          title: Text(
+            t.trackStatsTitle,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
             ),
           ),
-
-          // --- TEMPS ---
-          _buildStatTile(
-            context: context,
-            icon: Icons.timer_outlined,
-            label: t.statTime,
-            value1: _timeFor(real, liveDuration),
-            value2: hasImported && imported!.hasTimeData
-                ? imported.formattedDuration
-                : null,
-          ),
-
-          // --- DISTÀNCIA ---
-          _buildStatTile(
-            context: context,
-            icon: Icons.straighten_rounded,
-            label: t.statDistance,
-            value1: real.coordinates.isNotEmpty
-                ? "${(real.distance / 1000).toStringAsFixed(2)} km"
-                : "---",
-            value2: hasImported
-                ? "${(imported!.distance / 1000).toStringAsFixed(2)} km"
-                : null,
-          ),
-
-          // --- VELOCITAT ---
-          _buildStatTile(
-            context: context,
-            icon: Icons.speed_rounded,
-            label: t.statSpeed,
-            value1: real.hasTimeData
-                ? "${real.averageSpeed.toStringAsFixed(1)} km/h"
-                : "---",
-            value2: hasImported && imported!.hasTimeData
-                ? "${imported.averageSpeed.toStringAsFixed(1)} km/h"
-                : null,
-          ),
-
-          const Divider(height: 32, thickness: 0.7),
-
-          // --- ALTIMETRIA ---
-          _buildStatTile(
-            context: context,
-            icon: Icons.terrain_rounded,
-            label: t.statMaxElevation,
-            value1: real.hasElevationData && isValidElev(real.maxElevation)
-                ? "${real.maxElevation.toStringAsFixed(0)} m"
-                : "---",
-            value2:
-                hasImported &&
-                    imported!.hasElevationData &&
-                    isValidElev(imported.maxElevation)
-                ? "${imported.maxElevation.toStringAsFixed(0)} m"
-                : null,
-          ),
-
-          _buildStatTile(
-            context: context,
-            icon: Icons.south_east_rounded,
-            label: t.statMinElevation,
-            value1: real.hasElevationData && isValidElev(real.minElevation)
-                ? "${real.minElevation.toStringAsFixed(0)} m"
-                : "---",
-            value2:
-                hasImported &&
-                    imported!.hasElevationData &&
-                    isValidElev(imported.minElevation)
-                ? "${imported.minElevation.toStringAsFixed(0)} m"
-                : null,
-          ),
-
-          _buildStatTile(
-            context: context,
-            icon: Icons.unfold_less_rounded,
-            label: t.statAscent,
-            value1: real.hasAscentDescent
-                ? "${real.ascent.toStringAsFixed(0)} m"
-                : "---",
-            value2: hasImported && imported!.hasAscentDescent
-                ? "${imported.ascent.toStringAsFixed(0)} m"
-                : null,
-          ),
-
-          _buildStatTile(
-            context: context,
-            icon: Icons.unfold_more_rounded,
-            label: t.statDescent,
-            value1: real.hasAscentDescent
-                ? "${real.descent.toStringAsFixed(0)} m"
-                : "---",
-            value2: hasImported && imported!.hasAscentDescent
-                ? "${imported.descent.toStringAsFixed(0)} m"
-                : null,
-          ),
-        ],
-      ),
-    );
-  }
-
-  // --- TILE TAPPABLE ---
-  Widget _buildStatTile({
-    required BuildContext context,
-    required IconData icon,
-    required String label,
-    required String value1,
-    String? value2,
-  }) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () => _showStatDetails(context, icon, label, value1, value2),
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 4),
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
         ),
-        child: Row(
+        body: Center(
+          child: Text(
+            t.noRecordedTrack,
+            style: const TextStyle(fontSize: 16, color: Colors.black54),
+          ),
+        ),
+      );
+    }
+
+    final isReal = track == real;
+    final currentDuration = isReal ? liveDuration : track.duration;
+
+    final timeTotal = _formatDuration(currentDuration);
+    final timeStopped = _formatDuration(track.stoppedDuration);
+    final distanceKm = (track.distance / 1000).toStringAsFixed(2);
+
+    final currentSpeed = (isReal && real.speeds.isNotEmpty)
+        ? real.speeds.last.toStringAsFixed(1)
+        : "0.0";
+
+    final avgSpeed = track.averageSpeed.isFinite
+        ? track.averageSpeed.toStringAsFixed(1)
+        : "0.0";
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F5F5),
+      appBar: AppBar(
+        elevation: 0,
+        centerTitle: true,
+        backgroundColor: AppColors.primary,
+        iconTheme: const IconThemeData(color: Colors.white),
+        title: Text(
+          t.trackStatsTitle,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+      body: SingleChildScrollView(
+        child: Column(
           children: [
-            SizedBox(
-              width: 46,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
+            // --- 1. Distància Hero ---
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: _buildMainHero(distanceKm, "km"),
+            ),
+
+            // --- 2. Segona Fila (Micro-swipes Centrats) ---
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
                 children: [
-                  Icon(icon, color: Colors.grey.shade600, size: 22),
-                  const SizedBox(height: 4),
-                  Text(
-                    label,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey.shade700,
+                  Expanded(
+                    child: _buildMicroSwipeCard([
+                      _StatItem(
+                        t.statTimeStopped,
+                        timeStopped,
+                        Icons.pause_circle_filled,
+                      ),
+                      _StatItem(t.statTimeTotal, timeTotal, Icons.timer),
+                    ]),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildMicroSwipeCard([
+                      _StatItem(
+                        t.statSpeedCurrent,
+                        "$currentSpeed km/h",
+                        Icons.bolt,
+                      ),
+                      _StatItem(
+                        t.statSpeedAverage,
+                        "$avgSpeed km/h",
+                        Icons.speed,
+                      ),
+                    ]),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // --- 3. Tercer Element (PageView sense peek) ---
+            SizedBox(
+              height: 240,
+              child: PageView(
+                controller: PageController(viewportFraction: 1.0),
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: _buildSwipeCard(
+                      title: t.statElevation,
+                      icon: Icons.terrain,
+                      children: [
+                        _DetailRow(
+                          Icons.trending_up,
+                          t.statAscent,
+                          _formatElevation(track.ascent),
+                        ),
+                        const Divider(),
+                        _DetailRow(
+                          Icons.trending_down,
+                          t.statDescent,
+                          _formatElevation(track.descent),
+                        ),
+                        const Divider(),
+                        _DetailRow(
+                          Icons.height,
+                          t.statMaxElevation,
+                          _formatElevation(track.maxElevation),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: _buildSwipeCard(
+                      title: isReal ? t.recordingTrack : t.importedTrack,
+                      icon: Icons.info_outline,
+                      children: [
+                        _DetailRow(
+                          Icons.directions_run,
+                          t.statTimeMoving,
+                          _formatDuration(
+                            currentDuration - track.stoppedDuration,
+                          ),
+                        ),
+                        const Divider(),
+                        _DetailRow(
+                          Icons.location_on,
+                          t.statMinElevation,
+                          _formatElevation(track.minElevation),
+                        ),
+                        const Divider(),
+                        _DetailRow(
+                          Icons.straighten,
+                          "Punts",
+                          "${track.coordinates.length}",
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
 
-            const SizedBox(width: 12),
-
-            Expanded(
-              child: _valueBox(value: value1, color: AppColors.redAlert),
-            ),
-
-            if (value2 != null) ...[
-              const SizedBox(width: 8),
-              Expanded(
-                child: _valueBox(value: value2, color: AppColors.trackGreen),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.swipe_outlined, size: 14, color: Colors.grey),
+                  SizedBox(width: 6),
+                  Text(
+                    "Llisca per veure més detalls",
+                    style: TextStyle(color: Colors.grey, fontSize: 11),
+                  ),
+                ],
               ),
-            ],
+            ),
           ],
         ),
       ),
     );
   }
 
-  // --- BOTTOMSHEET ---
-  void _showStatDetails(
-    BuildContext context,
-    IconData icon,
-    String label,
-    String value1,
-    String? value2,
-  ) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+  Widget _buildMicroSwipeCard(List<Widget> items) {
+    return Container(
+      height: 100,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
+        ],
       ),
-      builder: (context) {
-        return SafeArea(
-          bottom: true,
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(icon, size: 26, color: Colors.grey.shade700),
-                    const SizedBox(width: 12),
-                    Text(
-                      label,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 20),
-
-                _detailRow("Track gravat", value1),
-                if (value2 != null) _detailRow("Track importat", value2),
-
-                const SizedBox(height: 20),
-              ],
-            ),
-          ),
-        );
-      },
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: PageView(children: items),
+      ),
     );
   }
 
-  Widget _detailRow(String title, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+  Widget _buildMainHero(String value, String unit) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 32),
+      decoration: BoxDecoration(
+        color: AppColors.primary,
+        borderRadius: BorderRadius.circular(20),
+      ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.baseline,
+        textBaseline: TextBaseline.alphabetic,
         children: [
           Text(
-            title,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-          ),
-          Text(
             value,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+            style: const TextStyle(
+              fontSize: 64,
+              fontWeight: FontWeight.w900,
+              color: Colors.white,
+              letterSpacing: -2,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            unit.toUpperCase(),
+            style: const TextStyle(
+              fontSize: 24,
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _valueBox({required String value, required Color color}) {
+  Widget _buildSwipeCard({
+    required String title,
+    required IconData icon,
+    required List<Widget> children,
+  }) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: color.withAlpha(25),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withAlpha(40), width: 1),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.black.withOpacity(0.05)),
       ),
-      child: Center(
-        child: Text(
-          value,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-            fontFamily: 'monospace',
-            letterSpacing: 0.3,
-            color: color,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: AppColors.primary, size: 22),
+              const SizedBox(width: 8),
+              Text(
+                title.toUpperCase(),
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black54,
+                ),
+              ),
+            ],
           ),
-        ),
+          const SizedBox(height: 12),
+          ...children,
+        ],
       ),
     );
   }
+}
 
-  String _timeFor(Track t, Duration live) {
-    switch (t.recordingState) {
-      case RecordingState.recording:
-        return _formatDuration(live);
-      case RecordingState.paused:
-        return t.formattedDuration;
-      default:
-        return "---";
-    }
+class _StatItem extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+  const _StatItem(this.label, this.value, this.icon);
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: AppColors.primary, size: 16),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                label.toUpperCase(),
+                style: const TextStyle(
+                  fontSize: 10,
+                  color: Colors.grey,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            fontFamily: 'monospace',
+          ),
+        ),
+      ],
+    );
   }
+}
 
-  String _formatDuration(Duration d) {
-    final h = d.inHours.toString().padLeft(2, '0');
-    final m = (d.inMinutes % 60).toString().padLeft(2, '0');
-    final s = (d.inSeconds % 60).toString().padLeft(2, '0');
-    return "$h:$m:$s";
+class _DetailRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  const _DetailRow(this.icon, this.label, this.value);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        children: [
+          Icon(icon, color: AppColors.primary.withOpacity(0.5), size: 18),
+          const SizedBox(width: 10),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 14, color: Colors.black87),
+          ),
+          const Spacer(),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'monospace',
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

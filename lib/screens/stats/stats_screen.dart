@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/l10n/app_localizations.dart';
@@ -6,56 +5,15 @@ import 'package:senda/models/track.dart';
 import 'package:senda/notifiers/imported_track_notifier.dart';
 import 'package:senda/notifiers/timer_notifier.dart';
 import 'package:senda/notifiers/track_notifier.dart';
-import 'package:senda/screens/stats/models/stat_chart_type.dart';
-import 'package:senda/screens/stats/stats_detail_screen.dart';
 import 'package:senda/theme/app_colors.dart';
 
 class TrackStatsScreen extends ConsumerWidget {
   const TrackStatsScreen({super.key});
 
-  // --- Mètodes de suport (Originals mantinguts) ---
-  String _timeFor(Track real, Duration liveDuration) {
-    if (real.coordinates.isEmpty) return "00:00:00";
-    return liveDuration.toString().split('.').first.padLeft(8, "0");
-  }
+  String _formatDuration(Duration d) =>
+      d.toString().split('.').first.padLeft(8, "0");
 
-  bool _trackHasElevation(Track? track) {
-    return track != null && track.altitudes.isNotEmpty;
-  }
-
-  String _formatElevation({
-    required double value,
-    required bool hasElevationData,
-  }) {
-    return hasElevationData ? "${value.toStringAsFixed(0)} m" : "---";
-  }
-
-  void _navigateToDetail(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required String valueReal,
-    required StatChartType chartType,
-    Track? real,
-    Track? imported,
-    String? valueImported,
-  }) {
-    Navigator.push(
-      context,
-      CupertinoPageRoute(
-        // <--- Això activa el gest de swipe lateral
-        builder: (context) => StatDetailScreen(
-          icon: icon,
-          label: label,
-          valueReal: valueReal,
-          valueImported: valueImported,
-          chartType: chartType,
-          realTrack: real,
-          importedTrack: imported,
-        ),
-      ),
-    );
-  }
+  String _formatElevation(double v) => "${v.toStringAsFixed(0)} m";
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -64,316 +22,343 @@ class TrackStatsScreen extends ConsumerWidget {
     final imported = ref.watch(importedTrackProvider);
     final liveDuration = ref.watch(timerProvider);
 
-    final hasImported = imported != null && imported.coordinates.isNotEmpty;
+    Track? track;
+    if (real.coordinates.isNotEmpty) {
+      track = real;
+    } else if (imported != null && imported.coordinates.isNotEmpty) {
+      track = imported;
+    }
 
-    final currentRealTime = _timeFor(real, liveDuration);
-    final currentRealElev = "${real.maxElevation.toStringAsFixed(0)} m";
+    if (track == null) {
+      return Scaffold(
+        appBar: AppBar(
+          elevation: 0,
+          backgroundColor: AppColors.primary,
+          title: Text(
+            t.trackStatsTitle,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        body: Center(
+          child: Text(
+            t.noRecordedTrack,
+            style: const TextStyle(fontSize: 16, color: Colors.black54),
+          ),
+        ),
+      );
+    }
+
+    final isReal = track == real;
+    final currentDuration = isReal ? liveDuration : track.duration;
+    final timeTotal = _formatDuration(currentDuration);
+    final timeStopped = _formatDuration(track.stoppedDuration);
+    final distanceKm = (track.distance / 1000).toStringAsFixed(2);
+    final currentSpeed = (isReal && real.speeds.isNotEmpty)
+        ? real.speeds.last.toStringAsFixed(1)
+        : "0.0";
+    final avgSpeed = track.averageSpeed.isFinite
+        ? track.averageSpeed.toStringAsFixed(1)
+        : "0.0";
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F7),
+      backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
+        elevation: 0,
+        centerTitle: true,
         backgroundColor: AppColors.primary,
+        iconTheme: const IconThemeData(color: Colors.white),
         title: Text(
           t.trackStatsTitle,
           style: const TextStyle(
             color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _buildHeader(t, hasImported),
-          const SizedBox(height: 8),
-
-          // --- BLOC 1: RENDIMENT ---
-          _StatGroupCard(
-            title: t.statTime.toUpperCase(),
-            icon: Icons.speed_rounded,
-            onTap: () => _navigateToDetail(
-              context,
-              icon: Icons.speed_rounded,
-              label: "Rendiment",
-              valueReal: currentRealTime,
-              chartType: StatChartType.speed,
-              real: real,
-              imported: imported,
-              valueImported: hasImported ? imported!.formattedDuration : null,
-            ),
-            rows: [
-              _StatRow(
-                label: t.statTime,
-                valueReal: currentRealTime,
-                valueImported: hasImported && imported!.hasTimeData
-                    ? imported.formattedDuration
-                    : null,
-              ),
-              _StatRow(
-                label: t.statDistance,
-                valueReal: real.coordinates.isNotEmpty
-                    ? "${(real.distance / 1000).toStringAsFixed(2)} km"
-                    : "---",
-                valueImported: hasImported
-                    ? "${(imported!.distance / 1000).toStringAsFixed(2)} km"
-                    : null,
-              ),
-              _StatRow(
-                label: t.statSpeed,
-                valueReal: real.hasTimeData
-                    ? "${real.averageSpeed.toStringAsFixed(1)} km/h"
-                    : "---",
-                valueImported: hasImported && imported!.hasTimeData
-                    ? "${imported.averageSpeed.toStringAsFixed(1)} km/h"
-                    : null,
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 16),
-
-          // --- BLOC 2: ALTIMETRIA ---
-          _StatGroupCard(
-            title: t.statMaxElevation.toUpperCase(),
-            icon: Icons.terrain_rounded,
-            onTap: () => _navigateToDetail(
-              context,
-              icon: Icons.terrain_rounded,
-              label: "Altimetria",
-              chartType: StatChartType.elevation,
-              real: real,
-              imported: imported,
-              valueReal: currentRealElev,
-              valueImported: hasImported
-                  ? "${imported!.maxElevation.toStringAsFixed(0)} m"
-                  : null,
-            ),
-            rows: [
-              _StatRow(
-                label: t.statMaxElevation,
-                valueReal: _formatElevation(
-                  value: real.maxElevation,
-                  hasElevationData: _trackHasElevation(real),
-                ),
-                valueImported: hasImported
-                    ? _formatElevation(
-                        value: imported.maxElevation,
-                        hasElevationData: _trackHasElevation(imported),
-                      )
-                    : null,
-              ),
-              _StatRow(
-                label: t.statMinElevation,
-                valueReal: _formatElevation(
-                  value: real.minElevation,
-                  hasElevationData: _trackHasElevation(real),
-                ),
-                valueImported: hasImported
-                    ? _formatElevation(
-                        value: imported.minElevation,
-                        hasElevationData: _trackHasElevation(imported),
-                      )
-                    : null,
-              ),
-              _StatRow(
-                label: t.statAscent,
-                valueReal: _formatElevation(
-                  value: real.ascent,
-                  hasElevationData: _trackHasElevation(real),
-                ),
-                valueImported: hasImported
-                    ? _formatElevation(
-                        value: imported.ascent,
-                        hasElevationData: _trackHasElevation(imported),
-                      )
-                    : null,
-              ),
-              _StatRow(
-                label: t.statDescent,
-                valueReal: _formatElevation(
-                  value: real.descent,
-                  hasElevationData: _trackHasElevation(real),
-                ),
-                valueImported: hasImported
-                    ? _formatElevation(
-                        value: imported.descent,
-                        hasElevationData: _trackHasElevation(imported),
-                      )
-                    : null,
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeader(AppLocalizations t, bool hasImported) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        children: [
-          const Expanded(flex: 3, child: SizedBox.shrink()),
-          _HeaderLabel(label: t.recordingTrack, color: AppColors.redAlert),
-          const SizedBox(width: 8),
-          if (hasImported)
-            _HeaderLabel(label: t.importedTrack, color: AppColors.trackGreen)
-          else
-            const Expanded(flex: 2, child: SizedBox.shrink()),
-        ],
-      ),
-    );
-  }
-}
-
-// --- Components de suport per mantenir el codi net ---
-
-class _HeaderLabel extends StatelessWidget {
-  final String label;
-  final Color color;
-  const _HeaderLabel({required this.label, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      flex: 2,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        decoration: BoxDecoration(
-          color: color.withAlpha(30),
-          borderRadius: BorderRadius.circular(4),
-        ),
-        child: Text(
-          label.toUpperCase(),
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 10,
-            fontWeight: FontWeight.w800,
-            color: color,
-            letterSpacing: 0.5,
+            fontWeight: FontWeight.bold,
           ),
         ),
       ),
-    );
-  }
-}
-
-class _StatGroupCard extends StatelessWidget {
-  final String title;
-  final List<Widget> rows;
-  final VoidCallback onTap;
-  final IconData icon;
-
-  const _StatGroupCard({
-    required this.title,
-    required this.rows,
-    required this.onTap,
-    required this.icon,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(10),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
+      body: SingleChildScrollView(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // --- 1. Distància Hero (Més compacte verticalment) ---
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  vertical: 20,
+                ), // Reduït de 32 a 20
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withAlpha(217),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Text(
+                      distanceKm,
+                      style: const TextStyle(
+                        fontSize: 54,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                        letterSpacing: -1.5,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      "KM",
+                      style: TextStyle(
+                        fontSize: 20,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // --- 2. Segona Fila (Títols més visibles i multilineals) ---
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Row(
                 children: [
-                  Icon(icon, size: 18, color: AppColors.primary),
-                  const SizedBox(width: 8),
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey,
-                      letterSpacing: 0.5,
-                    ),
+                  Expanded(
+                    child: _buildMicroCard([
+                      _StatItem(
+                        t.statTimeStopped,
+                        timeStopped,
+                        Icons.pause_circle_filled,
+                      ),
+                      _StatItem(t.statTimeTotal, timeTotal, Icons.timer),
+                    ]),
                   ),
-                  const Spacer(),
-                  const Icon(
-                    Icons.chevron_right,
-                    size: 18,
-                    color: Colors.black12,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildMicroCard([
+                      _StatItem(
+                        t.statSpeedCurrent,
+                        "$currentSpeed km/h",
+                        Icons.bolt,
+                      ),
+                      _StatItem(
+                        t.statSpeedAverage,
+                        "$avgSpeed km/h",
+                        Icons.speed,
+                      ),
+                    ]),
                   ),
                 ],
               ),
             ),
-            ...rows,
+
             const SizedBox(height: 12),
+
+            // --- 3. Tercer Element (Swipe Lineal) ---
+            SizedBox(
+              height: 240,
+              child: PageView(
+                controller: PageController(viewportFraction: 1.0),
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: _buildSwipeCard(
+                      title: t.statElevation,
+                      icon: Icons.terrain,
+                      children: [
+                        _DetailRow(
+                          Icons.trending_up,
+                          t.statAscent,
+                          _formatElevation(track.ascent),
+                        ),
+                        const Divider(),
+                        _DetailRow(
+                          Icons.trending_down,
+                          t.statDescent,
+                          _formatElevation(track.descent),
+                        ),
+                        const Divider(),
+                        _DetailRow(
+                          Icons.height,
+                          t.statMaxElevation,
+                          _formatElevation(track.maxElevation),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: _buildSwipeCard(
+                      title: isReal ? t.recordingTrack : t.importedTrack,
+                      icon: Icons.info_outline,
+                      children: [
+                        _DetailRow(
+                          Icons.directions_run,
+                          t.statTimeMoving,
+                          _formatDuration(
+                            currentDuration - track.stoppedDuration,
+                          ),
+                        ),
+                        const Divider(),
+                        _DetailRow(
+                          Icons.location_on,
+                          t.statMinElevation,
+                          _formatElevation(track.minElevation),
+                        ),
+                        const Divider(),
+                        _DetailRow(
+                          Icons.straighten,
+                          "Punts",
+                          "${track.coordinates.length}",
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
     );
   }
+
+  Widget _buildMicroCard(List<Widget> items) {
+    return Container(
+      height: 110, // Una mica més alt per encabir el possible multiline
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withAlpha(13), blurRadius: 10),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: PageView(
+          physics: const BouncingScrollPhysics(),
+          children: items,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSwipeCard({
+    required String title,
+    required IconData icon,
+    required List<Widget> children,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.primary.withAlpha(26)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: AppColors.primary, size: 22),
+              const SizedBox(width: 8),
+              Text(
+                title.toUpperCase(),
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary.withAlpha(179),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ...children,
+        ],
+      ),
+    );
+  }
 }
 
-class _StatRow extends StatelessWidget {
+class _StatItem extends StatelessWidget {
   final String label;
-  final String valueReal;
-  final String? valueImported;
-
-  const _StatRow({
-    required this.label,
-    required this.valueReal,
-    this.valueImported,
-  });
+  final String value;
+  final IconData icon;
+  const _StatItem(this.label, this.value, this.icon);
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Icon(icon, color: AppColors.primary, size: 16),
+              const SizedBox(width: 6),
+              Expanded(
+                // Permet que el text ocupi dues files si cal
+                child: Text(
+                  label.toUpperCase(),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Colors.grey,
+                    fontWeight: FontWeight.bold,
+                    height: 1.1,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'monospace',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DetailRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  const _DetailRow(this.icon, this.label, this.value);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
         children: [
-          Expanded(
-            flex: 3,
-            child: Text(
-              label,
-              style: const TextStyle(fontSize: 14, color: Colors.black54),
+          Icon(icon, color: AppColors.primary.withAlpha(128), size: 18),
+          const SizedBox(width: 10),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 14, color: Colors.black87),
+          ),
+          const Spacer(),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'monospace',
             ),
           ),
-          Expanded(
-            flex: 2,
-            child: Text(
-              valueReal,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
-          ),
-          if (valueImported != null)
-            Expanded(
-              flex: 2,
-              child: Text(
-                valueImported!,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 14, color: Colors.black38),
-              ),
-            )
-          else
-            const Expanded(flex: 2, child: SizedBox.shrink()),
         ],
       ),
     );

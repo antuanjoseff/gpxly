@@ -192,6 +192,23 @@
 },
 
 "waypointsRecorded": "Track waypoints",
-"waypointsImported": "Route waypoints"
+"waypointsImported": "Route waypoints",
 
+"noRecordedTrack": "No track available",
+"usingImportedTrack": "Showing imported route",
+
+"statTimeTotal": "Total time",
+"statTimeMoving": "Moving time",
+"statTimeStopped": "Stopped time",
+
+"statSpeedCurrent": "Current speed",
+"statSpeedAverage": "Average speed",
+
+"statElevation": "Elevation",
+"statElevationCurrent": "Current elevation",
+
+"statGps": "GPS",
+"statHeading": "Heading",
+"statSatellites": "Satellites",
+"statAccuracy": "Accuracy"
 }

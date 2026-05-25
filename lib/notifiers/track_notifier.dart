@@ -11,6 +11,7 @@ import 'package:senda/notifiers/gps_accuracy_notifier.dart';
 import 'package:senda/notifiers/gps_altitude_notifier.dart';
 import 'package:senda/notifiers/gps_bearing_notifier.dart';
 import 'package:senda/notifiers/gps_settings_notifier.dart';
+import 'package:senda/notifiers/helpers/thresholds.dart';
 import 'package:senda/notifiers/imported_track_notifier.dart';
 import 'package:senda/notifiers/timer_notifier.dart';
 import 'package:senda/notifiers/track_follow_notifier.dart';
@@ -26,7 +27,20 @@ class TrackNotifier extends Notifier<Track> {
   bool gpsActive = false;
   bool _isSimulationRunning = false;
   bool _isSimulationPaused = false;
-  bool _stopSimulation = false;
+
+  // ───────────────────────────────────────────────
+  // TEMPS ATURAT
+  // ───────────────────────────────────────────────
+  Duration _stoppedDuration = Duration.zero;
+  DateTime? _stopStart;
+  bool _isStopped = false;
+
+  Duration get stoppedDuration {
+    if (_isStopped && _stopStart != null) {
+      return _stoppedDuration + DateTime.now().difference(_stopStart!);
+    }
+    return _stoppedDuration;
+  }
 
   final _positionStreamController = StreamController<LatLng>.broadcast();
   Stream<LatLng> get positionStream => _positionStreamController.stream;
@@ -238,7 +252,7 @@ class TrackNotifier extends Notifier<Track> {
     required double vAccuracy,
     required int satellites,
   }) {
-    // 1. Actualitzem els micro-providers
+    _updateStopTime(speed, timestamp);
 
     double newDistance = state.distance;
     double newAscent = state.ascent;
@@ -286,6 +300,7 @@ class TrackNotifier extends Notifier<Track> {
 
     // Actualitzem estat
     state = state.copyWith(
+      stoppedDuration: stoppedDuration,
       coordinates: [
         ...state.coordinates,
         [lon, lat],
@@ -393,6 +408,11 @@ class TrackNotifier extends Notifier<Track> {
   // ───────────────────────────────────────────────
   // 1. startRecording: Ja no inicia el cronòmetre aquí, ho fa el RecordingHandler
   Future<void> startRecording(BuildContext context) async {
+    _stoppedDuration = Duration.zero;
+    _stopStart = null;
+    _isStopped = false;
+    state = state.copyWith(stoppedDuration: Duration.zero);
+
     ref.read(timerProvider.notifier).reset();
     ref.read(timerProvider.notifier).start();
     state = state.copyWith(
@@ -489,6 +509,23 @@ class TrackNotifier extends Notifier<Track> {
 
     // Deixa que gpsSettingsProvider decideixi la configuració
     ref.read(gpsSettingsProvider.notifier).apply();
+  }
+
+  void _updateStopTime(double speed, DateTime timestamp) {
+    if (speed < TrackThresholds.stopSpeedThreshold) {
+      // Usuari aturat
+      if (!_isStopped) {
+        _isStopped = true;
+        _stopStart = timestamp;
+      }
+    } else {
+      // Usuari en moviment
+      if (_isStopped && _stopStart != null) {
+        _stoppedDuration += timestamp.difference(_stopStart!);
+      }
+      _isStopped = false;
+      _stopStart = null;
+    }
   }
 }
 

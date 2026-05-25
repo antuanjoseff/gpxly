@@ -87,7 +87,7 @@ class RangeAreaPainter extends CustomPainter {
     // ─────────────────────────────────────────────
     // 2) Ajust d'amplada (CANVIS AQUÍ)
     // ─────────────────────────────────────────────
-    final double usableWidth = size.width; // 👈 100% de l'amplada
+    final double usableWidth = size.width;
     final double chartHeight = size.height - 40; // bottomReserved
     final double maxDist = distances.last;
 
@@ -106,7 +106,7 @@ class RangeAreaPainter extends CustomPainter {
 
     // Resseguir el perfil
     for (int i = start; i <= end; i++) {
-      double x = (distances[i] / maxDist) * usableWidth; // 👈 Sense el + 24
+      double x = (distances[i] / maxDist) * usableWidth;
 
       double relY = (altitudes[i] - forcedMinY) / yRange;
       double y = chartHeight - (relY * chartHeight);

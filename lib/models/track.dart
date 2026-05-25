@@ -7,6 +7,8 @@ enum RecordingState {
 }
 
 class Track {
+  final Duration stoppedDuration;
+
   final List<List<double>> coordinates;
   final List<double> distances;
   final List<double> altitudes;
@@ -40,6 +42,7 @@ class Track {
   final LatLng? currentPosition;
 
   Track({
+    this.stoppedDuration = Duration.zero,
     required this.coordinates,
     required this.altitudes,
     required this.isHgtFixed,
@@ -68,6 +71,7 @@ class Track {
   });
 
   Track copyWith({
+    Duration? stoppedDuration,
     List<List<double>>? coordinates,
     List<double>? distances,
     List<double>? altitudes,
@@ -95,6 +99,7 @@ class Track {
     LatLng? currentPosition, // 👈 afegit
   }) {
     return Track(
+      stoppedDuration: stoppedDuration ?? this.stoppedDuration,
       coordinates: coordinates ?? this.coordinates,
       distances: distances ?? this.distances,
       altitudes: altitudes ?? this.altitudes,
@@ -121,6 +126,14 @@ class Track {
 
       currentPosition: currentPosition ?? this.currentPosition, // 👈 afegit
     );
+  }
+
+  String get formattedStopped {
+    final total = stoppedDuration;
+    final h = total.inHours.toString().padLeft(2, '0');
+    final m = (total.inMinutes % 60).toString().padLeft(2, '0');
+    final s = (total.inSeconds % 60).toString().padLeft(2, '0');
+    return "$h:$m:$s";
   }
 
   double get currentSpeedKmH => (speeds.isNotEmpty) ? speeds.last * 3.6 : 0.0;
