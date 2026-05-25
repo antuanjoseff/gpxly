@@ -117,6 +117,7 @@ class SelectionPainter extends CustomPainter {
     }
 
     // WAYPOINTS IMPORTATS
+    // WAYPOINTS IMPORTATS
     if (importedWaypointIndices != null &&
         importedWaypointIndices!.isNotEmpty) {
       final impWpPaint = Paint()
@@ -131,10 +132,11 @@ class SelectionPainter extends CustomPainter {
         for (final idx in importedWaypointIndices!) {
           if (idx < 0 || idx >= importedDistsSource.length) continue;
 
+          // ELIMINADO EL + 24: Ahora la proporción es exacta al ancho usable
           final double x =
               (importedDistsSource[idx] / importedDistsSource.last) *
-                  usableWidth +
-              24;
+              usableWidth;
+
           canvas.drawCircle(Offset(x, xAxisY - 4), 4, impWpPaint);
         }
       }
