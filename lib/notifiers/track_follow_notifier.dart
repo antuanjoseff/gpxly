@@ -308,12 +308,16 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
       if (isNear &&
           headingDiff > 140 &&
           reverseDetector.isReverseDirection(closest, _lastUserPositions)) {
-        sounds.playReversedTrackSound();
-
         _reverseDialogShown = true;
         _reverseDetectionLocked = true;
 
         state = state.copyWith(showReverseTrackDialog: true);
+
+        // micro-delay per evitar que el rebuild mati el player
+        Future.delayed(const Duration(milliseconds: 30), () {
+          sounds.playReversedTrackSound();
+        });
+
         return;
       }
     }
