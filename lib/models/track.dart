@@ -38,6 +38,7 @@ class Track {
   final double? maxLon;
 
   // 🔥 Nou: punt blau actual
+  final double currentSpeed;
   final double currentHeading;
   final LatLng? currentPosition;
 
@@ -52,6 +53,7 @@ class Track {
     this.speeds = const [],
     this.headings = const [],
     this.currentHeading = 0.0,
+    this.currentSpeed = 0.0,
     this.satellites = const [],
     this.vAccuracies = const [],
     this.recordingState = RecordingState.idle,
@@ -67,7 +69,7 @@ class Track {
     this.minLon,
     this.maxLon,
 
-    this.currentPosition, // 👈 afegit
+    this.currentPosition,
   });
 
   Track copyWith({
@@ -81,6 +83,7 @@ class Track {
     List<double>? speeds,
     List<double>? headings,
     double? currentHeading,
+    double? currentSpeed,
     List<int>? satellites,
     List<double>? vAccuracies,
     RecordingState? recordingState,
@@ -96,7 +99,7 @@ class Track {
     double? minLon,
     double? maxLon,
 
-    LatLng? currentPosition, // 👈 afegit
+    LatLng? currentPosition,
   }) {
     return Track(
       stoppedDuration: stoppedDuration ?? this.stoppedDuration,
@@ -109,6 +112,7 @@ class Track {
       speeds: speeds ?? this.speeds,
       headings: headings ?? this.headings,
       currentHeading: currentHeading ?? this.currentHeading,
+      currentSpeed: currentSpeed ?? this.currentSpeed,
       satellites: satellites ?? this.satellites,
       vAccuracies: vAccuracies ?? this.vAccuracies,
       recordingState: recordingState ?? this.recordingState,
@@ -124,7 +128,7 @@ class Track {
       minLon: minLon ?? this.minLon,
       maxLon: maxLon ?? this.maxLon,
 
-      currentPosition: currentPosition ?? this.currentPosition, // 👈 afegit
+      currentPosition: currentPosition ?? this.currentPosition,
     );
   }
 

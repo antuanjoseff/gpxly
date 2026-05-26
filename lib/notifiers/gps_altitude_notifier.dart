@@ -1,7 +1,5 @@
 import 'dart:math';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-// 🔥 Importamos el provider de ajustes para leer los minutos del slider
 import 'package:senda/notifiers/barometer_settings_notifier.dart';
 import 'package:senda/services/native_barometer_channel.dart';
 
@@ -14,7 +12,6 @@ class GpsAltitudeNotifier extends Notifier<double> {
 
   DateTime? _lastCalibrationTime;
 
-  // ⚙️ Configuración
   final double _minAccuracyRequired = 15.0;
   final double _pressureJumpThreshold = 2.0;
 
@@ -24,30 +21,30 @@ class GpsAltitudeNotifier extends Notifier<double> {
       _hasBarometer = true;
       double newBaroAlt = _pressureToAltitude(pressure);
 
+      // Si hi ha un salt de pressió brusc, invalidem calibratge
       if ((newBaroAlt - _lastBaroAlt).abs() > _pressureJumpThreshold) {
         _lastCalibrationTime = null;
+        _isCalibrated = false;
       }
 
       _lastBaroAlt = newBaroAlt;
-      _updateState();
+      // 🚩 NO cridem a _updateState() aquí per no bombardejar l'AlarmEngine
     });
 
     return 0.0;
   }
 
-  // 🔥 Getter para que la UI sepa si mostrar "--m" o el número real
   bool get isCalibrated => _isCalibrated;
 
-  void update(double cogValue, {required double horizontalAccuracy}) {
+  /// Aquest mètode s'executa 1:1 amb cada coordenada del GPS
+  void update(double gpsAlt, {required double horizontalAccuracy}) {
     if (isSimulating) {
       _isCalibrated = true;
-      state = cogValue;
-      _isCalibrated = true;
+      state = gpsAlt;
       return;
     }
-    final now = DateTime.now();
 
-    // 🔥 LEEMOS EL INTERVALO real que el usuario ha puesto en el Slider
+    final now = DateTime.now();
     final settings = ref.read(barometerSettingsProvider);
     final calibrationInterval = Duration(minutes: settings.calibrationInterval);
 
@@ -57,36 +54,28 @@ class GpsAltitudeNotifier extends Notifier<double> {
 
     bool hasGoodCoverage = horizontalAccuracy <= _minAccuracyRequired;
 
+    // 1. Decidim si cal recalibrar l'offset
     if (_hasBarometer && intervalPassed && hasGoodCoverage) {
-      forceCalibration(cogValue);
+      _offset = gpsAlt - _lastBaroAlt;
+      _lastCalibrationTime = now;
+      _isCalibrated = true;
+      print("🎯 CALIBRAT: Nou offset $_offset");
     }
 
-    if (!_hasBarometer) {
-      state = cogValue;
+    // 2. ACTUALITZEM L'ESTAT (Això dispara l'AlarmEngine un sol cop)
+    if (_hasBarometer && _isCalibrated) {
+      state = _lastBaroAlt + _offset;
     } else {
-      _updateState();
+      state =
+          gpsAlt; // Fallback directe al GPS si no hi ha baròmetre o calibratge
     }
   }
 
-  void forceCalibration(double cogValue) {
-    _offset = cogValue - _lastBaroAlt;
+  void forceCalibration(double gpsAlt) {
+    _offset = gpsAlt - _lastBaroAlt;
     _lastCalibrationTime = DateTime.now();
     _isCalibrated = true;
-    _updateState();
-    print("🎯 CALIBRAT: Nou offset $_offset");
-  }
-
-  void _updateState() {
-    if (isSimulating) return;
-    if (_hasBarometer) {
-      // NOMÉS actualitzem l'estat si ja hem calibrat almenys un cop.
-      // Si no, mantenim l'estat en 0.0 (que la UI convertirà en --m)
-      if (_isCalibrated) {
-        state = _lastBaroAlt + _offset;
-      } else {
-        state = _lastBaroAlt + _offset;
-      }
-    }
+    state = _lastBaroAlt + _offset;
   }
 
   double _pressureToAltitude(double p) =>

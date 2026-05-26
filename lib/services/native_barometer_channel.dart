@@ -20,6 +20,14 @@ class NativeBarometerChannel {
     return await _methods.invokeMethod<bool>('hasBarometer') ?? false;
   }
 
+  static Future<void> setSamplingPeriod(int microseconds) async {
+    try {
+      await _methods.invokeMethod('setSamplingPeriod', microseconds);
+    } on PlatformException catch (e) {
+      print("Error canviant la freqüència: ${e.message}");
+    }
+  }
+
   static Stream<double> pressureStream() {
     _pressureStream ??= _events.receiveBroadcastStream().map(
       (event) => event as double,
@@ -27,3 +35,6 @@ class NativeBarometerChannel {
     return _pressureStream!;
   }
 }
+
+// Exempld d'ús
+// NativeBarometerChannel.setSamplingPeriod(1000000);

@@ -1,5 +1,5 @@
 import 'dart:async';
-
+import 'package:senda/services/native_barometer_channel.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/notifiers/helpers/thresholds.dart';
 import 'package:senda/services/native_gps_channel.dart';
@@ -140,12 +140,28 @@ class GpsSettingsNotifier extends Notifier<GpsSettings> {
   Future<void> apply() async {
     await _saveToPrefs();
 
+    // 1. Iniciem/Actualitzem el GPS
     await NativeGpsChannel.start(
       useTime: state.useTime,
       seconds: state.seconds,
       meters: state.meters,
       accuracy: state.accuracy,
     );
+
+    // 2. Sincronitzem el Baròmetre
+    int periodUs;
+    if (state.useTime) {
+      // Si el GPS va per temps, posem el mateix (mínim 1s per seguretat)
+      periodUs = state.seconds * 1000000;
+    } else {
+      // Si el GPS va per DISTÀNCIA, forcem 2 segons fixos
+      periodUs = 2000000;
+    }
+
+    await NativeBarometerChannel.setSamplingPeriod(periodUs);
+
+    // Eliminem qualsevol actualització dinàmica per velocitat
+    print("📡 Baròmetre fixat a: ${periodUs / 1000000}s");
   }
 
   Future<void> setNavigationMode() async {
@@ -161,6 +177,25 @@ class GpsSettingsNotifier extends Notifier<GpsSettings> {
   Future<void> restoreDefaultMode() async {
     await _loadFromPrefs();
     await apply();
+  }
+
+  void updateBarometerSync(double currentSpeed) {
+    // Si usem temps, el baròmetre ja es va configurar a l'apply() i no cal fer res
+    if (state.useTime) return;
+
+    int periodUs;
+    if (currentSpeed > 0.5) {
+      // Més de 1.8 km/h
+      // temps = metres configurats / velocitat real
+      double seconds = state.meters / currentSpeed;
+      // Límit de seguretat entre 2s i 30s
+      periodUs = (seconds.clamp(2.0, 30.0) * 1000000).toInt();
+    } else {
+      // Aturats: 5 segons per no saturar ni gastar
+      periodUs = 5000000;
+    }
+
+    NativeBarometerChannel.setSamplingPeriod(periodUs);
   }
 }
 

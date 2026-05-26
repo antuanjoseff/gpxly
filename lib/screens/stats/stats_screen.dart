@@ -5,71 +5,61 @@ import 'package:senda/models/track.dart';
 import 'package:senda/notifiers/imported_track_notifier.dart';
 import 'package:senda/notifiers/timer_notifier.dart';
 import 'package:senda/notifiers/track_notifier.dart';
+import 'package:senda/screens/stats/notifiers/stats_prefs_notifier.dart';
 import 'package:senda/theme/app_colors.dart';
 
-class TrackStatsScreen extends ConsumerWidget {
+class TrackStatsScreen extends ConsumerStatefulWidget {
   const TrackStatsScreen({super.key});
+
+  @override
+  ConsumerState<TrackStatsScreen> createState() => _TrackStatsScreenState();
+}
+
+class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
+  late Map<String, PageController> _controllers;
+
+  @override
+  void initState() {
+    super.initState();
+    final prefs = ref.read(statsPrefsProvider);
+    _controllers = {
+      'dist': PageController(initialPage: prefs.indices['dist']!),
+      'time': PageController(initialPage: prefs.indices['time']!),
+      'speed': PageController(initialPage: prefs.indices['speed']!),
+      'alt': PageController(initialPage: prefs.indices['alt']!),
+    };
+  }
+
+  @override
+  void dispose() {
+    _controllers.forEach((_, ctrl) => ctrl.dispose());
+    super.dispose();
+  }
 
   String _formatDuration(Duration d) =>
       d.toString().split('.').first.padLeft(8, "0");
 
-  String _formatElevation(double v) => "${v.toStringAsFixed(0)} m";
-
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final t = AppLocalizations.of(context)!;
+    final prefsState = ref.watch(statsPrefsProvider);
+    if (!prefsState.isInitialized)
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+
     final real = ref.watch(trackProvider);
     final imported = ref.watch(importedTrackProvider);
-    final liveDuration = ref.watch(timerProvider);
+    Track? track = real.coordinates.isNotEmpty
+        ? real
+        : (imported?.coordinates.isNotEmpty == true ? imported : null);
 
-    Track? track;
-    if (real.coordinates.isNotEmpty) {
-      track = real;
-    } else if (imported != null && imported.coordinates.isNotEmpty) {
-      track = imported;
-    }
-
-    if (track == null) {
-      return Scaffold(
-        appBar: AppBar(
-          elevation: 0,
-          backgroundColor: AppColors.primary,
-          title: Text(
-            t.trackStatsTitle,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-        body: Center(
-          child: Text(
-            t.noRecordedTrack,
-            style: const TextStyle(fontSize: 16, color: Colors.black54),
-          ),
-        ),
-      );
-    }
-
-    final isReal = track == real;
-    final currentDuration = isReal ? liveDuration : track.duration;
-    final timeTotal = _formatDuration(currentDuration);
-    final timeStopped = _formatDuration(track.stoppedDuration);
-    final distanceKm = (track.distance / 1000).toStringAsFixed(2);
-    final currentSpeed = (isReal && real.speeds.isNotEmpty)
-        ? real.speeds.last.toStringAsFixed(1)
-        : "0.0";
-    final avgSpeed = track.averageSpeed.isFinite
-        ? track.averageSpeed.toStringAsFixed(1)
-        : "0.0";
+    if (track == null) return _buildEmptyState(t);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: const Color(0xFFF5F5F7),
       appBar: AppBar(
         elevation: 0,
         centerTitle: true,
         backgroundColor: AppColors.primary,
-        iconTheme: const IconThemeData(color: Colors.white),
         title: Text(
           t.trackStatsTitle,
           style: const TextStyle(
@@ -78,289 +68,308 @@ class TrackStatsScreen extends ConsumerWidget {
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // --- 1. Distància Hero (Més compacte verticalment) ---
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  vertical: 20,
-                ), // Reduït de 32 a 20
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withAlpha(217),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
-                    Text(
-                      distanceKm,
-                      style: const TextStyle(
-                        fontSize: 54,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white,
-                        letterSpacing: -1.5,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    const Text(
-                      "KM",
-                      style: TextStyle(
-                        fontSize: 20,
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final cardHeight = (constraints.maxHeight - 64) / 4;
 
-            // --- 2. Segona Fila (Títols més visibles i multilineals) ---
-            Padding(
+            return ReorderableListView(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _buildMicroCard([
-                      _StatItem(
-                        t.statTimeStopped,
-                        timeStopped,
-                        Icons.pause_circle_filled,
-                      ),
-                      _StatItem(t.statTimeTotal, timeTotal, Icons.timer),
-                    ]),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildMicroCard([
-                      _StatItem(
-                        t.statSpeedCurrent,
-                        "$currentSpeed km/h",
-                        Icons.bolt,
-                      ),
-                      _StatItem(
-                        t.statSpeedAverage,
-                        "$avgSpeed km/h",
-                        Icons.speed,
-                      ),
-                    ]),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            // --- 3. Tercer Element (Swipe Lineal) ---
-            SizedBox(
-              height: 240,
-              child: PageView(
-                controller: PageController(viewportFraction: 1.0),
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: _buildSwipeCard(
-                      title: t.statElevation,
-                      icon: Icons.terrain,
-                      children: [
-                        _DetailRow(
-                          Icons.trending_up,
-                          t.statAscent,
-                          _formatElevation(track.ascent),
-                        ),
-                        const Divider(),
-                        _DetailRow(
-                          Icons.trending_down,
-                          t.statDescent,
-                          _formatElevation(track.descent),
-                        ),
-                        const Divider(),
-                        _DetailRow(
-                          Icons.height,
-                          t.statMaxElevation,
-                          _formatElevation(track.maxElevation),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: _buildSwipeCard(
-                      title: isReal ? t.recordingTrack : t.importedTrack,
-                      icon: Icons.info_outline,
-                      children: [
-                        _DetailRow(
-                          Icons.directions_run,
-                          t.statTimeMoving,
-                          _formatDuration(
-                            currentDuration - track.stoppedDuration,
-                          ),
-                        ),
-                        const Divider(),
-                        _DetailRow(
-                          Icons.location_on,
-                          t.statMinElevation,
-                          _formatElevation(track.minElevation),
-                        ),
-                        const Divider(),
-                        _DetailRow(
-                          Icons.straighten,
-                          "Punts",
-                          "${track.coordinates.length}",
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+              onReorder: (oldIdx, newIdx) =>
+                  ref.read(statsPrefsProvider.notifier).reorder(oldIdx, newIdx),
+              children: prefsState.order.map((key) {
+                return Padding(
+                  key: ValueKey(key),
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: _buildCardByKey(key, track, cardHeight, t, ref),
+                );
+              }).toList(),
+            );
+          },
         ),
       ),
     );
   }
 
-  Widget _buildMicroCard(List<Widget> items) {
+  Widget _buildCardByKey(
+    String key,
+    Track track,
+    double height,
+    AppLocalizations t,
+    WidgetRef ref,
+  ) {
+    final real = ref.read(trackProvider);
+    final liveDuration = ref.watch(timerProvider);
+    final isReal = track == real;
+
+    switch (key) {
+      case 'dist':
+        return _StatCard(
+          height: height,
+          controller: _controllers['dist']!,
+          onPageChanged: (i) =>
+              ref.read(statsPrefsProvider.notifier).setCarouselIdx('dist', i),
+          pages: [
+            _StatPage(
+              Icons.straighten,
+              track.distance > 0 ? (track.distance / 1000) : null,
+              "KM",
+              t.statDistance,
+            ),
+            _StatPage(
+              Icons.tag,
+              track.coordinates.length.toDouble(),
+              "PTS",
+              "PUNTS GPS",
+              isInt: true,
+            ),
+          ],
+        );
+      case 'time':
+        return _StatCard(
+          height: height,
+          controller: _controllers['time']!,
+          onPageChanged: (i) =>
+              ref.read(statsPrefsProvider.notifier).setCarouselIdx('time', i),
+          pages: [
+            _StatPage(
+              Icons.timer,
+              null,
+              "",
+              t.statTimeTotal,
+              customValue: _formatDuration(
+                isReal ? liveDuration : track.duration,
+              ),
+            ),
+            _StatPage(
+              Icons.pause_circle_filled,
+              null,
+              "",
+              t.statTimeStopped,
+              customValue: _formatDuration(track.stoppedDuration),
+            ),
+            _StatPage(
+              Icons.directions_run,
+              null,
+              "",
+              t.statTimeMoving,
+              customValue: _formatDuration(
+                isReal
+                    ? (liveDuration - track.stoppedDuration)
+                    : (track.duration - track.stoppedDuration),
+              ),
+            ),
+          ],
+        );
+      case 'speed':
+        return _StatCard(
+          height: height,
+          controller: _controllers['speed']!,
+          onPageChanged: (i) =>
+              ref.read(statsPrefsProvider.notifier).setCarouselIdx('speed', i),
+          pages: [
+            _StatPage(
+              Icons.bolt,
+              isReal ? (real.currentSpeed * 3.6) : null,
+              "km/h",
+              t.statSpeedCurrent,
+            ),
+            _StatPage(
+              Icons.speed,
+              track.averageSpeed > 0 ? track.averageSpeed : null,
+              "km/h",
+              t.statSpeedAverage,
+            ),
+          ],
+        );
+      case 'alt':
+        return _StatCard(
+          height: height,
+          controller: _controllers['alt']!,
+          onPageChanged: (i) =>
+              ref.read(statsPrefsProvider.notifier).setCarouselIdx('alt', i),
+          pages: [
+            _StatPage(
+              Icons.terrain,
+              (isReal && real.altitudes.isNotEmpty)
+                  ? real.altitudes.last
+                  : null,
+              "m",
+              t.statElevationCurrent,
+              isInt: true,
+            ),
+            _StatPage(
+              Icons.trending_up,
+              track.ascent,
+              "m",
+              t.statAscent,
+              isInt: true,
+            ),
+            _StatPage(
+              Icons.trending_down,
+              track.descent,
+              "m",
+              t.statDescent,
+              isInt: true,
+            ),
+            _StatPage(
+              Icons.vertical_align_top,
+              track.maxElevation,
+              "m",
+              t.statMaxElevation,
+              isInt: true,
+            ),
+            _StatPage(
+              Icons.vertical_align_bottom,
+              track.minElevation,
+              "m",
+              t.statMinElevation,
+              isInt: true,
+            ),
+          ],
+        );
+      default:
+        return const SizedBox();
+    }
+  }
+
+  Widget _buildEmptyState(AppLocalizations t) => Scaffold(
+    backgroundColor: const Color(0xFFF5F5F7),
+    appBar: AppBar(
+      backgroundColor: AppColors.primary,
+      title: Text(t.trackStatsTitle),
+    ),
+    body: Center(
+      child: Text(
+        t.noRecordedTrack,
+        style: const TextStyle(color: Colors.black54),
+      ),
+    ),
+  );
+}
+
+class _StatCard extends StatelessWidget {
+  final double height;
+  final List<Widget> pages;
+  final PageController controller;
+  final Function(int) onPageChanged;
+
+  const _StatCard({
+    required this.height,
+    required this.pages,
+    required this.controller,
+    required this.onPageChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      height: 110, // Una mica més alt per encabir el possible multiline
+      height: height,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppColors.primary.withOpacity(0.4),
+          width: 1.5,
+        ),
         boxShadow: [
-          BoxShadow(color: Colors.black.withAlpha(13), blurRadius: 10),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: PageView(
-          physics: const BouncingScrollPhysics(),
-          children: items,
+          controller: controller,
+          onPageChanged: onPageChanged,
+          children: pages,
         ),
       ),
     );
   }
-
-  Widget _buildSwipeCard({
-    required String title,
-    required IconData icon,
-    required List<Widget> children,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.primary.withAlpha(26)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, color: AppColors.primary, size: 22),
-              const SizedBox(width: 8),
-              Text(
-                title.toUpperCase(),
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primary.withAlpha(179),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          ...children,
-        ],
-      ),
-    );
-  }
 }
 
-class _StatItem extends StatelessWidget {
-  final String label;
-  final String value;
+class _StatPage extends StatelessWidget {
   final IconData icon;
-  const _StatItem(this.label, this.value, this.icon);
+  final double? value;
+  final String unit;
+  final String label;
+  final bool isInt;
+  final String? customValue;
+
+  const _StatPage(
+    this.icon,
+    this.value,
+    this.unit,
+    this.label, {
+    this.isInt = false,
+    this.customValue,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Row(
+    String val =
+        customValue ??
+        (value == null
+            ? "--"
+            : (isInt ? value!.toStringAsFixed(0) : value!.toStringAsFixed(2)));
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              color: AppColors.primary,
+              size: 26,
+            ), // 🔥 Pujat de 22 a 26
+            const SizedBox(width: 8),
+            Text(
+              label.toUpperCase(),
+              style: TextStyle(
+                color: Colors.grey.shade700,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.2,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
             children: [
-              Icon(icon, color: AppColors.primary, size: 16),
-              const SizedBox(width: 6),
-              Expanded(
-                // Permet que el text ocupi dues files si cal
-                child: Text(
-                  label.toUpperCase(),
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: Colors.grey,
+              Text(
+                val,
+                style: const TextStyle(
+                  color: Colors.black87,
+                  fontSize: 30, // 📉 Baixat de 34 a 30 per compensar
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              if (unit.isNotEmpty && val != "--") ...[
+                const SizedBox(width: 4),
+                Text(
+                  unit,
+                  style: TextStyle(
+                    color: Colors.grey.shade500,
+                    fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    height: 1.1,
                   ),
                 ),
-              ),
+              ],
             ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'monospace',
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _DetailRow extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-  const _DetailRow(this.icon, this.label, this.value);
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        children: [
-          Icon(icon, color: AppColors.primary.withAlpha(128), size: 18),
-          const SizedBox(width: 10),
-          Text(
-            label,
-            style: const TextStyle(fontSize: 14, color: Colors.black87),
-          ),
-          const Spacer(),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'monospace',
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

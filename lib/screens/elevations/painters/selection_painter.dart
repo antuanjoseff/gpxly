@@ -1,3 +1,5 @@
+// lib/screens/elevations/painters/selection_painter.dart
+
 import 'package:flutter/material.dart';
 
 class SelectionPainter extends CustomPainter {
@@ -5,33 +7,27 @@ class SelectionPainter extends CustomPainter {
   final double? graphX;
   final int? graphIndex;
 
-  // Waypoints
-  final List<int>? recordedWaypointIndices;
-  final List<int>? importedWaypointIndices;
-
   // Rang
   final double? startX;
   final int? startIndex;
   final double? endX;
   final int? endIndex;
 
-  // Tracks
+  // Eix global
   final List<double> distances;
   final List<double> altitudes;
 
-  final List<double>? secondaryDistances;
-  final List<double>? secondaryAltitudes;
+  // Waypoints (distàncies globals)
+  final List<double>? recordedWaypointGlobalDists;
+  final List<double>? importedWaypointGlobalDists;
 
   // Colors
   final Color graphNeedleColor;
   final Color sliderStartNeedleColor;
   final Color sliderEndNeedleColor;
-  final Color? secondaryGraphNeedleColor;
 
   final Color recordedWaypointColor;
   final Color importedWaypointColor;
-
-  final bool primaryIsReal;
 
   static const double bottomReserved = 40.0;
   static const double topReserved = 60.0;
@@ -51,12 +47,8 @@ class SelectionPainter extends CustomPainter {
     required this.sliderEndNeedleColor,
     required this.recordedWaypointColor,
     required this.importedWaypointColor,
-    required this.primaryIsReal,
-    this.secondaryDistances,
-    this.secondaryAltitudes,
-    this.secondaryGraphNeedleColor,
-    this.recordedWaypointIndices,
-    this.importedWaypointIndices,
+    this.recordedWaypointGlobalDists,
+    this.importedWaypointGlobalDists,
   });
 
   @override
@@ -66,15 +58,9 @@ class SelectionPainter extends CustomPainter {
     final chartHeight = size.height - bottomReserved - topReserved;
     final xAxisY = topReserved + chartHeight;
 
-    // Rang vertical combinat
-    final List<double> allAlts = [
-      ...altitudes,
-      if (secondaryAltitudes != null) ...secondaryAltitudes!,
-    ];
-
-    final double minAlt = allAlts.reduce((a, b) => a < b ? a : b);
-    final double maxAlt = allAlts.reduce((a, b) => a > b ? a : b);
-    final double diff = maxAlt - minAlt;
+    final minAlt = altitudes.reduce((a, b) => a < b ? a : b);
+    final maxAlt = altitudes.reduce((a, b) => a > b ? a : b);
+    final diff = maxAlt - minAlt;
 
     double exaggeration = 1.0;
     if (diff < 30) {
@@ -85,72 +71,50 @@ class SelectionPainter extends CustomPainter {
       exaggeration = 1.2;
     }
 
-    final double effectiveRange = diff < 50 ? 50 : diff;
+    final effectiveRange = diff < 50 ? 50 : diff;
+    final minY = minAlt - (effectiveRange * 0.3 * exaggeration);
+    final maxY = minY + (effectiveRange * 1.3 * exaggeration);
+    final yRange = maxY - minY;
 
-    final double minY = minAlt - (effectiveRange * 0.3 * exaggeration);
-    final double maxY = minY + (effectiveRange * 1.3 * exaggeration);
-    final double yRange = maxY - minY;
+    final usableWidth = size.width;
+    final maxDist = distances.last;
 
-    final double usableWidth = size.width;
+    double mapX(double dist) {
+      if (maxDist == 0) return 0;
+      return (dist / maxDist) * usableWidth;
+    }
 
     // WAYPOINTS GRAVATS
-    if (recordedWaypointIndices != null &&
-        recordedWaypointIndices!.isNotEmpty) {
+    if (recordedWaypointGlobalDists != null &&
+        recordedWaypointGlobalDists!.isNotEmpty) {
       final recWpPaint = Paint()
         ..color = recordedWaypointColor
         ..style = PaintingStyle.fill;
 
-      final List<double>? recordedDistsSource = primaryIsReal
-          ? distances
-          : secondaryDistances;
-
-      if (recordedDistsSource != null && recordedDistsSource.isNotEmpty) {
-        for (final idx in recordedWaypointIndices!) {
-          if (idx < 0 || idx >= recordedDistsSource.length) continue;
-
-          final double x =
-              (recordedDistsSource[idx] / recordedDistsSource.last) *
-              usableWidth;
-          canvas.drawCircle(Offset(x, xAxisY - 4), 4, recWpPaint);
-        }
+      for (final d in recordedWaypointGlobalDists!) {
+        final x = mapX(d);
+        canvas.drawCircle(Offset(x, xAxisY - 4), 4, recWpPaint);
       }
     }
 
     // WAYPOINTS IMPORTATS
-    // WAYPOINTS IMPORTATS
-    if (importedWaypointIndices != null &&
-        importedWaypointIndices!.isNotEmpty) {
+    if (importedWaypointGlobalDists != null &&
+        importedWaypointGlobalDists!.isNotEmpty) {
       final impWpPaint = Paint()
         ..color = importedWaypointColor
         ..style = PaintingStyle.fill;
 
-      final List<double>? importedDistsSource = primaryIsReal
-          ? secondaryDistances
-          : distances;
-
-      if (importedDistsSource != null && importedDistsSource.isNotEmpty) {
-        for (final idx in importedWaypointIndices!) {
-          if (idx < 0 || idx >= importedDistsSource.length) continue;
-
-          // ELIMINADO EL + 24: Ahora la proporción es exacta al ancho usable
-          final double x =
-              (importedDistsSource[idx] / importedDistsSource.last) *
-              usableWidth;
-
-          canvas.drawCircle(Offset(x, xAxisY - 4), 4, impWpPaint);
-        }
+      for (final d in importedWaypointGlobalDists!) {
+        final x = mapX(d);
+        canvas.drawCircle(Offset(x, xAxisY - 4), 4, impWpPaint);
       }
     }
 
-    // ─────────────────────────────────────────────
-    // DADES DEL RANG
-    // ─────────────────────────────────────────────
     final int? sIndex = startIndex;
     final int? eIndex = endIndex;
     final double? sX = startX;
     final double? eX = endX;
 
-    // EVITAR SOLAPAMENT TOOLTIP START/END
     double dxStart = 0;
     double dxEnd = 0;
     const double tooltipWidth = 80;
@@ -167,17 +131,11 @@ class SelectionPainter extends CustomPainter {
       }
     }
 
-    // ─────────────────────────────────────────────
-    // CALCULAR SI EL RANG ESTÀ INVERTIT (per ALTITUD)
-    // ─────────────────────────────────────────────
     bool inverted = false;
     if (sIndex != null && eIndex != null) {
       inverted = sIndex > eIndex;
     }
 
-    // ─────────────────────────────────────────────
-    // AGULLA PRINCIPAL
-    // ─────────────────────────────────────────────
     if (graphX != null && graphIndex != null) {
       _paintMainNeedle(
         canvas: canvas,
@@ -192,9 +150,6 @@ class SelectionPainter extends CustomPainter {
       );
     }
 
-    // ─────────────────────────────────────────────
-    // AGULLA INICI RANG (colors GIRATS)
-    // ─────────────────────────────────────────────
     if (startX != null && startIndex != null) {
       _paintRangeNeedle(
         canvas,
@@ -214,9 +169,6 @@ class SelectionPainter extends CustomPainter {
       );
     }
 
-    // ─────────────────────────────────────────────
-    // AGULLA FINAL RANG (colors GIRATS)
-    // ─────────────────────────────────────────────
     if (endX != null && endIndex != null) {
       _paintRangeNeedle(
         canvas,
@@ -237,9 +189,6 @@ class SelectionPainter extends CustomPainter {
     }
   }
 
-  // ─────────────────────────────────────────────
-  // AGULLA PRINCIPAL + TOOLTIP
-  // ─────────────────────────────────────────────
   void _paintMainNeedle({
     required Canvas canvas,
     required Size size,
@@ -284,9 +233,6 @@ class SelectionPainter extends CustomPainter {
     );
   }
 
-  // ─────────────────────────────────────────────
-  // AGULLES DE RANG + TOOLTIP
-  // ─────────────────────────────────────────────
   void _paintRangeNeedle(
     Canvas canvas,
     Size size,
@@ -335,9 +281,6 @@ class SelectionPainter extends CustomPainter {
     }
   }
 
-  // ─────────────────────────────────────────────
-  // TOOLTIP COMÚ
-  // ─────────────────────────────────────────────
   void _paintTooltipBox(
     Canvas canvas,
     Size size,
@@ -365,7 +308,6 @@ class SelectionPainter extends CustomPainter {
     double rectX = x - w / 2;
     double rectY = 4;
 
-    // CLAMP CORRECTE
     const double padding = 4.0;
     rectX = rectX.clamp(padding, size.width - w - padding);
 
@@ -383,9 +325,6 @@ class SelectionPainter extends CustomPainter {
     textPainter.paint(canvas, Offset(rectX + 8, rectY + 6));
   }
 
-  // ─────────────────────────────────────────────
-  // OVERLAP TOOLTIP
-  // ─────────────────────────────────────────────
   bool _tooltipsOverlap(double x1, double x2, double width) {
     return (x1 - x2).abs() < width;
   }

@@ -184,6 +184,7 @@ class TrackNotifier extends Notifier<Track> {
     state = state.copyWith(
       currentPosition: LatLng(lat, lon),
       currentHeading: heading,
+      currentSpeed: speed,
     );
 
     final gps = ref.read(gpsSettingsProvider);

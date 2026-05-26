@@ -1,9 +1,13 @@
+// lib/screens/elevations/elevation_profile_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/l10n/app_localizations.dart';
 import 'package:senda/models/waypoint.dart';
 import 'package:senda/notifiers/imported_track_notifier.dart';
 import 'package:senda/notifiers/imported_track_settings_notifier.dart';
+import 'package:senda/notifiers/remaining_track_notifier.dart';
+import 'package:senda/notifiers/track_follow_notifier.dart';
 import 'package:senda/notifiers/track_notifier.dart';
 import 'package:senda/notifiers/track_settings_notifier.dart';
 import 'package:senda/notifiers/waypoints_imported_notifier.dart';
@@ -57,24 +61,131 @@ class _ElevationProfileScreenState
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context)!;
+
     final real = ref.watch(trackProvider);
     final imported = ref.watch(importedTrackProvider);
+    final remaining = ref.watch(remainingTrackProvider);
+    final follow = ref.watch(trackFollowNotifierProvider);
 
     final realAlts = real.altitudes;
     final realDists = calculateDistances(real.coordinates);
-    final importedAlts = imported?.altitudes ?? [];
-    final importedDists = calculateDistances(imported?.coordinates ?? []);
 
+    final double pastLastDist = realDists.isNotEmpty ? realDists.last : 0.0;
+
+    // ─────────────────────────────────────────────
+    // 1) Lògica principal: quan s'ha de mostrar el FUTUR?
+    // ─────────────────────────────────────────────
+    final bool shouldShowFuture =
+        follow.isFollowing && !follow.isOffTrack && remaining != null;
+
+    // ─────────────────────────────────────────────
+    // 2) FUTUR segons la lògica final
+    // ─────────────────────────────────────────────
+    late final List<double> futureAlts;
+    late final List<double> futureDistsGlobal;
+
+    if (shouldShowFuture) {
+      // NOVA LÒGICA: futur enganxat al track real
+      futureAlts = remaining!.altitudes;
+      futureDistsGlobal = remaining.distances
+          .map((d) => pastLastDist + d)
+          .toList(growable: false);
+    } else {
+      // COMPORTAMENT ANTIC: track importat complet (si existeix)
+      final importedDists = calculateDistances(imported?.coordinates ?? []);
+      futureAlts = imported?.altitudes ?? [];
+      futureDistsGlobal = importedDists;
+    }
+
+    // Llistes globals (passat + futur)
+    final globalDists = <double>[...realDists, ...futureDistsGlobal];
+    final globalAlts = <double>[...realAlts, ...futureAlts];
+    // ─────────────────────────────────────────────
+    // 3) WAYPOINTS
+    // ─────────────────────────────────────────────
     final recordedWps = ref.watch(waypointsProvider);
     final importedWps = ref.watch(importedWaypointsProvider);
 
     final trackColor = ref.watch(trackSettingsProvider).color;
     final importedTrackColor = ref.watch(importedTrackSettingsProvider).color;
 
-    final primaryIsReal =
-        realDists.isNotEmpty &&
-        (importedDists.isEmpty || realDists.last >= importedDists.last);
+    // Waypoints gravats → sempre globals
+    final recordedWaypointGlobalDists = recordedWps
+        .where((wp) => wp.trackIndex >= 0 && wp.trackIndex < realDists.length)
+        .map((wp) => realDists[wp.trackIndex])
+        .toList(growable: false);
 
+    // Waypoints importats
+    final importedWaypointGlobalDists = <double>[];
+
+    if (!shouldShowFuture) {
+      // COMPORTAMENT ANTIC: tots els waypoints importats
+      final importedDists = calculateDistances(imported?.coordinates ?? []);
+      for (final wp in importedWps) {
+        if (wp.trackIndex < importedDists.length) {
+          importedWaypointGlobalDists.add(importedDists[wp.trackIndex]);
+        }
+      }
+    } else {
+      // NOVA LÒGICA: només waypoints FUTURS
+      for (final wp in importedWps) {
+        final idx = wp.trackIndex;
+        if (idx < remaining!.anchorIndex) continue;
+
+        final futureIdx = idx - remaining.anchorIndex;
+        if (futureIdx < remaining.distances.length) {
+          importedWaypointGlobalDists.add(
+            pastLastDist + remaining.distances[futureIdx],
+          );
+        }
+      }
+    }
+
+    final hasReal = realAlts.isNotEmpty;
+    final hasFuture = futureAlts.isNotEmpty;
+
+    // ─────────────────────────────────────────────
+    // 5) Estadístiques del rang seleccionat
+    // ─────────────────────────────────────────────
+    double? rangeDistance;
+    double? rangeAscent;
+    double? rangeDescent;
+    Duration? rangeTime;
+
+    if (selectedIndexStart != null && selectedIndexEnd != null) {
+      final start = selectedIndexStart!;
+      final end = selectedIndexEnd!;
+
+      // 1) Distància
+      rangeDistance = (globalDists[end] - globalDists[start]).abs();
+
+      // 2) Desnivell acumulat
+      double ascent = 0;
+      double descent = 0;
+
+      for (int i = start + 1; i <= end; i++) {
+        final diff = globalAlts[i] - globalAlts[i - 1];
+        if (diff > 0) ascent += diff;
+        if (diff < 0) descent += diff.abs();
+      }
+
+      rangeAscent = ascent;
+      rangeDescent = descent;
+
+      // 3) Temps (només si tens timestamps)
+      final real = ref.watch(trackProvider);
+      if (real.timestamps != null &&
+          real.timestamps!.length > end &&
+          real.timestamps!.length > start) {
+        final t0 = real.timestamps![start];
+        final t1 = real.timestamps![end];
+        rangeTime = t1.difference(t0);
+      }
+    }
+
+    // ─────────────────────────────────────────────
+    // 4) UI (sense canvis)
+    // ─────────────────────────────────────────────
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F7),
       appBar: AppBar(
@@ -93,9 +204,9 @@ class _ElevationProfileScreenState
         children: [
           const SizedBox(height: 12),
           HeaderLegendWidget(
-            hasReal: realAlts.isNotEmpty,
-            hasImported: importedAlts.isNotEmpty,
-            primaryIsReal: primaryIsReal,
+            hasReal: hasReal,
+            hasImported: hasFuture,
+            primaryIsReal: true,
             rangeStartIndex: selectedIndexStart,
             rangeEndIndex: selectedIndexEnd,
           ),
@@ -114,30 +225,21 @@ class _ElevationProfileScreenState
               ],
             ),
             height: MediaQuery.of(context).size.height * 0.32,
-
-            // Dins del Container que conté l'ElevationChartWidget
             child: ElevationChartWidget(
-              realAlts: realAlts,
-              realDists: realDists,
-              importedAlts: importedAlts,
-              importedDists: importedDists,
-              primaryIsReal: primaryIsReal,
+              pastAlts: realAlts,
+              pastDists: realDists,
+              futureAlts: futureAlts,
+              futureDistsGlobal: futureDistsGlobal,
               selectedIndexStart: selectedIndexStart,
               selectedIndexEnd: selectedIndexEnd,
               selectedIndexGraph: selectedIndexGraph,
-              recordedWaypointIndices: recordedWps
-                  .map((wp) => wp.trackIndex)
-                  .toList(),
-              importedWaypointIndices: importedWps
-                  .map((wp) => wp.trackIndex)
-                  .toList(),
+              recordedWaypointGlobalDists: recordedWaypointGlobalDists,
+              importedWaypointGlobalDists: importedWaypointGlobalDists,
               realColor: trackColor,
               importedColor: importedTrackColor,
               graphNeedleColor: AppColors.primary,
               sliderStartNeedleColor: Colors.green,
               sliderEndNeedleColor: Colors.red,
-
-              // CALLBACKS REQUERITS CORREGITS:
               onNeedleMove: (idx) => setState(() {
                 selectedIndexGraph = idx;
               }),
@@ -153,6 +255,58 @@ class _ElevationProfileScreenState
               }),
             ),
           ),
+          if (rangeDistance != null) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withAlpha(12),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Rang seleccionat",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    Text(
+                      "Distància: ${(rangeDistance! / 1000).toStringAsFixed(2)} km",
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                    Text(
+                      "Desnivell +: ${rangeAscent!.toStringAsFixed(0)} m",
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                    Text(
+                      "Desnivell -: ${rangeDescent!.toStringAsFixed(0)} m",
+                      style: const TextStyle(fontSize: 14),
+                    ),
+
+                    if (rangeTime != null)
+                      Text(
+                        "Temps: ${rangeTime!.inMinutes} min",
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ],
           WaypointsListWidget(
             recorded: recordedWps,
             imported: importedWps,
