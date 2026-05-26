@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/l10n/app_localizations.dart';
 import 'package:senda/models/waypoint.dart';
+import 'package:senda/notifiers/helpers/thresholds.dart';
 import 'package:senda/notifiers/imported_track_notifier.dart';
 import 'package:senda/notifiers/imported_track_settings_notifier.dart';
 import 'package:senda/notifiers/remaining_track_notifier.dart';
@@ -79,10 +80,10 @@ class _ElevationProfileScreenState
         follow.isFollowing && !follow.isOffTrack && remaining != null;
 
     // ─────────────────────────────────────────────
-    // 2) FUTUR segons la lògica final
+    // 2) FUTUR segons la lògica final + ESCALAT 20%
     // ─────────────────────────────────────────────
-    late final List<double> futureAlts;
-    late final List<double> futureDistsGlobal;
+    late List<double> futureAlts;
+    late List<double> futureDistsGlobal;
 
     if (shouldShowFuture) {
       // NOVA LÒGICA: futur enganxat al track real
@@ -95,6 +96,24 @@ class _ElevationProfileScreenState
       final importedDists = calculateDistances(imported?.coordinates ?? []);
       futureAlts = imported?.altitudes ?? [];
       futureDistsGlobal = importedDists;
+    }
+
+    // ─────────────────────────────────────────────
+    // 2B) ESCALAT DEL FUTUR AL 20% DEL GRÀFIC
+    // ─────────────────────────────────────────────
+    if (futureDistsGlobal.isNotEmpty && realDists.isNotEmpty) {
+      final double maxPast = realDists.last;
+      final double maxFuture = futureDistsGlobal.last;
+
+      if (maxFuture > 0) {
+        // El futur ha d'ocupar només el 20% de l'amplada total
+        final double futureScale =
+            (maxPast * TrackThresholds.futureTrackVisibility) / maxFuture;
+
+        futureDistsGlobal = futureDistsGlobal
+            .map((d) => maxPast + d * futureScale)
+            .toList(growable: false);
+      }
     }
 
     // Llistes globals (passat + futur)

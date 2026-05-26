@@ -27,4 +27,7 @@ class TrackThresholds {
 
   // Nou llindar per detectar aturades
   static const double stopSpeedThreshold = 0.5; // m/s
+
+  // Gràfic d'elevacions
+  static const double futureTrackVisibility = 0.3; // 30% of axis
 }
