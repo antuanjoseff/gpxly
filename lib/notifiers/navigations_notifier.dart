@@ -4,15 +4,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
-import 'package:senda/models/track_follow_state.dart';
+// Models immutables refactoritzats
+import 'package:senda/models/navigation_state.dart';
+import 'package:senda/models/user_position.dart';
 import 'package:senda/notifiers/gps_settings_notifier.dart';
 import 'package:senda/notifiers/imported_track_notifier.dart';
-import 'package:senda/notifiers/track_notifier.dart';
+// Proveïdors i serveis externs de la teva app
+import 'package:senda/notifiers/location_notifier.dart'; // Bloc 1
 import 'package:senda/services/permissions_service.dart';
-import 'package:senda/utils/geo_utils.dart';
+import 'package:senda/utils/distance_utils.dart'; // Per al teu mètode calculateDistanceManual / distanceBetween
 
+// Importació dels teus helpers matemàtics i de so reals
 import 'helpers/closest_result.dart';
-// Helpers
 import 'helpers/geometry_utils.dart';
 import 'helpers/offtrack_logic.dart';
 import 'helpers/progress_tracker.dart';
@@ -21,12 +24,8 @@ import 'helpers/thresholds.dart';
 import 'helpers/track_debug.dart';
 import 'helpers/track_sounds.dart';
 
-enum FollowMode { notFollowing, initializing, onTrack, offTrack }
-
-class TrackFollowNotifier extends Notifier<TrackFollowState> {
-  // ------------------------------------------------------------
-  // Helpers (Opció A)
-  // ------------------------------------------------------------
+class NavigationNotifier extends Notifier<NavigationState> {
+  // ─── INSTÀNCIES DE LES TEVES CLASSES UTILITÀRIES MANTINGUDES ───
   final geometry = TrackGeometryUtils();
   final reverseDetector = ReverseDetector();
   final offtrackLogic = OffTrackLogic();
@@ -34,9 +33,7 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
   final sounds = TrackSounds();
   final debug = TrackDebug();
 
-  // ------------------------------------------------------------
-  // Estat intern
-  // ------------------------------------------------------------
+  // ─── ESTAT INTERN REQUERIT PER ELS TEUS ALGORISMES MANTINGUT AL 100% ───
   final List<double> _lastDistances = [];
   final List<LatLng> _lastUserPositions = [];
 
@@ -44,7 +41,7 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
   DateTime? _lastOffTrackAlert;
 
   int maxOffTrackAlerts = 2;
-  Duration offTrackCooldown = Duration(seconds: 20);
+  Duration offTrackCooldown = const Duration(seconds: 20);
   int offTrackAlertsSent = 0;
 
   bool _offTrackDismissed = false;
@@ -59,21 +56,22 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
   bool _reverseDialogShown = false;
   bool _offTrackSnackbarShown = false;
 
-  bool debugMode = false;
-
   LatLng? _lastProjectedPoint;
   double _distanceProgressOnTrack = 0.0;
 
-  // ------------------------------------------------------------
-  // Build
-  // ------------------------------------------------------------
   @override
-  TrackFollowState build() {
-    return const TrackFollowState(
+  NavigationState build() {
+    // 🔗 DATA PIPELINING INTERN: El motor reacciona sol si ens movem i estem navegant
+    ref.listen<UserPosition?>(locationProvider, (previous, next) {
+      if (next == null || !state.isFollowing || state.isPaused) return;
+      _updateUserPositionAndEvaluate(next.position, userHeading: next.heading);
+    });
+
+    return NavigationState(
       isFollowing: false,
       isPaused: false,
       isOffTrack: false,
-      distanceToTrack: 0,
+      distanceToTrackLine: 0,
       showOffTrackSnackbar: false,
       showBackOnTrackSnackbar: false,
       showEndOfTrackSnackbar: false,
@@ -82,148 +80,92 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
     );
   }
 
-  // ------------------------------------------------------------
-  // API pública
-  // ------------------------------------------------------------
-
-  void reverseImportedTrack() {
-    // 1. Invertimos las coordenadas en el almacén (Provider)
-    ref.read(importedTrackProvider.notifier).reverseTrack();
-
-    _lastUserPositions.clear(); // <--- OBLIGATORIO: borra el rumbo antiguo
-    _lastProjectedPoint = null;
-    _lastDistances.clear();
-
-    _distanceProgressOnTrack = 0.0;
-
-    _reverseDialogShown = false;
-    _reverseDetectionLocked = false;
-
-    // 4. Actualizamos estado
-    state = state.copyWith(showReverseTrackDialog: false);
-  }
-
-  void dismissReverseTrackDialog() {
-    _reverseDialogShown = false;
-    _reverseDetectionLocked = false;
-
-    state = state.copyWith(showReverseTrackDialog: false);
-  }
-
-  void dismissEndOfTrackAlert() {
-    state = state.copyWith(showEndOfTrackSnackbar: false);
-  }
-
-  void dismissOffTrackAlert() {
-    _offTrackDismissed = true;
-  }
-
-  void clearOffTrackSnackbar() {
-    _offTrackSnackbarShown = false;
-    state = state.copyWith(showOffTrackSnackbar: false);
-  }
-
-  void dismissBackOnTrackAlert() {
-    state = state.copyWith(showBackOnTrackSnackbar: false);
-  }
-
-  // ------------------------------------------------------------
-  // Seguiment sense enregistrament
-  // ------------------------------------------------------------
+  // ─────────────────────────────────────────────────────────────
+  // 🚀 INICIAR NAVEGACIÓ (startFollowing)
+  // ─────────────────────────────────────────────────────────────
   Future<void> startFollowing(
     BuildContext context,
-    WidgetRef ref,
     MapLibreMapController? mapController,
   ) async {
     // 1. Permisos
     final ok = await PermissionsService.ensureGpsReady(context);
     if (!ok) return;
-    await ref.read(trackProvider.notifier).ensureGpsStarted();
 
-    // 2. Activar mode "following" al TrackNotifier
     // Ponemos el GPS en modo "Navegación" usando los umbrales centralizados
     await ref.read(gpsSettingsProvider.notifier).setNavigationMode();
     ref.read(gpsSettingsProvider.notifier).setFollowing(true);
 
-    // 3. Estat intern
-    state = state.copyWith(isFollowing: true, mode: FollowMode.initializing);
-
+    // 2. Reiniciem variables de control intern de l'autòmat
     _hasEverBeenOnTrack = false;
     _hasEverBeenOffTrack = false;
     offTrackAlertsSent = 0;
+    _lastUserPositions.clear();
+    _lastDistances.clear();
+    _distanceProgressOnTrack = 0.0;
+    _lastProjectedPoint = null;
+    _isCurrentlyOffTrack = false;
+    _reverseDialogShown = false;
+    _reverseDetectionLocked = false;
+    _offTrackSnackbarShown = false;
 
-    // 4. Centrar mapa a la posició actual
-    final pos = ref.read(trackProvider).currentPosition;
-    if (pos != null && mapController != null) {
-      mapController.animateCamera(CameraUpdate.newLatLng(pos));
-    }
+    state = NavigationState(isFollowing: true, mode: FollowMode.initializing);
 
-    // 5. Inicialitzar distància inicial (Millorat)
+    // Centrat inicial del mapa sobre la darrera posició del Bloc 1 (LocationNotifier)
+    final currentPos = ref.read(locationProvider)?.position;
     final imported = ref.read(importedTrackProvider);
     if (imported == null || imported.coordinates.isEmpty) return;
 
-    // Useu la posició de l'usuari si la tenim, si no, el primer punt del track
-    final referencePos =
-        pos ??
-        LatLng(imported.coordinates.first[1], imported.coordinates.first[0]);
+    if (currentPos != null && mapController != null) {
+      mapController.animateCamera(CameraUpdate.newLatLng(currentPos));
+    }
 
+    // Inicialització geomètrica del punt projectat més proper de la línia GPX
+    final referencePos =
+        currentPos ??
+        LatLng(imported.coordinates.first[1], imported.coordinates.first[0]);
     final importedLatLng = imported.coordinates
         .map((c) => LatLng(c[1], c[0]))
         .toList();
 
     final closest = geometry.closestPointAndSegment(
-      referencePos, // <--- Càlcul més real si l'usuari ja és a la ruta
+      referencePos,
       importedLatLng,
       _lastUserPositions,
     );
-
-    _lastDistances
-      ..clear()
-      ..add(closest.distance);
-
-    // També és bona idea inicialitzar el punt projectat
+    _lastDistances.add(closest.distance);
     _lastProjectedPoint = closest.projectedPoint;
   }
 
-  // ------------------------------------------------------------
-  // Aturar seguiment
-  // ------------------------------------------------------------
+  // ─────────────────────────────────────────────────────────────
+  // 🛑 ATURAR NAVEGACIÓ (stopFollowing)
+  // ─────────────────────────────────────────────────────────────
   void stopFollowing() {
     ref.read(gpsSettingsProvider.notifier).setFollowing(false);
 
-    // 1. Restaurar la configuració del GPS original de l'usuari
-    // Carreguem de Prefs i apliquem al canal natiu
+    // Restaurar la configuració del GPS original de l'usuari
     ref.read(gpsSettingsProvider.notifier).restoreDefaultMode();
 
-    state = state.copyWith(
-      isFollowing: false,
-      isPaused: false,
-      isOffTrack: false,
-      distanceToTrack: 0,
-      showOffTrackSnackbar: false,
-      showBackOnTrackSnackbar: false, // Netegem també aquests flags
-      showEndOfTrackSnackbar: false,
-      mode: FollowMode.notFollowing,
-    );
-
-    // 2. NETEJA INTERNA
     _lastDistances.clear();
     _lastUserPositions.clear();
     _distanceProgressOnTrack = 0.0;
     _lastProjectedPoint = null;
     offTrackAlertsSent = 0;
-    _offTrackStart = null; // Important netejar el cronòmetre d'offtrack
+    _offTrackStart = null;
     _isCurrentlyOffTrack = false;
     _reverseDialogShown = false;
     _reverseDetectionLocked = false;
+    _offTrackSnackbarShown = false;
+
+    state = NavigationState(mode: FollowMode.notFollowing);
   }
 
-  // ------------------------------------------------------------
-  // Actualitzar posició
-  // ------------------------------------------------------------
-  void updateUserPosition(LatLng userPos, {required double userHeading}) {
-    if (!state.isFollowing || state.isPaused) return;
-
+  // ─────────────────────────────────────────────────────────────
+  // 📐 EL MOTOR ANALÍTIC CENTRAL (updateUserPosition de l'autòmat)
+  // ─────────────────────────────────────────────────────────────
+  void _updateUserPositionAndEvaluate(
+    LatLng userPos, {
+    required double userHeading,
+  }) {
     // --- BUFFER DE POSICIONS ---
     _lastUserPositions.add(userPos);
     if (_lastUserPositions.length > TrackThresholds.lastNPositions) {
@@ -240,7 +182,7 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
         .map((c) => LatLng(c[1], c[0]))
         .toList();
 
-    // --- NIVELL 1: CÀLCULS BÀSICS (sempre disponibles) ---
+    // --- NIVELL 1: CÀLCULS BÀSICS ---
     final closest = geometry.closestPointAndSegment(
       userPos,
       importedLatLng,
@@ -249,9 +191,10 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
 
     final proj = closest.projectedPoint;
 
-    // Progressió sobre el track
+    // --- PROGRESSIÓ SOBRE EL TRACK MANTINGUDA ---
     if (_lastProjectedPoint != null) {
-      final step = distanceBetween(
+      final step = calculateDistanceManual(
+        // Utilitza el teu utilitari natiu de càlcul entre coordenades
         _lastProjectedPoint!.latitude,
         _lastProjectedPoint!.longitude,
         proj.latitude,
@@ -263,7 +206,7 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
     }
     _lastProjectedPoint = proj;
 
-    // Final del track
+    // --- FINAL DEL TRACK ---
     final List<double> lastCoords = imported.coordinates.last;
     final LatLng goalPoint = LatLng(lastCoords[1], lastCoords[0]);
 
@@ -275,7 +218,7 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
       return;
     }
 
-    // Distància al track
+    // Distància al track i gestió del buffer de tendències
     final dist = closest.distance;
     _lastDistances.add(dist);
     if (_lastDistances.length > TrackThresholds.trendWindow) {
@@ -313,7 +256,7 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
 
         state = state.copyWith(showReverseTrackDialog: true);
 
-        // micro-delay per evitar que el rebuild mati el player
+        // Micro-delay per evitar que el rebuild mati el reproductor
         Future.delayed(const Duration(milliseconds: 30), () {
           sounds.playReversedTrackSound();
         });
@@ -331,12 +274,12 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
       isHeadingWrong: isHeadingWrong,
     );
 
-    state = state.copyWith(distanceToTrack: dist);
+    state = state.copyWith(distanceToTrackLine: dist);
   }
 
-  // ------------------------------------------------------------
-  // Autòmat d’estats
-  // ------------------------------------------------------------
+  // ─────────────────────────────────────────────────────────────
+  // 🤖 L'AUTÒMAT D'ESTATS REUBICAT (_handleFollowState)
+  // ─────────────────────────────────────────────────────────────
   void _handleFollowState({
     required double dist,
     required bool isNear,
@@ -425,9 +368,9 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
     }
   }
 
-  // ------------------------------------------------------------
-  // Off-track alerts
-  // ------------------------------------------------------------
+  // ─────────────────────────────────────────────────────────────
+  // 🔔 GESTIÓ D'ALERTES D'ALLUNYAMENT (Off-track alerts)
+  // ─────────────────────────────────────────────────────────────
   void onUserDriftingAway(double dist) {
     if (_offTrackDismissed) return;
 
@@ -466,12 +409,11 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
     state = state.copyWith(showBackOnTrackSnackbar: true);
   }
 
-  // ------------------------------------------------------------
-  // Final del track
-  // ------------------------------------------------------------
+  // ─────────────────────────────────────────────────────────────
+  // 🏁 COMPLETAT DE LA RUTA (_checkIfFinished)
+  // ─────────────────────────────────────────────────────────────
   bool _checkIfFinished(ClosestResult closest, LatLng goal, int totalPoints) {
-    // 1. Distància real a la meta
-    final double distanceToGoal = distanceBetween(
+    final double distanceToGoal = calculateDistanceManual(
       closest.projectedPoint.latitude,
       closest.projectedPoint.longitude,
       goal.latitude,
@@ -479,30 +421,64 @@ class TrackFollowNotifier extends Notifier<TrackFollowState> {
     );
 
     final bool isAtGoal = distanceToGoal < TrackThresholds.minimumDitanceToGoal;
-
-    // 2. Progrés mínim realitzat sobre el track
     final bool hasMinimumProgress =
         _distanceProgressOnTrack >= TrackThresholds.minProgressRequired;
 
-    // 3. Nova lògica: només aquestes dues condicions
     return isAtGoal && hasMinimumProgress;
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // 🎮 API INTERACTIVA DE CONTROL (Giny del Mapa i Diàlegs)
+  // ─────────────────────────────────────────────────────────────
+  void reverseImportedTrack() {
+    ref.read(importedTrackProvider.notifier).reverseTrack();
+
+    _lastUserPositions.clear(); // Borra el rumb antic
+    _lastProjectedPoint = null;
+    _lastDistances.clear();
+    _distanceProgressOnTrack = 0.0;
+
+    _reverseDialogShown = false;
+    _reverseDetectionLocked = false;
+
+    state = state.copyWith(showReverseTrackDialog: false);
+  }
+
+  void dismissReverseTrackDialog() {
+    _reverseDialogShown = false;
+    _reverseDetectionLocked = false;
+    state = state.copyWith(showReverseTrackDialog: false);
+  }
+
+  void dismissEndOfTrackAlert() {
+    state = state.copyWith(showEndOfTrackSnackbar: false);
+  }
+
+  void dismissOffTrackAlert() {
+    _offTrackDismissed = true;
+  }
+
+  void clearOffTrackSnackbar() {
+    _offTrackSnackbarShown = false;
+    state = state.copyWith(showOffTrackSnackbar: false);
+  }
+
+  void dismissBackOnTrackAlert() {
+    state = state.copyWith(showBackOnTrackSnackbar: false);
   }
 
   void togglePause() {
     state = state.copyWith(isPaused: !state.isPaused);
-
-    // Limpiamos el punto de referencia para que al reanudar
-    // no calcule un "salto" de distancia erróneo.
     if (state.isPaused) {
       _lastProjectedPoint = null;
     }
   }
 }
 
-// ------------------------------------------------------------
-// Provider
-// ------------------------------------------------------------
-final trackFollowNotifierProvider =
-    NotifierProvider<TrackFollowNotifier, TrackFollowState>(
-      TrackFollowNotifier.new,
-    );
+// ─────────────────────────────────────────────────────────────
+// 🔗 EL PROVEÏDOR GLOBAL DE NAVEGACIÓ SENDA
+// ─────────────────────────────────────────────────────────────
+final navigationProvider =
+    NotifierProvider<NavigationNotifier, NavigationState>(() {
+      return NavigationNotifier();
+    });

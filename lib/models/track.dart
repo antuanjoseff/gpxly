@@ -1,5 +1,7 @@
 import 'package:maplibre_gl/maplibre_gl.dart';
 
+import 'user_position.dart';
+
 enum RecordingState {
   idle, // No gravant
   recording, // Gravació activa
@@ -7,131 +9,73 @@ enum RecordingState {
 }
 
 class Track {
-  final Duration stoppedDuration;
-
-  final List<List<double>> coordinates;
-  final List<double> distances;
-  final List<double> altitudes;
-  final List<bool> isHgtFixed;
-  final List<DateTime> timestamps;
-  final List<double> accuracies;
-
-  final List<double> speeds;
-  final List<double> headings;
-  final List<int> satellites;
-  final List<double> vAccuracies;
-
+  final List<UserPosition> points; // Llista compacta de punts
+  final TrackStats stats; // Mètriques globals precalculades
   final RecordingState recordingState;
 
-  final Duration duration;
-
-  final double distance;
-  final double ascent;
-  final double descent;
-  final double maxElevation;
-  final double minElevation;
-
-  // Bounding box
-  final double? minLat;
-  final double? maxLat;
-  final double? minLon;
-  final double? maxLon;
-
-  // 🔥 Nou: punt blau actual
-  final double currentSpeed;
-  final double currentHeading;
+  // Estat visual del punt blau a temps real (Independent de la gravació)
   final LatLng? currentPosition;
+  final double currentHeading;
+  final double currentSpeed;
 
   Track({
-    this.stoppedDuration = Duration.zero,
-    required this.coordinates,
-    required this.altitudes,
-    required this.isHgtFixed,
-    required this.timestamps,
-    required this.accuracies,
-    this.distances = const [],
-    this.speeds = const [],
-    this.headings = const [],
+    this.points = const [],
+    TrackStats? stats,
+    this.recordingState = RecordingState.idle,
+    this.currentPosition,
     this.currentHeading = 0.0,
     this.currentSpeed = 0.0,
-    this.satellites = const [],
-    this.vAccuracies = const [],
-    this.recordingState = RecordingState.idle,
-    this.duration = Duration.zero,
-    this.distance = 0.0,
-    this.ascent = 0.0,
-    this.descent = 0.0,
-    this.maxElevation = -9999.0,
-    this.minElevation = 9999.0,
-
-    this.minLat,
-    this.maxLat,
-    this.minLon,
-    this.maxLon,
-
-    this.currentPosition,
-  });
+  }) : stats = stats ?? TrackStats();
 
   Track copyWith({
-    Duration? stoppedDuration,
-    List<List<double>>? coordinates,
-    List<double>? distances,
-    List<double>? altitudes,
-    List<bool>? isHgtFixed,
-    List<DateTime>? timestamps,
-    List<double>? accuracies,
-    List<double>? speeds,
-    List<double>? headings,
+    List<UserPosition>? points,
+    TrackStats? stats,
+    RecordingState? recordingState,
+    LatLng? currentPosition,
     double? currentHeading,
     double? currentSpeed,
-    List<int>? satellites,
-    List<double>? vAccuracies,
-    RecordingState? recordingState,
-    Duration? duration,
-    double? distance,
-    double? ascent,
-    double? descent,
-    double? maxElevation,
-    double? minElevation,
-
-    double? minLat,
-    double? maxLat,
-    double? minLon,
-    double? maxLon,
-
-    LatLng? currentPosition,
   }) {
     return Track(
-      stoppedDuration: stoppedDuration ?? this.stoppedDuration,
-      coordinates: coordinates ?? this.coordinates,
-      distances: distances ?? this.distances,
-      altitudes: altitudes ?? this.altitudes,
-      isHgtFixed: isHgtFixed ?? this.isHgtFixed,
-      timestamps: timestamps ?? this.timestamps,
-      accuracies: accuracies ?? this.accuracies,
-      speeds: speeds ?? this.speeds,
-      headings: headings ?? this.headings,
+      points: points ?? this.points,
+      stats: stats ?? this.stats,
+      recordingState: recordingState ?? this.recordingState,
+      currentPosition: currentPosition ?? this.currentPosition,
       currentHeading: currentHeading ?? this.currentHeading,
       currentSpeed: currentSpeed ?? this.currentSpeed,
-      satellites: satellites ?? this.satellites,
-      vAccuracies: vAccuracies ?? this.vAccuracies,
-      recordingState: recordingState ?? this.recordingState,
-      duration: duration ?? this.duration,
-      distance: distance ?? this.distance,
-      ascent: ascent ?? this.ascent,
-      descent: descent ?? this.descent,
-      maxElevation: maxElevation ?? this.maxElevation,
-      minElevation: minElevation ?? this.minElevation,
-
-      minLat: minLat ?? this.minLat,
-      maxLat: maxLat ?? this.maxLat,
-      minLon: minLon ?? this.minLon,
-      maxLon: maxLon ?? this.maxLon,
-
-      currentPosition: currentPosition ?? this.currentPosition,
     );
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // 🔌 GETTERS DE RETROCOMPATIBILITAT PER EVITAR TRENCAMENTS
+  // ─────────────────────────────────────────────────────────────
+  List<List<double>> get coordinates =>
+      points.map((p) => [p.position.longitude, p.position.latitude]).toList();
+  List<double> get distances => points.map((p) => p.distanceAtPoint).toList();
+  List<double> get altitudes => points.map((p) => p.altitude).toList();
+  List<bool> get isHgtFixed => points.map((p) => p.isHgtFixed).toList();
+  List<DateTime> get timestamps => points.map((p) => p.timestamp).toList();
+  List<double> get accuracies => points.map((p) => p.accuracy).toList();
+  List<double> get speeds => points.map((p) => p.speed).toList();
+  List<double> get headings => points.map((p) => p.heading).toList();
+  List<int> get satellites => points.map((p) => p.satellites).toList();
+  List<double> get vAccuracies => points.map((p) => p.vAccuracy).toList();
+
+  // Redireccions cap a les estadístiques modulars
+  Duration get stoppedDuration => stats.stoppedDuration;
+  Duration get duration => stats.duration;
+  double get distance => stats.distance;
+  double get ascent => stats.ascent;
+  double get descent => stats.descent;
+  double get maxElevation => stats.maxElevation;
+  double get minElevation => stats.minElevation;
+  double? get minLat => stats.minLat;
+  double? get maxLat => stats.maxLat;
+  double? get minLon => stats.minLon;
+  double? get maxLon => stats.maxLon;
+
+  // ─────────────────────────────────────────────────────────────
+  // ⚙️ GETTERS DE LÒGICA DE NEGOCI MANTINGUTS INTACTES
+  // ─────────────────────────────────────────────────────────────
   String get formattedStopped {
     final total = stoppedDuration;
     final h = total.inHours.toString().padLeft(2, '0');
@@ -140,8 +84,9 @@ class Track {
     return "$h:$m:$s";
   }
 
-  double get currentSpeedKmH => (speeds.isNotEmpty) ? speeds.last * 3.6 : 0.0;
-  int get currentSatellites => (satellites.isNotEmpty) ? satellites.last : 0;
+  double get currentSpeedKmH => currentSpeed * 3.6;
+  int get currentSatellites => points.isNotEmpty ? points.last.satellites : 0;
+
   double get averageSpeed =>
       (duration.inSeconds > 0) ? (distance / duration.inSeconds) * 3.6 : 0.0;
 
@@ -157,9 +102,65 @@ class Track {
 
   bool get hasElevationData =>
       altitudes.isNotEmpty || minElevation != 0 || maxElevation != 0;
-
   bool get hasTimeData =>
       timestamps.isNotEmpty && timestamps.length == coordinates.length;
-
   bool get hasAscentDescent => ascent != 0 || descent != 0;
+}
+
+class TrackStats {
+  final Duration duration;
+  final Duration stoppedDuration;
+  final double distance;
+  final double ascent;
+  final double descent;
+  final double maxElevation;
+  final double minElevation;
+
+  // Bounding box geogràfic
+  final double? minLat;
+  final double? maxLat;
+  final double? minLon;
+  final double? maxLon;
+
+  TrackStats({
+    this.duration = Duration.zero,
+    this.stoppedDuration = Duration.zero,
+    this.distance = 0.0,
+    this.ascent = 0.0,
+    this.descent = 0.0,
+    this.maxElevation = -9999.0,
+    this.minElevation = 9999.0,
+    this.minLat,
+    this.maxLat,
+    this.minLon,
+    this.maxLon,
+  });
+
+  TrackStats copyWith({
+    Duration? duration,
+    Duration? stoppedDuration,
+    double? distance,
+    double? ascent,
+    double? descent,
+    double? maxElevation,
+    double? minElevation,
+    double? minLat,
+    double? maxLat,
+    double? minLon,
+    double? maxLon,
+  }) {
+    return TrackStats(
+      duration: duration ?? this.duration,
+      stoppedDuration: stoppedDuration ?? this.stoppedDuration,
+      distance: distance ?? this.distance,
+      ascent: ascent ?? this.ascent,
+      descent: descent ?? this.descent,
+      maxElevation: maxElevation ?? this.maxElevation,
+      minElevation: minElevation ?? this.minElevation,
+      minLat: minLat ?? this.minLat,
+      maxLat: maxLat ?? this.maxLat,
+      minLon: minLon ?? this.minLon,
+      maxLon: maxLon ?? this.maxLon,
+    );
+  }
 }
