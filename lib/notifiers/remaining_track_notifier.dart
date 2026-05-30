@@ -1,33 +1,40 @@
+// lib/notifiers/remaining_track_notifier.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/models/remaining_track_data.dart';
-import 'package:senda/notifiers/imported_track_notifier.dart'; // Tu provider de track importado
-import 'package:senda/notifiers/track_notifier.dart'; // Tu provider de grabación real
-import 'package:senda/utils/geo_utils.dart'; // Para haversineDistance
+import 'package:senda/notifiers/imported_track_notifier.dart'; // El teu provider de track importat
+// ✅ ADAPTAT: Importem el nou gravador i el model de track unificat
+import 'package:senda/notifiers/recording_notifier.dart'; // Bloc 2: Gravació neta
+import 'package:senda/utils/geo_utils.dart'; // Per a haversineDistance
 
 class RemainingTrackNotifier extends Notifier<RemainingTrackData?> {
   @override
   RemainingTrackData? build() {
-    // 1. Escuchamos activamente los dos tracks
-    final realTrack = ref.watch(trackProvider);
+    // 1. 🔗 DATA PIPELINING: Escuchamos activamente los dos tracks (El gravat nou i l'importat)
+    final realTrack = ref.watch(
+      trackRecordingProvider,
+    ); // ✅ ADAPTAT: Substitueix trackProvider
     final importedTrack = ref.watch(importedTrackProvider);
 
-    // Si no hay grabación o no hay guía, el futuro es nulo
-    if (realTrack.coordinates.isEmpty || importedTrack == null) {
+    // Si no hay grabación con puntos o no hay guía, el futuro es nulo
+    if (realTrack.points.isEmpty || importedTrack == null) {
       return null;
     }
 
-    // 2. Punto de anclaje (Última posición GPS grabada)
-    final currentGPS = realTrack.coordinates.last; // [lon, lat]
-    final currentAlt = realTrack.altitudes.last;
+    // 2. Punto de anclaje (Última posición GPS gravada)
+    // Llegim de forma ultra neta l'últim punt a través del nou model UserPosition
+    final lastPoint = realTrack.points.last;
+    final currentGPS = lastPoint.position; // LatLng objecte
+    final currentAlt = lastPoint.altitude;
 
     // Buscamos el índice más cercano en la guía
     final anchorIdx = _findClosestIndex(
-      currentGPS[1], // lat
-      currentGPS[0], // lon
+      currentGPS.latitude, // ✅ ADAPTAT: Ara és .latitude de MapLibre
+      currentGPS.longitude, // ✅ ADAPTAT: Ara és .longitude de MapLibre
       importedTrack.coordinates,
     );
 
     // 3. Recorte de listas (desde el anclaje hasta el final)
+    // Nota: Aquests getters fan servir la simulació de llistes del model Track sense trencar el codi!
     List<double> futureAlts = importedTrack.altitudes.sublist(anchorIdx);
     List<DateTime> futureTimes = importedTrack.timestamps.sublist(anchorIdx);
 
@@ -59,7 +66,6 @@ class RemainingTrackNotifier extends Notifier<RemainingTrackData?> {
     double minDist = double.infinity;
     int minIndex = 0;
     for (int i = 0; i < coords.length; i++) {
-      // Usamos tu función haversineDistance (asegúrate de que los parámetros coincidan)
       final d = haversineDistance(lat, lon, coords[i][1], coords[i][0]);
       if (d < minDist) {
         minDist = d;
@@ -70,7 +76,9 @@ class RemainingTrackNotifier extends Notifier<RemainingTrackData?> {
   }
 }
 
-// DEFINICIÓN DEL PROVIDER
+// ─────────────────────────────────────────────────────────────
+// 🔗 DEFINICIÓ DEL PROVIDER GLOBAL REFACTORITZAT
+// ─────────────────────────────────────────────────────────────
 final remainingTrackProvider =
     NotifierProvider<RemainingTrackNotifier, RemainingTrackData?>(
       RemainingTrackNotifier.new,

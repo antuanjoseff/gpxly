@@ -1,3 +1,4 @@
+// lib/services/cog_service.dart
 import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
@@ -92,8 +93,8 @@ class CogService {
     final double y =
         ((map.maxLat - lat) / (map.maxLat - map.minLat)) * (map.height - 1);
 
-    final int x1 = x.floor();
-    final int y1 = y.floor();
+    final int x1 = x.floor().clamp(0, map.width - 1);
+    final int y1 = y.floor().clamp(0, map.height - 1);
     final int x2 = (x1 + 1).clamp(0, map.width - 1);
     final int y2 = (y1 + 1).clamp(0, map.height - 1);
 
@@ -102,7 +103,8 @@ class CogService {
 
     double getV(int r, int c) {
       final int offset = (r * map.width + c) * 4;
-      if (offset + 4 > map.data!.length) return -9999;
+      // Blindatge de seguretat contra desbordament de llista
+      if (offset < 0 || offset + 4 > map.data!.length) return -9999;
       return ByteData.sublistView(
         map.data!,
         offset,
@@ -137,8 +139,10 @@ class CogService {
             .split(',')
             .map(double.parse)
             .toList();
-        final width = int.parse(response.headers['x-height'] ?? "500");
-        final height = int.parse(response.headers['x-width'] ?? "500");
+
+        // ✅ CORREGIT: Mapegem 'x-width' a width, i 'x-height' a height (Evita cotes desalineades)
+        final width = int.parse(response.headers['x-width'] ?? "500");
+        final height = int.parse(response.headers['x-height'] ?? "500");
 
         final dir = await getApplicationDocumentsDirectory();
         final path =
@@ -147,6 +151,7 @@ class CogService {
         final file = File(path);
         await file.writeAsBytes(response.bodyBytes);
 
+        // 📝 MANTINGUT: El bounding box es queda intacte com el tenies originalment
         final newMap = CogMap(
           path: path,
           minLon: bbox[0],
@@ -173,7 +178,6 @@ class CogService {
 
   void _manageCache(CogMap newMap) {
     if (_cache.length >= _maxCacheSize) {
-      // Ordenem per darrer ús (el més antic primer)
       _cache.sort((a, b) => a.lastUsed.compareTo(b.lastUsed));
 
       final oldest = _cache.removeAt(0);
@@ -189,7 +193,8 @@ class CogService {
     _cache.add(newMap);
   }
 
-  Future<void> dispose() async {
+  // ✅ CANVIAT DE NOM: Ara l'alliberament físic queda blindat del tancament efímer de Riverpod
+  Future<void> clearAllCacheFiles() async {
     print("🧹 CogService: Netejant memòria cau i fitxers...");
     for (var map in _cache) {
       map.data = null; // Allibera RAM

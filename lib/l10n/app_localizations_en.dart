@@ -512,4 +512,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get statAccuracy => 'Accuracy';
+
+  @override
+  String get deleteWaypoint => 'Delete waypoint';
+
+  @override
+  String get deleteWaypointTitle => 'Delete waypoint?';
+
+  @override
+  String get deleteWaypointMessage => 'Are you sure you want to delete this point of interest permanently?';
+
+  @override
+  String get deleteConfirm => 'DELETE';
+
+  @override
+  String get waypointDeletedSuccess => 'Waypoint successfully deleted';
 }

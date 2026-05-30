@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/l10n/app_localizations.dart';
 import 'package:senda/models/waypoint.dart';
-import 'package:senda/notifiers/track_follow_notifier.dart';
+import 'package:senda/notifiers/navigation_notifier.dart';
+import 'package:senda/notifiers/waypoints_recorded_notifier.dart';
 import 'package:senda/theme/app_colors.dart';
 
 class AppMessages {
@@ -35,6 +36,7 @@ class AppMessages {
     String? cancelLabel,
     bool barrierDismissible = true,
     List<Widget>? extraContent,
+    List<Widget>? actions, // ✅ NOU PARÀMETRE OPTIONAL
   }) {
     final t = AppLocalizations.of(context)!;
     final Color accentColor = confirmColor ?? AppColors.skyBlue;
@@ -90,30 +92,33 @@ class AppMessages {
           ),
         ),
         actionsPadding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-        actions: [
-          if (cancelLabel != null || confirmLabel != null)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                if (cancelLabel != null)
-                  TextButton(
-                    onPressed: () => Navigator.pop(context, false),
-                    child: Text(
-                      cancelLabel,
-                      style: TextStyle(color: Colors.white.withAlpha(130)),
-                    ),
-                  ),
-                if (confirmLabel != null) ...[
-                  const SizedBox(width: 8),
-                  ElevatedButton(
-                    style: _buttonStyle(accentColor),
-                    onPressed: () => Navigator.pop(context, true),
-                    child: Text(confirmLabel),
-                  ),
-                ],
-              ],
-            ),
-        ],
+        // ✅ ADAPTAT: Si li passem botons customitzats, els pinta directament en horitzontal
+        actions:
+            actions ??
+            [
+              if (cancelLabel != null || confirmLabel != null)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    if (cancelLabel != null)
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: Text(
+                          cancelLabel,
+                          style: TextStyle(color: Colors.white.withAlpha(130)),
+                        ),
+                      ),
+                    if (confirmLabel != null) ...[
+                      const SizedBox(width: 8),
+                      ElevatedButton(
+                        style: _buttonStyle(accentColor),
+                        onPressed: () => Navigator.pop(context, true),
+                        child: Text(confirmLabel),
+                      ),
+                    ],
+                  ],
+                ),
+            ],
       ),
     );
   }
@@ -259,6 +264,7 @@ class AppMessages {
   // ==========================================
   static Future<void> showWaypointDetails(
     BuildContext context,
+    WidgetRef ref, // ✅ AFEGIT: Per poder interactuar amb els providers reals
     Waypoint wp,
     Duration? elapsed,
   ) {
@@ -269,6 +275,9 @@ class AppMessages {
       formattedDuration =
           "${elapsed.inHours.toString().padLeft(2, '0')}:${elapsed.inMinutes.remainder(60).toString().padLeft(2, '0')}:${elapsed.inSeconds.remainder(60).toString().padLeft(2, '0')}";
     }
+
+    // Només permetem eliminar els waypoints creats en la sessió actual (que comencen per 'rec_')
+    final bool isDeletable = wp.id.startsWith('rec_');
 
     return _showBaseDialog(
       context: context,
@@ -301,6 +310,63 @@ class AppMessages {
             formattedDuration,
             Icons.timer_outlined,
           ),
+
+        // ─────────────────────────────────────────────────────────────
+        // 🔥 NOU: BOTÓ D'ELIMINAR WAYPOINT (Amb confirmació)
+        // ─────────────────────────────────────────────────────────────
+        if (isDeletable) ...[
+          const SizedBox(height: 12),
+          const Divider(color: Colors.white24),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: TextButton.icon(
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                foregroundColor: Colors.redAccent,
+              ),
+              icon: const Icon(Icons.delete_outline, size: 20),
+              label: Text(
+                t.deleteWaypoint.toUpperCase(),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                  letterSpacing: 1.1,
+                ),
+              ),
+              onPressed: () async {
+                // Tanquem el diàleg de detalls actual primer
+                Navigator.pop(context);
+
+                // Cridem al diàleg de confirmació d'esborrat de fita
+                final confirm = await _showBaseDialog(
+                  context: context,
+                  title: t.deleteWaypointTitle,
+                  message: t.deleteWaypointMessage,
+                  icon: Icons.delete_forever,
+                  iconColor: Colors.redAccent,
+                  confirmLabel: t.deleteConfirm,
+                  confirmColor: Colors.redAccent,
+                  cancelLabel: t.cancel,
+                );
+
+                // Si l'usuari confirma (true), l'esborrem directament de Riverpod
+                if (confirm == true) {
+                  // Ajusta el mètode .remove / .delete segons com es digui al teu waypointsProvider.notifier
+                  ref.read(waypointsProvider.notifier).remove(wp.id);
+
+                  // Mostrem un petit avís de confirmació flotant
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(t.waypointDeletedSuccess),
+                      backgroundColor: Colors.green.shade800,
+                    ),
+                  );
+                }
+              },
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -559,10 +625,12 @@ class AppMessages {
       icon: const Icon(Icons.close, color: Colors.white),
       onPressed: () {
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        ref.read(trackFollowNotifierProvider.notifier).dismissOffTrackAlert();
+        // ✅ ADAPTAT: Tanca l'alerta usant el nou navigationProvider
+        ref.read(navigationProvider.notifier).clearOffTrackSnackbar();
       },
     ),
   );
+
   static void showBackOnTrackPersistentSnackbar(
     BuildContext context,
     WidgetRef ref,
@@ -575,9 +643,8 @@ class AppMessages {
       icon: const Icon(Icons.close, color: Colors.white),
       onPressed: () {
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        ref
-            .read(trackFollowNotifierProvider.notifier)
-            .dismissBackOnTrackAlert();
+        // ✅ ADAPTAT: Tanca l'alerta usant el nou navigationProvider
+        ref.read(navigationProvider.notifier).dismissBackOnTrackAlert();
       },
     ),
   );

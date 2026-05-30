@@ -1,9 +1,10 @@
+// lib/screens/settings/settings_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/l10n/app_localizations.dart';
 import 'package:senda/notifiers/alarm_settings_notifier.dart';
 import 'package:senda/notifiers/barometer_settings_notifier.dart';
-import 'package:senda/notifiers/track_follow_notifier.dart';
+import 'package:senda/notifiers/navigation_notifier.dart';
 import 'package:senda/screens/settings/tabs/alarm_settings_tab.dart';
 import 'package:senda/screens/settings/tabs/barometer_settings_tab.dart';
 import 'package:senda/screens/settings/tabs/gps_settings_tab.dart';
@@ -21,7 +22,11 @@ class SettingsScreen extends ConsumerWidget {
 
     // Escoltant els estats per bloquejar el GPS si cal
     final alarms = ref.watch(alarmSettingsProvider);
-    final followingTrack = ref.watch(trackFollowNotifierProvider);
+
+    // ✅ ADAPTAT: Llegim amb '.select' només la variable que ens interessa per evitar redibuixats inútils
+    final isTrackActive = ref.watch(
+      navigationProvider.select((n) => n.isFollowing),
+    );
 
     final isAlarmActive =
         alarms.distanceEnabled ||
@@ -29,7 +34,6 @@ class SettingsScreen extends ConsumerWidget {
         alarms.cotaEnabled ||
         alarms.timeEnabled;
 
-    final isTrackActive = followingTrack.isFollowing;
     final gpsLocked = isAlarmActive || isTrackActive;
 
     final baro = ref.watch(barometerSettingsProvider);
@@ -100,8 +104,7 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ),
             _SettingsTile(
-              icon: Icons
-                  .device_thermostat_rounded, // Icona que suggereix relleu/alçada
+              icon: Icons.device_thermostat_rounded,
               label: t.barometerTitle,
               t: t,
               enabled: hasBarometer,
@@ -143,12 +146,11 @@ class _SettingsTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Definim el color dels elements (icona i text) segons l'estat
     final colorElements = enabled ? AppColors.primary : Colors.grey.shade400;
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white, // Blanc pur
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: enabled ? Colors.transparent : Colors.grey.shade200,
@@ -156,7 +158,7 @@ class _SettingsTile extends StatelessWidget {
         ),
       ),
       child: Material(
-        color: Colors.white, // Forçat blanc també al Material
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         elevation: enabled ? 2 : 0,
         child: InkWell(

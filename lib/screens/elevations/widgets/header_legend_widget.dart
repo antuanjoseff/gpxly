@@ -1,9 +1,12 @@
+// lib/screens/elevations/widgets/header_legend_widget.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/models/track.dart';
 import 'package:senda/notifiers/imported_track_notifier.dart';
+// ✅ ADAPTAT: Importem el nou proveïdor de gravació
+import 'package:senda/notifiers/recording_notifier.dart'; // Bloc 2: Gravació neta
 import 'package:senda/notifiers/timer_notifier.dart';
-import 'package:senda/notifiers/track_notifier.dart';
 import 'package:senda/theme/app_colors.dart';
 import 'package:senda/utils/distance_utils.dart';
 
@@ -28,7 +31,8 @@ class HeaderLegendWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final real = ref.watch(trackProvider);
+    // ✅ ADAPTAT: Llegim el nou trackRecordingProvider unificat de la branca
+    final real = ref.watch(trackRecordingProvider);
     final imported = ref.watch(importedTrackProvider);
     final live = ref.watch(timerProvider);
 
@@ -92,6 +96,7 @@ class HeaderLegendWidget extends ConsumerWidget {
   // CÀLCUL DEL RANG PER UN TRACK
   // ─────────────────────────────────────────────
   _RangeStats _computeRange(Track t, int s, int e) {
+    // ✅ ADAPTAT: Llegim de forma compatible usant les propietats simulades del model
     if (s < 0 || e >= t.distances.length) {
       return const _RangeStats.empty();
     }
@@ -197,7 +202,6 @@ class HeaderLegendWidget extends ConsumerWidget {
                       ),
                     ),
                   ),
-
                   const Text(" · ", style: TextStyle(color: Colors.black54)),
 
                   Expanded(

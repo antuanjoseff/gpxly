@@ -210,5 +210,11 @@
 "statGps": "GPS",
 "statHeading": "Heading",
 "statSatellites": "Satellites",
-"statAccuracy": "Accuracy"
+"statAccuracy": "Accuracy",
+
+"deleteWaypoint": "Delete waypoint",
+"deleteWaypointTitle": "Delete waypoint?",
+"deleteWaypointMessage": "Are you sure you want to delete this point of interest permanently?",
+"deleteConfirm": "DELETE",
+"waypointDeletedSuccess": "Waypoint successfully deleted"
 }

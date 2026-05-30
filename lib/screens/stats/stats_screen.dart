@@ -1,10 +1,12 @@
+// lib/screens/stats/stats_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/l10n/app_localizations.dart';
 import 'package:senda/models/track.dart';
-import 'package:senda/notifiers/imported_track_notifier.dart';
+import 'package:senda/notifiers/imported_track_notifier.dart'; // El teu provider de track importat
+// ✅ ADAPTAT: Els nous proveïdors modulars de la branca
+import 'package:senda/notifiers/recording_notifier.dart'; // Bloc 2: Gravació i totals
 import 'package:senda/notifiers/timer_notifier.dart';
-import 'package:senda/notifiers/track_notifier.dart';
 import 'package:senda/screens/stats/notifiers/stats_prefs_notifier.dart';
 import 'package:senda/theme/app_colors.dart';
 
@@ -43,14 +45,20 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context)!;
     final prefsState = ref.watch(statsPrefsProvider);
-    if (!prefsState.isInitialized)
+    if (!prefsState.isInitialized) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
 
-    final real = ref.watch(trackProvider);
-    final imported = ref.watch(importedTrackProvider);
-    Track? track = real.coordinates.isNotEmpty
-        ? real
-        : (imported?.coordinates.isNotEmpty == true ? imported : null);
+    // ✅ ADAPTAT: Llegim el nou trackRecordingProvider unificat de la branca
+    final realTrack = ref.watch(trackRecordingProvider);
+    final importedTrack = ref.watch(importedTrackProvider);
+
+    // Decidim quin track és el que estem avaluant en les mètriques visuals
+    Track? track = realTrack.points.isNotEmpty
+        ? realTrack
+        : (importedTrack != null && importedTrack.points.isNotEmpty
+              ? importedTrack
+              : null);
 
     if (track == null) return _buildEmptyState(t);
 
@@ -98,7 +106,8 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
     AppLocalizations t,
     WidgetRef ref,
   ) {
-    final real = ref.read(trackProvider);
+    // ✅ ADAPTAT: Llegim de forma segura des dels nous constructors reals
+    final real = ref.read(trackRecordingProvider);
     final liveDuration = ref.watch(timerProvider);
     final isReal = track == real;
 
@@ -118,7 +127,8 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
             ),
             _StatPage(
               Icons.tag,
-              track.coordinates.length.toDouble(),
+              track.points.length
+                  .toDouble(), // ✅ ADAPTAT: Ara és .points de UserPosition
               "PTS",
               "PUNTS GPS",
               isInt: true,
@@ -191,8 +201,11 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
           pages: [
             _StatPage(
               Icons.terrain,
-              (isReal && real.altitudes.isNotEmpty)
-                  ? real.altitudes.last
+              (isReal && real.points.isNotEmpty)
+                  ? real
+                        .points
+                        .last
+                        .altitude // ✅ ADAPTAT: Llegim l'altitud de la darrera UserPosition
                   : null,
               "m",
               t.statElevationCurrent,
@@ -248,6 +261,9 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
   );
 }
 
+// ─────────────────────────────────────────────────────────────
+// WIDGETS DE PRESENTACIÓ ADAPTATS AMB EL TEU DISSENY EXACTE
+// ─────────────────────────────────────────────────────────────
 class _StatCard extends StatelessWidget {
   final double height;
   final List<Widget> pages;
@@ -316,6 +332,7 @@ class _StatPage extends StatelessWidget {
         (value == null
             ? "--"
             : (isInt ? value!.toStringAsFixed(0) : value!.toStringAsFixed(2)));
+
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -325,8 +342,8 @@ class _StatPage extends StatelessWidget {
             Icon(
               icon,
               color: AppColors.primary,
-              size: 26,
-            ), // 🔥 Pujat de 22 a 26
+              size: 26, // Mida optimitzada a 26
+            ),
             const SizedBox(width: 8),
             Text(
               label.toUpperCase(),
@@ -351,7 +368,7 @@ class _StatPage extends StatelessWidget {
                 val,
                 style: const TextStyle(
                   color: Colors.black87,
-                  fontSize: 30, // 📉 Baixat de 34 a 30 per compensar
+                  fontSize: 30,
                   fontWeight: FontWeight.w900,
                 ),
               ),

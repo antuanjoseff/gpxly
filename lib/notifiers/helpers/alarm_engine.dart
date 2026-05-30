@@ -4,15 +4,18 @@ import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:senda/models/alarm_progress.dart';
+// ✅ ADAPTAT: Importem el nou canal de geolocalització atòmic
+import 'package:senda/models/user_position.dart';
 import 'package:senda/notifiers/alarm_settings_notifier.dart';
 import 'package:senda/notifiers/gps_altitude_notifier.dart';
 import 'package:senda/notifiers/helpers/track_sounds.dart';
-import 'package:senda/notifiers/track_notifier.dart';
+import 'package:senda/notifiers/location_notifier.dart'; // Bloc 1: Hardware i dades netes
 
 class AlarmEngine {
-  final Ref rootRef; // Renomenat per claredat
+  final Ref rootRef;
 
-  StreamSubscription<LatLng>? _posSub;
+  ProviderSubscription<UserPosition?>?
+  _locationSub; // ✅ ADAPTAT: Canvi de StreamSubscription a Riverpod Subscription
   Timer? _timer;
 
   // Distància
@@ -41,30 +44,36 @@ class AlarmEngine {
   Future<void> start() async {
     print("🚀 AlarmEngine START");
 
-    // 1. Eliminem l'await de la inicialització.
-    // Quan crides a start(), el Notifier ja està a punt.
+    _resetInternalState();
 
-    _resetInternalState(); // 🔥 Aquí s'ha d'inicialitzar _lastTimeAlarm = DateTime.now()
-
-    _posSub = rootRef
-        .read(trackProvider.notifier)
-        .positionStream
-        .listen(_onPosition);
+    _locationSub = rootRef.listen<UserPosition?>(locationProvider, (
+      previous,
+      next,
+    ) {
+      if (next == null) return;
+      _onUserPositionIncoming(
+        next,
+      ); // Crida la teva funció de processament amb el nou model
+    });
 
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       _checkTimeAlarm();
-      _emitProgress(); // 📤 Aquesta funció fa que els indicadors es moguin
+      _emitProgress();
     });
   }
 
   void stop() {
     print("🚀 AlarmEngine STOP");
-    _posSub?.cancel();
+    _locationSub?.close(); // ✅ ADAPTAT: Tanquem la subscripció de Riverpod
+    _locationSub = null;
     _timer?.cancel();
+    _timer = null;
     _resetInternalState();
   }
 
-  void _onPosition(LatLng pos) {
+  // ✅ ADAPTAT: Adaptat per rebre la nova estructura atòmica d'usuari de la branca
+  void _onUserPositionIncoming(UserPosition userGps) {
+    final pos = userGps.position;
     final settings = rootRef.read(alarmSettingsProvider);
     final gpsAltitude = rootRef.read(gpsAltitudeProvider);
 
@@ -91,22 +100,17 @@ class AlarmEngine {
   }
 
   void _processAltitudeLogics(double currentAlt, AlarmSettings settings) {
-    // 1. Guardem el valor anterior ABANS de fer res
-    // Aquesta és la teva "memòria" del segon anterior
     double altAnterior = _smoothedAlt;
 
-    // 2. A. Filtre de Suavitzat (Només un cop!)
     if (_smoothedAlt < 0) {
       _smoothedAlt = currentAlt;
-      return; // No podem calcular res fins a la segona lectura
+      return;
     } else {
       const double alpha = 0.15;
       _smoothedAlt = (_smoothedAlt * (1 - alpha)) + (currentAlt * alpha);
     }
 
-    // 3. B. Lògica de Desnivell Acumulat (acc)
     if (settings.accEnabled && settings.accMeters > 0) {
-      // El delta és la diferència entre el valor suavitzat d'ara i el d'abans
       double delta = _smoothedAlt - altAnterior;
 
       if (delta.abs() > 0.3) {
@@ -128,7 +132,6 @@ class AlarmEngine {
       }
     }
 
-    // 4. C. Lògica de Cotes (cota)
     if (settings.cotaEnabled && settings.cotaMeters > 0) {
       int currentFloor = (_smoothedAlt / settings.cotaMeters).floor();
 
@@ -154,7 +157,6 @@ class AlarmEngine {
   void _emitProgress() {
     final s = rootRef.read(alarmSettingsProvider);
 
-    // 🔍 PRINT 1: Comprovar si el motor sap que l'usuari vol alarmes
     print("--- EMIT PROGRESS ---");
     print(
       "Settings: Dist=${s.distanceEnabled}, Acc=${s.accEnabled}, Cota=${s.cotaEnabled}",
@@ -174,7 +176,6 @@ class AlarmEngine {
       timeP = (elapsed / s.timeSeconds);
     }
 
-    // 🔍 PRINT 2: Veure els valors calculats abans de l'enviament
     print(
       "Calculated: DistP=${distP.toStringAsFixed(2)}, AccP=${accP.toStringAsFixed(2)}, TimeP=${timeP.toStringAsFixed(2)}",
     );
@@ -189,7 +190,6 @@ class AlarmEngine {
     );
   }
 
-  // Mantenim els teus mètodes de temps i distància sense canvis estructurals
   void _checkTimeAlarm() {
     final settings = rootRef.read(alarmSettingsProvider);
     if (!settings.timeEnabled) return;

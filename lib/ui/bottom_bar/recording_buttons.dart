@@ -1,8 +1,10 @@
+// lib/widgets/recording_buttons.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/l10n/app_localizations.dart';
 import 'package:senda/notifiers/imported_track_notifier.dart';
-import 'package:senda/notifiers/track_follow_notifier.dart';
+// ✅ ADAPTAT: Importem el nou proveïdor analític de navegació de la branca
+import 'package:senda/notifiers/navigation_notifier.dart'; // Bloc 3: Lògica de seguiment
 import 'package:senda/theme/app_colors.dart';
 import 'package:senda/widgets/track_base_button.dart';
 
@@ -22,9 +24,12 @@ class RecordingButtons extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final t = AppLocalizations.of(context)!;
 
-    final followState = ref.watch(trackFollowNotifierProvider);
+    // ✅ ADAPTAT: Escoltem el nou navigationProvider de la branca
+    final navigationState = ref.watch(navigationProvider);
     final imported = ref.watch(importedTrackProvider);
-    final hasImported = imported != null && imported.coordinates.isNotEmpty;
+
+    // ✅ OPTIMITZAT: Mirem directament la llista compacta de punts inmutables
+    final hasImported = imported != null && imported.points.isNotEmpty;
 
     return Row(
       children: [
@@ -55,12 +60,15 @@ class RecordingButtons extends ConsumerWidget {
         if (hasImported)
           Expanded(
             child: TrackBaseButton(
-              color: followState.isFollowing
+              // ✅ ADAPTAT: Commuta el color i l'icona segons els flags del NavigationState unificat
+              color: navigationState.isFollowing
                   ? AppColors.alert
                   : AppColors.tertiary,
               onPressed: onFollowTrack,
-              icon: followState.isFollowing ? Icons.close : Icons.navigation,
-              text: followState.isFollowing ? t.stopFollowing : t.follow,
+              icon: navigationState.isFollowing
+                  ? Icons.close
+                  : Icons.navigation,
+              text: navigationState.isFollowing ? t.stopFollowing : t.follow,
             ),
           ),
       ],

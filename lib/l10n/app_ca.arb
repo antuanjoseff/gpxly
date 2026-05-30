@@ -211,6 +211,12 @@
 "statGps": "GPS",
 "statHeading": "Rumb",
 "statSatellites": "Satèl·lits",
-"statAccuracy": "Precisió"
+"statAccuracy": "Precisió",
+
+"deleteWaypoint": "Eliminar fita",
+"deleteWaypointTitle": "Eliminar fita?",
+"deleteWaypointMessage": "Estàs segur que vols esborrar aquest punt d'interès definitivament?",
+"deleteConfirm": "ELIMINAR",
+"waypointDeletedSuccess": "Fita esborrada correctament"
 }
   

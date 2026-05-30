@@ -1,9 +1,11 @@
+// lib/ui/bottom_bar/bottom_bar_buttons.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/l10n/app_localizations.dart';
 import 'package:senda/models/track.dart';
 import 'package:senda/notifiers/imported_track_notifier.dart';
-import 'package:senda/notifiers/track_follow_notifier.dart';
+// ✅ ADAPTAT: Proveïdor analític de navegació que substitueix el trackFollowNotifierProvider
+import 'package:senda/notifiers/navigation_notifier.dart';
 import 'package:senda/notifiers/waypoints_imported_notifier.dart';
 import 'package:senda/services/permissions_service.dart';
 import 'package:senda/theme/app_colors.dart';
@@ -32,9 +34,10 @@ class BottomBarButtons extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final followState = ref.watch(trackFollowNotifierProvider);
+    // ✅ ADAPTAT: Escoltem l'estat de navegació a través del nou bloc 3 unificat
+    final navigationState = ref.watch(navigationProvider);
     final imported = ref.watch(importedTrackProvider);
-    final hasImported = imported != null && imported.coordinates.isNotEmpty;
+    final hasImported = imported != null && imported.points.isNotEmpty;
 
     return IntrinsicHeight(
       child: Row(
@@ -63,8 +66,8 @@ class BottomBarButtons extends ConsumerWidget {
                 context,
                 ref,
                 hasImported,
-                followState.isFollowing,
-                followState.isPaused,
+                navigationState.isFollowing, // ✅ ADAPTAT
+                navigationState.isPaused, // ✅ ADAPTAT
               ),
             ),
           ),
@@ -73,7 +76,6 @@ class BottomBarButtons extends ConsumerWidget {
     );
   }
 
-  // --- GRAVACIÓ ---
   // --- GRAVACIÓ (Columna Esquerra) ---
   Widget _buildRecordingSlot(BuildContext context) {
     final t = AppLocalizations.of(context)!;
@@ -91,7 +93,6 @@ class BottomBarButtons extends ConsumerWidget {
     return _activeControlUI(
       key: const ValueKey("rec_active"),
       title: isPaused ? t.paused.toUpperCase() : t.recording.toUpperCase(),
-      // color: isPaused ? Colors.green : Colors.red,
       color: Colors.red,
       isPaused: state == RecordingState.paused,
       onToggle: state == RecordingState.recording ? onPause : onResume,
@@ -119,15 +120,13 @@ class BottomBarButtons extends ConsumerWidget {
       );
     }
 
-    // Dins de _buildFollowingSlot (BottomBarButtons.dart)
-
     if (!isFollowing) {
       return Column(
         key: const ValueKey("foll_has_track"),
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            t.importedTrack.toUpperCase(), // O una clau similar de traducció
+            t.importedTrack.toUpperCase(),
             style: const TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.bold,
@@ -138,34 +137,26 @@ class BottomBarButtons extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              // Botó de Navegació (Iniciar seguiment)
-              // Botó de Navegació (Iniciar seguiment)
               _circleButton(
                 icon: Icons.navigation_rounded,
                 color: AppColors.deepGreen,
                 onTap: () async {
-                  // 1. Permisos de localització en segon pla
                   final ok =
                       await PermissionsService.ensureBackgroundLocationWithDialog(
                         context,
                       );
                   if (!ok) return;
 
-                  // 2. Iniciar seguiment (sense diàleg si ja s’ha vist)
                   onFollowTrack();
                 },
               ),
-
-              // Botó de Paperera (Eliminar)
               _circleButton(
                 icon: Icons.delete_outline,
                 color: Colors.redAccent,
                 onTap: () async {
-                  // 1. Cridem al nou diàleg de confirmació que hem creat a AppMessages
                   final confirm =
                       await AppMessages.showDeleteImportedTrackDialog(context);
 
-                  // 2. Si l'usuari confirma (true), procedim a esborrar
                   if (confirm == true) {
                     ref.read(importedTrackProvider.notifier).clear();
                     ref.read(importedWaypointsProvider.notifier).clear();
@@ -186,14 +177,15 @@ class BottomBarButtons extends ConsumerWidget {
       isPaused: isFollowPaused,
       color: AppColors.deepGreen,
       onToggle: () {
-        ref.read(trackFollowNotifierProvider.notifier).togglePause();
+        // ✅ ADAPTAT: Acció enviada al nou analitzador navigationProvider
+        ref.read(navigationProvider.notifier).togglePause();
       },
       onStop: () async {
-        // 🔥 CRIDEM AL DIÀLEG DE CONFIRMACIÓ
         final confirm = await AppMessages.showStopFollowingDialog(context);
 
         if (confirm == true) {
-          ref.read(trackFollowNotifierProvider.notifier).stopFollowing();
+          // ✅ ADAPTAT: Acció enviada al nou analitzador navigationProvider
+          ref.read(navigationProvider.notifier).stopFollowing();
           ref.read(importedTrackProvider.notifier).clear();
           ref.read(importedWaypointsProvider.notifier).clear();
         }
@@ -201,7 +193,9 @@ class BottomBarButtons extends ConsumerWidget {
     );
   }
 
-  // --- Lògica d'icones als controls de pausa ---
+  // ─────────────────────────────────────────────────────────────
+  // 🎮 AUTÒMAT D'ICONES DE CONTROL DE PAUSA / RECUPERACIÓ
+  // ─────────────────────────────────────────────────────────────
   Widget _activeControlUI({
     required Key key,
     required String title,
@@ -243,7 +237,9 @@ class BottomBarButtons extends ConsumerWidget {
     );
   }
 
-  // --- COMPONENTS UI ---
+  // ─────────────────────────────────────────────────────────────
+  // 🎨 COMPONENT VISUAL A: EL GRAN BOTÓ FLOTANT
+  // ─────────────────────────────────────────────────────────────
   Widget _bigActionButton({
     required Key key,
     required String label,
@@ -264,7 +260,7 @@ class BottomBarButtons extends ConsumerWidget {
             style: TextStyle(
               color: color,
               fontWeight: FontWeight.bold,
-              fontSize: 13,
+              fontSize: 12,
             ),
           ),
         ],
@@ -272,6 +268,9 @@ class BottomBarButtons extends ConsumerWidget {
     );
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // 🎨 COMPONENT VISUAL B: ELS BOTONS CERCLES SECUNDARIS
+  // ─────────────────────────────────────────────────────────────
   Widget _circleButton({
     required IconData icon,
     required Color color,
@@ -280,12 +279,13 @@ class BottomBarButtons extends ConsumerWidget {
     return PressableScale(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(8),
+        width: 44,
+        height: 44,
         decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
           shape: BoxShape.circle,
-          color: color.withAlpha(26), // 0.1 → 26
         ),
-        child: Icon(icon, color: color, size: 24),
+        child: Icon(icon, color: color, size: 22),
       ),
     );
   }

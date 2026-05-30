@@ -1,5 +1,3 @@
-// lib/screens/elevations/elevation_profile_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/l10n/app_localizations.dart';
@@ -7,9 +5,10 @@ import 'package:senda/models/waypoint.dart';
 import 'package:senda/notifiers/helpers/thresholds.dart';
 import 'package:senda/notifiers/imported_track_notifier.dart';
 import 'package:senda/notifiers/imported_track_settings_notifier.dart';
+import 'package:senda/notifiers/navigation_notifier.dart';
+// ✅ ADAPTAT: Els nous proveïdors atòmics de la branca
+import 'package:senda/notifiers/recording_notifier.dart'; // Bloc 2: Gravació reals
 import 'package:senda/notifiers/remaining_track_notifier.dart';
-import 'package:senda/notifiers/track_follow_notifier.dart';
-import 'package:senda/notifiers/track_notifier.dart';
 import 'package:senda/notifiers/track_settings_notifier.dart';
 import 'package:senda/notifiers/waypoints_imported_notifier.dart';
 import 'package:senda/notifiers/waypoints_recorded_notifier.dart';
@@ -63,13 +62,16 @@ class _ElevationProfileScreenState
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context)!;
 
-    final real = ref.watch(trackProvider);
+    // ✅ ADAPTAT: Escoltem els nous proveïdors de dades nets
+    final real = ref.watch(trackRecordingProvider);
     final imported = ref.watch(importedTrackProvider);
     final remaining = ref.watch(remainingTrackProvider);
-    final follow = ref.watch(trackFollowNotifierProvider);
+    final follow = ref.watch(navigationProvider);
 
+    // ✅ OPTIMITZAT: Extraiem les llistes aprofitant directament la UserPosition del model
     final realAlts = real.altitudes;
-    final realDists = calculateDistances(real.coordinates);
+    final realDists =
+        real.distances; // Ja no requereix calculateDistances(real.coordinates)!
 
     final double pastLastDist = realDists.isNotEmpty ? realDists.last : 0.0;
 
@@ -86,13 +88,13 @@ class _ElevationProfileScreenState
     late List<double> futureDistsGlobal;
 
     if (shouldShowFuture) {
-      // NOVA LÒGICA: futur enganxat al track real
       futureAlts = remaining!.altitudes;
       futureDistsGlobal = remaining.distances
           .map((d) => pastLastDist + d)
           .toList(growable: false);
     } else {
       // COMPORTAMENT ANTIC: track importat complet (si existeix)
+      // Nota: El getter 'coordinates' d'imported simula la llista clàssica de forma compatible
       final importedDists = calculateDistances(imported?.coordinates ?? []);
       futureAlts = imported?.altitudes ?? [];
       futureDistsGlobal = importedDists;
@@ -106,7 +108,6 @@ class _ElevationProfileScreenState
       final double maxFuture = futureDistsGlobal.last;
 
       if (maxFuture > 0) {
-        // El futur ha d'ocupar només el 20% de l'amplada total
         final double futureScale =
             (maxPast * TrackThresholds.futureTrackVisibility) / maxFuture;
 
@@ -119,6 +120,7 @@ class _ElevationProfileScreenState
     // Llistes globals (passat + futur)
     final globalDists = <double>[...realDists, ...futureDistsGlobal];
     final globalAlts = <double>[...realAlts, ...futureAlts];
+
     // ─────────────────────────────────────────────
     // 3) WAYPOINTS
     // ─────────────────────────────────────────────
@@ -128,7 +130,7 @@ class _ElevationProfileScreenState
     final trackColor = ref.watch(trackSettingsProvider).color;
     final importedTrackColor = ref.watch(importedTrackSettingsProvider).color;
 
-    // Waypoints gravats → sempre globals
+    // Waypoints gravats
     final recordedWaypointGlobalDists = recordedWps
         .where((wp) => wp.trackIndex >= 0 && wp.trackIndex < realDists.length)
         .map((wp) => realDists[wp.trackIndex])
@@ -138,7 +140,6 @@ class _ElevationProfileScreenState
     final importedWaypointGlobalDists = <double>[];
 
     if (!shouldShowFuture) {
-      // COMPORTAMENT ANTIC: tots els waypoints importats
       final importedDists = calculateDistances(imported?.coordinates ?? []);
       for (final wp in importedWps) {
         if (wp.trackIndex < importedDists.length) {
@@ -146,7 +147,6 @@ class _ElevationProfileScreenState
         }
       }
     } else {
-      // NOVA LÒGICA: només waypoints FUTURS
       for (final wp in importedWps) {
         final idx = wp.trackIndex;
         if (idx < remaining!.anchorIndex) continue;
@@ -175,10 +175,8 @@ class _ElevationProfileScreenState
       final start = selectedIndexStart!;
       final end = selectedIndexEnd!;
 
-      // 1) Distància
       rangeDistance = (globalDists[end] - globalDists[start]).abs();
 
-      // 2) Desnivell acumulat
       double ascent = 0;
       double descent = 0;
 
@@ -191,17 +189,13 @@ class _ElevationProfileScreenState
       rangeAscent = ascent;
       rangeDescent = descent;
 
-      // 3) Temps (només si tens timestamps)
-      final real = ref.watch(trackProvider);
-      if (real.timestamps != null &&
-          real.timestamps!.length > end &&
-          real.timestamps!.length > start) {
-        final t0 = real.timestamps![start];
-        final t1 = real.timestamps![end];
+      // ✅ ADAPTAT: Llegim de forma segura la llista de dates compactes
+      if (real.timestamps.length > end && real.timestamps.length > start) {
+        final t0 = real.timestamps[start];
+        final t1 = real.timestamps[end];
         rangeTime = t1.difference(t0);
       }
     }
-
     // ─────────────────────────────────────────────
     // 4) UI (sense canvis)
     // ─────────────────────────────────────────────

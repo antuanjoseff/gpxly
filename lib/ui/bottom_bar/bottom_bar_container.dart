@@ -1,9 +1,12 @@
+// lib/ui/bottom_bar/bottom_bar_container.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:senda/l10n/app_localizations.dart'; // 👈 AFEGIT PER L10N
+import 'package:senda/l10n/app_localizations.dart';
 import 'package:senda/models/track.dart';
-import 'package:senda/notifiers/track_follow_notifier.dart';
+// ✅ ADAPTAT: Importem el nou proveïdor analític de navegació de la branca
+import 'package:senda/notifiers/navigation_notifier.dart'; // Bloc 3: Lògica de seguiment
 import 'package:senda/theme/app_colors.dart';
+
 import 'bottom_bar_buttons.dart';
 
 class BottomBarContainer extends ConsumerWidget {
@@ -36,10 +39,12 @@ class BottomBarContainer extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final t = AppLocalizations.of(context)!; // 👈 OBTENIM TRADUCCIONS
+    final t = AppLocalizations.of(context)!;
 
-    final followState = ref.watch(trackFollowNotifierProvider);
-    final bool isFollowPaused = followState.isPaused;
+    // ✅ ADAPTAT: Llegim amb '.select' només la variable que ens interessa del nou navigationProvider
+    final isFollowPaused = ref.watch(
+      navigationProvider.select((n) => n.isPaused),
+    );
 
     final bool isRecording = state == RecordingState.recording;
     final bool isPausedRec = state == RecordingState.paused;
@@ -92,16 +97,15 @@ class BottomBarContainer extends ConsumerWidget {
                             visible: isRecording || isPausedRec,
                             label: isPausedRec
                                 ? t.paused.toUpperCase()
-                                : t.recording.toUpperCase(), // 👈 MULTILANG
+                                : t.recording.toUpperCase(),
                             color: isPausedRec ? Colors.green : Colors.red,
                             showDot: isRecording,
                           ),
                           _StatusIndicator(
                             visible: isFollowingTrack,
                             label: isFollowPaused
-                                ? t.followPaused
-                                      .toUpperCase() // 👈 MULTILANG
-                                : t.following.toUpperCase(), // 👈 MULTILANG
+                                ? t.followPaused.toUpperCase()
+                                : t.following.toUpperCase(),
                             color: AppColors.deepGreen,
                             showDot: isFollowingTrack && !isFollowPaused,
                           ),

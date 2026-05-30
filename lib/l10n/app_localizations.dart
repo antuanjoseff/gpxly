@@ -1098,6 +1098,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Accuracy'**
   String get statAccuracy;
+
+  /// No description provided for @deleteWaypoint.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete waypoint'**
+  String get deleteWaypoint;
+
+  /// No description provided for @deleteWaypointTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete waypoint?'**
+  String get deleteWaypointTitle;
+
+  /// No description provided for @deleteWaypointMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete this point of interest permanently?'**
+  String get deleteWaypointMessage;
+
+  /// No description provided for @deleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'DELETE'**
+  String get deleteConfirm;
+
+  /// No description provided for @waypointDeletedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Waypoint successfully deleted'**
+  String get waypointDeletedSuccess;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

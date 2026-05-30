@@ -1,4 +1,3 @@
-import '../track_follow_notifier.dart';
 import 'thresholds.dart';
 
 class OffTrackLogic {

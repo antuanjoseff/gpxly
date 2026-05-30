@@ -1,0 +1,38 @@
+======================================================================
+ESTADO DEL REFACTOR DE ARQUITECTURA - PROYECTO SENDA (MAYO 2026)
+======================================================================
+El proyecto ha completado con éxito la migración hacia una arquitectura 
+de datos reactiva, limpia e inmutable basada en Riverpod 2.0.
+
+ESTADO DE LOS 4 PILARES DEL MOTOR:
+1. UserPosition (lib/models/user_position.dart): Modelo atómico e 
+   immutable que unifica la telemetría GPS, la altitud corregida por 
+   el CogService (DEM) y la distancia acumulada en ese nodo.
+2. locationProvider (lib/notifiers/location_notifier.dart): Controla el 
+   hardware mediante NativeGpsChannel.start(useTime...). Aloja el motor 
+   de Mock GPS asíncron basado en Timer.periodic para depuración progresiva.
+3. trackRecordingProvider (lib/notifiers/recording_notifier.dart): 
+   Custodia el modelo Track (lib/models/track.dart) y su estado. Acumula 
+   los puntos de forma eficiente, calcula el desnivell acumulado (stats) 
+   y gestiona el auto-save a SharedPreferences.
+4. navigationProvider (lib/notifiers/navigation_notifier.dart): Controla 
+   el autòmat de seguimiento del GPX importado (NavigationState). Ejecuta 
+   los helpers analíticos (geometry, offtrackLogic, reverseDetector) y 
+   emite las señales visuales de alerta (showOffTrackSnackbar, etc.).
+
+ARCHIVOS AUXILIARES INTEGRADOS Y COMPILANDO EN VERDE:
+- lib/services/recording_handler.dart: Orquestador síncrono de botones.
+- lib/services/gpx_import_service.dart & gpx_import_flow.dart: Lector GPX.
+- lib/services/gpx_exporter.dart: Generador de archivos GPX sin bucles defensivos.
+- lib/notifiers/helpers/alarm_engine.dart: Motor acústico suscrito a locationProvider.
+- lib/ui/app_messages.dart: Diálogos con botón Eliminar en horizontal integrado.
+- lib/screens/map/map_screen.dart: Vista de 1.100 líneas limpiada de oyentes 
+  redundantes. SmartCenter blindado mediante 'isProgrammaticMove'.
+- lib/utils/map_animator.dart: Interpolación lineal del punto azul y crecimiento 
+  progresivo del trazo vermell según los pasos del simulador de depuración.
+
+PRÓXIMOS OBJETIVOS DE FINE-TUNING PENDIENTES:
+- Implementar la edición de nombres de Waypoint desde el botón de la fila de detalles.
+- Añadir control de velocidad de simulación (x1, x2, x5, x10) en el Mock GPS.
+- Revisar filtros de histéresis fina para el desnivell acumulado en montaña.
+======================================================================

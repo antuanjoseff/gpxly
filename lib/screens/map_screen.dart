@@ -1,3 +1,4 @@
+// lib/screens/map/map_screen.dart
 import 'dart:async';
 import 'dart:math';
 
@@ -5,17 +6,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
-import 'package:senda/models/track.dart';
+import 'package:senda/models/navigation_state.dart'; // Afegit per a la nova lògica de navegació
+import 'package:senda/models/track.dart'; // Afegit per l'enum RecordingState si s'usa a la UI
+import 'package:senda/models/user_position.dart';
 import 'package:senda/models/waypoint.dart';
 import 'package:senda/notifiers/alarm_settings_notifier.dart';
-import 'package:senda/notifiers/gps_speed_notifier.dart';
 import 'package:senda/notifiers/imported_track_notifier.dart';
 import 'package:senda/notifiers/imported_track_settings_notifier.dart';
+// ✅ ADAPTAT: Importem la nova xarxa de providers modulars
+import 'package:senda/notifiers/location_notifier.dart'; // Bloc 1: Hardware i GPS
 import 'package:senda/notifiers/map_bearing_provider.dart';
+import 'package:senda/notifiers/navigation_notifier.dart'; // Bloc 3: Autòmat de Navegació
 import 'package:senda/notifiers/permissions_notifier.dart';
+import 'package:senda/notifiers/recording_notifier.dart'; // Bloc 2: Gravador i TrackStats
 import 'package:senda/notifiers/timer_notifier.dart';
-import 'package:senda/notifiers/track_follow_notifier.dart';
-import 'package:senda/notifiers/track_notifier.dart';
 import 'package:senda/notifiers/track_settings_notifier.dart';
 import 'package:senda/notifiers/waypoints_imported_notifier.dart';
 import 'package:senda/notifiers/waypoints_recorded_notifier.dart';
@@ -43,6 +47,8 @@ import 'package:senda/widgets/gps_accuracy_bars.dart';
 import 'package:senda/widgets/recording_status_bar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../notifiers/gps_speed_notifier.dart';
+
 class MapScreen extends ConsumerStatefulWidget {
   const MapScreen({super.key});
 
@@ -65,8 +71,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
   bool isProgrammaticMove = false;
   bool isImportingGpx = false;
   bool _isShowingReverseDialog = false;
-  bool hasDoneRecoveryFit =
-      false; // Flag per controlar que només es recuperi un cop per sessió
+  bool hasDoneRecoveryFit = false; // Control de recuperació per sessió
   DateTime _lastPrefsSave = DateTime.now();
   LatLng? _lastCameraCenter;
   late MapAnimator mapAnimator;
@@ -90,23 +95,21 @@ class _MapScreenState extends ConsumerState<MapScreen>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     NativeBarometerChannel.start();
-    // Carreguem la posició guardada al disc immediatament.
     _loadLastPosition();
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final ok = await PermissionsService.ensureBasicLocation(context);
       if (ok) {
-        // 2. Engeguem el TEU sistema de GPS (el canal natiu)
-        await ref.read(trackProvider.notifier).ensureGpsStarted();
+        // ✅ ADAPTAT: Engeguem el sensor GPS a través del nou locationProvider
+        await ref.read(locationProvider.notifier).ensureGpsStarted();
 
-        // 3. Com que el GPS ja està en marxa, esperem que arribi la primera
-        // posició del TEU provider per centrar el mapa si encara estem a (0,0).
-        final pos = ref.read(trackProvider).currentPosition;
-        if (pos != null &&
+        // ✅ ADAPTAT: Llegim la posició actual des del nou model UserPosition
+        final userGps = ref.read(locationProvider);
+        if (userGps != null &&
             (_initialCameraTarget == null ||
                 _initialCameraTarget!.latitude == 0)) {
           setState(() {
-            _initialCameraTarget = pos;
+            _initialCameraTarget = userGps.position;
           });
         }
       }
@@ -123,24 +126,25 @@ class _MapScreenState extends ConsumerState<MapScreen>
   }
 
   void _centerOnUser() {
-    final pos = ref.read(trackProvider).currentPosition;
-    if (pos == null || mapController == null) return;
+    // ✅ ADAPTAT: Llegim la posició actual directament del locationProvider (Punt Blau)
+    final userGps = ref.read(locationProvider);
+    if (userGps == null || mapController == null) return;
 
-    safeAnimateCamera(CameraUpdate.newLatLng(pos));
+    safeAnimateCamera(CameraUpdate.newLatLng(userGps.position));
   }
 
   Future<void> _onFollowTrack() async {
-    final notifier = ref.read(trackFollowNotifierProvider.notifier);
-    final state = ref.read(trackFollowNotifierProvider);
+    // ✅ ADAPTAT: Utilitzem el nou proveïdor analític de navegació Senda
+    final notifier = ref.read(navigationProvider.notifier);
+    final state = ref.read(navigationProvider);
 
     if (state.isFollowing) {
-      // Si ja està seguint → ATURA SEGUIMENT
       notifier.stopFollowing();
       return;
     }
 
-    // Si NO està seguint → activar GPS + centrar mapa + iniciar seguiment
-    await notifier.startFollowing(context, ref, mapController);
+    // El nou notifier ja s'encarrega de demanar permisos, engegar GPS i fer el primer enquadrament neta
+    await notifier.startFollowing(context, mapController);
   }
 
   Future<void> _loadLastPosition() async {
@@ -152,10 +156,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
       setState(() {
         if (lat != null && lon != null) {
           _initialCameraTarget = LatLng(lat, lon);
-          _initialZoom = 14.0; // Un zoom de ciutat estàndard
+          _initialZoom = 14.0;
         } else {
-          // Si no hi ha res, una posició per defecte (ex. Catalunya/BCN)
-          // per no aparèixer al mig de l'oceà
           _initialCameraTarget = const LatLng(41.3851, 2.1734);
           _initialZoom = 7.0;
         }
@@ -165,33 +167,30 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this); // Limpieza del observer
+    WidgetsBinding.instance.removeObserver(this);
     NativeBarometerChannel.stop();
     super.dispose();
   }
 
   Future<void> _savePositionToPrefs() async {
-    final pos = ref.read(trackProvider).currentPosition;
-    if (pos != null) {
+    // ✅ ADAPTAT: Desar a disc la darrera posició llegida des del locationProvider
+    final userGps = ref.read(locationProvider);
+    if (userGps != null) {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setDouble("last_lat", pos.latitude);
-      await prefs.setDouble("last_lon", pos.longitude);
-      _lastPrefsSave = DateTime.now(); // Actualitzem la marca de temps
+      await prefs.setDouble("last_lat", userGps.position.latitude);
+      await prefs.setDouble("last_lon", userGps.position.longitude);
+      _lastPrefsSave = DateTime.now();
     }
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) async {
     if (state == AppLifecycleState.resumed) {
-      // 1. Simplement digues al provider que s'actualitzi
       await ref.read(permissionsProvider.notifier).checkServiceStatus();
-
-      // 2. Un petit respir perquè el provider actualitzi l'estat
       await Future.delayed(const Duration(milliseconds: 300));
 
       final perm = ref.read(permissionsProvider);
 
-      // 3. Execució directa
       if (perm.serviceEnabled) {
         if (perm.shouldResumeRecording) {
           ref.read(permissionsProvider.notifier).consumeSignal();
@@ -211,14 +210,13 @@ class _MapScreenState extends ConsumerState<MapScreen>
     if (!mounted) return;
     if (result == null) return;
 
-    // 1. Obtenim la durada actual del cronòmetre independent
     final finalDuration = ref.read(timerProvider);
-
-    // 2. Aturem el cronòmetre (deixa de comptar)
     ref.read(timerProvider.notifier).pause();
 
-    // 3. Passem la durada al track perquè la guardi en el seu estat final
-    await ref.read(trackProvider.notifier).stopRecording(finalDuration);
+    // ✅ ADAPTAT: Aturem la gravació utilitzant el nou trackRecordingProvider
+    await ref
+        .read(trackRecordingProvider.notifier)
+        .stopRecording(finalDuration);
     if (!context.mounted) return;
 
     if (result == "share") {
@@ -226,11 +224,10 @@ class _MapScreenState extends ConsumerState<MapScreen>
       return;
     }
 
-    // Si ha triat FINALITZAR → mostrar diàleg de mantenir o eliminar
     final eliminar = await _askDeleteTrack();
     if (eliminar == true) {
       prefs.setBool("preserve_track_on_start", false);
-      ref.read(trackProvider.notifier).reset();
+      ref.read(trackRecordingProvider.notifier).reset(); // ✅ ADAPTAT
     } else {
       prefs.setBool("preserve_track_on_start", true);
     }
@@ -254,27 +251,26 @@ class _MapScreenState extends ConsumerState<MapScreen>
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: Colors.white10),
         ),
-        child: Icon(
-          icon,
-          color: AppColors.iconForegroundColor,
-          size: 26, // 🎯 Una mica més petita per la nova mida de 52px
-        ),
+        child: Icon(icon, color: AppColors.iconForegroundColor, size: 26),
       ),
     );
   }
 
   void _onAddWaypoint(BuildContext context, WidgetRef ref) async {
-    final track = ref.read(trackProvider);
-    if (track.coordinates.isEmpty) return;
+    // ✅ ADAPTAT: Llegim de forma unificada des del nou trackRecordingProvider
+    final recordingTrack = ref.read(trackRecordingProvider);
+    if (recordingTrack.points.isEmpty) return;
 
-    final lastCoords = track.coordinates.last; // [lon, lat]
-    final lastAlt = track.altitudes.isNotEmpty ? track.altitudes.last : 0.0;
+    // Llegim l'últim punt gravat utilitzant el nou model UserPosition
+    final lastPoint = recordingTrack.points.last;
+    final lastLat = lastPoint.position.latitude;
+    final lastLon = lastPoint.position.longitude;
+    final lastAlt = lastPoint.altitude;
 
-    // 1. OBTENIR ALÇADA REAL (HGT)
-    // 🔥 CORRECCIÓ: Ara rebem (altitud, status). Ens quedem només amb l'altitud.
+    // 1. OBTENIR ALÇADA REAL CORREGIDA
     final (correctedAlt, _) = await HgtService().getCorrectedElevation(
-      lastCoords[1], // lat
-      lastCoords[0], // lon
+      lastLat,
+      lastLon,
       lastAlt,
     );
 
@@ -288,15 +284,17 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
     if (name == null || name.isEmpty) return;
 
-    // 3. CREAR WAYPOINT AMB DADES CORREGIDES
+    // 3. CREAR WAYPOINT AMB LES NOVES REFERÈNCIES ATÒMIQUES
     final wp = Waypoint(
       id: "rec_${DateTime.now().millisecondsSinceEpoch}",
       name: name,
-      lat: lastCoords[1],
-      lon: lastCoords[0],
-      trackIndex: track.coordinates.length - 1,
-      ele: correctedAlt, // ✅ Ja és el double corregit
-      distanceAtPoint: track.distance,
+      lat: lastLat,
+      lon: lastLon,
+      trackIndex:
+          recordingTrack.points.length -
+          1, // Basat en la llista compacta de punts
+      ele: correctedAlt,
+      distanceAtPoint: recordingTrack.distance,
       time: DateTime.now(),
     );
 
@@ -306,6 +304,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
   void _fitToBounds(List<List<double>> coords, {bool instant = false}) {
     if (coords.isEmpty || mapController == null) return;
 
+    // ✅ CORREGIDO: Añadimos [1] para la Latitud y [0] para la Longitud
     final lats = coords.map((c) => c[1]).toList();
     final lons = coords.map((c) => c[0]).toList();
 
@@ -343,7 +342,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
     }
   }
 
-  // Importa Point de dart:math si no el tens
   void _onFeatureTapped(
     Point<double> point,
     LatLng latLng,
@@ -351,7 +349,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
     String layerId,
     Annotation? annotation,
   ) async {
-    // 1. Busquem quina "feature" s'ha clicat a les capes de waypoints
     final features = await mapController?.queryRenderedFeatures(point, [
       'waypoints_recorded_layer',
       'waypoints_imported_layer',
@@ -359,13 +356,11 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
     if (features == null || features.isEmpty) return;
 
-    // 2. Extraiem el waypoint_id de les propietats del GeoJSON
     final dynamic feature = features.first;
     final String? wpId = feature['properties']?['waypoint_id'];
 
     if (wpId == null) return;
 
-    // 3. Busquem el waypoint en els nostres providers
     final recorded = ref.read(waypointsProvider);
     final imported = ref.read(importedWaypointsProvider);
     final waypoint = [...recorded, ...imported].firstWhere(
@@ -373,78 +368,67 @@ class _MapScreenState extends ConsumerState<MapScreen>
       orElse: () => throw Exception("Waypoint no trobat"),
     );
 
-    // 4. Calculem el temps transcorregut
     Duration? elapsed;
 
-    // Decidim de quin track agafem l'hora d'inici
+    // ✅ ADAPTAT: Llegim de forma compatible usant el nou trackRecordingProvider
     final track = wpId.startsWith('rec_')
-        ? ref.read(trackProvider)
+        ? ref.read(trackRecordingProvider)
         : ref.read(importedTrackProvider);
 
     if (track != null && track.timestamps.isNotEmpty && waypoint.time != null) {
-      // Diferència entre l'hora del waypoint i l'hora del primer punt del track
       elapsed = waypoint.time!.difference(track.timestamps.first);
     }
 
-    // 5. Obrim el diàleg amb tota la informació
     if (mounted) {
-      AppMessages.showWaypointDetails(context, waypoint, elapsed);
+      AppMessages.showWaypointDetails(context, ref, waypoint, elapsed);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final recordingState = ref.watch(
-      trackProvider.select((t) => t.recordingState),
-    );
-
-    // 2. La resta de providers es mantenen igual perquè no canvien cada segon
+    // ✅ ADAPTAT: Connectem les variables reactives visuals amb els proveïdors optimitzats
+    final navigationState = ref.watch(
+      navigationProvider,
+    ); // Substitueix trackFollowNotifierProvider
     final trackSettings = ref.watch(trackSettingsProvider);
     final importedTrack = ref.watch(importedTrackProvider);
     final hasImportedTrack =
-        importedTrack != null && importedTrack.coordinates.isNotEmpty;
-    final trackFollowState = ref.watch(trackFollowNotifierProvider);
+        importedTrack != null && importedTrack.points.isNotEmpty;
 
     final pressure = ref.watch(barometerProvider).value;
-    final isRunning = ref.watch(trackProvider.notifier).isSimulationRunning;
-    final isPaused = ref.watch(trackProvider.notifier).isSimulationPaused;
 
-    ref.listen(trackProvider, (prev, next) async {
-      if (!styleInitialized || mapController == null) return;
+    // ✅ ADAPTAT: Llegim els indicadors d'estat a través del nou locationProvider i del gravador
+    final isRunning = ref.watch(locationProvider.notifier).isSimulationRunning;
+    final isPaused = ref.watch(locationProvider.notifier).isSimulationPaused;
 
-      // ───────────────────────────────────────────────
-      // 0) ACTUALITZACIÓ VISUAL I GUARDAT PERIÒDIC
-      // ───────────────────────────────────────────────
-      if (next.currentPosition != null) {
-        // Punt blau sempre fluid
-        mapAnimator.updateUserPositionDirect(next.currentPosition!);
+    // ─────────────────────────────────────────────────────────────
+    // 🛰️ OIENT A: MOVIMENT DEL PUNT BLAU I CONTROL DE CÀMERA (GPS)
+    // ─────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────
+    // 🛰️ OIENT A: MOVIMENT DEL PUNT BLAU I CONTROL DE CÀMERA (GPS)
+    // ─────────────────────────────────────────────────────────────
+    ref.listen<UserPosition?>(locationProvider, (prev, next) async {
+      if (!styleInitialized || mapController == null || next == null) return;
 
-        // --- GUARDAT EFICIENT (Cada 5 minuts) ---
-        final ara = DateTime.now();
-        if (ara.difference(_lastPrefsSave).inMinutes >= 5) {
-          _savePositionToPrefs(); // Crida a la funció que hem creat abans
-        }
+      // 🔄 MODIFICAT: En lloc d'un salt directe, deleguem la posició al motor d'animació fluida
+      mapAnimator.animateUserPosition(next.position); // 👈 CANVIAT AQUÍ!
+
+      // --- GUARDAT EFICIENT EN MEMÒRIA CACHÉ (Cada 5 minuts) ---
+      final ara = DateTime.now();
+      if (ara.difference(_lastPrefsSave).inMinutes >= 5) {
+        _savePositionToPrefs();
       }
 
-      mapAnimator.updateFromTrack(next);
+      if (isImportingGpx) return;
 
-      // Si estem important un GPX, aturem qualsevol lògica que mogui la càmera.
-      if (isImportingGpx) {
-        return;
-      }
-
-      // ───────────────────────────────────────────────
-      // 3) PRIMER FIX GPS (Només si el mapa està "buit")
-      // ───────────────────────────────────────────────
-      if (next.currentPosition != null &&
-          prev?.currentPosition == null &&
-          next.coordinates.isEmpty) {
+      // 2. PRIMER FIX GPS (Només si la llista del gravador està totalment buida)
+      final recordingPoints = ref.read(trackRecordingProvider).points;
+      if (prev == null && recordingPoints.isEmpty) {
         hasDoneFirstFixZoom = true;
-        final pos = next.currentPosition!;
         isProgrammaticMove = true;
 
-        _lastCameraCenter = pos;
-        safeAnimateCamera(CameraUpdate.newLatLngZoom(pos, 18));
+        _lastCameraCenter = next.position;
+        safeAnimateCamera(CameraUpdate.newLatLngZoom(next.position, 18));
 
         Future.delayed(const Duration(milliseconds: 300), () {
           isProgrammaticMove = false;
@@ -452,44 +436,26 @@ class _MapScreenState extends ConsumerState<MapScreen>
         return;
       }
 
-      // ───────────────────────────────────────────────
-      // 4) FIT TO BOUNDS (Només Recuperació Inicial)
-      // ───────────────────────────────────────────────
-      final isRecoveringTrack =
-          (prev?.coordinates.isEmpty ?? true) &&
-          next.coordinates.length > 1 &&
-          !hasDoneRecoveryFit;
-
-      if (isRecoveringTrack) {
-        hasDoneRecoveryFit = true;
-        _fitToBounds(next.coordinates, instant: true);
-        return;
-      }
-
-      // ───────────────────────────────────────────────
-      // 5) SmartCenter (Seguiment actiu)
-      // ───────────────────────────────────────────────
-      if (smartCenterEnabled &&
-          next.currentPosition != null &&
-          !isProgrammaticMove) {
+      // 3. SmartCenter (Seguiment automàtic actiu de la càmera)
+      if (smartCenterEnabled && !isProgrammaticMove) {
         double distanceSinceLastMove = 999.0;
 
         if (_lastCameraCenter != null) {
           distanceSinceLastMove = calculateDistanceManual(
             _lastCameraCenter!.latitude,
             _lastCameraCenter!.longitude,
-            next.currentPosition!.latitude,
-            next.currentPosition!.longitude,
+            next.position.latitude,
+            next.position.longitude,
           );
         }
 
-        // Si l'usuari s'ha allunyat més de 3 metres del CENTRE actual de la càmera...
         if (distanceSinceLastMove > 3.0) {
           isProgrammaticMove = true;
-          _lastCameraCenter =
-              next.currentPosition; // 🎯 Actualitzem la referència!
+          _lastCameraCenter = next.position;
 
-          safeAnimateCamera(CameraUpdate.newLatLng(next.currentPosition!));
+          // 🔄 ADAPTACIÓ FLUIDA: Perquè la pròpia càmera acompanyi el desplaçament fluid
+          // de l'animador del punt blau en lloc de fer un salt ràpid, usem animateCamera.
+          safeAnimateCamera(CameraUpdate.newLatLng(next.position));
 
           Future.delayed(const Duration(milliseconds: 600), () {
             isProgrammaticMove = false;
@@ -498,10 +464,50 @@ class _MapScreenState extends ConsumerState<MapScreen>
       }
     });
 
-    ref.listen(importedTrackProvider, (prev, next) {
+    // ─────────────────────────────────────────────────────────────
+    // 📊 OIENT B: GRAVACIÓ FÍSICA (LÍNIA I TRAMS ANIMATS)
+    // ─────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────
+    // 📊 OIENT B: GRAVACIÓ FÍSICA (LÍNIA I TRAMS ANIMATS)
+    // ─────────────────────────────────────────────────────────────
+    ref.listen<Track>(trackRecordingProvider, (prev, next) {
       if (!styleInitialized || mapController == null) return;
 
-      if (next == null || next.coordinates.isEmpty) {
+      // ✅ ADAPTAT: Eliminem 'navigationState' perquè la teva funció real només rep el track!
+      mapAnimator.updateFromTrack(next);
+
+      if (isImportingGpx) return;
+
+      // RECUPERACIÓ INICIAL DE TRAÇAT DES DE CACHÉ (Fit Bounds un sol cop)
+      final bool isRecoveringTrack =
+          (prev == null || prev.points.isEmpty) &&
+          next.points.length > 1 &&
+          !hasDoneRecoveryFit;
+
+      if (isRecoveringTrack) {
+        hasDoneRecoveryFit = true;
+
+        final List<List<double>> mapCoords = next.coordinates;
+        _fitToBounds(mapCoords, instant: true);
+      }
+    });
+
+    // ─────────────────────────────────────────────────────────────
+    // 🗺️ OIENT C: SET DE CAPES DEL TRACK IMPORTAT (GPX)
+    // ─────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────
+    // 🗺️ OIENT C: SET DE CAPES DEL TRACK IMPORTAT (GPX PROGRESSIU)
+    // ─────────────────────────────────────────────────────────────
+    ref.listen<Track?>(importedTrackProvider, (prev, next) {
+      if (!styleInitialized || mapController == null) return;
+
+      // ✅ CANVI CLAU: En lloc de llegir 'next.coordinates' (que és el bloc sencer),
+      // demanem el segment tallat que s'ha estès en aquest mil·lisegon de simulació.
+      final List<List<double>> coordsVisibles = ref
+          .read(importedTrackProvider.notifier)
+          .visibleCoordinates;
+
+      if (next == null || coordsVisibles.isEmpty) {
         mapController!.setGeoJsonSource("imported_track", {
           "type": "FeatureCollection",
           "features": [],
@@ -509,12 +515,16 @@ class _MapScreenState extends ConsumerState<MapScreen>
         return;
       }
 
+      // Pintem al GeoJSON de MapLibre només la llista dinàmica progressiva
       mapController!.setGeoJsonSource("imported_track", {
         "type": "FeatureCollection",
         "features": [
           {
             "type": "Feature",
-            "geometry": {"type": "LineString", "coordinates": next.coordinates},
+            "geometry": {
+              "type": "LineString",
+              "coordinates": coordsVisibles,
+            }, // 👈 MODIFICAT AQUÍ!
           },
         ],
       });
@@ -531,11 +541,15 @@ class _MapScreenState extends ConsumerState<MapScreen>
         ),
       );
 
-      if (isImportingGpx) {
+      // El FitToBounds general només el fem un cop en carregar el fitxer original
+      if (isImportingGpx && next.coordinates.isNotEmpty) {
         _fitToBounds(next.coordinates);
       }
     });
 
+    // ─────────────────────────────────────────────────────────────
+    // 📍 RECEPTORS DE REFRESC DE LES CAPES DE WAYPOINTS
+    // ─────────────────────────────────────────────────────────────
     ref.listen(waypointsProvider, (prev, next) async {
       if (!styleInitialized || !waypointLayersReady || mapController == null)
         return;
@@ -560,11 +574,14 @@ class _MapScreenState extends ConsumerState<MapScreen>
       );
     });
 
+    // ─────────────────────────────────────────────────────────────
+    // 🎨 RECEPTORS DE CANVIS EN ELS ESTILS VISUALS DE CAPA
+    // ─────────────────────────────────────────────────────────────
     ref.listen(trackSettingsProvider, (previous, next) {
       if (mapController == null || !styleInitialized) return;
 
       mapController!.setLayerProperties(
-        "track_line_layer", // 👈 el teu layer del JSON
+        "track_line_layer",
         LineLayerProperties(
           lineColor: next.color.toMapLibreColor(),
           lineWidth: next.width,
@@ -588,56 +605,56 @@ class _MapScreenState extends ConsumerState<MapScreen>
       );
     });
 
-    ref.listen(trackFollowNotifierProvider, (prev, next) {
+    // ─────────────────────────────────────────────────────────────
+    // 🔔 OIENT D: GESTIÓ D'ALERTES I DIÀLEGS EN PANTALLA (Navegació Senda)
+    // ─────────────────────────────────────────────────────────────
+    // ✅ ADAPTAT: Substituïm la subscripció del vell trackFollowNotifierProvider pel navigationProvider
+    ref.listen<NavigationState>(navigationProvider, (prev, next) {
       if (next.showBackOnTrackSnackbar == true) {
         AppMessages.showBackOnTrackPersistentSnackbar(context, ref);
-
-        ref
-            .read(trackFollowNotifierProvider.notifier)
-            .dismissBackOnTrackAlert();
+        ref.read(navigationProvider.notifier).dismissBackOnTrackAlert();
       }
     });
 
-    ref.listen(trackFollowNotifierProvider, (prev, next) async {
+    ref.listen<NavigationState>(navigationProvider, (prev, next) async {
       if (next.showReverseTrackDialog && !_isShowingReverseDialog) {
-        _isShowingReverseDialog = true; // Bloqueamos nuevas aperturas
+        _isShowingReverseDialog = true; // Bloqueig de doble finestra
+
+        ref.read(navigationProvider.notifier).sounds.playReversedTrackSound();
 
         final accept = await AppMessages.showReverseTrackDialog(context);
 
         if (accept == true) {
-          ref.read(trackFollowNotifierProvider.notifier).reverseImportedTrack();
+          ref.read(navigationProvider.notifier).reverseImportedTrack();
         } else {
-          ref
-              .read(trackFollowNotifierProvider.notifier)
-              .dismissReverseTrackDialog();
+          ref.read(navigationProvider.notifier).dismissReverseTrackDialog();
         }
 
-        _isShowingReverseDialog = false; // Liberamos cuando el usuario cierra
+        _isShowingReverseDialog = false; // Alliberem el control al tancar
       }
     });
 
-    ref.listen(trackFollowNotifierProvider, (prev, next) {
+    ref.listen<NavigationState>(navigationProvider, (prev, next) {
       if (next.showEndOfTrackSnackbar == true) {
         AppMessages.showEndOfTrackSnackBar(context);
-
-        ref.read(trackFollowNotifierProvider.notifier).dismissEndOfTrackAlert();
+        ref.read(navigationProvider.notifier).dismissEndOfTrackAlert();
       }
     });
 
-    ref.listen(trackFollowNotifierProvider, (prev, next) {
+    ref.listen<NavigationState>(navigationProvider, (prev, next) {
       if (next.showOffTrackSnackbar == true) {
         AppMessages.showOffTrackPersistentSnackbar(context, ref);
-
-        // 🔥 IMPORTANT: reset immediat
-        ref.read(trackFollowNotifierProvider.notifier).clearOffTrackSnackbar();
+        ref.read(navigationProvider.notifier).clearOffTrackSnackbar();
       }
     });
 
+    // ─────────────────────────────────────────────────────────────
+    // 📐 PREPARACIÓ DELS VISORS GENERALS DE L'APPBAR
+    // ─────────────────────────────────────────────────────────────
     if (_initialCameraTarget == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    // 🔔 ICONA D’ALARMES ACTIVES
     final alarms = ref.watch(alarmSettingsProvider);
 
     final anyAlarmActive =
@@ -672,26 +689,21 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 backgroundColor: AppColors.primary,
                 automaticallyImplyLeading: false,
                 titleSpacing: 16,
-
-                title: const Text(
-                  'Senda',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
-                    color: Colors.white,
-                  ),
-                ),
-
+                title: Text("SENDA"),
                 actions: [
-                  // Dins de l'actions de l'AppBar:
+                  // ✅ ADAPTAT: Comprovem si hi ha un track importat a través de la nova referència
                   if (ref.watch(importedTrackProvider) != null)
                     Padding(
                       padding: const EdgeInsets.only(right: 8),
                       child: GestureDetector(
                         onTap: () {
-                          final notifier = ref.read(trackProvider.notifier);
+                          // ✅ ADAPTAT: El simulador de traçats ara està delegat de forma neta al locationProvider
+                          final notifier = ref.read(locationProvider.notifier);
                           if (!isRunning) {
-                            notifier.simulateImportedTrack();
+                            final importedData = ref.read(
+                              importedTrackProvider,
+                            );
+                            notifier.simulateImportedTrack(importedData);
                           } else {
                             notifier.toggleSimulationPause();
                           }
@@ -744,12 +756,12 @@ class _MapScreenState extends ConsumerState<MapScreen>
                           width: 32,
                           height: 32,
                           decoration: const BoxDecoration(
-                            color: Colors.white, // Cercle blanc
+                            color: Colors.white,
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(
                             Icons.notifications_active,
-                            color: Colors.red, // Icona vermella
+                            color: Colors.red,
                             size: 20,
                           ),
                         ),
@@ -772,12 +784,12 @@ class _MapScreenState extends ConsumerState<MapScreen>
                         width: 32,
                         height: 32,
                         decoration: const BoxDecoration(
-                          color: Colors.white, // Cercle blanc
+                          color: Colors.white,
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
                           Icons.settings_outlined,
-                          color: AppColors.primary, // Skyblue
+                          color: AppColors.primary,
                           size: 20,
                         ),
                       ),
@@ -791,14 +803,16 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   const SizedBox(width: 8),
                 ],
               ),
-
         body: Stack(
           children: [
             RepaintBoundary(
               child: Listener(
                 behavior: HitTestBehavior.translucent,
-
                 onPointerDown: (PointerDownEvent event) {
+                  // 🔥 BLINDATGE CRÍTIC: Si l'aplicació està movent el mapa per codi (SmartCenter actiu),
+                  // ignorem completament el toc perquè no desconnecti el seguiment en temps real.
+                  if (isProgrammaticMove) return;
+
                   if (smartCenterEnabled) {
                     setState(() => smartCenterEnabled = false);
                   }
@@ -826,33 +840,27 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     setState(() => _fullScreen = false);
                   },
                   onCameraIdle: () async {
-                    // 1. Si el moviment és de l'app (SmartCenter/Programat), sortim immediatament
                     if (isProgrammaticMove) return;
 
-                    final pos = mapController
-                        ?.cameraPosition; // MapLibre ja el té, no cal 'await' normalment
+                    final pos = mapController?.cameraPosition;
                     if (pos == null) return;
+
                     ref.read(mapBearingProvider.notifier).update(pos.bearing);
-                    // 2. FILTRE DE ZOOM: Només actualitzem si el canvi és notable (> 0.2)
-                    // Això evita que el build es dispari per micro-ajustaments
+
                     final currentZoom = ref.read(mapZoomProvider);
                     if ((currentZoom - pos.zoom).abs() > 0.2) {
                       ref.read(mapZoomProvider.notifier).update(pos.zoom);
                     }
 
-                    // 4. GUARDAT A PREFS: Aquest és el millor lloc per fer el guardat de seguretat
-                    // perquè el mapa està quiet i no bloquegem frames de moviment.
                     final prefs = await SharedPreferences.getInstance();
                     await prefs.setDouble("last_lat", pos.target.latitude);
                     await prefs.setDouble("last_lon", pos.target.longitude);
                     await prefs.setDouble("last_zoom", pos.zoom);
                   },
-
                   onMapCreated: (controller) {
                     mapController = controller;
                     controller.onFeatureTapped.add(_onFeatureTapped);
                   },
-
                   onStyleLoadedCallback: () async {
                     await setupUserLocationLayer(mapController!);
                     await setupWaypointLayers(mapController!);
@@ -880,14 +888,21 @@ class _MapScreenState extends ConsumerState<MapScreen>
               // -------------------------
               // PÍNDOLA FLOTANT (CENTRAT DALT)
               // -------------------------
+              // -------------------------
+              // PÍNDOLA FLOTANT (CENTRAT DALT)
+              // -------------------------
               Positioned(
                 top: 10,
                 left: 10,
                 child: RecordingStatusBar(
-                  state: recordingState,
+                  // ✅ ADAPTAT: Passem el RecordingState real des del nou gravador inalterable
+                  state: ref.watch(
+                    trackRecordingProvider.select((t) => t.recordingState),
+                  ),
                   duration: ref.watch(timerProvider),
                 ),
               ),
+
               // -------------------------
               // COLUMNA DE BOTONS SUPERIOR DRETA
               // -------------------------
@@ -929,7 +944,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     ),
 
                     const SizedBox(height: 8),
-                    if (recordingState == RecordingState.recording) ...[
+                    // ✅ ADAPTAT: Llegim l'estat de gravació des del nou trackRecordingProvider
+                    if (ref.watch(trackRecordingProvider).recordingState ==
+                        RecordingState.recording) ...[
                       _buildSquareButton(
                         icon: Icons.add_location_alt_outlined,
                         onTap: () => _onAddWaypoint(context, ref),
@@ -942,8 +959,20 @@ class _MapScreenState extends ConsumerState<MapScreen>
                       _buildSquareButton(
                         icon: Icons.gps_fixed,
                         onTap: () {
-                          setState(() => smartCenterEnabled = true);
+                          // ✅ ADAPTAT: Afegim les línies de control temporal de moviment programat
+                          final currentGps = ref.read(locationProvider);
+                          setState(() {
+                            smartCenterEnabled = true;
+                            if (currentGps != null)
+                              _lastCameraCenter = currentGps.position;
+                            isProgrammaticMove = true;
+                          });
+
                           _centerOnUser();
+
+                          Future.delayed(const Duration(milliseconds: 600), () {
+                            isProgrammaticMove = false;
+                          });
                         },
                       ),
                   ],
@@ -960,8 +989,12 @@ class _MapScreenState extends ConsumerState<MapScreen>
                           () => _isPanelExpanded = !_isPanelExpanded,
                         ),
 
-                        // L'estat de gravació que ve del teu provider/model
-                        state: recordingState,
+                        // ✅ ADAPTAT: Passem el RecordingState real mitjançant el paràmetre requerit
+                        state: ref.watch(
+                          trackRecordingProvider.select(
+                            (t) => t.recordingState,
+                          ),
+                        ),
 
                         onStart: () async {
                           final ok = await requestLocationPermissionsUnified(
@@ -971,35 +1004,43 @@ class _MapScreenState extends ConsumerState<MapScreen>
                           if (!ok) return;
 
                           await RecordingHandler.start(context, ref);
-                          final map = mapController;
-                          final pos = ref.read(trackProvider).currentPosition;
 
-                          if (map != null && pos != null) {
+                          final map = mapController;
+                          final userGps = ref.read(locationProvider);
+
+                          if (map != null && userGps != null) {
+                            setState(() {
+                              smartCenterEnabled = true;
+                              _lastCameraCenter = userGps.position;
+                              isProgrammaticMove = true;
+                            });
+
                             safeAnimateCamera(
-                              CameraUpdate.newLatLngZoom(pos, 18),
+                              CameraUpdate.newLatLngZoom(userGps.position, 18),
+                            );
+
+                            Future.delayed(
+                              const Duration(milliseconds: 600),
+                              () {
+                                isProgrammaticMove = false;
+                              },
                             );
                           }
 
                           setState(() => _isPanelExpanded = false);
                         },
+
                         onPause: () => RecordingHandler.pause(ref),
                         onResume: () => RecordingHandler.resume(ref),
                         onStop: () => _handleStopProcess(context, ref),
 
                         hasImportedTrack: hasImportedTrack,
-                        isFollowingTrack: trackFollowState.isFollowing,
-
-                        // ... resta de paràmetres iguals
                         onImportTrack: () async {
-                          // 1. BLOQUEIG ATÒMIC (Immediat)
                           setState(() {
                             isImportingGpx = true;
                             smartCenterEnabled = false;
                           });
 
-                          // 2. NETEJA DE CÀMERA
-                          // Com que no hi ha stopAnimation, movem la càmera on ja està
-                          // però amb moveCamera per tallar qualsevol animació en curs.
                           final currentPos =
                               await mapController?.cameraPosition;
                           if (currentPos != null) {
@@ -1015,17 +1056,19 @@ class _MapScreenState extends ConsumerState<MapScreen>
                               mapController: mapController,
                             );
 
-                            // 3. El FitToBounds del track importat
-                            final importedCoords = ref
-                                .read(importedTrackProvider)
-                                ?.coordinates;
-                            if (importedCoords != null &&
-                                importedCoords.isNotEmpty) {
-                              // Fem el fitToBounds amb un micro-delay perquè el mapa hagi digerit el GPX
+                            final importedData = ref.read(
+                              importedTrackProvider,
+                            );
+
+                            if (importedData != null &&
+                                importedData.points.isNotEmpty) {
                               Future.delayed(
                                 const Duration(milliseconds: 50),
                                 () {
-                                  _fitToBounds(importedCoords, instant: true);
+                                  _fitToBounds(
+                                    importedData.coordinates,
+                                    instant: true,
+                                  );
                                 },
                               );
                             }
@@ -1037,19 +1080,18 @@ class _MapScreenState extends ConsumerState<MapScreen>
                         },
 
                         onFollowTrack: () {
-                          if (trackFollowState.isFollowing) {
-                            // 1. ATURAR CÀLCULS (Estalvi de bateria/CPU)
+                          if (navigationState.isFollowing) {
                             ref
-                                .read(trackFollowNotifierProvider.notifier)
+                                .read(navigationProvider.notifier)
                                 .stopFollowing();
-
-                            // 2. NETEJAR RUTA (Per poder importar-ne una de nova)
                             ref.read(importedTrackProvider.notifier).clear();
                           } else {
-                            // Si no està seguint, iniciem normalment
                             _onFollowTrack();
                           }
                         },
+
+                        // ✅ AFEGIT: Mantenim el flag de control requerit pel teu contenidor
+                        isFollowingTrack: navigationState.isFollowing,
                       ),
               ),
             ],
@@ -1060,8 +1102,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
   }
 
   Future<void> _shareTrack() async {
-    final track = ref.read(trackProvider);
-    if (track.coordinates.isEmpty) return;
+    // ✅ ADAPTAT: Llegim del nou trackRecordingProvider unificat
+    final recordingTrack = ref.read(trackRecordingProvider);
+    if (recordingTrack.points.isEmpty) return;
 
     // 1. Proposar nom editable
     final suggested = buildGpxFilename().replaceAll(".gpx", "");
@@ -1069,25 +1112,21 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
     if (name == null || name.isEmpty) return;
 
-    // 2. Exportar i compartir
+    // 2. Exportar i compartir l'arxiu de punts únics
     await exportGpx(name, ref, context);
 
     if (!mounted) return;
 
-    // 3. Preguntar si vol eliminar o mantenir
+    // 3. Preguntar si vol eliminar o mantenir el track gravat
     final prefs = await SharedPreferences.getInstance();
     final eliminar = await _askDeleteTrack();
 
-    // ... després de exportGpx ...
-
     if (eliminar == true) {
-      // 1. Indiquem que no volem recuperar res el pròxim cop
       prefs.setBool("preserve_track_on_start", false);
 
-      // 2. Cridem al mètode correcte que hem definit al Notifier
-      ref.read(trackProvider.notifier).reset();
+      // ✅ ADAPTAT: Reset complet net a través del nou gravador inalterable
+      ref.read(trackRecordingProvider.notifier).reset();
 
-      // 3. També hauries de netejar els waypoints si n'hi havia
       ref.read(waypointsProvider.notifier).clear();
       ref.read(timerProvider.notifier).reset();
     } else {

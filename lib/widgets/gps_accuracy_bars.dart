@@ -1,14 +1,15 @@
+// lib/widgets/gps_accuracy_bars.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:senda/notifiers/gps_accuracy_notifier.dart';
+import 'package:senda/notifiers/navigation_notifier.dart';
 import 'package:senda/notifiers/permissions_notifier.dart';
-import 'package:senda/notifiers/track_follow_notifier.dart';
-import 'package:senda/notifiers/track_notifier.dart';
+// ✅ ADAPTAT: Importem els nous proveïdors optimitzats
+import 'package:senda/notifiers/recording_notifier.dart'; // Bloc 2: Gravació
 import 'package:senda/services/location_permission_flow.dart';
 import 'package:senda/ui/app_messages.dart';
-
-import '../utils/gps_accuracy.dart';
+import 'package:senda/utils/gps_accuracy.dart';
 
 class GpsAccuracyBars extends ConsumerWidget {
   final int totalBars;
@@ -18,9 +19,15 @@ class GpsAccuracyBars extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final permissions = ref.watch(permissionsProvider);
     final level = ref.watch(gpsAccuracyLevelProvider);
-    final track = ref.watch(trackProvider);
-    final followState = ref.watch(trackFollowNotifierProvider);
     final accuracy = ref.watch(gpsAccuracyProvider);
+
+    // ✅ ADAPTAT: Escoltem de forma eficient els nous estats immutables
+    final isRecording = ref.watch(
+      trackRecordingProvider.select((t) => t.recording),
+    );
+    final isFollowing = ref.watch(
+      navigationProvider.select((n) => n.isFollowing),
+    );
 
     // ───────────────────────────────────────────────
     // 1. SENSE PERMISOS
@@ -28,18 +35,15 @@ class GpsAccuracyBars extends ConsumerWidget {
     if (!permissions.hasPermission) {
       return GestureDetector(
         behavior: HitTestBehavior.opaque,
-        // Dins del Gesture detector de "SENSE PERMISOS" (Punt 1)
         onTap: () async {
           final ok = await requestLocationPermissionsUnified(context, ref);
 
-          // 🔥 ARA SÍ: Refresquem les dues coses (Permisos i Sensor)
           final permNotifier = ref.read(permissionsProvider.notifier);
           await permNotifier.checkPermissions();
-          await permNotifier.checkServiceStatus(); // <--- AFEGEIX AIXÒ
+          await permNotifier.checkServiceStatus();
 
           if (!ok) return;
         },
-
         child: Container(
           padding: const EdgeInsets.all(6),
           child: const Tooltip(
@@ -51,21 +55,18 @@ class GpsAccuracyBars extends ConsumerWidget {
     }
 
     // ───────────────────────────────────────────────
-    // 2. GPS DESACTIVAT
+    // 2. GPS DESACTIVAT AL DISPOSITIU
     // ───────────────────────────────────────────────
     if (!permissions.serviceEnabled) {
       return GestureDetector(
         behavior: HitTestBehavior.opaque,
-        // Dins de GpsAccuracyBars, al onTap de GPS DESACTIVAT:
         onTap: () async {
           final go = await AppMessages.showGpsDisabledDialog(context);
           if (go == true) {
             await Geolocator.openLocationSettings();
-            // Forcem una comprovació manual al tornar
             await ref.read(permissionsProvider.notifier).checkServiceStatus();
           }
         },
-
         child: Container(
           padding: const EdgeInsets.all(6),
           child: const Tooltip(
@@ -77,11 +78,9 @@ class GpsAccuracyBars extends ConsumerWidget {
     }
 
     // ───────────────────────────────────────────────
-    // 3. ESTADO ACTIVO: Grabando O Siguiendo
+    // 3. COMPROVACIÓ D'ACTIVITAT (Opcional, desactiva si vols que es mostri sempre)
     // ───────────────────────────────────────────────
-    // Antes solo miraba track.recording. Ahora mira ambos.
-    // final bool isActive = track.recording || followState.isFollowing;
-
+    // final bool isActive = isRecording || isFollowing;
     // if (!isActive) {
     //   return _wrapWithAccuracyText(
     //     bars: _buildBars(0, Colors.white),
@@ -90,7 +89,7 @@ class GpsAccuracyBars extends ConsumerWidget {
     // }
 
     // ───────────────────────────────────────────────
-    // 4. LÒGICA NORMAL D’ACCURACY (Se activa si isActive es true)
+    // 4. LÒGICA NORMAL D’ACCURACY (Nivells de senyal)
     // ───────────────────────────────────────────────
     late Color color;
     late int activeBars;
@@ -144,17 +143,12 @@ class GpsAccuracyBars extends ConsumerWidget {
                 ),
               ),
             ),
-
-          // Centrem les barres dins del contenidor
           bars,
         ],
       ),
     );
   }
 
-  // ───────────────────────────────────────────────
-  // BARRES (Actualitzat per a millor contrast en AppBar blau)
-  // ───────────────────────────────────────────────
   Widget _buildBars(int activeBars, Color color) {
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -162,10 +156,9 @@ class GpsAccuracyBars extends ConsumerWidget {
       children: List.generate(totalBars, (index) {
         final active = index < activeBars;
         final height = (index + 1) * 4.0;
-
-        // 🔥 CANVI: Ara les barres inactives són sempre blanques
-        // amb una opacitat del 30% per destacar sobre el blau.
-        final Color inactiveColor = Colors.white.withAlpha(225);
+        final Color inactiveColor = Colors.white.withAlpha(
+          75,
+        ); // Corregit de 225 a 75 per donar el 30% d'opacitat real real sobre el blau
 
         return Container(
           width: 3,

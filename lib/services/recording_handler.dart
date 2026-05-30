@@ -1,10 +1,15 @@
+// lib/services/recording_handler.dart
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
+// Importacions de la nova línia de providers estructurada
+import 'package:senda/notifiers/location_notifier.dart'; // Bloc 1: Hardware GPS
 import 'package:senda/notifiers/permissions_notifier.dart';
+import 'package:senda/notifiers/recording_notifier.dart'; // Bloc 2: Gravador i Stats
 import 'package:senda/notifiers/timer_notifier.dart';
-import 'package:senda/notifiers/track_notifier.dart';
 import 'package:senda/notifiers/waypoints_recorded_notifier.dart';
 import 'package:senda/services/permissions_service.dart';
 import 'package:senda/ui/app_messages.dart';
@@ -12,9 +17,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class RecordingHandler {
   static Future<void> start(BuildContext context, WidgetRef ref) async {
-    print("🔴 [HANDLER] Iniciant funcio start..."); // 👈 PRINT
+    print("🔴 [HANDLER] Iniciant funcio start...");
 
-    final track = ref.read(trackProvider.notifier);
+    // ✅ ADAPTAT: Llegim el nou gravador i el node de localització
+    final recordingNotifier = ref.read(trackRecordingProvider.notifier);
+    final locationNotifier = ref.read(locationProvider.notifier);
+
     final wpNotifier = ref.read(waypointsProvider.notifier);
     final prefs = await SharedPreferences.getInstance();
 
@@ -22,16 +30,16 @@ class RecordingHandler {
     final hasWpCache = await wpNotifier.hasSavedWaypoints();
 
     // ───────────────────────────────────────────────
-    // 1. RECUPERAR TRACK + WAYPOINTS
+    // 1. RECUPERAR TRACK + WAYPOINTS DES DE LA CACHÉ
     // ───────────────────────────────────────────────
     if (hasTrackCache || hasWpCache) {
-      print("🔴 [HANDLER] Detectada cache de track."); // 👈 PRINT
+      print("🔴 [HANDLER] Detectada cache de track.");
       if (!context.mounted) return;
 
       final recuperar = await AppMessages.showRecoverTrackDialog(context);
       if (recuperar == true) {
-        // (Lògica de recuperació de cache igual...)
-        if (hasTrackCache) await track.loadFromCache();
+        // Carreguem el cache estructurat dins del nou model a través de recordingNotifier
+        if (hasTrackCache) await recordingNotifier.loadFromCache();
         if (hasWpCache) wpNotifier.restoreFromPrefs();
 
         // Abans de continuar, verifiquem permís "Sempre" (per seguretat)
@@ -40,9 +48,11 @@ class RecordingHandler {
         );
         if (!ok) return;
 
-        track.resumeRecording();
+        recordingNotifier.resumeRecording();
         ref.read(timerProvider.notifier).start();
-        await track.ensureGpsStarted(); // Engega el NativeGpsChannel
+
+        // ✅ ADAPTAT: Engeguem el NativeGpsChannel a través del nou locationNotifier
+        await locationNotifier.ensureGpsStarted();
 
         HapticFeedback.mediumImpact();
         ref.read(permissionsProvider.notifier).checkPermissions();
@@ -56,24 +66,18 @@ class RecordingHandler {
     // ───────────────────────────────────────────────
     // 2. GPS I PERMISOS "ALWAYS" (Sense Geolocator)
     // ───────────────────────────────────────────────
-
-    // A) Comprovar si el xip GPS està encès
     final serviceStatus = await Permission.location.serviceStatus;
     if (!serviceStatus.isEnabled) {
-      print(
-        "🔴 [HANDLER] GPS apagat. Aturant i demanant activació.",
-      ); // 👈 PRINT
+      print("🔴 [HANDLER] GPS apagat. Aturant i demanant activació.");
       if (!context.mounted) return;
       final go = await AppMessages.showGpsDisabledDialog(context);
       if (go == true) {
         ref.read(permissionsProvider.notifier).setPendingAction(true);
-        // Obrim ajustos de localització del sistema
         openAppSettings();
       }
       return;
     }
 
-    // B) Diàleg explicatiu + Permís "Sempre"
     final ok = await PermissionsService.ensureBackgroundLocationWithDialog(
       context,
     );
@@ -84,18 +88,16 @@ class RecordingHandler {
     // ───────────────────────────────────────────────
     HapticFeedback.mediumImpact();
 
-    // Reset i inici del cronòmetre
+    // Reset i inici del cronòmetre global
     ref.read(timerProvider.notifier).reset();
     ref.read(timerProvider.notifier).start();
 
-    // Iniciem gravació i engeguem el NativeGpsChannel
-    await track.startRecording(context);
-    await track.ensureGpsStarted();
+    // ✅ ADAPTAT: Iniciem gravació física i engeguem el hardware a través dels nous blocs
+    recordingNotifier.startRecording();
+    await locationNotifier.ensureGpsStarted();
 
-    // Actualitzem l'estat visual dels permisos al Notifier
     ref.read(permissionsProvider.notifier).checkPermissions();
-
-    print("🔴 [HANDLER] Tot OK. Començant gravació neta."); // 👈 PRINT
+    print("🔴 [HANDLER] Tot OK. Començant gravació neta.");
   }
 
   // ───────────────────────────────────────────────
@@ -104,23 +106,28 @@ class RecordingHandler {
   static Future<void> pause(WidgetRef ref) async {
     HapticFeedback.lightImpact();
     ref.read(timerProvider.notifier).pause();
-    ref.read(trackProvider.notifier).pauseRecording();
+    ref.read(trackRecordingProvider.notifier).pauseRecording(); // ✅ ADAPTAT
   }
 
   static Future<void> resume(WidgetRef ref) async {
     HapticFeedback.lightImpact();
     ref.read(timerProvider.notifier).start();
-    ref.read(trackProvider.notifier).resumeRecording();
+    ref.read(trackRecordingProvider.notifier).resumeRecording(); // ✅ ADAPTAT
   }
 
+  // ───────────────────────────────────────────────
+  // ATURAR (STOP)
+  // ───────────────────────────────────────────────
   static Future<void> stop(WidgetRef ref) async {
     HapticFeedback.heavyImpact();
-    ref.read(timerProvider.notifier).pause(); // 🔥 Atura cronòmetre
+    ref.read(timerProvider.notifier).pause();
 
-    // Passem la durada actual al trackProvider perquè la guardi definitivament
+    // Passem la durada actual al trackRecordingProvider perquè la guardi definitivament
     final finalDuration = ref.read(timerProvider);
-    await ref.read(trackProvider.notifier).stopRecording(finalDuration);
+    await ref
+        .read(trackRecordingProvider.notifier)
+        .stopRecording(finalDuration); // ✅ ADAPTAT
 
-    ref.read(timerProvider.notifier).reset(); // 🔥 Neteja
+    ref.read(timerProvider.notifier).reset();
   }
 }

@@ -1,13 +1,15 @@
 // lib/services/gpx_import_flow.dart
 
 import 'dart:io';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:senda/l10n/app_localizations.dart';
-import 'package:senda/notifiers/track_notifier.dart';
-import 'package:senda/services/gpx_import_service.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
+import 'package:senda/l10n/app_localizations.dart';
+// ✅ ADAPTAT: Importem el proveïdor de la ruta importada de la branca
+import 'package:senda/notifiers/imported_track_notifier.dart';
+import 'package:senda/services/gpx_import_service.dart';
 
 /// Flux complet d'importació GPX + zoom al mapa.
 /// Aquesta funció és cridada tant des de la bottom bar com des de l'AppBar.
@@ -18,6 +20,7 @@ Future<void> pickGpxAndImport({
 }) async {
   final t = AppLocalizations.of(context)!;
 
+  // 📝 MANTINGUT: La teva crida original exacta al FilePicker
   final result = await FilePicker.pickFiles(
     type: FileType.custom,
     allowedExtensions: ['gpx'],
@@ -63,25 +66,29 @@ Future<void> pickGpxAndImport({
     return;
   }
 
-  // Importar GPX
+  // Importar el contingut del GPX al magatzem de dades
   await GpxImportService.importGpx(ref, xml);
 
-  // Centrar mapa...
-  final track = ref.read(trackProvider);
-  if (track.coordinates.isEmpty || mapController == null) return;
+  // ─── CENTRAR MAPA EN EL RECUADRE DE LA RUTA IMPORTADA ───
+  // ✅ OPTIMITZAT: Llegim les coordenades i els valors del Bounding Box
+  // que el model unificat ja ens dona precalculats, estalviant els bucles 'reduce'.
+  final importedTrack = ref.read(importedTrackProvider);
+  if (importedTrack == null ||
+      importedTrack.points.isEmpty ||
+      mapController == null)
+    return;
 
-  final lats = track.coordinates.map((c) => c[1]);
-  final lons = track.coordinates.map((c) => c[0]);
+  final stats = importedTrack.stats;
+  if (stats.minLat == null ||
+      stats.maxLat == null ||
+      stats.minLon == null ||
+      stats.maxLon == null)
+    return;
 
+  // Reconstruïm els límits de MapLibre usant els valors que el servei ja ha processat
   final bounds = LatLngBounds(
-    southwest: LatLng(
-      lats.reduce((a, b) => a < b ? a : b),
-      lons.reduce((a, b) => a < b ? a : b),
-    ),
-    northeast: LatLng(
-      lats.reduce((a, b) => a > b ? a : b),
-      lons.reduce((a, b) => a > b ? a : b),
-    ),
+    southwest: LatLng(stats.minLat!, stats.minLon!),
+    northeast: LatLng(stats.maxLat!, stats.maxLon!),
   );
 
   await mapController.animateCamera(

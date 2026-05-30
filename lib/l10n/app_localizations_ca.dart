@@ -512,4 +512,19 @@ class AppLocalizationsCa extends AppLocalizations {
 
   @override
   String get statAccuracy => 'Precisió';
+
+  @override
+  String get deleteWaypoint => 'Eliminar fita';
+
+  @override
+  String get deleteWaypointTitle => 'Eliminar fita?';
+
+  @override
+  String get deleteWaypointMessage => 'Estàs segur que vols esborrar aquest punt d\'interès definitivament?';
+
+  @override
+  String get deleteConfirm => 'ELIMINAR';
+
+  @override
+  String get waypointDeletedSuccess => 'Fita esborrada correctament';
 }
