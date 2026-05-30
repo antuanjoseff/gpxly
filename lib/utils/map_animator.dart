@@ -1,4 +1,6 @@
 // lib/utils/map_animator.dart
+import 'dart:async';
+
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:senda/models/track.dart';
 import 'package:senda/utils/map_layers.dart';
@@ -10,14 +12,18 @@ class MapAnimator {
   List<List<double>>? _lastTrack;
   List<List<double>>? _lastAnimatedSegment;
 
+  // ─── CONTROL DEL SEMÁFORO DE ANIMACIÓN CRÍTICO ───
+  Timer? _activeTimer;
+  bool isAnimating = false;
+
   MapAnimator(this.controller);
 
   // ─────────────────────────────────────────────────────────────
-  // 🛰️ ANIMACIÓ DE GLIDE DEL CERCLE BLAU (60 FPS Reals)
+  // 🛰️ 1. LLISCAMENT DEL CERCLE BLAU (Mantenim l'oient A del GPS)
   // ─────────────────────────────────────────────────────────────
-  // Esborrat 'updateUserPositionDirect' per evitar el salt inicial destructiu
   void animateUserPosition(LatLng? newPos) {
-    if (newPos == null) return;
+    if (newPos == null || isAnimating)
+      return; // Si està corrent la gravació, el bucle unificat ja ho mourà
 
     if (_lastUserPos == null) {
       setUserLocationGeometry(controller, newPos.latitude, newPos.longitude);
@@ -28,12 +34,12 @@ class MapAnimator {
     final from = _lastUserPos!;
     final to = newPos;
 
-    const steps =
-        15; // Augmentat de 10 a 15 per fer la transició de lliscament més suau
-    const dt = Duration(milliseconds: 16); // 16ms = ~60 ràfegues per segon
+    const steps = 15;
+    const dt = Duration(milliseconds: 16);
 
     for (int i = 0; i <= steps; i++) {
       Future.delayed(dt * i, () {
+        if (isAnimating) return; // Salvaguarda si arrenca una passa de track
         final t = i / steps;
         final lat = from.latitude + (to.latitude - from.latitude) * t;
         final lon = from.longitude + (to.longitude - from.longitude) * t;
@@ -45,25 +51,38 @@ class MapAnimator {
   }
 
   // ─────────────────────────────────────────────────────────────
-  // 📊 ANIMACIÓ DEL CREIXEMENT I POLS DE LA RUTA ENREGISTRADA
+  // 📊 2. MOTOR UNIFICAT FLUID DE CREIXEMENT DE LA RUTA (Batec Track)
   // ─────────────────────────────────────────────────────────────
-  void updateFromTrack(Track track) {
-    // 1. L'animació del cercle blau es llegeix ara de forma controlada des d'oient A,
-    // per tant enfoquem aquest mètode exclusivament a fer créixer la línia vermella.
-    _animateTrackSegment(track.coordinates, track.recordingState);
+  void updateFromTrack(Track track, bool userMovedMap) {
+    _animateTrackProgress(
+      track.coordinates,
+      track.recordingState,
+      userMovedMap,
+    );
   }
 
-  void _animateTrackSegment(List<List<double>> coords, RecordingState state) {
+  void _animateTrackProgress(
+    List<List<double>> coords,
+    RecordingState state,
+    bool userMovedMap,
+  ) {
     if (state != RecordingState.recording) {
-      // Si estem en pausa o Stop, simplement dibuixem el traçat fix tancat
       _updateFullTrack(coords);
+      if (coords.isNotEmpty) {
+        _lastUserPos = LatLng(coords.last[1], coords.last[0]);
+        setUserLocationGeometry(
+          controller,
+          _lastUserPos!.latitude,
+          _lastUserPos!.longitude,
+        );
+      }
       return;
     }
     if (coords.length < 2) return;
 
     final lastTwo = coords.sublist(coords.length - 2);
 
-    // Evitem duplicar processos si el segment és idèntic en el canvi de segon
+    // Evitem re-animar si el fragment del segon és exactament el mateix
     if (_lastAnimatedSegment != null &&
         _lastAnimatedSegment![0][0] == lastTwo[0][0] &&
         _lastAnimatedSegment![0][1] == lastTwo[0][1] &&
@@ -74,52 +93,78 @@ class MapAnimator {
 
     _lastAnimatedSegment = lastTwo;
 
-    // ─── INTERPOLACIÓ LINEAL DEL NOU TRAM (CREIXEMENT PROGRESSIU) ───
-    final startLon = lastTwo[0][0];
-    final startLat = lastTwo[0][1];
-    final endLon = lastTwo[1][0];
-    final endLat = lastTwo[1][1];
+    // Si hi ha un temporitzador vell corrent en segon pla, el matem del tot abans de trepitjar
+    _activeTimer?.cancel();
 
-    const steps = 20; // Passos de creixement del nou quilòmetre
-    const dt = Duration(milliseconds: 25);
+    final double startLon = lastTwo[0][0];
+    final double startLat = lastTwo[0][1];
+    final double endLon = lastTwo[1][0];
+    final double latFinalDesti = lastTwo[1][1];
 
-    for (int i = 0; i <= steps; i++) {
-      Future.delayed(dt * i, () {
-        final t = i / steps;
+    int currentStep = 0;
+    const int totalSteps = 15; // Passos de la interpolació cinemàtica
 
-        // Calculem on es troba el tall progressiu del segment en el microsegon 't'
-        final currentInterpLon = startLon + (endLon - startLon) * t;
-        final currentInterpLat = startLat + (endLat - startLat) * t;
+    isAnimating = true;
 
-        // Reconstruïm una llista provisional de geometries que s'està estenent
-        final listProvisional = [
-          ...coords.sublist(0, coords.length - 1),
-          [currentInterpLon, currentInterpLat],
-        ];
+    // Arrenquem un ÚNIC rellotge controlat per a coordinar totes les geometries
+    _activeTimer = Timer.periodic(const Duration(milliseconds: 30), (timer) {
+      currentStep++;
+      final double t = currentStep / totalSteps;
 
-        // Actualitzem la línia principal del mapa perquè sembli que creix metre a metre
-        setTrackLineGeometry(controller, listProvisional);
+      // Calculem la posició interpolada exacta del microsegon actual 't'
+      final double animatedLat = startLat + (latFinalDesti - startLat) * t;
+      final double animatedLon = startLon + (endLon - startLon) * t;
 
-        // A sobre pintem la capa de pols de color vermell elèctric intermitent
-        final opacity = t < 0.5 ? t * 2 : (1 - t) * 2;
-        setAnimatingSegmentGeometry(controller, [
-          [startLon, startLat],
-          [currentInterpLon, currentInterpLat],
-        ]);
+      // A) LLISCAMENT SÍNCRON DEL PUNT BLAU (Es mou al mateix mil·límetre que el traç)
+      setUserLocationGeometry(controller, animatedLat, animatedLon);
+      _lastUserPos = LatLng(animatedLat, animatedLon);
 
-        controller.setLayerProperties(
-          "track_animating_layer",
-          LineLayerProperties(
-            lineOpacity: opacity,
-            lineColor: "#FF0000",
-            lineWidth: 4.0,
-          ),
-        );
-      });
-    }
+      // B) CREIXEMENT PROGRESSIU DE LA LÍNIA PRINCIPAL NEGRA/VERMELLA
+      final animatedCoordinates = [
+        ...coords.sublist(0, coords.length - 1),
+        [animatedLon, animatedLat],
+      ];
+      setTrackLineGeometry(controller, animatedCoordinates);
 
-    // Al final del cicle, fixem la llista de referència
-    _lastTrack = coords;
+      // C) CAPA SUPERIOR DE POLS VERMELL ELÈCTRIC INTERMITENT (Efecte pols de radar)
+      final opacity = t < 0.5 ? t * 2 : (1 - t) * 2;
+      setAnimatingSegmentGeometry(controller, [
+        [startLon, startLat],
+        [animatedLon, animatedLat],
+      ]);
+
+      controller.setLayerProperties(
+        "track_animating_layer",
+        LineLayerProperties(
+          lineOpacity: opacity,
+          lineColor: "#FF0000",
+          lineWidth: 4.0,
+        ),
+      );
+
+      // 🏁 FINAL DE LA TRANSICIÓ D'AQUEST SEGMENT
+      if (currentStep >= totalSteps) {
+        timer.cancel();
+        _activeTimer = null;
+
+        // Fixem la línia real geomètrica final sense retalls provisoris
+        setTrackLineGeometry(controller, coords);
+        _lastTrack = coords;
+
+        // 🎥 GESTIÓ SMART CENTER: Si l'usuari no ha mogut el mapa, acompanyem el desplaçament
+        if (!userMovedMap) {
+          controller.animateCamera(CameraUpdate.newLatLng(_lastUserPos!)).then((
+            _,
+          ) {
+            Future.delayed(const Duration(milliseconds: 100), () {
+              isAnimating = false; // Alliberem el semàfor de control
+            });
+          });
+        } else {
+          isAnimating = false;
+        }
+      }
+    });
   }
 
   void _updateFullTrack(List<List<double>> coords) {

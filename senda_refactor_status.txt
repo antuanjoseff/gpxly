@@ -20,19 +20,36 @@ ESTADO DE LOS 4 PILARES DEL MOTOR:
    los helpers analíticos (geometry, offtrackLogic, reverseDetector) y 
    emite las señales visuales de alerta (showOffTrackSnackbar, etc.).
 
-ARCHIVOS AUXILIARES INTEGRADOS Y COMPILANDO EN VERDE:
+SISTEMA DE TELEMETRÍA Y ALTITUD FUSED (INTEGRACIÓN COMPLETA):
+- lib/services/cog_service.dart: Corregido el bug de inversión de cabeceras 
+  x-width/x-height para evitar cotes desalineadas. Conserva la interpolación 
+  bilineal nativa sobre la malla de 30x30m para una pendiente digital suave. 
+  El método 'clearAllCacheFiles' blinda el borrado físico del ciclo efímero de Riverpod.
+- lib/core/altitude/altitude_processor.dart & altitude_state.dart: Implementado 
+  un Filtro Complementario alpino profesional. Elimina el desajuste absoluto y 
+  la deriva climática del barómetro mediante una constante de calibración lenta 
+  (_kCalibrate = 0.02) contra el ancla del DEM, y añade un escudo de umbral de 
+  seguridad (Threshold > 4m/s) para filtrar golpes de viento accidentales.
+- lib/notifiers/dem_altitude_migrated.dart: ELIMINADO permanentemente del 
+  proyecto. El circuito se ha simplificado inyectando la cota interpolada limpia 
+  del CogService de forma directa hacia el AltitudeProcessor desde el LocationNotifier.
+- lib/notifiers/gps_settings_notifier.dart: Sincronizado dinámicamente con el 
+  hardware barométrico. Ejecuta 'NativeBarometerChannel.setSamplingPeriod' mediante 
+  el método 'apply()' (sincronía por tiempo) y ajusta de forma adaptativa los 
+  microsegundos por velocidad de marcha real en el modo distancia mediante 'updateBarometerSync()'.
+
+ARCHIVOS DE INTERFAZ E INFRAESTRUCTURA INTEGRADOS EN VERDE:
 - lib/services/recording_handler.dart: Orquestador síncrono de botones.
-- lib/services/gpx_import_service.dart & gpx_import_flow.dart: Lector GPX.
-- lib/services/gpx_exporter.dart: Generador de archivos GPX sin bucles defensivos.
-- lib/notifiers/helpers/alarm_engine.dart: Motor acústico suscrito a locationProvider.
-- lib/ui/app_messages.dart: Diálogos con botón Eliminar en horizontal integrado.
+- lib/services/gpx_import_service.dart & gpx_import_flow.dart: Lector GPX con 
+  'visibleCoordinates' para simulación progresiva (crece el trazo por detrás del paso).
+- lib/services/gpx_exporter.dart: Generador de archivos GPX sin bucles defensivos pesados.
+- lib/ui/app_messages.dart: Diálogos con botón Eliminar en horizontal integrado en actions.
 - lib/screens/map/map_screen.dart: Vista de 1.100 líneas limpiada de oyentes 
-  redundantes. SmartCenter blindado mediante 'isProgrammaticMove'.
+  redundantes. SmartCenter blindado mediante 'isProgrammaticMove' e 'isImportingGpx'.
 - lib/utils/map_animator.dart: Interpolación lineal del punto azul y crecimiento 
   progresivo del trazo vermell según los pasos del simulador de depuración.
 
 PRÓXIMOS OBJETIVOS DE FINE-TUNING PENDIENTES:
 - Implementar la edición de nombres de Waypoint desde el botón de la fila de detalles.
 - Añadir control de velocidad de simulación (x1, x2, x5, x10) en el Mock GPS.
-- Revisar filtros de histéresis fina para el desnivell acumulado en montaña.
 ======================================================================

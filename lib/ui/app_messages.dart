@@ -264,7 +264,7 @@ class AppMessages {
   // ==========================================
   static Future<void> showWaypointDetails(
     BuildContext context,
-    WidgetRef ref, // ✅ AFEGIT: Per poder interactuar amb els providers reals
+    WidgetRef ref,
     Waypoint wp,
     Duration? elapsed,
   ) {
@@ -276,7 +276,6 @@ class AppMessages {
           "${elapsed.inHours.toString().padLeft(2, '0')}:${elapsed.inMinutes.remainder(60).toString().padLeft(2, '0')}:${elapsed.inSeconds.remainder(60).toString().padLeft(2, '0')}";
     }
 
-    // Només permetem eliminar els waypoints creats en la sessió actual (que comencen per 'rec_')
     final bool isDeletable = wp.id.startsWith('rec_');
 
     return _showBaseDialog(
@@ -285,7 +284,8 @@ class AppMessages {
       message: "",
       icon: Icons.place_rounded,
       iconColor: AppColors.skyBlue,
-      confirmLabel: AppLocalizations.of(context)!.ok,
+      confirmLabel:
+          null, // 🎯 ANUL·LEM el botó automàtic per defecte que es trencava
       extraContent: [
         _buildDetailItem(t.waypointName, wp.name, Icons.label_outline),
         _buildDetailItem(
@@ -310,63 +310,71 @@ class AppMessages {
             formattedDuration,
             Icons.timer_outlined,
           ),
-
-        // ─────────────────────────────────────────────────────────────
-        // 🔥 NOU: BOTÓ D'ELIMINAR WAYPOINT (Amb confirmació)
-        // ─────────────────────────────────────────────────────────────
-        if (isDeletable) ...[
-          const SizedBox(height: 12),
-          const Divider(color: Colors.white24),
-          const SizedBox(height: 8),
-          SizedBox(
-            width: double.infinity,
-            child: TextButton.icon(
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                foregroundColor: Colors.redAccent,
-              ),
-              icon: const Icon(Icons.delete_outline, size: 20),
-              label: Text(
-                t.deleteWaypoint.toUpperCase(),
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
-                  letterSpacing: 1.1,
-                ),
-              ),
-              onPressed: () async {
-                // Tanquem el diàleg de detalls actual primer
-                Navigator.pop(context);
-
-                // Cridem al diàleg de confirmació d'esborrat de fita
-                final confirm = await _showBaseDialog(
-                  context: context,
-                  title: t.deleteWaypointTitle,
-                  message: t.deleteWaypointMessage,
-                  icon: Icons.delete_forever,
-                  iconColor: Colors.redAccent,
-                  confirmLabel: t.deleteConfirm,
-                  confirmColor: Colors.redAccent,
-                  cancelLabel: t.cancel,
-                );
-
-                // Si l'usuari confirma (true), l'esborrem directament de Riverpod
-                if (confirm == true) {
-                  // Ajusta el mètode .remove / .delete segons com es digui al teu waypointsProvider.notifier
-                  ref.read(waypointsProvider.notifier).remove(wp.id);
-
-                  // Mostrem un petit avís de confirmació flotant
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(t.waypointDeletedSuccess),
-                      backgroundColor: Colors.green.shade800,
+      ],
+      // ─────────────────────────────────────────────────────────────
+      // 🔥 LA SOLUCIÓ: BOTONS FORÇATS A LA MATEIXA FILA HORITZONTAL
+      // ─────────────────────────────────────────────────────────────
+      actions: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Row(
+            children: [
+              // 1. Botó d'Eliminar (A l'esquerra de tot)
+              if (isDeletable)
+                TextButton.icon(
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.redAccent,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 8,
                     ),
-                  );
-                }
-              },
-            ),
+                  ),
+                  icon: const Icon(Icons.delete_outline, size: 18),
+                  label: Text(
+                    t.deleteConfirm.toUpperCase(), // Farà servir "ELIMINAR"
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
+                  ),
+                  onPressed: () async {
+                    Navigator.pop(context); // Tanquem detalls
+
+                    final confirm = await _showBaseDialog(
+                      context: context,
+                      title: t.deleteWaypointTitle,
+                      message: t.deleteWaypointMessage,
+                      icon: Icons.delete_forever,
+                      iconColor: Colors.redAccent,
+                      confirmLabel: t.deleteConfirm,
+                      confirmColor: Colors.redAccent,
+                      cancelLabel: t.cancel,
+                    );
+
+                    if (confirm == true) {
+                      ref.read(waypointsProvider.notifier).remove(wp.id);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(t.waypointDeletedSuccess),
+                          backgroundColor: Colors.green.shade800,
+                        ),
+                      );
+                    }
+                  },
+                )
+              else
+                const SizedBox.shrink(),
+
+              const Spacer(), // Empeny de forma automàtica el següent botó cap a la dreta
+              // 2. Botó d'Acceptar (A la dreta de tot)
+              ElevatedButton(
+                style: _buttonStyle(AppColors.skyBlue),
+                onPressed: () => Navigator.pop(context, true),
+                child: Text(AppLocalizations.of(context)!.ok),
+              ),
+            ],
           ),
-        ],
+        ),
       ],
     );
   }

@@ -43,6 +43,7 @@ import 'package:senda/utils/distance_utils.dart';
 import 'package:senda/utils/map_animator.dart';
 import 'package:senda/utils/map_layers.dart';
 import 'package:senda/widgets/compass_widget.dart';
+import 'package:senda/widgets/debug_altitude_panel.dart';
 import 'package:senda/widgets/gps_accuracy_bars.dart';
 import 'package:senda/widgets/recording_status_bar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -465,20 +466,16 @@ class _MapScreenState extends ConsumerState<MapScreen>
     });
 
     // ─────────────────────────────────────────────────────────────
-    // 📊 OIENT B: GRAVACIÓ FÍSICA (LÍNIA I TRAMS ANIMATS)
-    // ─────────────────────────────────────────────────────────────
-    // ─────────────────────────────────────────────────────────────
-    // 📊 OIENT B: GRAVACIÓ FÍSICA (LÍNIA I TRAMS ANIMATS)
+    // 📊 OIENT B: GRAVACIÓ FÍSICA (LÍNIA I TRAMS ANIMATS UNIFICATS)
     // ─────────────────────────────────────────────────────────────
     ref.listen<Track>(trackRecordingProvider, (prev, next) {
       if (!styleInitialized || mapController == null) return;
 
-      // ✅ ADAPTAT: Eliminem 'navigationState' perquè la teva funció real només rep el track!
-      mapAnimator.updateFromTrack(next);
+      // ✅ ADAPTAT: Passem el track i el flag '!smartCenterEnabled' de forma unificada
+      mapAnimator.updateFromTrack(next, !smartCenterEnabled);
 
       if (isImportingGpx) return;
 
-      // RECUPERACIÓ INICIAL DE TRAÇAT DES DE CACHÉ (Fit Bounds un sol cop)
       final bool isRecoveringTrack =
           (prev == null || prev.points.isEmpty) &&
           next.points.length > 1 &&
@@ -486,7 +483,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
       if (isRecoveringTrack) {
         hasDoneRecoveryFit = true;
-
         final List<List<double>> mapCoords = next.coordinates;
         _fitToBounds(mapCoords, instant: true);
       }
@@ -902,7 +898,15 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   duration: ref.watch(timerProvider),
                 ),
               ),
-
+              // ─────────────────────────────────────────────────────────────
+              // 🔥 NOU: PANEL FLOTANTE DE DEBUG DE ALTITUDES SINCRO
+              // ─────────────────────────────────────────────────────────────
+              const Positioned(
+                top:
+                    52, // Colocado a 52px de arriba para dejar espacio a la píndola de tiempo
+                left: 10,
+                child: DebugAltitudePanel(),
+              ),
               // -------------------------
               // COLUMNA DE BOTONS SUPERIOR DRETA
               // -------------------------

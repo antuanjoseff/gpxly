@@ -2,6 +2,7 @@ import 'dart:async'; // ✅ MANTINGUT / AFEGIT per al Timer
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
+import 'package:senda/core/altitude/altitude_processor.dart';
 // Models immutables refactoritzats
 import 'package:senda/models/user_position.dart';
 import 'package:senda/notifiers/gps_accuracy_notifier.dart';
@@ -11,7 +12,9 @@ import 'package:senda/notifiers/gps_settings_notifier.dart';
 // ✅ AFEGIT: Importem el proveïdor de la ruta per poder actualitzar el seu progrés visual
 import 'package:senda/notifiers/imported_track_notifier.dart';
 import 'package:senda/services/cog_service.dart';
+import 'package:senda/services/native_barometer_channel.dart';
 import 'package:senda/services/native_gps_channel.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LocationNotifier extends Notifier<UserPosition?> {
   StreamSubscription? _gpsSub;
@@ -47,19 +50,28 @@ class LocationNotifier extends Notifier<UserPosition?> {
   }
 
   // 🛰️ HARDWARE: ENGEGADA I CONFIGURACIÓ SEGONS GPS_SETTINGS
+  // Dins de lib/notifiers/location_notifier.dart
   Future<void> ensureGpsStarted() async {
     if (gpsActive) return;
 
+    // 1. Engeguem els dos canals físics de maquinari de fons
+    await NativeBarometerChannel.start();
+
+    // 2. Esperem que les preferències de configuració estiguin llegides del disc
     await ref.read(gpsSettingsProvider.notifier).initialized;
+
+    // 3. Executem l'apply() del teu GpsSettingsNotifier!
+    // Això aplicarà de forma atòmica i immediata el període correcte en microsegons
+    // (ja sigui 1s, 5s o 2s) al xip del baròmetre segons el mode triat [INDEX].
+    await ref.read(gpsSettingsProvider.notifier).apply();
+
+    // 4. Connectem el flux d'entrada que rebrà dades exactament a la freqüència del teu apply()
+    NativeBarometerChannel.pressureStream().listen((hPa) {
+      ref.read(altitudeProcessorProvider.notifier).updateBaro(hPa);
+    });
+
+    // 5. Connectem la subscripció sota els paràmetres del teu record d'origen
     final gpsSettings = ref.read(gpsSettingsProvider);
-
-    await NativeGpsChannel.start(
-      useTime: gpsSettings.useTime,
-      seconds: gpsSettings.seconds,
-      meters: gpsSettings.meters,
-      accuracy: gpsSettings.accuracy,
-    );
-
     _gpsSub?.cancel();
     _gpsSub = NativeGpsChannel.positionStream().listen((data) {
       _processIncomingGpsPoint(data);
@@ -97,6 +109,19 @@ class LocationNotifier extends Notifier<UserPosition?> {
       );
       finalAlt = correctedAlt;
       finalIsFixed = isFixed;
+
+      // ─────────────────────────────────────────────────────────────
+      // 🔥 CONEXIÓ DIRECTA AMB EL TEU ALTITUDE_PROCESSOR
+      // ─────────────────────────────────────────────────────────────
+      // Si el CogService ha pogut extreure i corregir l'altitud de la cel·la digital (isFixed == true),
+      // li passem directament la cota de referència al teu motor analític de baròmetre.
+      if (isFixed) {
+        final processor = ref.read(altitudeProcessorProvider.notifier);
+        processor.updateDem(correctedAlt);
+        processor.process();
+      }
+      // Passem la velocitat del satèl·lit real perquè el baròmetre recalculi el seu període d'espera dinàmic [INDEX]
+      ref.read(gpsSettingsProvider.notifier).updateBarometerSync(speed);
     }
 
     ref
@@ -217,6 +242,50 @@ class LocationNotifier extends Notifier<UserPosition?> {
     _gpsSub = null;
     gpsActive = false;
     state = null;
+  }
+
+  // ─── 💾 PERSISTÈNCIA A DISC: GUARDAR COORDENADES AL SORTIR ───
+  Future<void> saveCurrentPositionToPrefs() async {
+    final currentPos = state;
+    // Només guardem si tenim una coordenada vàlida a la pantalla
+    if (currentPos == null) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble("last_lat", currentPos.position.latitude);
+    await prefs.setDouble("last_lon", currentPos.position.longitude);
+    print(
+      "💾 [PERSISTÈNCIA] Coordenades de sortida guardades amb èxit: ${currentPos.position}",
+    );
+  }
+
+  // ─── 🔄 PERSISTÈNCIA A DISC: LLEGIR COORDENADES AL ARRENCAR ───
+  Future<void> loadCachePositionFromPrefs() async {
+    // Si el GPS real de maquinari ja ha emès un punt abans de carregar el disc, la caché ja no cal
+    if (state != null) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    final lat = prefs.getDouble("last_lat");
+    final lon = prefs.getDouble("last_lon");
+
+    if (lat != null && lon != null && state == null) {
+      print(
+        "🔄 [PERSISTÈNCIA] Carregant posició estàtica de caché: $lat, $lon",
+      );
+
+      // Injectem l'estat temporal amb precisió 999m de referència de fons [INDEX]
+      state = UserPosition(
+        position: LatLng(lat, lon),
+        altitude: 0.0,
+        isHgtFixed: false,
+        timestamp: DateTime.now(),
+        accuracy: 999.0,
+        vAccuracy: 0.0,
+        speed: 0.0,
+        heading: 0.0,
+        satellites: 0,
+        distanceAtPoint: 0.0,
+      );
+    }
   }
 }
 

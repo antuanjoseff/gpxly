@@ -40,6 +40,9 @@ class CogService {
   final Duration _retryInterval = const Duration(minutes: 5);
   Future<void>? _activeDownload;
 
+  // GETTER: Exposem la llista de celdas actuals en memòria cau per poder dibuixar els seus bounds
+  List<CogMap> get activeCacheMaps => List.unmodifiable(_cache);
+
   Future<(double, bool)> getCorrectedElevation(
     double lat,
     double lon,
