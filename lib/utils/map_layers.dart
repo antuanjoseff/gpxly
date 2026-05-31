@@ -111,8 +111,9 @@ void updateMapPosition(
   double lat,
   double lon,
   bool userMovedMap,
-  void Function(bool) onAnimate,
-) {
+  void Function(bool) onAnimate, {
+  bool centerCamera = true,
+}) {
   controller.setGeoJsonSource("user_location", {
     "type": "FeatureCollection",
     "features": [
@@ -125,7 +126,8 @@ void updateMapPosition(
       },
     ],
   });
-  if (!userMovedMap) {
+
+  if (!userMovedMap && centerCamera) {
     onAnimate(true);
     controller.animateCamera(CameraUpdate.newLatLng(LatLng(lat, lon))).then((
       _,

@@ -55,7 +55,6 @@ class _DebugDemMapState extends ConsumerState<DebugDemMap>
       if (!styleInitialized || mapController == null || next == null) return;
 
       mapAnimator?.animateUserPosition(next.position);
-      mapController!.animateCamera(CameraUpdate.newLatLng(next.position));
     });
 
     // 🗺️ OYENTE DEM: Inyección idéntica a tu lógica de trazo de líneas
