@@ -178,20 +178,43 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
           onPageChanged: (i) =>
               ref.read(statsPrefsProvider.notifier).setCarouselIdx('speed', i),
           pages: [
+            // 1. VELOCITAT ACTUAL (En temps real per al punt blau si grava)
             _StatPage(
               Icons.bolt,
               isReal ? (real.currentSpeed * 3.6) : null,
               "km/h",
               t.statSpeedCurrent,
             ),
+            // 2. VELOCITAT MITJANA (Nativa filtrada sobre temps en moviment)
             _StatPage(
               Icons.speed,
-              track.averageSpeed > 0 ? track.averageSpeed : null,
+              track.averageSpeed > 0
+                  ? track.averageSpeed
+                  : null, // Redirigit per la línia 61 del model
               "km/h",
               t.statSpeedAverage,
             ),
+            // 3. VELOCITAT MÀXIMA (Protegida contra pics de soroll GPS)
+            _StatPage(
+              Icons.trending_up,
+              track.maxSpeed > 0
+                  ? track.maxSpeed
+                  : null, // Redirigit per la línia 62 del model
+              "km/h",
+              t.statSpeedMax, // Pots utilitzar t.statSpeedMax si hi és al l10n
+            ),
+            // 🔥 4. NOU: RITME MITJÀ EN MOVIMENT (PACE ALPÍ)
+            _StatPage(
+              Icons.directions_walk_rounded,
+              null, // Deixem a null per forçar l'ús del string precalculat de sota
+              "", // La unitat "min/km" ja va incrustada de forma neta al text compacte
+              t.statPaceAverage,
+              customValue: track
+                  .formattedAveragePace, // ✅ Cadena atòmica autogestionada "MM:SS min/km"
+            ),
           ],
         );
+
       case 'alt':
         return _StatCard(
           height: height,

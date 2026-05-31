@@ -68,6 +68,11 @@ class Track {
   double get descent => stats.descent;
   double get maxElevation => stats.maxElevation;
   double get minElevation => stats.minElevation;
+
+  // ✅ CORREGIDO: Ahora apuntan a las variables reales procesadas por el motor
+  double get averageSpeed => stats.averageSpeed;
+  double get maxSpeed => stats.maxSpeed;
+
   double? get minLat => stats.minLat;
   double? get maxLat => stats.maxLat;
   double? get minLon => stats.minLon;
@@ -87,9 +92,6 @@ class Track {
   double get currentSpeedKmH => currentSpeed * 3.6;
   int get currentSatellites => points.isNotEmpty ? points.last.satellites : 0;
 
-  double get averageSpeed =>
-      (duration.inSeconds > 0) ? (distance / duration.inSeconds) * 3.6 : 0.0;
-
   String get formattedDuration {
     final h = duration.inHours.toString().padLeft(2, '0');
     final m = (duration.inMinutes % 60).toString().padLeft(2, '0');
@@ -105,8 +107,39 @@ class Track {
   bool get hasTimeData =>
       timestamps.isNotEmpty && timestamps.length == coordinates.length;
   bool get hasAscentDescent => ascent != 0 || descent != 0;
+
+  // 🏃‍♂️ RITMO MEDIO EN MOVIMIENTO (Minutos por Kilómetro -> min/km)
+  double get averagePace {
+    if (distance <= 0) return 0.0;
+
+    // Tiempo en movimiento en minutos dividido por la distancia en kilómetros
+    final double movingMinutes = (duration - stoppedDuration).inSeconds / 60.0;
+    final double distanceKm = distance / 1000.0;
+
+    return movingMinutes / distanceKm;
+  }
+
+  // ⚙️ FORMATO TEXTO COMPACTO (Devuelve string formateado "MM:SS min/km")
+  String get formattedAveragePace {
+    final double pace = averagePace;
+    if (pace <= 0 || pace.isInfinite || pace.isNaN) return "--:-- min/km";
+
+    final int minutes = pace.floor();
+    final int seconds = ((pace - minutes) * 60).round();
+
+    // Blindaje por si el redondeo de los segundos llega a 60
+    final int displaySeconds = seconds == 60 ? 59 : seconds;
+
+    final String mm = minutes.toString().padLeft(2, '0');
+    final String ss = displaySeconds.toString().padLeft(2, '0');
+
+    return "$mm:$ss min/km";
+  }
 }
 
+// ─────────────────────────────────────────────────────────────
+// 🔥 SUB-MODEL REFACTORIZADO CON VELOCIDADES REALES
+// ─────────────────────────────────────────────────────────────
 class TrackStats {
   final Duration duration;
   final Duration stoppedDuration;
@@ -115,6 +148,8 @@ class TrackStats {
   final double descent;
   final double maxElevation;
   final double minElevation;
+  final double averageSpeed; // ✅ NUEVO
+  final double maxSpeed; // ✅ NUEVO
 
   // Bounding box geogràfic
   final double? minLat;
@@ -130,6 +165,8 @@ class TrackStats {
     this.descent = 0.0,
     this.maxElevation = -9999.0,
     this.minElevation = 9999.0,
+    this.averageSpeed = 0.0, // ✅ Inicializado
+    this.maxSpeed = 0.0, // ✅ Inicializado
     this.minLat,
     this.maxLat,
     this.minLon,
@@ -144,6 +181,8 @@ class TrackStats {
     double? descent,
     double? maxElevation,
     double? minElevation,
+    double? averageSpeed, // ✅ Añadido al copyWith
+    double? maxSpeed, // ✅ Añadido al copyWith
     double? minLat,
     double? maxLat,
     double? minLon,
@@ -157,6 +196,8 @@ class TrackStats {
       descent: descent ?? this.descent,
       maxElevation: maxElevation ?? this.maxElevation,
       minElevation: minElevation ?? this.minElevation,
+      averageSpeed: averageSpeed ?? this.averageSpeed, // ✅ Mapeado
+      maxSpeed: maxSpeed ?? this.maxSpeed, // ✅ Mapeado
       minLat: minLat ?? this.minLat,
       maxLat: maxLat ?? this.maxLat,
       minLon: minLon ?? this.minLon,

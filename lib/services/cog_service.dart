@@ -3,8 +3,10 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
+import 'package:senda/notifiers/dem_bounds_notifier.dart';
 
 class CogMap {
   final String path;
@@ -43,47 +45,62 @@ class CogService {
   // GETTER: Exposem la llista de celdas actuals en memòria cau per poder dibuixar els seus bounds
   List<CogMap> get activeCacheMaps => List.unmodifiable(_cache);
 
+  // 🔥 CORREGIDO: Añadimos 'Ref ref' en los parámetros de la cabecera
   Future<(double, bool)> getCorrectedElevation(
     double lat,
     double lon,
     double gpsAlt,
+    Ref ref,
   ) async {
+    // 1. Comprobación rápida en caliente sobre la caché existente
     for (var map in _cache) {
       if (map.contains(lat, lon)) {
         map.lastUsed = DateTime.now();
-        final alt = _interpolateElevation(
-          map,
-          lat,
-          lon,
-        ); // 🎯 Ús d'interpolació
+        final alt = _interpolateElevation(map, lat, lon);
         return (alt ?? gpsAlt, true);
       }
     }
 
+    // 2. Freno de mano si el servidor falló recientemente
     if (_lastFailedDownload != null &&
         DateTime.now().difference(_lastFailedDownload!) < _retryInterval) {
       return (gpsAlt, false);
     }
 
-    if (_activeDownload != null) {
-      await _activeDownload;
-      return getCorrectedElevation(lat, lon, gpsAlt);
+    // 3. Si hay otra descarga en curso, esperamos a que termine esa tarea específica.
+    final currentDownload = _activeDownload;
+    if (currentDownload != null) {
+      await currentDownload.catchError((_) {});
+
+      // Volvemos a mirar la caché tras la espera sin invocar recursión
+      for (var map in _cache) {
+        if (map.contains(lat, lon)) {
+          map.lastUsed = DateTime.now();
+          final alt = _interpolateElevation(map, lat, lon);
+          return (alt ?? gpsAlt, true);
+        }
+      }
+      return (gpsAlt, false);
     }
 
-    _activeDownload = _downloadNewArea(lat, lon);
+    // 4. Si no había descarga, somos los encargados de iniciarla pasando el ref
+    _activeDownload = _downloadNewArea(lat, lon, ref);
     try {
       await _activeDownload;
+    } catch (e) {
+      print("❌ [COG SERVICE] Error en la descarga: $e");
     } finally {
-      _activeDownload = null;
+      _activeDownload = null; // Liberación garantizada
     }
 
-    // Re-intentar un cop descarregat
+    // 5. Verificación final post-descarga
     for (var map in _cache) {
       if (map.contains(lat, lon)) {
         final alt = _interpolateElevation(map, lat, lon);
         return (alt ?? gpsAlt, true);
       }
     }
+
     return (gpsAlt, false);
   }
 
@@ -128,7 +145,7 @@ class CogService {
     return top + yFrac * (bottom - top);
   }
 
-  Future<void> _downloadNewArea(double lat, double lon) async {
+  Future<void> _downloadNewArea(double lat, double lon, Ref ref) async {
     final uri = Uri.https(
       'cog-tiles-euaeg7eaavbqczgf.spaincentral-01.azurewebsites.net',
       '/api/getTile',
@@ -168,6 +185,14 @@ class CogService {
 
         _manageCache(newMap);
         _lastFailedDownload = null;
+        ref
+            .read(demBoundsProvider.notifier)
+            .addCell(
+              bbox[0], // minLon
+              bbox[1], // minLat
+              bbox[2], // maxLon
+              bbox[3], // maxLat
+            );
       }
     } catch (e) {
       _lastFailedDownload = DateTime.now();

@@ -527,4 +527,10 @@ class AppLocalizationsCa extends AppLocalizations {
 
   @override
   String get waypointDeletedSuccess => 'Fita esborrada correctament';
+
+  @override
+  String get statSpeedMax => 'Velocitat Màxima';
+
+  @override
+  String get statPaceAverage => 'Ritme Mitjà';
 }

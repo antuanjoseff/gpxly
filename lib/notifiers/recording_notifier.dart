@@ -60,6 +60,7 @@ class RecordingNotifier extends Notifier<Track> {
     double newDescent = state.stats.descent;
     double newMax = state.stats.maxElevation;
     double newMin = state.stats.minElevation;
+    double newMaxSpeed = state.stats.maxSpeed; // Rescatem la màxima actual
 
     double calculatedDistanceAtPoint = newDistance;
 
@@ -89,17 +90,36 @@ class RecordingNotifier extends Notifier<Track> {
     }
 
     // Actualitzem límits d'elevació
-    if (state.points.isEmpty || newPoint.altitude > newMax)
+    if (state.points.isEmpty || newPoint.altitude > newMax) {
       newMax = newPoint.altitude;
-    if (state.points.isEmpty || newPoint.altitude < newMin)
+    }
+    if (state.points.isEmpty || newPoint.altitude < newMin) {
       newMin = newPoint.altitude;
+    }
+
+    // ⚡ 1. CÀLCUL DE VELOCITAT MÀXIMA (Filtre de seguretat de 120 km/h per a salts de GPS)
+    final double currentSpeedKmh = newPoint.speed * 3.6;
+    if (currentSpeedKmh > newMaxSpeed && currentSpeedKmh < 120.0) {
+      newMaxSpeed = currentSpeedKmh;
+    }
+
+    // ⚡ 2. CÀLCUL DE VELOCITAT MITJANA REAL EN MOVIMENT
+    final Duration totalDuration = ref.read(timerProvider);
+    final Duration movingDuration = totalDuration - stoppedDuration;
+    double newAvgSpeed = 0.0;
+
+    if (movingDuration.inSeconds > 5 && newDistance > 0) {
+      final double distanceKm = newDistance / 1000.0;
+      final double timeHours = movingDuration.inSeconds / 3600.0;
+      newAvgSpeed = distanceKm / timeHours; // Velocitat = Km / Hores
+    }
 
     // Guardem la distància d'aquest segment acumulada a dins de la UserPosition [INDEX]
     final userPositionWithDistance = newPoint.copyWith(
       distanceAtPoint: calculatedDistanceAtPoint,
     );
 
-    // Reconstruïm el nou bloc de TrackStats compacte [INDEX]
+    // Reconstruïm el nou bloc de TrackStats compacte amb les velocitats injectades [INDEX]
     final updatedStats = state.stats.copyWith(
       distance: newDistance,
       ascent: newAscent,
@@ -107,7 +127,9 @@ class RecordingNotifier extends Notifier<Track> {
       maxElevation: newMax,
       minElevation: newMin,
       stoppedDuration: stoppedDuration,
-      duration: ref.read(timerProvider),
+      duration: totalDuration,
+      averageSpeed: newAvgSpeed,
+      maxSpeed: newMaxSpeed,
     );
 
     // Actualitzem l'estat central de Riverpod d'un sol cop de forma atòmica [INDEX]

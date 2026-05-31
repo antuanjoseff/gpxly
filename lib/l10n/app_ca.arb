@@ -217,6 +217,9 @@
 "deleteWaypointTitle": "Eliminar fita?",
 "deleteWaypointMessage": "Estàs segur que vols esborrar aquest punt d'interès definitivament?",
 "deleteConfirm": "ELIMINAR",
-"waypointDeletedSuccess": "Fita esborrada correctament"
+"waypointDeletedSuccess": "Fita esborrada correctament",
+
+"statSpeedMax": "Velocitat Màxima",
+"statPaceAverage": "Ritme Mitjà"
 }
   

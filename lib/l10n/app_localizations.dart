@@ -1128,6 +1128,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Waypoint successfully deleted'**
   String get waypointDeletedSuccess;
+
+  /// No description provided for @statSpeedMax.
+  ///
+  /// In en, this message translates to:
+  /// **'Max Speed'**
+  String get statSpeedMax;
+
+  /// No description provided for @statPaceAverage.
+  ///
+  /// In en, this message translates to:
+  /// **'Average Pace'**
+  String get statPaceAverage;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

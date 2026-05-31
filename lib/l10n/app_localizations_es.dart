@@ -527,4 +527,10 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get waypointDeletedSuccess => 'Hito borrado correctamente';
+
+  @override
+  String get statSpeedMax => 'Velocidad Máxima';
+
+  @override
+  String get statPaceAverage => 'Ritmo Medio';
 }

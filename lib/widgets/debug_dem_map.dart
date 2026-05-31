@@ -4,8 +4,8 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
+import 'package:senda/notifiers/dem_bounds_notifier.dart';
 import 'package:senda/notifiers/location_notifier.dart';
-import 'package:senda/services/cog_service.dart';
 
 class DebugDemMap extends ConsumerStatefulWidget {
   const DebugDemMap({super.key});
@@ -14,18 +14,26 @@ class DebugDemMap extends ConsumerStatefulWidget {
   ConsumerState<DebugDemMap> createState() => _DebugDemMapState();
 }
 
-class _DebugDemMapState extends ConsumerState<DebugDemMap> {
+class _DebugDemMapState extends ConsumerState<DebugDemMap>
+    with AutomaticKeepAliveClientMixin {
   MapLibreMapController? _miniMapController;
   bool _styleLoaded = false;
 
   @override
+  bool get wantKeepAlive => true; // Evita que se destruya el mapa al hacer scroll
+
+  @override
   Widget build(BuildContext context) {
+    super.build(context); // Inicializa el KeepAlive
+
     final userPos = ref.watch(locationProvider);
 
-    // Si el GPS es mou i l'estil ja s'havia carregat, actualitzem geometries de fons
-    if (_styleLoaded && _miniMapController != null) {
-      _miniMapController!.onStyleLoadedCallback?.call();
-    }
+    // Escuchamos la pizarra reactiva de Riverpod
+    ref.listen<List<DemBounds>>(demBoundsProvider, (previous, next) {
+      if (_styleLoaded && _miniMapController != null) {
+        _updateDemLayers(next);
+      }
+    });
 
     if (userPos == null) {
       return const SizedBox(
@@ -39,48 +47,37 @@ class _DebugDemMapState extends ConsumerState<DebugDemMap> {
       );
     }
 
-    return SizedBox(
-      height: 200, // Pujat una mica a 200px per a millor usabilitat de gestos
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: MapLibreMap(
-          tiltGesturesEnabled: false,
-          compassEnabled: false,
-          styleString: "assets/osm_style.json",
-          initialCameraPosition: CameraPosition(
-            target: userPos.position,
-            zoom: 11.5,
-          ),
-
-          // ─────────────────────────────────────────────────────────────
-          // 🔥 CLAU 1: DESBLOQUEJAR PAN, ZOOM IN I ZOOM OUT DINS DEL LISTVIEW
-          // ─────────────────────────────────────────────────────────────
-          gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>{
-            Factory<OneSequenceGestureRecognizer>(
-              () =>
-                  EagerGestureRecognizer(), // Força al mapa a agafar el control dels dits a l'acte
-            ),
-          },
-
-          onMapCreated: (controller) => _miniMapController = controller,
-          onStyleLoadedCallback: () {
-            // El bloc s'executa de forma segura en un micro-retall per evitar col·lisions d'estat
-            if (!mounted) return;
-            setState(() {
-              _styleLoaded = true;
-            });
-            _setupDebugLayers();
-          },
-        ),
+    return MapLibreMap(
+      tiltGesturesEnabled: false,
+      compassEnabled: false,
+      styleString: "assets/osm_style.json",
+      initialCameraPosition: CameraPosition(
+        target: userPos.position,
+        zoom:
+            10.0, // Alejado a 10.0 para poder contemplar el rectángulo de 15km
       ),
+      gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>{
+        Factory<OneSequenceGestureRecognizer>(() => EagerGestureRecognizer()),
+      },
+      onMapCreated: (controller) => _miniMapController = controller,
+      // 🔥 CORREGIDO: Declaramos asíncrono el callback para esperar a las capas
+      onStyleLoadedCallback: () async {
+        if (!mounted) return;
+        setState(() {
+          _styleLoaded = true;
+        });
+
+        // 🔥 CLAVE 1: Forzamos el await para que no se inyecten datos antes de crear las capas
+        await _setupDebugLayers();
+      },
     );
   }
 
-  void _setupDebugLayers() async {
-    if (_miniMapController == null) return;
+  Future<void> _setupDebugLayers() async {
+    if (_miniMapController == null || !mounted) return;
 
     try {
-      // 1. Creem la font GeoJSON en memòria nativa
+      // 1. Añadimos la fuente GeoJSON nativa de forma segura
       await _miniMapController!.addSource(
         "dem_bounds_source",
         const GeojsonSourceProperties(
@@ -88,64 +85,88 @@ class _DebugDemMapState extends ConsumerState<DebugDemMap> {
         ),
       );
 
-      // 2. Capa de la línia exterior discontínua (Taronja de depuració)
+      // 2. Capa de relleno poligonal (Pintada primero para que quede abajo)
       await _miniMapController!.addLayer(
-        "dem_bounds_layer",
-        "", // Per damunt de tot
-        const LineLayerProperties(
-          lineColor: "#FF9800",
-          lineWidth: 2.5,
-          lineDasharray: [3.0, 3.0], // 3px línia, 3px buit
+        "dem_bounds_fill_layer",
+        "building", // 🚀 TRUCO DE CONTRASTE: La colocamos justo encima de los edificios
+        const FillLayerProperties(
+          fillColor: "#FF9800",
+          fillOpacity: 0.30, // Opacidad sutil y elegante del 30%
         ),
       );
 
-      // 3. Capa de farcit poligonal translúcid
+      // 3. Capa de la línea exterior discontinua (Pintada encima del relleno)
       await _miniMapController!.addLayer(
-        "dem_bounds_fill_layer",
-        "dem_bounds_layer", // Just per sota de la seva pròpia línia de contorn
-        const FillLayerProperties(fillColor: "#FF9800", fillOpacity: 0.15),
+        "dem_bounds_layer",
+        "dem_bounds_fill_layer", // 🚀 CLAVE: Se apoya de forma segura sobre el ID del relleno
+        const LineLayerProperties(
+          lineColor: "#FF9800",
+          lineWidth: 3.5,
+          lineDasharray: [4.0, 2.0], // 4px trazo, 2px vacío
+        ),
       );
 
-      // Llançem la primera càrrega dinàmica de cels descarregats
-      _updateDemLayers();
+      // Retardo de seguridad para que la GPU procese los IDs sin estrés asíncrono
+      Future.delayed(const Duration(milliseconds: 200), () {
+        if (mounted) {
+          _updateDemLayers(ref.read(demBoundsProvider));
+        }
+      });
     } catch (e) {
       print("⚠️ Error creant les capes visuals DEM de debug: $e");
     }
   }
 
-  void _updateDemLayers() {
-    if (_miniMapController == null || !_styleLoaded) return;
+  void _updateDemLayers(List<DemBounds> cells) {
+    if (_miniMapController == null || !_styleLoaded || !mounted) return;
 
-    // Llegim la llista real de mapes en memòria cau des del teu CogService Singleton
-    final activeMaps = CogService().activeCacheMaps;
     final List<Map<String, dynamic>> features = [];
 
-    print(
-      "📊 [DEBUG MAPA] Dibuixant rectangles DEM actius a la RAM. Total: ${activeMaps.length}",
-    );
-
-    for (final map in activeMaps) {
+    for (final cell in cells) {
       features.add({
         "type": "Feature",
-        "properties": {"path": map.path},
+        "id": "cell_${cell.minLon.toStringAsFixed(3)}",
+        "properties": {"path": "dem_cell"},
         "geometry": {
           "type": "Polygon",
           "coordinates": [
             [
-              [map.minLon, map.minLat], // 1. Baix-Esquerra
-              [map.maxLon, map.minLat], // 2. Baix-Dreta
-              [map.maxLon, map.maxLat], // 3. Dalt-Dreta
-              [map.minLon, map.maxLat], // 4. Dalt-Esquerra
-              [map.minLon, map.minLat], // 5. Tancament geomètric
+              // 🔄 CLAVE 3: SENTIDO ANTIHORARIO (CCW) ESTRICTO PARA LA GPU NATIVA
+              [cell.minLon, cell.minLat], // 1. Abajo-Izquierda
+              [cell.maxLon, cell.minLat], // 2. Abajo-Derecha
+              [cell.maxLon, cell.maxLat], // 3. Arriba-Derecha
+              [cell.minLon, cell.maxLat], // 4. Arriba-Izquierda
+              [cell.minLon, cell.minLat], // 5. Cierre geométrico
             ],
           ],
         },
       });
     }
 
-    _miniMapController!.setGeoJsonSource("dem_bounds_source", {
+    final Map<String, dynamic> geoJsonPayload = {
       "type": "FeatureCollection",
       "features": features,
-    });
+    };
+
+    print("🌍 [AUDITORIA GEOJSON MAPA] Contingut de l'estructura:");
+    print(geoJsonPayload.toString());
+
+    if (!mounted || _miniMapController == null) return;
+
+    // Inyectamos los datos estructurados planos de Dart
+    _miniMapController!.setGeoJsonSource("dem_bounds_source", geoJsonPayload);
+
+    // 🔥 CLAVE 4: Sacudida invisible de cámara para despertar el refresco de píxeles nativo
+    final currentCamera = _miniMapController!.cameraPosition;
+    if (currentCamera != null) {
+      _miniMapController!.moveCamera(
+        CameraUpdate.newLatLng(
+          LatLng(
+            currentCamera.target.latitude + 0.000001,
+            currentCamera.target.longitude,
+          ),
+        ),
+      );
+    }
   }
 }

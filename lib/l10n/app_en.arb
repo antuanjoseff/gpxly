@@ -216,5 +216,8 @@
 "deleteWaypointTitle": "Delete waypoint?",
 "deleteWaypointMessage": "Are you sure you want to delete this point of interest permanently?",
 "deleteConfirm": "DELETE",
-"waypointDeletedSuccess": "Waypoint successfully deleted"
+"waypointDeletedSuccess": "Waypoint successfully deleted",
+
+"statSpeedMax": "Max Speed",
+"statPaceAverage": "Average Pace"
 }

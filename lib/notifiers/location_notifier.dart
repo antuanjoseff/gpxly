@@ -106,6 +106,7 @@ class LocationNotifier extends Notifier<UserPosition?> {
         lat,
         lon,
         altitude,
+        ref,
       );
       finalAlt = correctedAlt;
       finalIsFixed = isFixed;

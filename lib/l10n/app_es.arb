@@ -216,5 +216,8 @@
 "deleteWaypointTitle": "¿Eliminar hito?",
 "deleteWaypointMessage": "¿Estás seguro de que quieres borrar este punto de interés definitivamente?",
 "deleteConfirm": "ELIMINAR",
-"waypointDeletedSuccess": "Hito borrado correctamente"
+"waypointDeletedSuccess": "Hito borrado correctamente",
+
+"statSpeedMax": "Velocidad Máxima",
+"statPaceAverage": "Ritmo Medio"
 }
