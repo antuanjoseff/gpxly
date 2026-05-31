@@ -1,12 +1,14 @@
-// lib/services/cog_service.dart
+// lib/services/cog_service.dart (Parte 1 de 2)
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:senda/notifiers/dem_bounds_notifier.dart';
+import 'package:senda/notifiers/helpers/thresholds.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CogMap {
   final String path;
@@ -28,6 +30,29 @@ class CogMap {
 
   bool contains(double lat, double lon) =>
       (lat >= minLat && lat <= maxLat && lon >= minLon && lon <= maxLon);
+
+  // Convierte el mapa a un JSON de texto para SharedPreferences
+  Map<String, dynamic> toJson() => {
+    'path': path,
+    'minLon': minLon,
+    'minLat': minLat,
+    'maxLon': maxLon,
+    'maxLat': maxLat,
+    'width': width,
+    'height': height,
+    'lastUsed': lastUsed.toIso8601String(),
+  };
+
+  // Reconstruye el objeto desde el JSON al abrir la app
+  factory CogMap.fromJson(Map<String, dynamic> json) => CogMap(
+    path: json['path'],
+    minLon: json['minLon'],
+    minLat: json['minLat'],
+    maxLon: json['maxLon'],
+    maxLat: json['maxLat'],
+    width: json['width'],
+    height: json['height'],
+  )..lastUsed = DateTime.parse(json['lastUsed']);
 }
 
 class CogService {
@@ -45,17 +70,71 @@ class CogService {
   // GETTER: Exposem la llista de celdas actuals en memòria cau per poder dibuixar els seus bounds
   List<CogMap> get activeCacheMaps => List.unmodifiable(_cache);
 
-  // 🔥 CORREGIDO: Añadimos 'Ref ref' en los parámetros de la cabecera
+  /// 📥 INICIALITZACIÓ CRÍTICA: Restaura els arxius de disc i actualitza el demBoundsProvider al mateix temps
+  Future<void> initService(dynamic ref) async {
+    final prefs = await SharedPreferences.getInstance();
+
+    final String? cachedJson = prefs.getString('cog_persistent_index');
+
+    if (cachedJson != null) {
+      try {
+        final List<dynamic> decoded = jsonDecode(cachedJson);
+        _cache.clear();
+
+        for (var item in decoded) {
+          final map = CogMap.fromJson(item);
+          final file = File(map.path);
+
+          // Solo lo añadimos al índice si el archivo binario realmente existe en el disco
+          if (await file.exists()) {
+            _cache.add(map);
+
+            // Sincronitzem el demBoundsProvider amb les cèl·les persistides a disc
+            ref
+                .read(demBoundsProvider.notifier)
+                .addCell(map.minLon, map.minLat, map.maxLon, map.maxLat);
+          }
+        }
+        print(
+          "💾 [COG] Índex restaurat i mapes de debug sincronitzats: ${_cache.length} fitxers.",
+        );
+      } catch (e) {
+        print("❌ [COG] Error restaurant l'índex: $e");
+      }
+    }
+  }
+
+  /// 💾 DESAR ÍNDEX: Persisteix la llista de metadades a SharedPreferences
+  Future<void> _saveIndexToDisk() async {
+    final prefs = await SharedPreferences.getInstance();
+    final List<Map<String, dynamic>> jsonList = _cache
+        .map((e) => e.toJson())
+        .toList();
+    await prefs.setString('cog_persistent_index', jsonEncode(jsonList));
+  }
+
   Future<(double, bool)> getCorrectedElevation(
     double lat,
     double lon,
     double gpsAlt,
-    Ref ref,
+    dynamic ref,
   ) async {
     // 1. Comprobación rápida en caliente sobre la caché existente
     for (var map in _cache) {
       if (map.contains(lat, lon)) {
         map.lastUsed = DateTime.now();
+
+        // SMART RAM: Si el archivo está en disco pero su RAM fue purgada, lo volvemos a levantar
+        if (map.data == null) {
+          final file = File(map.path);
+          if (await file.exists()) {
+            map.data = await file.readAsBytes();
+            _optimizeRamUsage(); // Mantenemos la RAM protegida bajo el límite de 4
+          } else {
+            continue;
+          }
+        }
+
         final alt = _interpolateElevation(map, lat, lon);
         return (alt ?? gpsAlt, true);
       }
@@ -76,6 +155,7 @@ class CogService {
       for (var map in _cache) {
         if (map.contains(lat, lon)) {
           map.lastUsed = DateTime.now();
+          if (map.data == null) map.data = await File(map.path).readAsBytes();
           final alt = _interpolateElevation(map, lat, lon);
           return (alt ?? gpsAlt, true);
         }
@@ -96,6 +176,7 @@ class CogService {
     // 5. Verificación final post-descarga
     for (var map in _cache) {
       if (map.contains(lat, lon)) {
+        if (map.data == null) map.data = await File(map.path).readAsBytes();
         final alt = _interpolateElevation(map, lat, lon);
         return (alt ?? gpsAlt, true);
       }
@@ -145,7 +226,7 @@ class CogService {
     return top + yFrac * (bottom - top);
   }
 
-  Future<void> _downloadNewArea(double lat, double lon, Ref ref) async {
+  Future<void> _downloadNewArea(double lat, double lon, dynamic ref) async {
     final uri = Uri.https(
       'cog-tiles-euaeg7eaavbqczgf.spaincentral-01.azurewebsites.net',
       '/api/getTile',
@@ -160,7 +241,7 @@ class CogService {
             .map(double.parse)
             .toList();
 
-        // ✅ CORREGIT: Mapegem 'x-width' a width, i 'x-height' a height (Evita cotes desalineades)
+        // Mapegem 'x-width' a width, i 'x-height' a height (Evita cotes desalineades)
         final width = int.parse(response.headers['x-width'] ?? "500");
         final height = int.parse(response.headers['x-height'] ?? "500");
 
@@ -171,7 +252,7 @@ class CogService {
         final file = File(path);
         await file.writeAsBytes(response.bodyBytes);
 
-        // 📝 MANTINGUT: El bounding box es queda intacte com el tenies originalment
+        // 📝 MANTINGUT: El bounding box se queda intacto con sus índices originales [0],[1],[2],[3]
         final newMap = CogMap(
           path: path,
           minLon: bbox[0],
@@ -183,7 +264,7 @@ class CogService {
           data: response.bodyBytes, // 🚀 Guardem directament en RAM
         );
 
-        _manageCache(newMap);
+        await _managePersistentCache(newMap);
         _lastFailedDownload = null;
         ref
             .read(demBoundsProvider.notifier)
@@ -204,26 +285,58 @@ class CogService {
   // NETEJA DE MEMÒRIA I DISC
   // ───────────────────────────────────────────────
 
-  void _manageCache(CogMap newMap) {
-    if (_cache.length >= _maxCacheSize) {
+  /// 🧠 GESTIÓ INTEGRADA DE MEMÒRIA I DISC (Límit N basat en TrackThresholds)
+  Future<void> _managePersistentCache(CogMap newMap) async {
+    _cache.add(newMap);
+
+    // Si superem el límit N d'arxius persistents definits a TrackThresholds
+    if (_cache.length > TrackThresholds.maxPersistentFiles) {
+      // 1. Ordenem de l'arxiu més antic al més recent segons el seu ús
       _cache.sort((a, b) => a.lastUsed.compareTo(b.lastUsed));
 
+      // 2. Extraiem el que fa més temps que no es fa servir (el primer de la llista)
       final oldest = _cache.removeAt(0);
 
-      // Alliberem la RAM immediatament
+      // 3. Alliberem immediatament el seu espai a la memòria RAM
       oldest.data = null;
 
-      // Esborrem el fitxer físic
-      File(oldest.path).delete().catchError((e) {
-        print("⚠️ No s'ha pogut esborrar el fitxer temporal: $e");
-      });
+      // 4. Eliminem l'arxiu físic .bin del disc per alliberar espai real al telèfon
+      final file = File(oldest.path);
+      if (await file.exists()) {
+        await file.delete().catchError((e) {
+          print("⚠️ No s'ha pogut esborrar el fitxer permanent antic: $e");
+        });
+        print(
+          "🗑️ [COG] S'ha eliminat del disc l'arxiu més antic per superar el límit N.",
+        );
+      }
     }
-    _cache.add(newMap);
+
+    // 5. Mantenemos también controlada la memoria RAM en caliente bajo el límite de 4 celdas
+    _optimizeRamUsage();
+
+    // 6. Desem el nou estat de l'índex text de forma persistent
+    await _saveIndexToDisk();
+  }
+
+  /// 🧠 OPTIMITZACIÓ DE RAM: Libera RAM poniendo el data en null, manteniendo el archivo físico intacto
+  void _optimizeRamUsage() {
+    final mapsWithData = _cache.where((m) => m.data != null).toList();
+    if (mapsWithData.length > _maxCacheSize) {
+      mapsWithData.sort((a, b) => a.lastUsed.compareTo(b.lastUsed));
+      mapsWithData.first.data = null;
+      print(
+        "🧠 [COG] RAM optimizada: Celda antigua liberada de la memoria física.",
+      );
+    }
   }
 
   // ✅ CANVIAT DE NOM: Ara l'alliberament físic queda blindat del tancament efímer de Riverpod
   Future<void> clearAllCacheFiles() async {
     print("🧹 CogService: Netejant memòria cau i fitxers...");
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('cog_persistent_index');
+
     for (var map in _cache) {
       map.data = null; // Allibera RAM
       final file = File(map.path);

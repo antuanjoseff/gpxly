@@ -3,10 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/l10n/app_localizations.dart';
-// ✅ AFEGIT: Importem el motor de localització per cridar al guardat/recuperació de caché
 import 'package:senda/notifiers/location_notifier.dart';
 import 'package:senda/notifiers/permissions_notifier.dart';
 import 'package:senda/screens/map_screen.dart';
+// 🔥 AFEGIT: Importem el CogService per poder inicialitzar l'índex de cèl·les
+import 'package:senda/services/cog_service.dart';
 import 'package:senda/theme/app_theme.dart';
 
 void main() async {
@@ -54,11 +55,13 @@ class _LifecycleWrapperState extends ConsumerState<_LifecycleWrapper>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
 
-    // 🔄 NOU: Al mateix moment en què l'aplicació s'arrenca en fred,
-    // demanem al locationProvider que vagi a buscar la caché des de SharedPreferences
-    // perquè el punt blau estigui llest abans que el satèl·lit es connecti [INDEX].
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // 🔄 NOU ENLLAÇ DE PERSISTÈNCIA UNIFICAT
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // 1. Recupera la posició del punt blau guardada prèviament
       ref.read(locationProvider.notifier).loadCachePositionFromPrefs();
+
+      // 2. 🔥 NOU: Recupera els fitxers .bin de disc i omple el demBoundsProvider instantàniament
+      await CogService().initService(ref);
     });
   }
 
@@ -70,8 +73,7 @@ class _LifecycleWrapperState extends ConsumerState<_LifecycleWrapper>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // 💾 NOU: Capturem el moment de sortida (minimitzat o tancat definitiu del Double Back Button)
-    // i demanem al provider que salvi les coordenades actuals a SharedPreferences de forma síncrona [INDEX].
+    // 💾 Capturem el moment de sortida per salvar coordenades
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.detached) {
       ref.read(locationProvider.notifier).saveCurrentPositionToPrefs();

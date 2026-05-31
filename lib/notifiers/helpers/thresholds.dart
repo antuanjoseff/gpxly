@@ -30,4 +30,7 @@ class TrackThresholds {
 
   // Gràfic d'elevacions
   static const double futureTrackVisibility = 0.3; // 30% of axis
+
+  // LÍMIT MÀXIM D'ARXIUS COG PERSISTENTS A DISC
+  static const int maxPersistentFiles = 10;
 }
