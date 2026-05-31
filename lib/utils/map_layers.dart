@@ -1,10 +1,11 @@
-import 'dart:typed_data';
 import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:senda/models/waypoint.dart';
-import 'package:senda/theme/app_colors.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
+import 'package:senda/models/waypoint.dart';
+import 'package:senda/notifiers/dem_bounds_notifier.dart';
+import 'package:senda/theme/app_colors.dart';
 
 /// Configura les capes del mapa:
 /// - track_line (línia vermella)
@@ -289,6 +290,36 @@ void setTrackLineGeometry(
               "geometry": {"type": "LineString", "coordinates": coordinates},
             },
           ],
+  });
+}
+
+void setDemBoundsGeometry(
+  MapLibreMapController controller,
+  List<DemBounds> cells,
+) {
+  final List<Map<String, dynamic>> features = [];
+
+  for (final cell in cells) {
+    features.add({
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [cell.minLon, cell.minLat], // 1. Abajo-Izquierda
+            [cell.maxLon, cell.minLat], // 2. Abajo-Derecha
+            [cell.maxLon, cell.maxLat], // 3. Arriba-Derecha
+            [cell.minLon, cell.maxLat], // 4. Arriba-Izquierda
+            [cell.minLon, cell.minLat], // 5. Cierre geométrico
+          ],
+        ],
+      },
+    });
+  }
+
+  controller.setGeoJsonSource("dem_bounds_source", {
+    "type": "FeatureCollection",
+    "features": features,
   });
 }
 

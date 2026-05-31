@@ -58,7 +58,7 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
             valueText: _formatDistance(settings.distanceMeters),
             value: settings.distanceMeters,
             min: 100,
-            max: 10000,
+            max: 5000,
             step: 100,
             onChanged: (val) => ref
                 .read(alarmSettingsProvider.notifier)
@@ -296,7 +296,6 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
     required ValueChanged<double> onChanged,
     required double step,
   }) {
-    // Definim el color dels botons segons si l'alarma està activa
     final buttonColor = isActive ? AppColors.primary : Colors.grey.shade400;
 
     return Column(
@@ -319,12 +318,12 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
           children: [
             IconButton(
               icon: const Icon(Icons.remove_circle_outline),
-              color: buttonColor, // Color dinàmic
+              color: buttonColor,
               onPressed: isActive && value > min
                   ? () {
                       HapticFeedback.lightImpact();
-                      // Calculem el nou valor sense baixar del mínim
-                      final newVal = (value - 10).clamp(min, max);
+                      // 🔥 CORREGIDO: Restamos el 'step' real (100m), no 10 fijo
+                      final newVal = (value - step).clamp(min, max);
                       onChanged(newVal);
                     }
                   : null,
@@ -342,12 +341,12 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
             ),
             IconButton(
               icon: const Icon(Icons.add_circle_outline),
-              color: buttonColor, // Color dinàmic
+              color: buttonColor,
               onPressed: isActive && value < max
                   ? () {
                       HapticFeedback.lightImpact();
-                      // Calculem el nou valor sense passar del màxim
-                      final newVal = (value + 10).clamp(min, max);
+                      // 🔥 CORREGIDO: Sumamos el 'step' real (100m) para sincronizar con el Slider
+                      final newVal = (value + step).clamp(min, max);
                       onChanged(newVal);
                     }
                   : null,

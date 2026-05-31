@@ -1,12 +1,9 @@
 // lib/widgets/debug_dem_map.dart
-import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
-import 'package:senda/notifiers/dem_bounds_notifier.dart';
 import 'package:senda/notifiers/location_notifier.dart';
 import 'package:senda/utils/map_animator.dart';
 import 'package:senda/utils/map_layers.dart';
@@ -27,12 +24,15 @@ class _DebugDemMapState extends ConsumerState<DebugDemMap>
   LatLng? _initialCameraTarget;
 
   @override
-  bool get wantKeepAlive => true;
+  bool get wantKeepAlive => true; // Evita que se destruya el mapa al cambiar de página o hacer scroll
 
   @override
   Widget build(BuildContext context) {
-    super.build(context);
+    super.build(
+      context,
+    ); // Inicializa obligatoriamente el Mixin de persistencia
 
+    // 1. Captura estricta de la posición inicial para el arranque del CameraPosition
     if (_initialCameraTarget == null) {
       final currentPos = ref.read(locationProvider);
       if (currentPos != null) {
@@ -50,19 +50,15 @@ class _DebugDemMapState extends ConsumerState<DebugDemMap>
       }
     }
 
-    // 🛰️ OYENTE GPS: Animación unificada del punto azul original
+    // 🛰️ OYENTE GPS REACTIVO: Réplica exacta del comportamiento del mapa principal
     ref.listen(locationProvider, (previous, next) {
       if (!styleInitialized || mapController == null || next == null) return;
 
+      // 🔄 ESTRATEGIA UNIFICADA: Delegamos la actualización al motor de animación original
       mapAnimator?.animateUserPosition(next.position);
-      mapController!.animateCamera(CameraUpdate.newLatLng(next.position));
-    });
 
-    // 🗺️ OYENTE DEM: Inyección idéntica a tu lógica de trazo de líneas
-    ref.listen<List<DemBounds>>(demBoundsProvider, (previous, next) {
-      if (styleInitialized && mapController != null) {
-        setDemBoundsGeometry(mapController!, next);
-      }
+      // Acompañamos el movimiento deslizando la cámara de forma suave
+      mapController!.animateCamera(CameraUpdate.newLatLng(next.position));
     });
 
     return SizedBox(
@@ -73,7 +69,8 @@ class _DebugDemMapState extends ConsumerState<DebugDemMap>
         styleString: "assets/osm_style.json",
         initialCameraPosition: CameraPosition(
           target: _initialCameraTarget!,
-          zoom: 10.0,
+          zoom:
+              14.0, // Zoom intermedio para poder apreciar la fluidez del punto azul
         ),
         gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>{
           Factory<OneSequenceGestureRecognizer>(() => EagerGestureRecognizer()),
@@ -81,64 +78,33 @@ class _DebugDemMapState extends ConsumerState<DebugDemMap>
         onMapCreated: (controller) {
           mapController = controller;
         },
-        // 🎨 FIRMA OFICIAL: Corregimos el orden de parámetros de addLayer basándonos en el repositorio
+        // 🎨 REPLICA EXACTA: Mismo flujo secuencial asíncrono que arranca el motor del mapa principal
         onStyleLoadedCallback: () async {
           print(
-            "🎨 [DEBUG MAP] Inicialitzant capes segons el repositori oficial...",
+            "🎨 [DEBUG MAP] Estil JSON base detectat. Inicialitzant capa de posició...",
           );
+
           try {
-            // 1. Añadimos primero la fuente GeoJSON para los polígonos DEM
-            await mapController!.addSource(
-              "dem_bounds_source",
-              const GeojsonSourceProperties(
-                data: {"type": "FeatureCollection", "features": []},
-              ),
-            );
-
-            // 2. Capa de relleno naranja (Capa Base)
-            // Estructura oficial: addLayer(sourceId, layerId, properties)
-            await mapController!.addLayer(
-              "dem_bounds_source", // sourceId
-              "dem_bounds_fill_layer", // layerId
-              const FillLayerProperties(
-                fillColor: "#FF9800",
-                fillOpacity: 0.25,
-              ),
-            );
-
-            // 3. Capa de línea discontinua de contorno
-            await mapController!.addLayer(
-              "dem_bounds_source", // sourceId
-              "dem_bounds_layer", // layerId
-              const LineLayerProperties(
-                lineColor: "#FF9800",
-                lineWidth: 3.0,
-                lineDasharray: [4.0, 2.0],
-              ),
-            );
-
-            // 4. Cargamos el punto azul usando los inicializadores compartidos de tu app
+            // Inyectamos la fuente y propiedades de la capa de ubicación compartida por la app
             await setupUserLocationLayer(mapController!);
+
+            // Instanciamos el animador original pasándole el controlador de este mapa
             mapAnimator = MapAnimator(mapController!);
 
-            await Future.delayed(const Duration(milliseconds: 150));
-            if (!mounted) return;
-
             setState(() {
-              styleInitialized = true;
+              styleInitialized =
+                  true; // Se abren las compuertas para que el ref.listen envíe datos
             });
 
-            // Volcado inicial en caliente de los datos existentes en Riverpod
-            setDemBoundsGeometry(mapController!, ref.read(demBoundsProvider));
-
+            // Forzamos el primer pintado inmediato si ya tenemos coordenadas guardadas
             final currentPos = ref.read(locationProvider);
             if (currentPos != null) {
               mapAnimator?.animateUserPosition(currentPos.position);
             }
 
-            print("✅ [DEBUG MAP] Inicialitzat correctament.");
+            print("✅ [DEBUG MAP] Motor de posicionament unificat i listo.");
           } catch (e) {
-            print("⚠️ Error en onStyleLoaded del mapa de debug: $e");
+            print("⚠️ Error inicialitzant la capa de posició compartida: $e");
           }
         },
       ),
