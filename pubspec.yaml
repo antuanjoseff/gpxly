@@ -45,6 +45,7 @@ dependencies:
   flutter_foreground_task:
   cupertino_icons:
   intl: any
+  reorderable_grid_view:
   archive:
   flutter_localizations:
     sdk: flutter

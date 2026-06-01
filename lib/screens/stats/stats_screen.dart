@@ -1,11 +1,15 @@
 // lib/screens/stats/stats_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:reorderable_grid_view/reorderable_grid_view.dart';
+import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:senda/l10n/app_localizations.dart';
 import 'package:senda/models/track.dart';
 import 'package:senda/notifiers/imported_track_notifier.dart';
 import 'package:senda/notifiers/recording_notifier.dart';
 import 'package:senda/notifiers/timer_notifier.dart';
+// Assegura't que aquest import apunti exactament on tens definit el LocationNotifier/locationProvider
+import 'package:senda/notifiers/location_notifier.dart';
 import 'package:senda/screens/stats/notifiers/stats_prefs_notifier.dart';
 import 'package:senda/theme/app_colors.dart';
 
@@ -24,10 +28,11 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
     super.initState();
     final prefs = ref.read(statsPrefsProvider);
     _controllers = {
-      'dist': PageController(initialPage: prefs.indices['dist']!),
-      'time': PageController(initialPage: prefs.indices['time']!),
-      'speed': PageController(initialPage: prefs.indices['speed']!),
-      'alt': PageController(initialPage: prefs.indices['alt']!),
+      'dist': PageController(initialPage: prefs.indices['dist'] ?? 0),
+      'time': PageController(initialPage: prefs.indices['time'] ?? 0),
+      'speed': PageController(initialPage: prefs.indices['speed'] ?? 0),
+      'alt': PageController(initialPage: prefs.indices['alt'] ?? 0),
+      'coords': PageController(initialPage: prefs.indices['coords'] ?? 0),
     };
   }
 
@@ -40,10 +45,34 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
   String _formatDuration(Duration d) =>
       d.toString().split('.').first.padLeft(8, "0");
 
+  // ─── FUNCIONS DE FORMAT PER A LES COORDENADES ───
+  String _convertToDMS(double degree, bool isLat) {
+    String direction = isLat
+        ? (degree >= 0 ? 'N' : 'S')
+        : (degree >= 0 ? 'E' : 'O');
+    double absDegree = degree.abs();
+    int d = absDegree.floor();
+    double minutesNotTruncated = (absDegree - d) * 60;
+    int m = minutesNotTruncated.floor();
+    int s = ((minutesNotTruncated - m) * 60).round();
+    return "$d°$m'$s\"$direction";
+  }
+
+  String _formatLatLngToDMS(LatLng? position) {
+    if (position == null) return "--";
+    return "${_convertToDMS(position.latitude, true)}\n${_convertToDMS(position.longitude, false)}";
+  }
+
+  String _formatLatLngToDecimal(LatLng? position) {
+    if (position == null) return "--";
+    return "${position.latitude.toStringAsFixed(5)}°\n${position.longitude.toStringAsFixed(5)}°";
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context)!;
     final prefsState = ref.watch(statsPrefsProvider);
+
     if (!prefsState.isInitialized) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
@@ -57,232 +86,109 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
               ? importedTrack
               : null);
 
-    if (track == null) return _buildEmptyState(t);
+    final duration = ref.watch(timerProvider);
+
+    // 🚀 Connectem directament amb el teu LocationNotifier per tenir posicionament global constant
+    final liveLocation = ref.watch(locationProvider);
+
+    // Si estem gravant el track utilitza la posició interna, si està en repòs agafa la del teu GPS
+    final LatLng? activePosition =
+        track?.currentPosition ?? liveLocation?.position;
+
+    final double? distanceKm = track != null ? (track.distance / 1000.0) : null;
+    final double? currentAltitude = track != null && track.altitudes.isNotEmpty
+        ? track.altitudes.last
+        : null;
+
+    final Map<String, List<Widget>> cardPages = {
+      'dist': [
+        _StatPage(Icons.straighten, distanceKm, "km", "Distància"),
+        const _StatPage(Icons.flag, null, "km", "Restant"),
+      ],
+      'time': [
+        _StatPage(
+          Icons.timer,
+          null,
+          "",
+          "Temps Actiu",
+          customValue: _formatDuration(duration),
+        ),
+        const _StatPage(
+          Icons.hourglass_bottom,
+          null,
+          "",
+          "Temps Estimat",
+          customValue: "--:--:--",
+        ),
+      ],
+      'speed': [
+        _StatPage(Icons.speed, track?.currentSpeedKmH, "km/h", "Velocitat"),
+        _StatPage(Icons.trending_up, track?.averageSpeed, "km/h", "Mitjana"),
+      ],
+      'alt': [
+        _StatPage(Icons.filter_hdr, currentAltitude, "m", "Altitud"),
+        _StatPage(
+          Icons.arrow_upward,
+          track?.ascent,
+          "m",
+          "Desnivell",
+          isInt: true,
+        ),
+      ],
+      'coords': [
+        _StatPage(
+          Icons.my_location,
+          null,
+          "",
+          "Posició GD",
+          customValue: _formatLatLngToDecimal(activePosition),
+        ),
+        _StatPage(
+          Icons.explore,
+          null,
+          "",
+          "Posició DMS",
+          customValue: _formatLatLngToDMS(activePosition),
+        ),
+      ],
+    };
+
+    final List<String> currentOrder = prefsState.order;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F7),
       appBar: AppBar(
-        elevation: 0,
-        centerTitle: true,
+        title: Text(t.trackStatsTitle),
         backgroundColor: AppColors.primary,
-        title: Text(
-          t.trackStatsTitle,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
       ),
       body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final cardHeight = (constraints.maxHeight - 32) / 4;
-
-            return ReorderableListView(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              onReorder: (oldIdx, newIdx) =>
-                  ref.read(statsPrefsProvider.notifier).reorder(oldIdx, newIdx),
-
-              // 🚀 SOLUCIÓ LÍMITS BLANCS: Evitem fons blancs de control en moure targetes
-              proxyDecorator:
-                  (Widget child, int index, Animation<double> animation) {
-                    return AnimatedBuilder(
-                      animation: animation,
-                      builder: (BuildContext context, Widget? child) {
-                        return Material(
-                          elevation: 4,
-                          color: Colors.transparent,
-                          borderRadius: BorderRadius.circular(16),
-                          child: child,
-                        );
-                      },
-                      child: child,
-                    );
-                  },
-
-              children: prefsState.order.map((key) {
-                return _buildCardByKey(key, track, cardHeight, t, ref);
-              }).toList(),
-            );
-          },
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: ReorderableGridView.count(
+            crossAxisCount: 2,
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            childAspectRatio: 1.0,
+            onReorder: (oldIndex, newIndex) {
+              ref.read(statsPrefsProvider.notifier).reorder(oldIndex, newIndex);
+            },
+            children: currentOrder.map((key) {
+              return _StatCard(
+                key: ValueKey(key),
+                controller: _controllers[key]!,
+                height: double.infinity,
+                onPageChanged: (index) => ref
+                    .read(statsPrefsProvider.notifier)
+                    .setCarouselIdx(key, index),
+                pages: cardPages[key]!,
+              );
+            }).toList(),
+          ),
         ),
       ),
     );
   }
-
-  Widget _buildCardByKey(
-    String key,
-    Track track,
-    double height,
-    AppLocalizations t,
-    WidgetRef ref,
-  ) {
-    final real = ref.read(trackRecordingProvider);
-    final liveDuration = ref.watch(timerProvider);
-    final isReal = track == real;
-
-    switch (key) {
-      case 'dist':
-        return _StatCard(
-          key: ValueKey(key),
-          height: height,
-          controller: _controllers['dist']!,
-          onPageChanged: (i) =>
-              ref.read(statsPrefsProvider.notifier).setCarouselIdx('dist', i),
-          pages: [
-            _StatPage(
-              Icons.straighten,
-              track.distance > 0 ? (track.distance / 1000) : null,
-              "KM",
-              t.statDistance,
-            ),
-            _StatPage(
-              Icons.tag,
-              track.points.length.toDouble(),
-              "PTS",
-              "PUNTS GPS",
-              isInt: true,
-            ),
-          ],
-        );
-      case 'time':
-        return _StatCard(
-          key: ValueKey(key),
-          height: height,
-          controller: _controllers['time']!,
-          onPageChanged: (i) =>
-              ref.read(statsPrefsProvider.notifier).setCarouselIdx('time', i),
-          pages: [
-            _StatPage(
-              Icons.timer,
-              null,
-              "",
-              t.statTimeTotal,
-              customValue: _formatDuration(
-                isReal ? liveDuration : track.duration,
-              ),
-            ),
-            _StatPage(
-              Icons.pause_circle_filled,
-              null,
-              "",
-              t.statTimeStopped,
-              customValue: _formatDuration(track.stoppedDuration),
-            ),
-            _StatPage(
-              Icons.directions_run,
-              null,
-              "",
-              t.statTimeMoving,
-              customValue: _formatDuration(
-                isReal
-                    ? (liveDuration - track.stoppedDuration)
-                    : (track.duration - track.stoppedDuration),
-              ),
-            ),
-          ],
-        );
-      case 'speed':
-        return _StatCard(
-          key: ValueKey(key),
-          height: height,
-          controller: _controllers['speed']!,
-          onPageChanged: (i) =>
-              ref.read(statsPrefsProvider.notifier).setCarouselIdx('speed', i),
-          pages: [
-            _StatPage(
-              Icons.bolt,
-              isReal ? (real.currentSpeed * 3.6) : null,
-              "km/h",
-              t.statSpeedCurrent,
-            ),
-            _StatPage(
-              Icons.speed,
-              track.averageSpeed > 0 ? track.averageSpeed * 3.6 : null,
-              "km/h",
-              t.statSpeedAverage,
-            ),
-            _StatPage(
-              Icons.trending_up,
-              track.maxSpeed > 0 ? track.maxSpeed * 3.6 : null,
-              "km/h",
-              t.statSpeedMax,
-            ),
-            _StatPage(
-              Icons.directions_walk_rounded,
-              null,
-              "",
-              t.statPaceAverage,
-              customValue: track.formattedAveragePace,
-            ),
-          ],
-        );
-      case 'alt':
-        return _StatCard(
-          key: ValueKey(key),
-          height: height,
-          controller: _controllers['alt']!,
-          onPageChanged: (i) =>
-              ref.read(statsPrefsProvider.notifier).setCarouselIdx('alt', i),
-          pages: [
-            _StatPage(
-              Icons.terrain,
-              (isReal && real.points.isNotEmpty)
-                  ? real.points.last.altitude
-                  : null,
-              "m",
-              t.statElevationCurrent,
-              isInt: true,
-            ),
-            _StatPage(
-              Icons.trending_up,
-              track.ascent,
-              "m",
-              t.statAscent,
-              isInt: true,
-            ),
-            _StatPage(
-              Icons.trending_down,
-              track.descent,
-              "m",
-              t.statDescent,
-              isInt: true,
-            ),
-            _StatPage(
-              Icons.vertical_align_top,
-              track.maxElevation != -9999.0 ? track.maxElevation : null,
-              "m",
-              t.statMaxElevation,
-              isInt: true,
-            ),
-            _StatPage(
-              Icons.vertical_align_bottom,
-              track.minElevation != 9999.0 ? track.minElevation : null,
-              "m",
-              t.statMinElevation,
-              isInt: true,
-            ),
-          ],
-        );
-      default:
-        return const SizedBox();
-    }
-  }
-
-  Widget _buildEmptyState(AppLocalizations t) => Scaffold(
-    backgroundColor: const Color(0xFFF5F5F7),
-    appBar: AppBar(
-      backgroundColor: AppColors.primary,
-      title: Text(t.trackStatsTitle),
-    ),
-    body: Center(
-      child: Text(
-        t.noRecordedTrack,
-        style: const TextStyle(color: Colors.black54),
-      ),
-    ),
-  );
 }
+// (Continuació de lib/screens/stats/stats_screen.dart)
 
 class _StatCard extends StatefulWidget {
   final double height;
@@ -313,67 +219,58 @@ class _StatCardState extends State<_StatCard> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Container(
-        height: widget.height - 8,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: AppColors.primary.withOpacity(0.4),
-            width: 1.5,
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.primary.withAlpha(102), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(5),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.02),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Stack(
+          children: [
+            PageView(
+              controller: widget.controller,
+              onPageChanged: (index) {
+                setState(() {
+                  _currentPage = index;
+                });
+                widget.onPageChanged(index);
+              },
+              children: widget.pages,
             ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: Stack(
-            children: [
-              PageView(
-                controller: widget.controller,
-                onPageChanged: (index) {
-                  setState(() {
-                    _currentPage = index;
-                  });
-                  widget.onPageChanged(index);
-                },
-                children: widget.pages,
-              ),
-
-              // 🚀 CERCLES INDICADORS DISCRETS DE PÀGINA (PUNTETS)
-              if (widget.pages.length > 1)
-                Positioned(
-                  bottom: 6,
-                  left: 0,
-                  right: 0,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(widget.pages.length, (index) {
-                      final bool isActive = index == _currentPage;
-                      return AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        margin: const EdgeInsets.symmetric(horizontal: 3),
-                        width: isActive ? 6 : 4,
-                        height: isActive ? 6 : 4,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: isActive
-                              ? AppColors.primary
-                              : Colors.grey.shade300,
-                        ),
-                      );
-                    }),
-                  ),
+            if (widget.pages.length > 1)
+              Positioned(
+                bottom: 8,
+                left: 0,
+                right: 0,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(widget.pages.length, (index) {
+                    final bool isActive = index == _currentPage;
+                    return AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      margin: const EdgeInsets.symmetric(horizontal: 3),
+                      width: isActive ? 6 : 4,
+                      height: isActive ? 6 : 4,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: isActive
+                            ? AppColors.primary
+                            : Colors.grey.shade300,
+                      ),
+                    );
+                  }),
                 ),
-            ],
-          ),
+              ),
+          ],
         ),
       ),
     );
@@ -411,15 +308,15 @@ class _StatPage extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: AppColors.primary, size: 26),
-            const SizedBox(width: 8),
+            Icon(icon, color: AppColors.primary, size: 22),
+            const SizedBox(width: 6),
             Text(
               label.toUpperCase(),
               style: TextStyle(
                 color: Colors.grey.shade700,
-                fontSize: 12,
+                fontSize: 10,
                 fontWeight: FontWeight.bold,
-                letterSpacing: 1.2,
+                letterSpacing: 1.0,
               ),
             ),
           ],
@@ -434,20 +331,21 @@ class _StatPage extends StatelessWidget {
             children: [
               Text(
                 val,
+                textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: Colors.black87,
-                  fontSize: 30,
+                  fontSize: 24,
                   fontWeight: FontWeight.w900,
                   fontFamily: 'monospace',
                 ),
               ),
               if (unit.isNotEmpty && val != "--") ...[
-                const SizedBox(width: 4),
+                const SizedBox(width: 2),
                 Text(
                   unit,
                   style: TextStyle(
                     color: Colors.grey.shade500,
-                    fontSize: 14,
+                    fontSize: 12,
                     fontWeight: FontWeight.bold,
                   ),
                 ),

@@ -2,13 +2,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class StatsPrefsState {
-  final List<String> order; // 🔥 L'ordre de les targetes
+  final List<String> order;
   final Map<String, int> indices; // Els índexs del carousel de cada targeta
   final bool isInitialized;
 
   StatsPrefsState({
-    this.order = const ['dist', 'time', 'speed', 'alt'],
-    this.indices = const {'dist': 0, 'time': 0, 'speed': 0, 'alt': 0},
+    this.order = const ['dist', 'time', 'speed', 'alt', 'coords'],
+    this.indices = const {
+      'dist': 0,
+      'time': 0,
+      'speed': 0,
+      'alt': 0,
+      'coords': 0,
+    },
     this.isInitialized = false,
   });
 
@@ -35,15 +41,23 @@ class StatsPrefsNotifier extends Notifier<StatsPrefsState> {
   Future<void> _loadPrefs() async {
     final prefs = await SharedPreferences.getInstance();
 
-    // Carreguem l'ordre (si no n'hi ha, usem el de defecte)
-    final savedOrder =
-        prefs.getStringList('stats_order') ?? ['dist', 'time', 'speed', 'alt'];
+    // 1. Carreguem l'ordre incloent 'coords' al valor per defecte
+    List<String> savedOrder =
+        prefs.getStringList('stats_order') ??
+        ['dist', 'time', 'speed', 'alt', 'coords'];
+
+    // 🚀 BLINDATGE: Si el telèfon ja tenia una llista antiga de 4 elements, hi afegim 'coords' i actualitzem el disc
+    if (!savedOrder.contains('coords')) {
+      savedOrder = [...savedOrder, 'coords'];
+      await prefs.setStringList('stats_order', savedOrder);
+    }
 
     final savedIndices = {
       'dist': prefs.getInt('stats_dist_idx') ?? 0,
       'time': prefs.getInt('stats_time_idx') ?? 0,
       'speed': prefs.getInt('stats_speed_idx') ?? 0,
       'alt': prefs.getInt('stats_alt_idx') ?? 0,
+      'coords': prefs.getInt('stats_coords_idx') ?? 0,
     };
 
     state = state.copyWith(
@@ -54,8 +68,6 @@ class StatsPrefsNotifier extends Notifier<StatsPrefsState> {
   }
 
   Future<void> reorder(int oldIndex, int newIndex) async {
-    if (oldIndex < newIndex) newIndex -= 1;
-
     final newList = List<String>.from(state.order);
     final String item = newList.removeAt(oldIndex);
     newList.insert(newIndex, item);
