@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:senda/notifiers/dem_bounds_notifier.dart';
 import 'package:senda/notifiers/helpers/thresholds.dart';
+import 'package:senda/services/altitude_logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class CogMap {
@@ -135,8 +136,19 @@ class CogService {
           }
         }
 
+        // 🔥 CANVI DE SEGURETAT 1
         final alt = _interpolateElevation(map, lat, lon);
-        return (alt ?? gpsAlt, true);
+        if (alt != null && alt > 0.0) {
+          return (
+            alt,
+            true,
+          ); // Retornem l'altitud del mapa i confirmem que és FIXA (true)
+        } else {
+          return (
+            gpsAlt,
+            false,
+          ); // Fallback al GPS i avisem que NO és fixa (false) per evitar descalibrar el baròmetre
+        }
       }
     }
 
@@ -156,8 +168,14 @@ class CogService {
         if (map.contains(lat, lon)) {
           map.lastUsed = DateTime.now();
           if (map.data == null) map.data = await File(map.path).readAsBytes();
+
+          // 🔥 CANVI DE SEGURETAT 2
           final alt = _interpolateElevation(map, lat, lon);
-          return (alt ?? gpsAlt, true);
+          if (alt != null && alt > 0.0) {
+            return (alt, true);
+          } else {
+            return (gpsAlt, false);
+          }
         }
       }
       return (gpsAlt, false);
@@ -177,8 +195,14 @@ class CogService {
     for (var map in _cache) {
       if (map.contains(lat, lon)) {
         if (map.data == null) map.data = await File(map.path).readAsBytes();
+
+        // 🔥 CANVI DE SEGURETAT 3
         final alt = _interpolateElevation(map, lat, lon);
-        return (alt ?? gpsAlt, true);
+        if (alt != null && alt > 0.0) {
+          return (alt, true);
+        } else {
+          return (gpsAlt, false);
+        }
       }
     }
 
@@ -194,17 +218,17 @@ class CogService {
     final double y =
         ((map.maxLat - lat) / (map.maxLat - map.minLat)) * (map.height - 1);
 
-    final int x1 = x.floor().clamp(0, map.width - 1);
-    final int y1 = y.floor().clamp(0, map.height - 1);
-    final int x2 = (x1 + 1).clamp(0, map.width - 1);
-    final int y2 = (y1 + 1).clamp(0, map.height - 1);
+    // 🛡️ REFACTORITZACIÓ: Deixem un píxel de marge a les vores per evitar desbordaments de fitxer
+    final int x1 = x.floor().clamp(0, map.width - 2);
+    final int y1 = y.floor().clamp(0, map.height - 2);
+    final int x2 = x1 + 1;
+    final int y2 = y1 + 1;
 
     final double xFrac = x - x1;
     final double yFrac = y - y1;
 
     double getV(int r, int c) {
       final int offset = (r * map.width + c) * 4;
-      // Blindatge de seguretat contra desbordament de llista
       if (offset < 0 || offset + 4 > map.data!.length) return -9999;
       return ByteData.sublistView(
         map.data!,
@@ -218,12 +242,21 @@ class CogService {
     final v12 = getV(y2, x1);
     final v22 = getV(y2, x2);
 
-    if (v11 < -1000 || v21 < -1000 || v12 < -1000 || v22 < -1000) return null;
+    if (v11 < -1000 || v21 < -1000 || v12 < -1000 || v22 < -1000) {
+      AltitudeLoggerService().log(
+        "⚠️ COG BIND -> Píxel fora de rang o NoData detectat a la vora del fitxer. Retornant null.",
+      );
+      return null;
+    }
 
     // Fórmula Bilineal
     final double top = v11 + xFrac * (v21 - v11);
     final double bottom = v12 + xFrac * (v22 - v12);
-    return top + yFrac * (bottom - top);
+
+    final finalElevation = top + yFrac * (bottom - top);
+
+    // 🛡️ SEGONA DEFENSA: Si la fórmula matemàtica dóna zero o negatiu (improbable a Catalunya), evitem retornar-ho
+    return finalElevation > 0.0 ? finalElevation : null;
   }
 
   Future<void> _downloadNewArea(double lat, double lon, dynamic ref) async {
@@ -277,6 +310,9 @@ class CogService {
       }
     } catch (e) {
       _lastFailedDownload = DateTime.now();
+      AltitudeLoggerService().log(
+        "❌ COG DESCARGA -> Error descarregant cel·la d'Azure: $e",
+      );
       rethrow;
     }
   }

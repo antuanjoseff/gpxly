@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/notifiers/barometer_settings_notifier.dart';
+import 'package:senda/services/altitude_logger.dart';
 import 'package:senda/services/native_barometer_channel.dart';
 
 class GpsAltitudeNotifier extends Notifier<double> {
@@ -25,6 +26,9 @@ class GpsAltitudeNotifier extends Notifier<double> {
       if ((newBaroAlt - _lastBaroAlt).abs() > _pressureJumpThreshold) {
         _lastCalibrationTime = null;
         _isCalibrated = false;
+        AltitudeLoggerService().log(
+          "🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de ${(newBaroAlt - _lastBaroAlt).abs().toStringAsFixed(1)}m)",
+        );
       }
 
       _lastBaroAlt = newBaroAlt;
@@ -59,7 +63,9 @@ class GpsAltitudeNotifier extends Notifier<double> {
       _offset = gpsAlt - _lastBaroAlt;
       _lastCalibrationTime = now;
       _isCalibrated = true;
-      print("🎯 CALIBRAT: Nou offset $_offset");
+      AltitudeLoggerService().log(
+        "🎯 CALIBRATGE -> Nou offset: ${_offset.toStringAsFixed(1)}m (GPS: ${gpsAlt.toStringAsFixed(1)}m | BaroPuru: ${_lastBaroAlt.toStringAsFixed(1)}m)",
+      );
     }
 
     // 2. ACTUALITZEM L'ESTAT (Això dispara l'AlarmEngine un sol cop)

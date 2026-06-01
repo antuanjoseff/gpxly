@@ -28,6 +28,7 @@ import 'package:senda/screens/elevations/elevation_profile_screen.dart';
 import 'package:senda/screens/settings/settings_screen.dart';
 import 'package:senda/screens/settings/tabs/alarm_settings_tab.dart';
 import 'package:senda/screens/stats/stats_screen.dart';
+import 'package:senda/services/altitude_logger.dart';
 import 'package:senda/services/gpx_exporter.dart';
 import 'package:senda/services/gpx_import_flow.dart';
 import 'package:senda/services/hgt_service.dart';
@@ -685,8 +686,19 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 backgroundColor: AppColors.primary,
                 automaticallyImplyLeading: false,
                 titleSpacing: 16,
+                leading: const GpsAccuracyBars(),
                 title: Text("SENDA"),
                 actions: [
+                  IconButton(
+                    icon: const Icon(Icons.share),
+                    onPressed: () => AltitudeLoggerService().shareLog(),
+                  ),
+
+                  // 🧹 RESSET (Borra directament amb un sol clic)
+                  IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    onPressed: () => AltitudeLoggerService().clearLog(),
+                  ),
                   // ✅ ADAPTAT: Comprovem si hi ha un track importat a través de la nova referència
                   if (ref.watch(importedTrackProvider) != null)
                     Padding(
@@ -791,10 +803,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
                       ),
                     ),
                   ),
-
-                  const SizedBox(width: 8),
-
-                  const GpsAccuracyBars(),
 
                   const SizedBox(width: 8),
                 ],

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/models/track.dart';
 import 'package:senda/notifiers/gps_altitude_notifier.dart';
-import 'package:senda/widgets/floating_route_panel.dart'; // blinkingProvider
 
 class RecordingStatusBar extends ConsumerWidget {
   final RecordingState state;

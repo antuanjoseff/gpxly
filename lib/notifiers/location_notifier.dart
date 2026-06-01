@@ -1,5 +1,5 @@
 import 'dart:async'; // ✅ MANTINGUT / AFEGIT per al Timer
-
+import 'package:senda/services/altitude_logger.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:senda/core/altitude/altitude_processor.dart';
@@ -85,12 +85,16 @@ class LocationNotifier extends Notifier<UserPosition?> {
     final lat = data["lat"] as double;
     final lon = data["lon"] as double;
     final accuracy = data["accuracy"] as double;
-    final altitude = data["altitude"] as double;
+    final altitude =
+        data["altitude"] as double; // Altitud bruta del satèl·lit (GPS)
     final speed = data["speed"] as double;
     final heading = data["heading"] as double;
     final timestamp = DateTime.fromMillisecondsSinceEpoch(data["timestamp"]);
     final vAccuracy = data["vAccuracy"] as double;
     final satellites = data["satellites"] as int? ?? 0;
+
+    // Instanciem el servei de logs per registrar telemetria en temps real
+    final logger = AltitudeLoggerService();
 
     ref.read(gpsBearingProvider.notifier).update(heading);
     ref.read(gpsAccuracyProvider.notifier).update(accuracy);
@@ -101,33 +105,68 @@ class LocationNotifier extends Notifier<UserPosition?> {
     if (_isSimulationRunning) {
       finalAlt = altitude;
       finalIsFixed = true;
+      logger.log(
+        "🎮 SIMULACIÓ -> Punt simulat: ${altitude.toStringAsFixed(1)}m | Sat: $satellites",
+      );
     } else {
+      logger.log(
+        "🛰️ GPS ENTRADA -> Lat: $lat | Lon: $lon | AltGPS: ${altitude.toStringAsFixed(1)}m | Acc: ${accuracy.toStringAsFixed(1)}m",
+      );
+
+      // 1. Demanem la cota al servei cartogràfic
       final (correctedAlt, isFixed) = await _cogService.getCorrectedElevation(
         lat,
         lon,
         altitude,
         ref,
       );
-      finalAlt = correctedAlt;
-      finalIsFixed = isFixed;
 
-      // ─────────────────────────────────────────────────────────────
-      // 🔥 CONEXIÓ DIRECTA AMB EL TEU ALTITUDE_PROCESSOR
-      // ─────────────────────────────────────────────────────────────
-      // Si el CogService ha pogut extreure i corregir l'altitud de la cel·la digital (isFixed == true),
-      // li passem directament la cota de referència al teu motor analític de baròmetre.
-      if (isFixed) {
+      logger.log(
+        "🗺️ DEM RESPOSTA -> Rebut: ${correctedAlt.toStringAsFixed(1)}m | isFixed: $isFixed",
+      );
+
+      // 🛡️ CONTROL DE SEGURETAT DE LA CORRECCIÓ DEM
+      if (isFixed && correctedAlt > 0.0) {
+        finalAlt = correctedAlt;
+        finalIsFixed = true;
+
+        // Si la dada DEM és real i bona, actualitzem el motor analític del baròmetre
         final processor = ref.read(altitudeProcessorProvider.notifier);
         processor.updateDem(correctedAlt);
         processor.process();
+
+        logger.log(
+          "✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre",
+        );
+      } else {
+        // 🚑 PLA DE RESCAT INTEGRAL:
+        if (altitude > 0.0) {
+          finalAlt = altitude;
+          logger.log(
+            "⚠️ RESCAT (GPS FALS) -> El DEM ha fallat o és 0. S'usa l'altitud del GPS brut: ${finalAlt.toStringAsFixed(1)}m",
+          );
+        } else {
+          finalAlt =
+              state?.altitude ?? 0.0; // Manté l'última coneguda si tot falla
+          logger.log(
+            "🚨 RESCAT CRÍTIC -> DEM i GPS Bruts invàlids (0). Es manté l'última coneguda: ${finalAlt.toStringAsFixed(1)}m",
+          );
+        }
+        finalIsFixed = false;
       }
-      // Passem la velocitat del satèl·lit real perquè el baròmetre recalculi el seu període d'espera dinàmic [INDEX]
+
+      // Passem la velocitat del satèl·lit real perquè el baròmetre recalculi el seu període
       ref.read(gpsSettingsProvider.notifier).updateBarometerSync(speed);
     }
 
+    // 🚀 ENVIAMENT REFEGURAT
     ref
         .read(gpsAltitudeProvider.notifier)
         .update(finalAlt, horizontalAccuracy: accuracy);
+
+    logger.log(
+      "🚀 PROVIDER SORTIDA -> Valor publicat: ${finalAlt.toStringAsFixed(1)}m | isHgtFixed: $finalIsFixed",
+    );
 
     state = UserPosition(
       position: LatLng(lat, lon),
