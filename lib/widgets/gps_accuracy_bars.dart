@@ -133,7 +133,8 @@ class GpsAccuracyBars extends ConsumerWidget {
         children: [
           if (accuracy != null)
             Positioned(
-              top: -6,
+              left: 12,
+              top: 10,
               child: Text(
                 "${accuracy.round()}m",
                 style: const TextStyle(

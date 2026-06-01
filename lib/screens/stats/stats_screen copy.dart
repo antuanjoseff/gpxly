@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/l10n/app_localizations.dart';
 import 'package:senda/models/track.dart';
-import 'package:senda/notifiers/imported_track_notifier.dart';
-import 'package:senda/notifiers/recording_notifier.dart';
+import 'package:senda/notifiers/imported_track_notifier.dart'; // El teu provider de track importat
+// ✅ ADAPTAT: Els nous proveïdors modulars de la branca
+import 'package:senda/notifiers/recording_notifier.dart'; // Bloc 2: Gravació i totals
 import 'package:senda/notifiers/timer_notifier.dart';
 import 'package:senda/screens/stats/notifiers/stats_prefs_notifier.dart';
 import 'package:senda/theme/app_colors.dart';
@@ -48,9 +49,11 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
+    // ✅ ADAPTAT: Llegim el nou trackRecordingProvider unificat de la branca
     final realTrack = ref.watch(trackRecordingProvider);
     final importedTrack = ref.watch(importedTrackProvider);
 
+    // Decidim quin track és el que estem avaluant en les mètriques visuals
     Track? track = realTrack.points.isNotEmpty
         ? realTrack
         : (importedTrack != null && importedTrack.points.isNotEmpty
@@ -76,32 +79,35 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final cardHeight = (constraints.maxHeight - 32) / 4;
+            final cardHeight = (constraints.maxHeight - 64) / 4;
 
             return ReorderableListView(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              buildDefaultDragHandles: true,
               onReorder: (oldIdx, newIdx) =>
                   ref.read(statsPrefsProvider.notifier).reorder(oldIdx, newIdx),
-
-              // 🚀 SOLUCIÓ LÍMITS BLANCS: Evitem fons blancs de control en moure targetes
-              proxyDecorator:
-                  (Widget child, int index, Animation<double> animation) {
-                    return AnimatedBuilder(
-                      animation: animation,
-                      builder: (BuildContext context, Widget? child) {
-                        return Material(
-                          elevation: 4,
-                          color: Colors.transparent,
-                          borderRadius: BorderRadius.circular(16),
-                          child: child,
-                        );
-                      },
+              proxyDecorator: (Widget child, int index, Animation<double> animation) {
+                return AnimatedBuilder(
+                  animation: animation,
+                  builder: (BuildContext context, Widget? child) {
+                    return Material(
+                      elevation:
+                          4, // Una ombra suau per notar que "surt" de la pantalla
+                      color: Colors
+                          .transparent, // ◄ CRÍTIC: Evita les vores blanques residuals
+                      borderRadius: BorderRadius.circular(16),
                       child: child,
                     );
                   },
-
+                  child: child,
+                );
+              },
               children: prefsState.order.map((key) {
-                return _buildCardByKey(key, track, cardHeight, t, ref);
+                return Padding(
+                  key: ValueKey(key),
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: _buildCardByKey(key, track, cardHeight, t, ref),
+                );
               }).toList(),
             );
           },
@@ -117,6 +123,7 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
     AppLocalizations t,
     WidgetRef ref,
   ) {
+    // ✅ ADAPTAT: Llegim de forma segura des dels nous constructors reals
     final real = ref.read(trackRecordingProvider);
     final liveDuration = ref.watch(timerProvider);
     final isReal = track == real;
@@ -124,7 +131,6 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
     switch (key) {
       case 'dist':
         return _StatCard(
-          key: ValueKey(key),
           height: height,
           controller: _controllers['dist']!,
           onPageChanged: (i) =>
@@ -138,7 +144,8 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
             ),
             _StatPage(
               Icons.tag,
-              track.points.length.toDouble(),
+              track.points.length
+                  .toDouble(), // ✅ ADAPTAT: Ara és .points de UserPosition
               "PTS",
               "PUNTS GPS",
               isInt: true,
@@ -147,7 +154,6 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
         );
       case 'time':
         return _StatCard(
-          key: ValueKey(key),
           height: height,
           controller: _controllers['time']!,
           onPageChanged: (i) =>
@@ -184,42 +190,50 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
         );
       case 'speed':
         return _StatCard(
-          key: ValueKey(key),
           height: height,
           controller: _controllers['speed']!,
           onPageChanged: (i) =>
               ref.read(statsPrefsProvider.notifier).setCarouselIdx('speed', i),
           pages: [
+            // 1. VELOCITAT ACTUAL (En temps real per al punt blau si grava)
             _StatPage(
               Icons.bolt,
               isReal ? (real.currentSpeed * 3.6) : null,
               "km/h",
               t.statSpeedCurrent,
             ),
+            // 2. VELOCITAT MITJANA (Nativa filtrada sobre temps en moviment)
             _StatPage(
               Icons.speed,
-              track.averageSpeed > 0 ? track.averageSpeed * 3.6 : null,
+              track.averageSpeed > 0
+                  ? track.averageSpeed
+                  : null, // Redirigit per la línia 61 del model
               "km/h",
               t.statSpeedAverage,
             ),
+            // 3. VELOCITAT MÀXIMA (Protegida contra pics de soroll GPS)
             _StatPage(
               Icons.trending_up,
-              track.maxSpeed > 0 ? track.maxSpeed * 3.6 : null,
+              track.maxSpeed > 0
+                  ? track.maxSpeed
+                  : null, // Redirigit per la línia 62 del model
               "km/h",
-              t.statSpeedMax,
+              t.statSpeedMax, // Pots utilitzar t.statSpeedMax si hi és al l10n
             ),
+            // 🔥 4. NOU: RITME MITJÀ EN MOVIMENT (PACE ALPÍ)
             _StatPage(
               Icons.directions_walk_rounded,
-              null,
-              "",
+              null, // Deixem a null per forçar l'ús del string precalculat de sota
+              "", // La unitat "min/km" ja va incrustada de forma neta al text compacte
               t.statPaceAverage,
-              customValue: track.formattedAveragePace,
+              customValue: track
+                  .formattedAveragePace, // ✅ Cadena atòmica autogestionada "MM:SS min/km"
             ),
           ],
         );
+
       case 'alt':
         return _StatCard(
-          key: ValueKey(key),
           height: height,
           controller: _controllers['alt']!,
           onPageChanged: (i) =>
@@ -228,7 +242,10 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
             _StatPage(
               Icons.terrain,
               (isReal && real.points.isNotEmpty)
-                  ? real.points.last.altitude
+                  ? real
+                        .points
+                        .last
+                        .altitude // ✅ ADAPTAT: Llegim l'altitud de la darrera UserPosition
                   : null,
               "m",
               t.statElevationCurrent,
@@ -250,14 +267,14 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
             ),
             _StatPage(
               Icons.vertical_align_top,
-              track.maxElevation != -9999.0 ? track.maxElevation : null,
+              track.maxElevation,
               "m",
               t.statMaxElevation,
               isInt: true,
             ),
             _StatPage(
               Icons.vertical_align_bottom,
-              track.minElevation != 9999.0 ? track.minElevation : null,
+              track.minElevation,
               "m",
               t.statMinElevation,
               isInt: true,
@@ -284,14 +301,16 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
   );
 }
 
-class _StatCard extends StatefulWidget {
+// ─────────────────────────────────────────────────────────────
+// WIDGETS DE PRESENTACIÓ ADAPTATS AMB EL TEU DISSENY EXACTE
+// ─────────────────────────────────────────────────────────────
+class _StatCard extends StatelessWidget {
   final double height;
   final List<Widget> pages;
   final PageController controller;
   final Function(int) onPageChanged;
 
   const _StatCard({
-    super.key,
     required this.height,
     required this.pages,
     required this.controller,
@@ -299,81 +318,30 @@ class _StatCard extends StatefulWidget {
   });
 
   @override
-  State<_StatCard> createState() => _StatCardState();
-}
-
-class _StatCardState extends State<_StatCard> {
-  int _currentPage = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _currentPage = widget.controller.initialPage;
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Container(
-        height: widget.height - 8,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: AppColors.primary.withOpacity(0.4),
-            width: 1.5,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.02),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
-            ),
-          ],
+    return Container(
+      height: height,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppColors.primary.withOpacity(0.4),
+          width: 1.5,
         ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: Stack(
-            children: [
-              PageView(
-                controller: widget.controller,
-                onPageChanged: (index) {
-                  setState(() {
-                    _currentPage = index;
-                  });
-                  widget.onPageChanged(index);
-                },
-                children: widget.pages,
-              ),
-
-              // 🚀 CERCLES INDICADORS DISCRETS DE PÀGINA (PUNTETS)
-              if (widget.pages.length > 1)
-                Positioned(
-                  bottom: 6,
-                  left: 0,
-                  right: 0,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(widget.pages.length, (index) {
-                      final bool isActive = index == _currentPage;
-                      return AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        margin: const EdgeInsets.symmetric(horizontal: 3),
-                        width: isActive ? 6 : 4,
-                        height: isActive ? 6 : 4,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: isActive
-                              ? AppColors.primary
-                              : Colors.grey.shade300,
-                        ),
-                      );
-                    }),
-                  ),
-                ),
-            ],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
           ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: PageView(
+          controller: controller,
+          onPageChanged: onPageChanged,
+          children: pages,
         ),
       ),
     );
@@ -403,7 +371,7 @@ class _StatPage extends StatelessWidget {
         customValue ??
         (value == null
             ? "--"
-            : (isInt ? value!.toStringAsFixed(0) : value!.toStringAsFixed(1)));
+            : (isInt ? value!.toStringAsFixed(0) : value!.toStringAsFixed(2)));
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -411,7 +379,11 @@ class _StatPage extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: AppColors.primary, size: 26),
+            Icon(
+              icon,
+              color: AppColors.primary,
+              size: 26, // Mida optimitzada a 26
+            ),
             const SizedBox(width: 8),
             Text(
               label.toUpperCase(),
@@ -438,7 +410,6 @@ class _StatPage extends StatelessWidget {
                   color: Colors.black87,
                   fontSize: 30,
                   fontWeight: FontWeight.w900,
-                  fontFamily: 'monospace',
                 ),
               ),
               if (unit.isNotEmpty && val != "--") ...[

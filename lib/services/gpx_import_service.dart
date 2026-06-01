@@ -25,17 +25,19 @@ class GpxImportService {
     final loadedPoints = <UserPosition>[];
     double accumulatedDistance = 0.0;
 
-    // Variables para calcular Bounds y Elevaciones extremas en UNA SOLA PASADA (Evita .reduce)
     double minLat = 90.0, maxLat = -90.0;
     double minLon = 180.0, maxLon = -180.0;
     double minEle = double.infinity, maxEle = -double.infinity;
 
+    // 🚀 NOVES VARIABLES PER ALS ATRIBUTS OBLIDATS
+    double maxSpeed = 0.0;
+
     double? lastLat;
     double? lastLon;
+    DateTime?
+    lastTime; // 🚀 Per mesurar el temps entre punts i trobar la velocitat
 
-    // ─────────────────────────────────────────────────
     // 1. PARSEJAR I MAPEAR EL CORRENT DE PUNTS (TRACK)
-    // ─────────────────────────────────────────────────
     for (int i = 0; i < gpxPoints.length; i++) {
       final p = gpxPoints[i];
       if (p.lat == null || p.lon == null) continue;
@@ -48,7 +50,6 @@ class GpxImportService {
 
       alts.add(currentAlt);
 
-      // Càlcul de Bounds i elevacions en calent (Evita iteraciones extras posteriores)
       if (currentLat < minLat) minLat = currentLat;
       if (currentLat > maxLat) maxLat = currentLat;
       if (currentLon < minLon) minLon = currentLon;
@@ -56,17 +57,35 @@ class GpxImportService {
       if (currentAlt < minEle) minEle = currentAlt;
       if (currentAlt > maxEle) maxEle = currentAlt;
 
-      if (i > 0 && lastLat != null && lastLon != null) {
-        accumulatedDistance += haversineDistance(
+      double segmentSpeed = 0.0; // Velocitat calculada per a aquest punt
+
+      if (i > 0 && lastLat != null && lastLon != null && lastTime != null) {
+        // Calculem els metres fets en aquest pas
+        final double distanceDelta = haversineDistance(
           lastLat,
           lastLon,
           currentLat,
           currentLon,
         );
+        accumulatedDistance += distanceDelta;
+
+        // Calculem el temps passat en segons
+        final int timeDeltaSeconds = normalizedTime
+            .difference(lastTime)
+            .inSeconds;
+
+        // 🚀 CÀLCUL DE LA VELOCITAT DINÀMICA DEL PUNT
+        if (timeDeltaSeconds > 0) {
+          segmentSpeed = distanceDelta / timeDeltaSeconds; // m/s
+          if (segmentSpeed > maxSpeed) {
+            maxSpeed = segmentSpeed; // Guardem el pic més alt
+          }
+        }
       }
 
       lastLat = currentLat;
       lastLon = currentLon;
+      lastTime = normalizedTime; // Guardem el temps per a la següent iteració
 
       loadedPoints.add(
         UserPosition(
@@ -76,7 +95,8 @@ class GpxImportService {
           timestamp: normalizedTime,
           accuracy: 0.0,
           vAccuracy: 0.0,
-          speed: 0.0,
+          speed:
+              segmentSpeed, // 🚀 ARA SÍ: Cada punt guarda la seva velocitat calculada
           heading: 0.0,
           satellites: p.sat ?? 0,
           distanceAtPoint: accumulatedDistance,
@@ -85,12 +105,6 @@ class GpxImportService {
     }
 
     if (loadedPoints.isEmpty) return;
-
-    // ─────────────────────────────────────────────────
-    // 2. COMPROVACIÓ DE BOUNDS NATIUS DEL XML DEL GPX
-    // ─────────────────────────────────────────────────
-    // ✅ OPTIMITZACIÓ: Si l'arxiu ja porta l'etiqueta oficial <bounds>, la usem directament
-    // estalviant qualsevol desquadre o esforç analític del fil principal.
 
     print(
       ">>> INDESTRUCTIBLE GPX BOUNDS: "
@@ -105,22 +119,30 @@ class GpxImportService {
       );
     }
 
+    // 🚀 CÀLCUL FINAL DE LA VELOCITAT MITJANA (m/s)
+    double averageSpeed = 0.0;
+    if (totalDuration.inSeconds > 0) {
+      averageSpeed = accumulatedDistance / totalDuration.inSeconds;
+    }
+
     final ascent = computeAscent(alts);
     final descent = computeDescent(alts);
 
-    // ─────────────────────────────────────────────────
     // 3. CONSTRUCCIÓ DE L'ESTAT CENTRAL DEL TRACK
-    // ─────────────────────────────────────────────────
     final importedTrack = Track(
       points: loadedPoints,
       recordingState: RecordingState.idle,
       stats: TrackStats(
         duration: totalDuration,
+        stoppedDuration: Duration
+            .zero, // Es queda a zero de manera conscient (manca d'acceleròmetre al fitxer)
         distance: accumulatedDistance,
         ascent: ascent,
         descent: descent,
         maxElevation: maxEle == -double.infinity ? 0.0 : maxEle,
         minElevation: minEle == double.infinity ? 0.0 : minEle,
+        averageSpeed: averageSpeed, // 🚀 ENLLAÇAT CORRECTAMENT
+        maxSpeed: maxSpeed, // 🚀 ENLLAÇAT CORRECTAMENT
         minLat: minLat,
         maxLat: maxLat,
         minLon: minLon,
