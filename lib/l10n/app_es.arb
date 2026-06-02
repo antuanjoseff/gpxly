@@ -4,7 +4,7 @@
   "stopRecording": "Detener grabación",
   "gpsDisabled": "El GPS está desactivado",
   "locationPermissionRequired": "Se requieren permisos de ubicación",
-  
+
   "exitWarning": "Pulsa atrás otra vez para salir",
   "longPressToFinish": "Mantén pulsado para finalizar la grabación",
 
@@ -143,7 +143,7 @@
 "gpsOptimizationTitle": "Optimización GPS",
 "gpsOptimizationMessage": "Para un seguimiento preciso, activaremos el modo de alta fidelidad. Esto puede aumentar el consumo de batería.",
 "confirm": "CONFIRMAR",
- 
+
 "notificationPermissionTitle": "Notificaciones de seguimiento",
 "notificationPermissionMessage": "Senda necesita mostrar una notificación mientras grabas la ruta. Esto evita que el sistema detenga la aplicación para ahorrar batería y garantiza que no pierdas tu track.",
 "understood": "ENTENDIDO",
@@ -219,5 +219,8 @@
 "waypointDeletedSuccess": "Hito borrado correctamente",
 
 "statSpeedMax": "Velocidad Máxima",
-"statPaceAverage": "Ritmo Medio"
+"statPaceAverage": "Ritmo Medio",
+
+"statBarometerPressure": "PRES. BARO.",
+"barometerTitle": "Barómetro"
 }

@@ -1,4 +1,3 @@
-// lib/screens/stats/stats_screen.dart (PARTE 1)
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:reorderable_grid_view/reorderable_grid_view.dart';
@@ -9,9 +8,14 @@ import 'package:senda/notifiers/imported_track_notifier.dart';
 import 'package:senda/notifiers/recording_notifier.dart';
 import 'package:senda/notifiers/timer_notifier.dart';
 import 'package:senda/notifiers/location_notifier.dart';
+import 'package:senda/notifiers/barometer_settings_notifier.dart'; // 🆕 El teu notifier de pressió
 import 'package:senda/screens/stats/notifiers/stats_prefs_notifier.dart';
 import 'package:senda/screens/stats/satellites/screens/satellite_detail_screen.dart';
 import 'package:senda/theme/app_colors.dart';
+import 'package:senda/providers/barometer_provider.dart';
+
+// Importem els components del bloc 2 (si els separes en fitxers diferents)
+// import 'widgets/stat_cards.dart';
 
 class TrackStatsScreen extends ConsumerStatefulWidget {
   const TrackStatsScreen({super.key});
@@ -94,55 +98,81 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
         ? track.altitudes.last
         : null;
 
+    // 🆕 LECTURA DELS TEUS PROVIDERS NATIUS DE BARÒMETRE
+    final pressure = ref.watch(barometerProvider).value;
+    final hasBarometer = ref.watch(barometerSettingsProvider).hasBarometer;
     final Map<String, List<Widget>> cardPages = {
       'dist': [
-        _StatPage(Icons.straighten, distanceKm, "km", "Distància"),
-        const _StatPage(Icons.flag, null, "km", "Restant"),
+        // Usen: "statDistance" (DIST) i "statDistance" repetit o una de nova
+        _StatPage(Icons.straighten, distanceKm, "km", t.statDistance),
+        const _StatPage(Icons.flag, null, "km", "RESTANT"), // Text auxiliar fix
       ],
       'time': [
         _StatPage(
           Icons.timer,
           null,
           "",
-          "Temps Actiu",
+          t.statTime, // Usa "statTime" (TMP) del teu llistat
           customValue: _formatDuration(duration),
         ),
         const _StatPage(
           Icons.hourglass_bottom,
           null,
           "",
-          "Temps Estimat",
+          "ESTIMAT",
           customValue: "--:--:--",
         ),
       ],
       'speed': [
-        _StatPage(Icons.speed, track?.currentSpeedKmH, "km/h", "Velocitat"),
-        _StatPage(Icons.trending_up, track?.averageSpeed, "km/h", "Mitjana"),
+        _StatPage(
+          Icons.speed,
+          track?.currentSpeedKmH,
+          "km/h",
+          t.statSpeed,
+        ), // Usa "statSpeed" (VEL)
+        _StatPage(
+          Icons.trending_up,
+          track?.averageSpeed,
+          "km/h",
+          t.statSpeedAverage,
+        ), // Usa "statSpeedAverage"
       ],
       'alt': [
-        _StatPage(Icons.filter_hdr, currentAltitude, "m", "Altitud"),
+        _StatPage(
+          Icons.filter_hdr,
+          currentAltitude,
+          "m",
+          t.statElevation,
+        ), // ✅ CORREGIT: Usava "Altitud", la teva clau real és "statElevation"
         _StatPage(
           Icons.arrow_upward,
           track?.ascent,
           "m",
-          "Desnivell",
+          t.statAscent, // Usa "statAscent" (+ASC)
           isInt: true,
         ),
+        if (hasBarometer)
+          _StatPage(
+            Icons.compress,
+            pressure,
+            "hPa",
+            t.statBarometerPressure, // 🆕 Utilitza la nova clau afegida
+          ),
       ],
       'coords': [
-        _StatPage(
+        const _StatPage(
           Icons.my_location,
           null,
           "",
-          "Posició GD",
-          customValue: _formatLatLngToDecimal(activePosition),
+          "POSICIÓ GD",
+          customValue: "--", // S'omple dinàmicament al mètode original
         ),
-        _StatPage(
+        const _StatPage(
           Icons.explore,
           null,
           "",
-          "Posició DMS",
-          customValue: _formatLatLngToDMS(activePosition),
+          "POSICIÓ DMS",
+          customValue: "--",
         ),
       ],
     };
@@ -197,8 +227,6 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
     );
   }
 }
-
-// lib/screens/stats/stats_screen.dart (PARTE 2)
 
 /// 🛰️ Tarjeta estática para el diagnóstico del GPS
 class _GpsStaticCard extends StatelessWidget {

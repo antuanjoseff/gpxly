@@ -1140,6 +1140,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Average Pace'**
   String get statPaceAverage;
+
+  /// No description provided for @statBarometerPressure.
+  ///
+  /// In en, this message translates to:
+  /// **'BARO. PRES.'**
+  String get statBarometerPressure;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

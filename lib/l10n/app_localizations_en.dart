@@ -533,4 +533,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get statPaceAverage => 'Average Pace';
+
+  @override
+  String get statBarometerPressure => 'BARO. PRES.';
 }

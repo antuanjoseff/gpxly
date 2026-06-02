@@ -219,5 +219,8 @@
 "waypointDeletedSuccess": "Waypoint successfully deleted",
 
 "statSpeedMax": "Max Speed",
-"statPaceAverage": "Average Pace"
+"statPaceAverage": "Average Pace",
+
+"statBarometerPressure": "BARO. PRES.",
+"barometerTitle": "Barometer"
 }

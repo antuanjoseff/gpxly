@@ -4,7 +4,7 @@
   "stopRecording": "Atura gravació",
   "gpsDisabled": "El GPS està desactivat",
   "locationPermissionRequired": "Cal acceptar permisos de localització",
-  
+
   "exitWarning": "Prem enrere un altre cop per sortir",
   "longPressToFinish": "Mantén premut per finalitzar la gravació",
 
@@ -220,6 +220,8 @@
 "waypointDeletedSuccess": "Fita esborrada correctament",
 
 "statSpeedMax": "Velocitat Màxima",
-"statPaceAverage": "Ritme Mitjà"
+"statPaceAverage": "Ritme Mitjà",
+
+"statBarometerPressure": "PRESIÓ BARO.",
+"barometerTitle": "Baròmetre"
 }
-  
