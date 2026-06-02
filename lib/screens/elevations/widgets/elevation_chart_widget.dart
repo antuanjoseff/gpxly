@@ -1,10 +1,8 @@
-// lib/screens/elevations/widgets/elevation_chart_widget.dart
-
+// lib/screens/elevations/widgets/elevation_chart_widget.dart (BLOC 1 DE 2)
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:senda/screens/elevations/painters/range_highlight_painter.dart'
-    show RangeAreaPainter;
 import 'package:senda/screens/elevations/painters/selection_painter.dart';
+import 'package:senda/screens/elevations/painters/range_highlight_painter.dart';
 import 'package:senda/screens/elevations/utils/chart_utils.dart';
 import 'package:senda/theme/app_colors.dart';
 import 'package:senda/utils/distance_utils.dart';
@@ -69,15 +67,12 @@ class _ElevationChartWidgetState extends State<ElevationChartWidget> {
     final futureDists = widget.futureDistsGlobal;
     final futureAlts = widget.futureAlts;
 
-    // 🔥 ROBUST: si no hi ha passat NI futur → no hi ha gràfic
+    // Si no hay datos, evitamos pintar un lienzo vacío
     if (pastDists.isEmpty && futureDists.isEmpty) {
       return const SizedBox.shrink();
     }
 
-    // 🔥 ROBUST: si només hi ha futur → OK
-    // 🔥 ROBUST: si només hi ha passat → OK
-
-    // 🔥 ROBUST: assegurar que les llistes tenen la mateixa longitud
+    // Aseguramos de forma robusta la misma longitud en las listas [INDEX]
     final safePastLength = (pastDists.length == pastAlts.length)
         ? pastDists.length
         : 0;
@@ -90,7 +85,7 @@ class _ElevationChartWidgetState extends State<ElevationChartWidget> {
     final safeFutureDists = futureDists.take(safeFutureLength).toList();
     final safeFutureAlts = futureAlts.take(safeFutureLength).toList();
 
-    // 🔥 Globals robustos
+    // Estructuramos los ejes globales [INDEX]
     final globalDists = <double>[...safePastDists, ...safeFutureDists];
     final globalAlts = <double>[...safePastAlts, ...safeFutureAlts];
 
@@ -98,7 +93,7 @@ class _ElevationChartWidgetState extends State<ElevationChartWidget> {
       return const SizedBox.shrink();
     }
 
-    // 🔥 Rang vertical robust
+    // Rango vertical automático robusto [INDEX]
     final minAlt = globalAlts.reduce((a, b) => a < b ? a : b);
     final maxAlt = globalAlts.reduce((a, b) => a > b ? a : b);
     final diff = (maxAlt - minAlt).abs();
@@ -116,7 +111,6 @@ class _ElevationChartWidgetState extends State<ElevationChartWidget> {
     final forcedMinY = minAlt - (effectiveRange * 0.3 * exaggeration);
     final forcedMaxY = forcedMinY + (effectiveRange * 1.3 * exaggeration);
 
-    // 🔥 maxDist robust
     final maxDist = globalDists.last > 0 ? globalDists.last : 1.0;
 
     return LayoutBuilder(
@@ -128,7 +122,6 @@ class _ElevationChartWidgetState extends State<ElevationChartWidget> {
           return (dist / maxDist) * width;
         }
 
-        // 🔥 Índexs robustos
         int clampIndex(int? idx) {
           if (idx == null) return -1;
           if (idx < 0) return -1;
@@ -157,13 +150,11 @@ class _ElevationChartWidgetState extends State<ElevationChartWidget> {
               width,
               globalDists,
             );
-
             widget.onRangeSelected(start, end);
             setState(() => _draggingNeedle = 0);
           },
           onTapUp: (details) {
             final x = details.localPosition.dx;
-
             final touchedStart = startX != null && (x - startX).abs() < 30;
             final touchedEnd = endX != null && (x - endX).abs() < 30;
 
@@ -174,7 +165,6 @@ class _ElevationChartWidgetState extends State<ElevationChartWidget> {
           },
           onPanDown: (details) {
             final x = details.localPosition.dx;
-
             final touchedStart = startX != null && (x - startX).abs() < 30;
             final touchedEnd = endX != null && (x - endX).abs() < 30;
 
@@ -213,6 +203,7 @@ class _ElevationChartWidgetState extends State<ElevationChartWidget> {
           onPanCancel: () => setState(() => _draggingNeedle = 0),
           child: Stack(
             children: [
+              // Capa 1: El gráfico de líneas de fondo de FL Chart
               Positioned.fill(
                 child: Padding(
                   padding: const EdgeInsets.only(
@@ -234,6 +225,8 @@ class _ElevationChartWidgetState extends State<ElevationChartWidget> {
                   ),
                 ),
               ),
+
+              // Capa 2: El polígono de resaltado degradado (Tu nuevo RangeAreaPainter) [INDEX]
               if (startIdx >= 0 && endIdx >= 0)
                 Positioned.fill(
                   child: Padding(
@@ -246,13 +239,14 @@ class _ElevationChartWidgetState extends State<ElevationChartWidget> {
                         endIndex: endIdx,
                         distances: globalDists,
                         altitudes: globalAlts,
-                        minY: forcedMinY,
-                        maxY: forcedMaxY,
-                        color: Colors.orange.withAlpha(50),
+                        realPointsCount: safePastDists.length,
+                        trackColor: widget.realColor,
                       ),
                     ),
                   ),
                 ),
+
+              // Capa 3: Las agujas, nodos y bocadillos flotantes de información
               Positioned.fill(
                 child: CustomPaint(
                   painter: SelectionPainter(
@@ -409,7 +403,7 @@ class _ElevationChartWidgetState extends State<ElevationChartWidget> {
             preventCurveOverShooting: true,
             color: importedTrackColor,
             barWidth: 3,
-            dashArray: [6, 6],
+            dashArray: const [8, 4],
             dotData: const FlDotData(show: false),
             belowBarData: BarAreaData(
               show: true,

@@ -223,5 +223,12 @@
 "statPaceAverage": "Ritme Mitjà",
 
 "statBarometerPressure": "PRESIÓ BARO.",
-"barometerTitle": "Baròmetre"
+"barometerTitle": "Baròmetre",
+
+"statRangeSelectedTitle": "Rang seleccionat",
+"statRangeDistance": "Distància",
+"statRangeAscent": "Desnivell +",
+"statRangeDescent": "Desnivell -",
+"statRangeTime": "Temps del tram"
 }
+

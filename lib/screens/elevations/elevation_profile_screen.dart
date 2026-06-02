@@ -1,3 +1,6 @@
+// lib/screens/elevations/elevation_profile_screen.dart (BLOC 1 DE 2)
+import 'dart:math'
+    as math; // ✅ Correcto: Importación arriba del todo, fuera del build
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/l10n/app_localizations.dart';
@@ -6,8 +9,7 @@ import 'package:senda/notifiers/helpers/thresholds.dart';
 import 'package:senda/notifiers/imported_track_notifier.dart';
 import 'package:senda/notifiers/imported_track_settings_notifier.dart';
 import 'package:senda/notifiers/navigation_notifier.dart';
-// ✅ ADAPTAT: Els nous proveïdors atòmics de la branca
-import 'package:senda/notifiers/recording_notifier.dart'; // Bloc 2: Gravació reals
+import 'package:senda/notifiers/recording_notifier.dart';
 import 'package:senda/notifiers/remaining_track_notifier.dart';
 import 'package:senda/notifiers/track_settings_notifier.dart';
 import 'package:senda/notifiers/waypoints_imported_notifier.dart';
@@ -62,62 +64,55 @@ class _ElevationProfileScreenState
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context)!;
 
-    // ✅ ADAPTAT: Escoltem els nous proveïdors de dades nets
+    // Escuchadores de datos de Riverpod
     final real = ref.watch(trackRecordingProvider);
     final imported = ref.watch(importedTrackProvider);
     final remaining = ref.watch(remainingTrackProvider);
     final follow = ref.watch(navigationProvider);
 
-    // ✅ OPTIMITZAT: Extraiem les llistes aprofitant directament la UserPosition del model
     final realAlts = real.altitudes;
-    final realDists =
-        real.distances; // Ja no requereix calculateDistances(real.coordinates)!
+    final realDists = real.distances;
 
     final double pastLastDist = realDists.isNotEmpty ? realDists.last : 0.0;
-
-    // ─────────────────────────────────────────────
-    // 1) Lògica principal: quan s'ha de mostrar el FUTUR?
-    // ─────────────────────────────────────────────
     final bool shouldShowFuture =
         follow.isFollowing && !follow.isOffTrack && remaining != null;
 
-    // ─────────────────────────────────────────────
-    // 2) FUTUR segons la lògica final + ESCALAT 20%
-    // ─────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────────────
+    // 🆕 LÒGICA DE FINESTRA ASIMÈTRICA: 100% PASSAT VISIBLE + 25% FUTUR REAL
+    // ─────────────────────────────────────────────────────────────────────────
     late List<double> futureAlts;
     late List<double> futureDistsGlobal;
 
     if (shouldShowFuture) {
-      futureAlts = remaining!.altitudes;
-      futureDistsGlobal = remaining.distances
-          .map((d) => pastLastDist + d)
-          .toList(growable: false);
+      // Proporción exacta para que el futuro ocupe siempre el 25% de la gráfica visible [INDEX]
+      final double maxFutureDistanceVisible = pastLastDist / 3.0;
+
+      final remainingAlts = remaining!.altitudes;
+      final remainingDists = remaining.distances;
+
+      final List<double> tempFutureAlts = [];
+      final List<double> tempFutureDists = [];
+
+      for (int i = 0; i < remainingDists.length; i++) {
+        // Solo añadimos los puntos del futuro que entran dentro de este 25% espacial
+        if (remainingDists[i] <= maxFutureDistanceVisible) {
+          tempFutureAlts.add(remainingAlts[i]);
+          tempFutureDists.add(pastLastDist + remainingDists[i]);
+        } else {
+          break; // Ventana llena, detenemos el bucle
+        }
+      }
+
+      futureAlts = tempFutureAlts;
+      futureDistsGlobal = tempFutureDists;
     } else {
-      // COMPORTAMENT ANTIC: track importat complet (si existeix)
-      // Nota: El getter 'coordinates' d'imported simula la llista clàssica de forma compatible
+      // Si no hay navegación activa, mostramos la ruta de referencia completa
       final importedDists = calculateDistances(imported?.coordinates ?? []);
       futureAlts = imported?.altitudes ?? [];
       futureDistsGlobal = importedDists;
     }
 
-    // ─────────────────────────────────────────────
-    // 2B) ESCALAT DEL FUTUR AL 20% DEL GRÀFIC
-    // ─────────────────────────────────────────────
-    if (futureDistsGlobal.isNotEmpty && realDists.isNotEmpty) {
-      final double maxPast = realDists.last;
-      final double maxFuture = futureDistsGlobal.last;
-
-      if (maxFuture > 0) {
-        final double futureScale =
-            (maxPast * TrackThresholds.futureTrackVisibility) / maxFuture;
-
-        futureDistsGlobal = futureDistsGlobal
-            .map((d) => maxPast + d * futureScale)
-            .toList(growable: false);
-      }
-    }
-
-    // Llistes globals (passat + futur)
+    // Unificamos las listas filtradas para el eje global de coordenadas [INDEX]
     final globalDists = <double>[...realDists, ...futureDistsGlobal];
     final globalAlts = <double>[...realAlts, ...futureAlts];
 
@@ -130,13 +125,11 @@ class _ElevationProfileScreenState
     final trackColor = ref.watch(trackSettingsProvider).color;
     final importedTrackColor = ref.watch(importedTrackSettingsProvider).color;
 
-    // Waypoints gravats
     final recordedWaypointGlobalDists = recordedWps
         .where((wp) => wp.trackIndex >= 0 && wp.trackIndex < realDists.length)
         .map((wp) => realDists[wp.trackIndex])
         .toList(growable: false);
 
-    // Waypoints importats
     final importedWaypointGlobalDists = <double>[];
 
     if (!shouldShowFuture) {
@@ -164,7 +157,7 @@ class _ElevationProfileScreenState
     final hasFuture = futureAlts.isNotEmpty;
 
     // ─────────────────────────────────────────────
-    // 5) Estadístiques del rang seleccionat
+    // 5) ESTADÍSTIQUES DEL TRAM SELECCIONAT
     // ─────────────────────────────────────────────
     double? rangeDistance;
     double? rangeAscent;
@@ -189,16 +182,13 @@ class _ElevationProfileScreenState
       rangeAscent = ascent;
       rangeDescent = descent;
 
-      // ✅ ADAPTAT: Llegim de forma segura la llista de dates compactes
       if (real.timestamps.length > end && real.timestamps.length > start) {
         final t0 = real.timestamps[start];
         final t1 = real.timestamps[end];
         rangeTime = t1.difference(t0);
       }
     }
-    // ─────────────────────────────────────────────
-    // 4) UI (sense canvis)
-    // ─────────────────────────────────────────────
+    // lib/screens/elevations/elevation_profile_screen.dart (BLOC 2 DE 2)
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F7),
       appBar: AppBar(
@@ -268,6 +258,10 @@ class _ElevationProfileScreenState
               }),
             ),
           ),
+
+          // ───────────────────────────────────────────────────────────────────
+          // ✅ NUEVO PANEL DE SELECCIÓN CON TUS NUEVAS LLAVES DE IDIOMA (l10n) [INDEX]
+          // ───────────────────────────────────────────────────────────────────
           if (rangeDistance != null) ...[
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -287,9 +281,10 @@ class _ElevationProfileScreenState
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      "Rang seleccionat",
-                      style: TextStyle(
+                    // Título de la sección del tramo
+                    Text(
+                      t.statRangeSelectedTitle,
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
                         color: Colors.black87,
@@ -297,23 +292,44 @@ class _ElevationProfileScreenState
                     ),
                     const SizedBox(height: 12),
 
+                    // Distancia del tramo
                     Text(
-                      "Distància: ${(rangeDistance! / 1000).toStringAsFixed(2)} km",
-                      style: const TextStyle(fontSize: 14),
+                      "${t.statRangeDistance}: ${(rangeDistance! / 1000).toStringAsFixed(2)} km",
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                    Text(
-                      "Desnivell +: ${rangeAscent!.toStringAsFixed(0)} m",
-                      style: const TextStyle(fontSize: 14),
-                    ),
-                    Text(
-                      "Desnivell -: ${rangeDescent!.toStringAsFixed(0)} m",
-                      style: const TextStyle(fontSize: 14),
-                    ),
+                    const SizedBox(height: 4),
 
+                    // Desnivel positivo acumulado del tramo
+                    Text(
+                      "${t.statRangeAscent}: ${rangeAscent!.toStringAsFixed(0)} m",
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+
+                    // Desnivel negativo acumulado del tramo
+                    Text(
+                      "${t.statRangeDescent}: ${rangeDescent!.toStringAsFixed(0)} m",
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+
+                    // Tiempo invertido en el tramo
                     if (rangeTime != null)
                       Text(
-                        "Temps: ${rangeTime!.inMinutes} min",
-                        style: const TextStyle(fontSize: 14),
+                        "${t.statRangeTime}: ${rangeTime!.inMinutes} min",
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                   ],
                 ),

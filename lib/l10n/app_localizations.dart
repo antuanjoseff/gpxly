@@ -1146,6 +1146,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'BARO. PRES.'**
   String get statBarometerPressure;
+
+  /// No description provided for @statRangeSelectedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected range'**
+  String get statRangeSelectedTitle;
+
+  /// No description provided for @statRangeDistance.
+  ///
+  /// In en, this message translates to:
+  /// **'Distance'**
+  String get statRangeDistance;
+
+  /// No description provided for @statRangeAscent.
+  ///
+  /// In en, this message translates to:
+  /// **'Ascent'**
+  String get statRangeAscent;
+
+  /// No description provided for @statRangeDescent.
+  ///
+  /// In en, this message translates to:
+  /// **'Descent'**
+  String get statRangeDescent;
+
+  /// No description provided for @statRangeTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Split time'**
+  String get statRangeTime;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

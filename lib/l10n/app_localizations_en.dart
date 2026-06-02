@@ -536,4 +536,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get statBarometerPressure => 'BARO. PRES.';
+
+  @override
+  String get statRangeSelectedTitle => 'Selected range';
+
+  @override
+  String get statRangeDistance => 'Distance';
+
+  @override
+  String get statRangeAscent => 'Ascent';
+
+  @override
+  String get statRangeDescent => 'Descent';
+
+  @override
+  String get statRangeTime => 'Split time';
 }

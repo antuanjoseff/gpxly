@@ -222,5 +222,12 @@
 "statPaceAverage": "Ritmo Medio",
 
 "statBarometerPressure": "PRES. BARO.",
-"barometerTitle": "Barómetro"
+"barometerTitle": "Barómetro",
+
+"statRangeSelectedTitle": "Rango seleccionado",
+"statRangeDistance": "Distancia",
+"statRangeAscent": "Desnivel +",
+"statRangeDescent": "Desnivel -",
+"statRangeTime": "Tiempo del tramo"
 }
+

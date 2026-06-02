@@ -222,5 +222,12 @@
 "statPaceAverage": "Average Pace",
 
 "statBarometerPressure": "BARO. PRES.",
-"barometerTitle": "Barometer"
+"barometerTitle": "Barometer",
+
+"statRangeSelectedTitle": "Selected range",
+"statRangeDistance": "Distance",
+"statRangeAscent": "Ascent",
+"statRangeDescent": "Descent",
+"statRangeTime": "Split time"
 }
+
