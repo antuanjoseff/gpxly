@@ -1,4 +1,4 @@
-Hola! Continuem amb el desenvolupament de la pantalla d'estadístiques (stats_screen.dart) de l'app "Senda". 
+Hola! Continuem amb el desenvolupament de la pantalla d'estadístiques (stats_screen.dart) de l'app "Senda".
 
 Avui vull implementar la nova targeta de diagnòstic de satèl·lits globals (clau 'gps') per a la graella dinàmica de 2x2. Vull que aquesta targeta sigui un carrusel amb les següents dues pàgines:
 
@@ -12,3 +12,14 @@ Recorda el context actual:
 - Estem substituint els mètodes deprecats de color (withOpacity) per la versió moderna (withAlpha).
 
 Genera, si us plau, el codi complet actualitzat del Notifier (stats_prefs_notifier.dart) i de la pantalla principal (stats_screen.dart) integrant aquesta nova targeta de satèl·lits.
+
+
+///////////////////////////////
+//   AZURE SECURITY
+///////////////////////////////
+
+Vull reprendre el projecte de seguretat de les Azure Functions.
+Estàvem implementant el model amb 52 claus setmanals (w01–w52), on la Flutter app signa cada petició amb la clau privada de la setmana i el backend valida amb la clau pública corresponent.
+També teníem timestamp anti-replay (30s), capçaleres X-App-Timestamp / X-App-Signature / X-App-Key-Version, i APIM amb rate limit (5 req/min) i quota (500 req/dia).
+A més, ara les meves Function Apps estan desplegades com a contenidors públics i vull continuar reforçant la seguretat i el flux d’autenticació.
+Continuem a partir d’aquí.

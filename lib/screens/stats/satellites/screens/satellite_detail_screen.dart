@@ -1,8 +1,7 @@
-// lib/stats/satellites/screens/satellite_detail_screen.dart (PARTE 1)
+// lib/stats/satellites/screens/satellite_detail_screen.dart
 import 'package:flutter/material.dart';
 import 'package:senda/theme/app_colors.dart';
 import 'package:senda/services/native_gps_channel.dart';
-import 'constellation_page.dart';
 import '../painters/skyplot_painter.dart';
 
 class SatelliteDetailScreen extends StatefulWidget {
@@ -13,15 +12,6 @@ class SatelliteDetailScreen extends StatefulWidget {
 }
 
 class _SatelliteDetailScreenState extends State<SatelliteDetailScreen> {
-  final PageController _pageController = PageController();
-  int _currentPage = 0;
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
-
   Map<String, String> _parseConstellation(int type, int svid) {
     switch (type) {
       case 1:
@@ -39,174 +29,172 @@ class _SatelliteDetailScreenState extends State<SatelliteDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    String title = 'Resum de Xarxes';
-    if (_currentPage == 1) title = 'Intensitat de Senyal';
-    if (_currentPage == 2) title = 'Skyplot Satèl·lits';
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Skyplot'),
+        backgroundColor: AppColors.primary,
+        centerTitle: true,
+      ),
+      backgroundColor: Colors.white,
+      body: StreamBuilder<List<dynamic>>(
+        stream: NativeGpsChannel.satelliteStream,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-    return StreamBuilder<List<dynamic>>(
-      stream: NativeGpsChannel.satelliteStream,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Scaffold(
-            appBar: AppBar(
-              title: Text(title),
-              backgroundColor: AppColors.primary,
-            ),
-            body: const Center(child: CircularProgressIndicator()),
-          );
-        }
-
-        final satellites = snapshot.data ?? [];
-        if (satellites.isEmpty) {
-          return Scaffold(
-            appBar: AppBar(
-              title: Text(title),
-              backgroundColor: AppColors.primary,
-            ),
-            body: const Center(
+          final satellites = snapshot.data ?? [];
+          if (satellites.isEmpty) {
+            return const Center(
               child: Text(
                 'Buscant satèl·lits... Assegura\'t de tenir el GPS actiu exterior.',
                 style: TextStyle(color: Colors.grey),
               ),
-            ),
-          );
-        }
+            );
+          }
 
-        // 🚀 SOLUCIÓ: Reinicialitzem el controlador amb la pàgina actual desada a l'estat
-        // Així, quan el StreamBuilder es reconstrueixi, no perdràs la teva posició de Swipe.
-        final localController = PageController(initialPage: _currentPage);
+          // Filtros de conteo para la telemetría superior
+          int usedCount = 0;
+          for (var sat in satellites) {
+            if (Map<String, dynamic>.from(sat)['usedInFix'] as bool)
+              usedCount++;
+          }
 
-        return Scaffold(
-          appBar: AppBar(
-            title: Text(title),
-            backgroundColor: AppColors.primary,
-            actions: [
-              Padding(
-                padding: const EdgeInsets.only(right: 16.0),
-                child: Row(
-                  children: List.generate(
-                    3,
-                    (index) => AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      margin: const EdgeInsets.symmetric(horizontal: 3),
-                      height: 8,
-                      width: _currentPage == index ? 16 : 8,
-                      decoration: BoxDecoration(
-                        color: _currentPage == index
-                            ? Colors.white
-                            : Colors.white.withAlpha(100),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
+          return ListView(
+            padding: const EdgeInsets.all(16.0),
+            children: [
+              // 1. PANEL DE TELEMETRÍA SUPERIOR (Igual que en tu imagen)
+              _buildTelemetryPanel(satellites.length, usedCount),
+              const SizedBox(height: 20),
+
+              // 2. RADAR CIRCULAR (SKYPLOT CENTRADO)
+              Center(
+                child: SizedBox(
+                  width: MediaQuery.of(context).size.width * 0.85,
+                  height: MediaQuery.of(context).size.width * 0.85,
+                  child: CustomPaint(
+                    painter: SkyplotPainter(
+                      satellites: satellites,
+                      parseFn: _parseConstellation,
                     ),
                   ),
                 ),
               ),
+              const SizedBox(height: 30),
+
+              // 3. GRÁFICO DE BARRAS ESTILO GARMIN INFERIOR
+              SizedBox(height: 140, child: _buildGarminBarChart(satellites)),
             ],
-          ),
-          body: PageView(
-            controller: localController, // 👈 Passem el controlador fixat
-            onPageChanged: (page) {
-              setState(() {
-                _currentPage = page;
-              });
-            },
-            children: [
-              ConstellationPage(
-                satellites: satellites,
-                parseFn: _parseConstellation,
-              ),
-              _buildGarminBarChartPage(satellites),
-              _buildSkyplotPage(satellites),
-            ],
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
-  Widget _buildGarminBarChartPage(List<dynamic> satellites) {
-    final displaySats = satellites.take(15).toList();
-    return Padding(
-      padding: const EdgeInsets.only(
-        left: 12.0,
-        right: 12.0,
-        bottom: 24.0,
-        top: 24.0,
+  Widget _buildTelemetryPanel(int totalInView, int totalInUse) {
+    final TextStyle labelStyle = TextStyle(
+      color: Colors.blue.shade700,
+      fontSize: 13,
+      fontWeight: FontWeight.w500,
+    );
+    return Container(
+      padding: const EdgeInsets.all(8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'UTC Time: ${DateTime.now().toUtc().toString().split(' ').last.split('.').first}',
+            style: labelStyle,
+          ),
+          Text(
+            'Fix Type: ${totalInUse >= 4 ? "3D/RTK Fix" : "No Fix"}',
+            style: labelStyle,
+          ),
+          Text('Satellites in View: $totalInView', style: labelStyle),
+          Text('Satellites in Use: $totalInUse', style: labelStyle),
+        ],
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: displaySats.map((sat) {
-          final map = Map<String, dynamic>.from(sat);
+    );
+  }
+
+  Widget _buildGarminBarChart(List<dynamic> satellites) {
+    final sortedSats = List<dynamic>.from(satellites)
+      ..sort(
+        (a, b) => Map<String, dynamic>.from(a)['constellation'].compareTo(
+          Map<String, dynamic>.from(b)['constellation'],
+        ),
+      );
+
+    // CORRECCIÓ: Embolicam la llista en un Align per controlar l'alçada real dels fills
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: ListView.builder(
+        shrinkWrap: true, // Permet que s'adapti correctament a l'alçada
+        scrollDirection: Axis.horizontal,
+        itemCount: sortedSats.length,
+        itemBuilder: (context, index) {
+          final map = Map<String, dynamic>.from(sortedSats[index]);
           final cn0 = (map['cn0'] as num).toDouble();
-          final usedInFix = map['usedInFix'] as bool;
           final parsed = _parseConstellation(
             map['constellation'] as int,
             map['svid'] as int,
           );
 
           final double heightFactor = (cn0 / 50.0).clamp(0.05, 1.0);
-          final barColor = usedInFix
-              ? Colors.green
-              : Colors.grey.withAlpha(140);
 
-          return Expanded(
+          Color barColor = Colors.orange;
+          if (cn0 >= 30.0)
+            barColor = Colors.green;
+          else if (cn0 >= 20.0)
+            barColor = Colors.amber;
+
+          return Container(
+            width: 26,
+            margin: const EdgeInsets.symmetric(horizontal: 2.0),
+            // Forcem que la columna alineï tot el seu contingut cap a baix
             child: Column(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 Text(
                   cn0.toStringAsFixed(0),
-                  style: const TextStyle(
-                    fontSize: 10,
-                    color: Colors.grey,
+                  style: TextStyle(
+                    fontSize: 9,
+                    color: barColor,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 6),
-                Expanded(
-                  child: FractionallySizedBox(
-                    heightFactor: heightFactor,
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 3.0),
-                      decoration: BoxDecoration(
-                        color: barColor,
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(4),
-                          topRight: Radius.circular(4),
+                const SizedBox(height: 4),
+                // CORRECCIÓ: Limitem l'alçada màxima de la barra (ex: 80px) perquè no s'estiri sola cap a dalt
+                SizedBox(
+                  height: 80,
+                  child: Align(
+                    alignment: Alignment.bottomCenter, // Força la base aquí
+                    child: FractionallySizedBox(
+                      heightFactor: heightFactor,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: barColor,
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(2),
+                            topRight: Radius.circular(2),
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 4),
                 Text(
                   parsed['code']!,
                   style: const TextStyle(
-                    fontSize: 9,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 8,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
             ),
           );
-        }).toList(),
-      ),
-    );
-  }
-
-  Widget _buildSkyplotPage(List<dynamic> satellites) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Center(
-        child: AspectRatio(
-          aspectRatio: 1.0,
-          child: CustomPaint(
-            painter: SkyplotPainter(
-              satellites: satellites,
-              parseFn: _parseConstellation,
-            ),
-          ),
-        ),
+        },
       ),
     );
   }
