@@ -1,3 +1,4 @@
+// lib/models/user_position.dart
 import 'package:maplibre_gl/maplibre_gl.dart';
 
 class UserPosition {
@@ -13,6 +14,10 @@ class UserPosition {
   final double heading; // En graus (0-360)
   final int satellites;
 
+  // 🛰️ APARTAT NOU: Afegits per al diagnòstic de la targeta de satèl·lits de Senda
+  final int satellitesUsed;
+  final int satellitesInView;
+
   UserPosition({
     required this.position,
     required this.altitude,
@@ -24,6 +29,8 @@ class UserPosition {
     this.speed = 0.0,
     this.heading = 0.0,
     this.satellites = 0,
+    this.satellitesUsed = 0, // 👈 Nou camp afegit amb valor per defecte
+    this.satellitesInView = 0, // 👈 Nou camp afegit amb valor per defecte
   });
 
   UserPosition copyWith({
@@ -37,6 +44,8 @@ class UserPosition {
     double? speed,
     double? heading,
     int? satellites,
+    int? satellitesUsed, // 👈 Afegit al copyWith
+    int? satellitesInView, // 👈 Afegit al copyWith
   }) {
     return UserPosition(
       position: position ?? this.position,
@@ -49,6 +58,8 @@ class UserPosition {
       speed: speed ?? this.speed,
       heading: heading ?? this.heading,
       satellites: satellites ?? this.satellites,
+      satellitesUsed: satellitesUsed ?? this.satellitesUsed, // 👈 Mapejat
+      satellitesInView: satellitesInView ?? this.satellitesInView, // 👈 Mapejat
     );
   }
 }

@@ -17,7 +17,7 @@ class TrackingService : Service() {
     private lateinit var fused: FusedLocationProviderClient
     private lateinit var callback: LocationCallback
     private lateinit var locationManager: LocationManager
-    
+
     private var lastLocation: Location? = null
     private var lastTime: Long = 0
     private var satellitesUsed: Int = 0
@@ -32,13 +32,34 @@ class TrackingService : Service() {
     private val gnssStatusCallback = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
         object : GnssStatus.Callback() {
             override fun onSatelliteStatusChanged(status: GnssStatus) {
+                val sats = mutableListOf<Map<String, Any>>()
                 var used = 0
                 val total = status.satelliteCount
+
                 for (i in 0 until total) {
                     if (status.usedInFix(i)) used++
+
+                    sats.add(
+                        mapOf(
+                            "svid" to status.getSvid(i),
+                            "constellation" to status.getConstellationType(i),
+                            "azimuth" to status.getAzimuthDegrees(i),
+                            "elevation" to status.getElevationDegrees(i),
+                            "cn0" to status.getCn0DbHz(i),
+                            "usedInFix" to status.usedInFix(i)
+                        )
+                    )
                 }
+
                 satellitesUsed = used
                 satellitesInView = total
+
+                TrackingPlugin.sendEvent(
+                    mapOf(
+                        "type" to "gnss_status",
+                        "satellites" to sats
+                    )
+                )
             }
         }
     } else null
@@ -64,7 +85,7 @@ class TrackingService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent == null) return START_NOT_STICKY
-        
+
         lastLocation = null
         lastTime = 0
         useTime = intent.getBooleanExtra("useTime", true)
@@ -80,19 +101,20 @@ class TrackingService : Service() {
 
     private fun startLocationUpdates() {
         fused.removeLocationUpdates(callback)
-        
+
         val intervalMs = (if (seconds < 1) 1 else seconds) * 1000L
-        
-        // Si usem metres, demanem la ubicació cada segon (més freqüent) 
+
+        // Si usem metres, demanem la ubicació cada segon (més freqüent)
         // però el filtre 'minDistance' farà que només ens avisi quan ens movem.
-        val realInterval = if (useTime) intervalMs else 1000L 
+        val realInterval = if (useTime) intervalMs else 1000L
         val minDistance = if (useTime) 0f else metersThreshold
 
         val builder = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, realInterval)
             .setGranularity(Granularity.GRANULARITY_FINE)
+            .setMinUpdateIntervalMillis(realInterval)
             .setMinUpdateDistanceMeters(minDistance)
             // Afegeix això: ajuda a que el primer punt arribi de seguida
-            .setMaxUpdateDelayMillis(0) 
+            .setMaxUpdateDelayMillis(0)
             .build()
 
         try {
@@ -116,7 +138,7 @@ class TrackingService : Service() {
                 if (dist < (metersThreshold * 0.9)) return
             }
         }
-        
+
 
         lastTime = now
         lastLocation = loc
@@ -141,10 +163,6 @@ class TrackingService : Service() {
             "sat_view" to satellitesInView
         ))
     }
-
-
-
-    
 
     private fun startForegroundServiceNotification() {
         val channelId = "tracking_channel"

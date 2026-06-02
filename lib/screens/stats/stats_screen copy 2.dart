@@ -1,4 +1,4 @@
-// lib/screens/stats/stats_screen.dart (PARTE 1)
+// lib/screens/stats/stats_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:reorderable_grid_view/reorderable_grid_view.dart';
@@ -8,9 +8,9 @@ import 'package:senda/models/track.dart';
 import 'package:senda/notifiers/imported_track_notifier.dart';
 import 'package:senda/notifiers/recording_notifier.dart';
 import 'package:senda/notifiers/timer_notifier.dart';
+// Assegura't que aquest import apunti exactament on tens definit el LocationNotifier/locationProvider
 import 'package:senda/notifiers/location_notifier.dart';
 import 'package:senda/screens/stats/notifiers/stats_prefs_notifier.dart';
-import 'package:senda/screens/stats/satellites/screens/satellite_detail_screen.dart';
 import 'package:senda/theme/app_colors.dart';
 
 class TrackStatsScreen extends ConsumerStatefulWidget {
@@ -45,6 +45,7 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
   String _formatDuration(Duration d) =>
       d.toString().split('.').first.padLeft(8, "0");
 
+  // ─── FUNCIONS DE FORMAT PER A LES COORDENADES ───
   String _convertToDMS(double degree, bool isLat) {
     String direction = isLat
         ? (degree >= 0 ? 'N' : 'S')
@@ -78,6 +79,7 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
 
     final realTrack = ref.watch(trackRecordingProvider);
     final importedTrack = ref.watch(importedTrackProvider);
+
     Track? track = realTrack.points.isNotEmpty
         ? realTrack
         : (importedTrack != null && importedTrack.points.isNotEmpty
@@ -85,7 +87,11 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
               : null);
 
     final duration = ref.watch(timerProvider);
+
+    // 🚀 Connectem directament amb el teu LocationNotifier per tenir posicionament global constant
     final liveLocation = ref.watch(locationProvider);
+
+    // Si estem gravant el track utilitza la posició interna, si està en repòs agafa la del teu GPS
     final LatLng? activePosition =
         track?.currentPosition ?? liveLocation?.position;
 
@@ -166,21 +172,6 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
               ref.read(statsPrefsProvider.notifier).reorder(oldIndex, newIndex);
             },
             children: currentOrder.map((key) {
-              if (key == 'gps') {
-                return _GpsStaticCard(
-                  key: ValueKey(key),
-                  satellitesUsed: liveLocation?.satellitesUsed ?? 0,
-                  satellitesInView: liveLocation?.satellitesInView ?? 0,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const SatelliteDetailScreen(),
-                      ),
-                    );
-                  },
-                );
-              }
               return _StatCard(
                 key: ValueKey(key),
                 controller: _controllers[key]!,
@@ -197,107 +188,8 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
     );
   }
 }
+// (Continuació de lib/screens/stats/stats_screen.dart)
 
-// lib/screens/stats/stats_screen.dart (PARTE 2)
-
-/// 🛰️ Tarjeta estática para el diagnóstico del GPS
-class _GpsStaticCard extends StatelessWidget {
-  final int satellitesUsed;
-  final int satellitesInView;
-  final VoidCallback onTap;
-
-  const _GpsStaticCard({
-    super.key,
-    required this.satellitesUsed,
-    required this.satellitesInView,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.primary.withAlpha(102), width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(5),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.satellite_alt,
-                      color: AppColors.primary,
-                      size: 22,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      "ESTAT GPS",
-                      style: TextStyle(
-                        color: Colors.grey.shade700,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.0,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
-                    children: [
-                      Text(
-                        "$satellitesUsed/$satellitesInView",
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Colors.black87,
-                          fontSize: 24,
-                          fontWeight: FontWeight.w900,
-                          fontFamily: 'monospace',
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  "Actius / En vista",
-                  style: TextStyle(
-                    color: Colors.grey.shade500,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Tarjeta con control de carrusel de una o más páginas
 class _StatCard extends StatefulWidget {
   final double height;
   final List<Widget> pages;
@@ -385,7 +277,6 @@ class _StatCardState extends State<_StatCard> {
   }
 }
 
-/// Página de datos de una métrica individual
 class _StatPage extends StatelessWidget {
   final IconData icon;
   final double? value;

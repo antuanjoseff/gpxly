@@ -70,10 +70,10 @@ class LocationNotifier extends Notifier<UserPosition?> {
       ref.read(altitudeProcessorProvider.notifier).updateBaro(hPa);
     });
 
-    // 5. Connectem la subscripció sota els paràmetres del teu record d'origen
+    // 5. Connectem la subscripció a la canonada filtrada d'ubicacions netes
     final gpsSettings = ref.read(gpsSettingsProvider);
     _gpsSub?.cancel();
-    _gpsSub = NativeGpsChannel.positionStream().listen((data) {
+    _gpsSub = NativeGpsChannel.locationStream.listen((data) {
       _processIncomingGpsPoint(data);
     });
 
@@ -91,7 +91,11 @@ class LocationNotifier extends Notifier<UserPosition?> {
     final heading = data["heading"] as double;
     final timestamp = DateTime.fromMillisecondsSinceEpoch(data["timestamp"]);
     final vAccuracy = data["vAccuracy"] as double;
+
+    // Mantenim el mapeig original i extreiem els dos nous valors actius/vista
     final satellites = data["satellites"] as int? ?? 0;
+    final satUsed = data["sat_used"] as int? ?? 0;
+    final satView = data["sat_view"] as int? ?? 0;
 
     // Instanciem el servei de logs per registrar telemetria en temps real
     final logger = AltitudeLoggerService();
@@ -177,7 +181,9 @@ class LocationNotifier extends Notifier<UserPosition?> {
       vAccuracy: vAccuracy,
       speed: speed,
       heading: heading,
-      satellites: satellites,
+      satellites: satellites, // ✅ El teu camp original es manté intacte
+      satellitesUsed: satUsed, // 🛰️ Nou camp per al diagnòstic
+      satellitesInView: satView, // 🛰️ Nou camp per al diagnòstic
       distanceAtPoint: 0.0,
     );
   }
@@ -245,6 +251,8 @@ class LocationNotifier extends Notifier<UserPosition?> {
         "satellites": currentImportedPoint.satellites > 0
             ? currentImportedPoint.satellites
             : 12,
+        "sat_used": 10,
+        "sat_view": 14,
       };
 
       // 5. Injectem la coordenada al processador del motor de localització
@@ -323,6 +331,10 @@ class LocationNotifier extends Notifier<UserPosition?> {
         speed: 0.0,
         heading: 0.0,
         satellites: 0,
+        satellitesUsed:
+            0, // 🛰️ Afegit per compatibilitat amb el nou constructor
+        satellitesInView:
+            0, // 🛰️ Afegit per compatibilitat amb el nou constructor
         distanceAtPoint: 0.0,
       );
     }
