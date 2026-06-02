@@ -75,23 +75,17 @@ class _ElevationProfileScreenState
         follow.isFollowing && !follow.isOffTrack && remaining != null;
 
     // ─────────────────────────────────────────────────────────────────────────
-    // 🆕 LÒGICA DE FINESTRA ASIMÈTRICA: MODIFICADES NOMÉS LES ALÇADES FUTURES
+    // 🆕 LÒGICA DE FINESTRA ASIMÈTRICA: 100% PASSAT VISIBLE + 25% FUTUR REAL
     // ─────────────────────────────────────────────────────────────────────────
     late List<double> futureAlts;
     late List<double> futureDistsGlobal;
 
     if (shouldShowFuture) {
-      // Proporción exacta para que el futuro ocupe siempre el 25% de la gráfica visible
+      // Proporción exacta para que el futuro ocupe siempre el 25% de la gráfica visible [INDEX]
       final double maxFutureDistanceVisible = pastLastDist / 3.0;
 
       final remainingAlts = remaining!.altitudes;
       final remainingDists = remaining.distances;
-
-      // 🧮 CALCULEM L'OFFSET ENTRE L'ÚLTIM PUNT REAL I EL PRIMER FUTUR
-      double elevationOffset = 0.0;
-      if (realAlts.isNotEmpty && remainingAlts.isNotEmpty) {
-        elevationOffset = realAlts.last - remainingAlts.first;
-      }
 
       final List<double> tempFutureAlts = [];
       final List<double> tempFutureDists = [];
@@ -99,8 +93,7 @@ class _ElevationProfileScreenState
       for (int i = 0; i < remainingDists.length; i++) {
         // Solo añadimos los puntos del futuro que entran dentro de este 25% espacial
         if (remainingDists[i] <= maxFutureDistanceVisible) {
-          // Apliquem l'offset sumant la diferència a cada punt futur per evitar el graó
-          tempFutureAlts.add(remainingAlts[i] + elevationOffset);
+          tempFutureAlts.add(remainingAlts[i]);
           tempFutureDists.add(pastLastDist + remainingDists[i]);
         } else {
           break; // Ventana llena, detenemos el bucle
@@ -116,7 +109,7 @@ class _ElevationProfileScreenState
       futureDistsGlobal = importedDists;
     }
 
-    // Unificamos las listas filtradas para el eje global de coordenadas
+    // Unificamos las listas filtradas para el eje global de coordenadas [INDEX]
     final globalDists = <double>[...realDists, ...futureDistsGlobal];
     final globalAlts = <double>[...realAlts, ...futureAlts];
 
@@ -192,7 +185,6 @@ class _ElevationProfileScreenState
         rangeTime = t1.difference(t0);
       }
     }
-
     // lib/screens/elevations/elevation_profile_screen.dart (BLOC 2 DE 2)
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F7),
@@ -265,7 +257,7 @@ class _ElevationProfileScreenState
           ),
 
           // ───────────────────────────────────────────────────────────────────
-          // ✅ NUEVO PANEL DE SELECCIÓN MANTENIDO TOTALMENTE INTACTO
+          // ✅ NUEVO PANEL DE SELECCIÓN CON TUS NUEVAS LLAVES DE IDIOMA (l10n) [INDEX]
           // ───────────────────────────────────────────────────────────────────
           if (rangeDistance != null) ...[
             Padding(

@@ -220,6 +220,7 @@
 
 "statSpeedMax": "Max Speed",
 "statPaceAverage": "Average Pace",
+"statPace" : "Pace",
 
 "statBarometerPressure": "BARO. PRES.",
 "barometerTitle": "Barometer",
@@ -228,6 +229,9 @@
 "statRangeDistance": "Distance",
 "statRangeAscent": "Ascent",
 "statRangeDescent": "Descent",
-"statRangeTime": "Split time"
+"statRangeTime": "Split time",
+
+"statPositionDecimal": "DD Position",
+"statPositionDMS": "DMS Position"
 }
 

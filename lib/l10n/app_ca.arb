@@ -221,6 +221,7 @@
 
 "statSpeedMax": "Velocitat Màxima",
 "statPaceAverage": "Ritme Mitjà",
+"statPace" : "Ritme",
 
 "statBarometerPressure": "PRESIÓ BARO.",
 "barometerTitle": "Baròmetre",
@@ -229,6 +230,9 @@
 "statRangeDistance": "Distància",
 "statRangeAscent": "Desnivell +",
 "statRangeDescent": "Desnivell -",
-"statRangeTime": "Temps del tram"
+"statRangeTime": "Temps del tram",
+
+"statPositionDecimal": "Posició GD",
+"statPositionDMS": "Posició DMS"
 }
 

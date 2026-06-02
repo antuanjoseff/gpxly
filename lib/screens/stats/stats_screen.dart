@@ -61,6 +61,15 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
     return "$d°$m'$s\"$direction";
   }
 
+  String _formatCurrentPace(double speedKmh) {
+    if (speedKmh <= 0.3) return "--:-- min/km";
+    final double totalMinutes = 60.0 / speedKmh;
+    final int minutes = totalMinutes.floor();
+    final int seconds = ((totalMinutes - minutes) * 60).round();
+    final int displaySeconds = seconds == 60 ? 59 : seconds;
+    return "${minutes.toString().padLeft(2, '0')}:${displaySeconds.toString().padLeft(2, '0')} min/km";
+  }
+
   String _formatLatLngToDMS(LatLng? position) {
     if (position == null) return "--";
     return "${_convertToDMS(position.latitude, true)}\n${_convertToDMS(position.longitude, false)}";
@@ -94,6 +103,11 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
         track?.currentPosition ?? liveLocation?.position;
 
     final double? distanceKm = track != null ? (track.distance / 1000.0) : null;
+    final Duration stoppedDuration =
+        track?.stats.stoppedDuration ?? Duration.zero;
+    final Duration movingDuration =
+        duration - stoppedDuration; // Temps en moviment
+
     final double? currentAltitude = track != null && track.altitudes.isNotEmpty
         ? track.altitudes.last
         : null;
@@ -112,31 +126,55 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
           Icons.timer,
           null,
           "",
-          t.statTime, // Usa "statTime" (TMP) del teu llistat
+          t.statTime,
           customValue: _formatDuration(duration),
         ),
-        const _StatPage(
-          Icons.hourglass_bottom,
+        _StatPage(
+          Icons.directions_walk,
           null,
           "",
-          "ESTIMAT",
-          customValue: "--:--:--",
+          t.statTimeMoving,
+          customValue: _formatDuration(movingDuration),
+        ),
+        _StatPage(
+          Icons.hotel,
+          null,
+          "",
+          t.statTimeStopped,
+          customValue: _formatDuration(stoppedDuration),
         ),
       ],
+
       'speed': [
         _StatPage(
           Icons.speed,
-          track?.currentSpeedKmH,
+          track?.currentSpeedKmH, // Usa el teu getter que ja ve en km/h
           "km/h",
-          t.statSpeed,
-        ), // Usa "statSpeed" (VEL)
+          t.statSpeed, // Velocitat actual
+        ),
         _StatPage(
           Icons.trending_up,
           track?.averageSpeed,
           "km/h",
           t.statSpeedAverage,
-        ), // Usa "statSpeedAverage"
+        ),
+        _StatPage(Icons.bolt, track?.maxSpeed, "km/h", t.statSpeedMax),
+        _StatPage(
+          Icons.av_timer,
+          null,
+          "",
+          t.statPace,
+          customValue: _formatCurrentPace(track?.currentSpeedKmH ?? 0.0),
+        ),
+        _StatPage(
+          Icons.directions_run,
+          null,
+          "",
+          t.statPaceAverage,
+          customValue: track?.formattedAveragePace ?? "--:-- min/km",
+        ),
       ],
+
       'alt': [
         _StatPage(
           Icons.filter_hdr,
@@ -159,20 +197,23 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
             t.statBarometerPressure, // 🆕 Utilitza la nova clau afegida
           ),
       ],
+      // 🔍 Busca i REEMPLAÇA el teu bloc 'coords' actual per aquest:
       'coords': [
-        const _StatPage(
+        _StatPage(
           Icons.my_location,
           null,
           "",
-          "POSICIÓ GD",
-          customValue: "--", // S'omple dinàmicament al mètode original
+          t.statPositionDecimal,
+          customValue: _formatLatLngToDecimal(
+            activePosition,
+          ), // 🔥 Connectat a la teva funció!
         ),
-        const _StatPage(
+        _StatPage(
           Icons.explore,
           null,
           "",
-          "POSICIÓ DMS",
-          customValue: "--",
+          t.statPositionDMS,
+          customValue: _formatLatLngToDMS(activePosition),
         ),
       ],
     };

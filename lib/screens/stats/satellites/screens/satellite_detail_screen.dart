@@ -29,6 +29,8 @@ class _SatelliteDetailScreenState extends State<SatelliteDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final double radarSize = MediaQuery.of(context).size.width * 0.85;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Skyplot'),
@@ -56,22 +58,54 @@ class _SatelliteDetailScreenState extends State<SatelliteDetailScreen> {
           // Filtros de conteo para la telemetría superior
           int usedCount = 0;
           for (var sat in satellites) {
-            if (Map<String, dynamic>.from(sat)['usedInFix'] as bool)
+            if (Map<String, dynamic>.from(sat)['usedInFix'] as bool) {
               usedCount++;
+            }
           }
 
           return ListView(
             padding: const EdgeInsets.all(16.0),
             children: [
-              // 1. PANEL DE TELEMETRÍA SUPERIOR (Igual que en tu imagen)
-              _buildTelemetryPanel(satellites.length, usedCount),
+              // 1. FILA SUPERIOR: Telemetría a la izquierda y Leyenda fuera del gráfico a la derecha
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Lado izquierdo: Tu panel de telemetría original
+                  _buildTelemetryPanel(satellites.length, usedCount),
+
+                  // Lado derecho: La leyenda de formas geométricas alineada arriba
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 8,
+                    ),
+                    margin: const EdgeInsets.only(top: 8.0, right: 8.0),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildLegendRow('GPS', 1),
+                        _buildLegendRow('Glonass', 3),
+                        _buildLegendRow('Galileo', 6),
+                        _buildLegendRow('BeiDou', 5),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(height: 20),
 
-              // 2. RADAR CIRCULAR (SKYPLOT CENTRADO)
+              // 2. RADAR CIRCULAR LIMPIO (SKYPLOT CENTRADO)
               Center(
                 child: SizedBox(
-                  width: MediaQuery.of(context).size.width * 0.85,
-                  height: MediaQuery.of(context).size.width * 0.85,
+                  width: radarSize,
+                  height: radarSize,
                   child: CustomPaint(
                     painter: SkyplotPainter(
                       satellites: satellites,
@@ -87,6 +121,31 @@ class _SatelliteDetailScreenState extends State<SatelliteDetailScreen> {
             ],
           );
         },
+      ),
+    );
+  }
+
+  // Widget auxiliar para pintar cada fila de la leyenda de constelaciones
+  Widget _buildLegendRow(String label, int type) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2.0),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CustomPaint(
+            size: const Size(12, 12),
+            painter: _LegendShapePainter(constellationType: type),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey.shade700,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -125,11 +184,10 @@ class _SatelliteDetailScreenState extends State<SatelliteDetailScreen> {
         ),
       );
 
-    // CORRECCIÓ: Embolicam la llista en un Align per controlar l'alçada real dels fills
     return Align(
       alignment: Alignment.bottomCenter,
       child: ListView.builder(
-        shrinkWrap: true, // Permet que s'adapti correctament a l'alçada
+        shrinkWrap: true,
         scrollDirection: Axis.horizontal,
         itemCount: sortedSats.length,
         itemBuilder: (context, index) {
@@ -143,15 +201,15 @@ class _SatelliteDetailScreenState extends State<SatelliteDetailScreen> {
           final double heightFactor = (cn0 / 50.0).clamp(0.05, 1.0);
 
           Color barColor = Colors.orange;
-          if (cn0 >= 30.0)
+          if (cn0 >= 30.0) {
             barColor = Colors.green;
-          else if (cn0 >= 20.0)
+          } else if (cn0 >= 20.0) {
             barColor = Colors.amber;
+          }
 
           return Container(
             width: 26,
             margin: const EdgeInsets.symmetric(horizontal: 2.0),
-            // Forcem que la columna alineï tot el seu contingut cap a baix
             child: Column(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
@@ -164,11 +222,10 @@ class _SatelliteDetailScreenState extends State<SatelliteDetailScreen> {
                   ),
                 ),
                 const SizedBox(height: 4),
-                // CORRECCIÓ: Limitem l'alçada màxima de la barra (ex: 80px) perquè no s'estiri sola cap a dalt
                 SizedBox(
                   height: 80,
                   child: Align(
-                    alignment: Alignment.bottomCenter, // Força la base aquí
+                    alignment: Alignment.bottomCenter,
                     child: FractionallySizedBox(
                       heightFactor: heightFactor,
                       child: Container(
@@ -198,4 +255,63 @@ class _SatelliteDetailScreenState extends State<SatelliteDetailScreen> {
       ),
     );
   }
+}
+
+/// 🎨 Pintor miniatura idéntico a las figuras que dibuja tu SkyplotPainter
+class _LegendShapePainter extends CustomPainter {
+  final int constellationType;
+
+  _LegendShapePainter({required this.constellationType});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+
+    final paintNode = Paint()
+      ..color = Colors.grey.shade700
+      ..style = PaintingStyle.fill;
+
+    final paintStroke = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+
+    if (constellationType == 1) {
+      canvas.drawCircle(Offset.zero, 4.5, paintNode);
+      canvas.drawCircle(Offset.zero, 4.5, paintStroke);
+    } else if (constellationType == 3) {
+      canvas.drawRect(
+        Rect.fromCenter(center: Offset.zero, width: 8, height: 8),
+        paintNode,
+      );
+      canvas.drawRect(
+        Rect.fromCenter(center: Offset.zero, width: 8, height: 8),
+        paintStroke,
+      );
+    } else if (constellationType == 6) {
+      var path = Path()
+        ..moveTo(0, -5)
+        ..lineTo(4.5, 3.5)
+        ..lineTo(-4.5, 3.5)
+        ..close();
+      canvas.drawPath(path, paintNode);
+      canvas.drawPath(path, paintStroke);
+    } else {
+      var path = Path()
+        ..moveTo(0, -5)
+        ..lineTo(4.5, 0)
+        ..lineTo(0, 5)
+        ..lineTo(-4.5, 0)
+        ..close();
+      canvas.drawPath(path, paintNode);
+      canvas.drawPath(path, paintStroke);
+    }
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant _LegendShapePainter oldDelegate) => false;
 }

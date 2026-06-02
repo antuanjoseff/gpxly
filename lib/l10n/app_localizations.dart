@@ -1141,6 +1141,12 @@ abstract class AppLocalizations {
   /// **'Average Pace'**
   String get statPaceAverage;
 
+  /// No description provided for @statPace.
+  ///
+  /// In en, this message translates to:
+  /// **'Pace'**
+  String get statPace;
+
   /// No description provided for @statBarometerPressure.
   ///
   /// In en, this message translates to:
@@ -1176,6 +1182,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Split time'**
   String get statRangeTime;
+
+  /// No description provided for @statPositionDecimal.
+  ///
+  /// In en, this message translates to:
+  /// **'DD Position'**
+  String get statPositionDecimal;
+
+  /// No description provided for @statPositionDMS.
+  ///
+  /// In en, this message translates to:
+  /// **'DMS Position'**
+  String get statPositionDMS;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

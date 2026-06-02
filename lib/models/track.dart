@@ -81,6 +81,8 @@ class Track {
   // ─────────────────────────────────────────────────────────────
   // ⚙️ GETTERS DE LÒGICA DE NEGOCI MANTINGUTS INTACTES
   // ─────────────────────────────────────────────────────────────
+  Duration get movingDuration => duration - stoppedDuration;
+
   String get formattedStopped {
     final total = stoppedDuration;
     final h = total.inHours.toString().padLeft(2, '0');
@@ -148,8 +150,8 @@ class TrackStats {
   final double descent;
   final double maxElevation;
   final double minElevation;
-  final double averageSpeed; // ✅ NUEVO
-  final double maxSpeed; // ✅ NUEVO
+  final double averageSpeed;
+  final double maxSpeed;
 
   // Bounding box geogràfic
   final double? minLat;

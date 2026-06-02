@@ -220,6 +220,7 @@
 
 "statSpeedMax": "Velocidad Máxima",
 "statPaceAverage": "Ritmo Medio",
+"statPace" : "Ritmo",
 
 "statBarometerPressure": "PRES. BARO.",
 "barometerTitle": "Barómetro",
@@ -228,6 +229,9 @@
 "statRangeDistance": "Distancia",
 "statRangeAscent": "Desnivel +",
 "statRangeDescent": "Desnivel -",
-"statRangeTime": "Tiempo del tramo"
+"statRangeTime": "Tiempo del tramo",
+
+"statPositionDecimal": "Posición GD",
+"statPositionDMS": "Posición DMS"
 }
 
