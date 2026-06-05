@@ -60,7 +60,7 @@ class _LifecycleWrapperState extends ConsumerState<_LifecycleWrapper>
       // 1. Recupera la posició del punt blau guardada prèviament
       ref.read(locationProvider.notifier).loadCachePositionFromPrefs();
 
-      // 2. 🔥 NOU: Recupera els fitxers .bin de disc i omple el demBoundsProvider instantàniament
+      // 2. NOU: Recupera els fitxers .bin de disc i omple el demBoundsProvider instantàniament
       await CogService().initService(ref);
     });
   }

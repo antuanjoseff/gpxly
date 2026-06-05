@@ -1,30 +1,24 @@
-// lib/screens/elevations/painters/selection_painter.dart
-
+// lib/screens/elevations/painters/selection_painter.dart (BLOC 1 DE 2)
 import 'package:flutter/material.dart';
 
 class SelectionPainter extends CustomPainter {
-  // Agulla principal
   final double? graphX;
   final int? graphIndex;
 
-  // Rang
   final double? startX;
   final int? startIndex;
   final double? endX;
   final int? endIndex;
 
-  // Eix global
   final List<double> distances;
   final List<double> altitudes;
 
-  // Waypoints (distàncies globals)
   final List<double>? recordedWaypointGlobalDists;
   final List<double>? importedWaypointGlobalDists;
 
-  // Colors
   final Color graphNeedleColor;
-  final Color sliderStartNeedleColor;
-  final Color sliderEndNeedleColor;
+  final Color sliderStartNeedleColor; // Color Verd original
+  final Color sliderEndNeedleColor; // Color Vermell original
 
   final Color recordedWaypointColor;
   final Color importedWaypointColor;
@@ -90,10 +84,8 @@ class SelectionPainter extends CustomPainter {
       final recWpPaint = Paint()
         ..color = recordedWaypointColor
         ..style = PaintingStyle.fill;
-
       for (final d in recordedWaypointGlobalDists!) {
-        final x = mapX(d);
-        canvas.drawCircle(Offset(x, xAxisY - 4), 4, recWpPaint);
+        canvas.drawCircle(Offset(mapX(d), xAxisY - 4), 4, recWpPaint);
       }
     }
 
@@ -103,10 +95,8 @@ class SelectionPainter extends CustomPainter {
       final impWpPaint = Paint()
         ..color = importedWaypointColor
         ..style = PaintingStyle.fill;
-
       for (final d in importedWaypointGlobalDists!) {
-        final x = mapX(d);
-        canvas.drawCircle(Offset(x, xAxisY - 4), 4, impWpPaint);
+        canvas.drawCircle(Offset(mapX(d), xAxisY - 4), 4, impWpPaint);
       }
     }
 
@@ -115,145 +105,140 @@ class SelectionPainter extends CustomPainter {
     final double? sX = startX;
     final double? eX = endX;
 
-    double dxStart = 0;
-    double dxEnd = 0;
-    const double tooltipWidth = 80;
-
+    // ─────────────────────────────────────────────────────────────────────────
+    // 🧮 LÒGICA DE REVERSIBILITAT GEOMÈTRICA DE SENDA (Inversió de Punts)
+    // ─────────────────────────────────────────────────────────────────────────
+    // Determinem si l'usuari ha creuat els dits (Final menor que l'Inici)
+    bool isCrossed = false;
     if (sX != null && eX != null) {
-      if (_tooltipsOverlap(sX, eX, tooltipWidth)) {
-        if (sX < eX) {
-          dxStart = -tooltipWidth / 2;
-          dxEnd = tooltipWidth / 2;
-        } else {
-          dxStart = tooltipWidth / 2;
-          dxEnd = -tooltipWidth / 2;
-        }
-      }
+      isCrossed = eX < sX;
     }
 
-    bool inverted = false;
-    if (sIndex != null && eIndex != null) {
-      inverted = sIndex > eIndex;
+    // 1. DIBUIX DE L'AGULLA DE L'ESQUERRA (Sempre es pinta en VERD)
+    if (sX != null && sIndex != null && eX != null && eIndex != null) {
+      // Si s'han creuat, l'agulla de l'esquerra real és la del final (eX)
+      final double leftX = isCrossed ? eX : sX;
+      final int leftIndex = isCrossed ? eIndex : sIndex;
+
+      _paintNeedleLineAndDot(
+        canvas,
+        leftX,
+        leftIndex,
+        sliderStartNeedleColor,
+        minY,
+        yRange,
+        chartHeight,
+        xAxisY,
+      );
+
+      // El tooltip de l'esquerra mostra sempre la info de l'agulla de l'esquerra en VERD
+      final distKm = distances[leftIndex] / 1000.0;
+      _paintTooltipBoxFixed(
+        canvas,
+        size,
+        "${distKm.toStringAsFixed(2)} km | ${altitudes[leftIndex].toStringAsFixed(0)} m",
+        sliderStartNeedleColor.withAlpha(230),
+        forceLeft: true,
+      );
+    } else if (sX != null && sIndex != null) {
+      // Cas de seguretat si només s'ha pintat l'inici
+      _paintNeedleLineAndDot(
+        canvas,
+        sX,
+        sIndex,
+        sliderStartNeedleColor,
+        minY,
+        yRange,
+        chartHeight,
+        xAxisY,
+      );
+      final distKm = distances[sIndex] / 1000.0;
+      _paintTooltipBoxFixed(
+        canvas,
+        size,
+        "${distKm.toStringAsFixed(2)} km | ${altitudes[sIndex].toStringAsFixed(0)} m",
+        sliderStartNeedleColor.withAlpha(230),
+        forceLeft: true,
+      );
     }
 
+    // 2. DIBUIX DE L'AGULLA DE LA DRETA (Sempre es pinta en VERMELL)
+    if (sX != null && sIndex != null && eX != null && eIndex != null) {
+      // Si s'han creuat, l'agulla de la dreta real és la de l'inici (sX)
+      final double rightX = isCrossed ? sX : eX;
+      final int rightIndex = isCrossed ? sIndex : eIndex;
+
+      _paintNeedleLineAndDot(
+        canvas,
+        rightX,
+        rightIndex,
+        sliderEndNeedleColor,
+        minY,
+        yRange,
+        chartHeight,
+        xAxisY,
+      );
+
+      // El tooltip de la dreta mostra sempre la info de l'agulla de la dreta en VERMELL
+      final distKm = distances[rightIndex] / 1000.0;
+      _paintTooltipBoxFixed(
+        canvas,
+        size,
+        "${distKm.toStringAsFixed(2)} km | ${altitudes[rightIndex].toStringAsFixed(0)} m",
+        sliderEndNeedleColor.withAlpha(230),
+        forceLeft: false,
+      );
+    } else if (eX != null && eIndex != null) {
+      // Cas de seguretat si només s'ha pintat el final
+      _paintNeedleLineAndDot(
+        canvas,
+        eX,
+        eIndex,
+        sliderEndNeedleColor,
+        minY,
+        yRange,
+        chartHeight,
+        xAxisY,
+      );
+      final distKm = distances[eIndex] / 1000.0;
+      _paintTooltipBoxFixed(
+        canvas,
+        size,
+        "${distKm.toStringAsFixed(2)} km | ${altitudes[eIndex].toStringAsFixed(0)} m",
+        sliderEndNeedleColor.withAlpha(230),
+        forceLeft: false,
+      );
+    }
+
+    // 3. L'agulla central del dit (S'ARROSSEGA FLUIDA SOTA EL DIT INDEPENDENT!)
     if (graphX != null && graphIndex != null) {
       _paintMainNeedle(
-        canvas: canvas,
-        size: size,
-        x: graphX!,
-        index: graphIndex!,
-        minY: minY,
-        yRange: yRange,
-        chartHeight: chartHeight,
-        xAxisY: xAxisY,
-        tooltipColor: graphNeedleColor.withAlpha(230),
-      );
-    }
-
-    if (startX != null && startIndex != null) {
-      _paintRangeNeedle(
         canvas,
         size,
-        startX!,
-        startIndex!,
-        inverted ? sliderEndNeedleColor : sliderStartNeedleColor,
+        graphX!,
+        graphIndex!,
         minY,
         yRange,
         chartHeight,
         xAxisY,
-        dx: dxStart,
-        showTooltip: true,
-        tooltipColor: inverted
-            ? Colors.red.withAlpha(230)
-            : Colors.green.withAlpha(230),
-      );
-    }
-
-    if (endX != null && endIndex != null) {
-      _paintRangeNeedle(
-        canvas,
-        size,
-        endX!,
-        endIndex!,
-        inverted ? sliderStartNeedleColor : sliderEndNeedleColor,
-        minY,
-        yRange,
-        chartHeight,
-        xAxisY,
-        dx: dxEnd,
-        showTooltip: true,
-        tooltipColor: inverted
-            ? Colors.green.withAlpha(230)
-            : Colors.red.withAlpha(230),
+        graphNeedleColor.withAlpha(230),
       );
     }
   }
 
-  void _paintMainNeedle({
-    required Canvas canvas,
-    required Size size,
-    required double x,
-    required int index,
-    required double minY,
-    required double yRange,
-    required double chartHeight,
-    required double xAxisY,
-    required Color tooltipColor,
-  }) {
-    if (index < 0 || index >= altitudes.length) return;
-
-    final double distMeters = distances[index];
-    final double distKm = distMeters / 1000.0;
-    final double altPrimary = altitudes[index];
-
-    final double relPrimary = (altPrimary - minY) / yRange;
-    final double dyPrimary =
-        topReserved + (chartHeight - (relPrimary * chartHeight));
-
-    final linePaint = Paint()
-      ..color = graphNeedleColor.withAlpha(150)
-      ..strokeWidth = 2;
-    canvas.drawLine(Offset(x, xAxisY), Offset(x, dyPrimary), linePaint);
-
-    final dotPaintPrimary = Paint()..color = graphNeedleColor;
-    final dotBorderPaint = Paint()
-      ..color = Colors.white
-      ..strokeWidth = 2
-      ..style = PaintingStyle.stroke;
-
-    canvas.drawCircle(Offset(x, dyPrimary), dotRadius, dotPaintPrimary);
-    canvas.drawCircle(Offset(x, dyPrimary), dotRadius, dotBorderPaint);
-
-    _paintTooltipBox(
-      canvas,
-      size,
-      x,
-      "${altPrimary.toStringAsFixed(0)} m\n${distKm.toStringAsFixed(2)} km",
-      tooltipColor,
-    );
-  }
-
-  void _paintRangeNeedle(
+  // lib/screens/elevations/painters/selection_painter.dart (BLOC 2 DE 2)
+  void _paintNeedleLineAndDot(
     Canvas canvas,
-    Size size,
     double x,
     int index,
     Color color,
     double minY,
     double yRange,
     double chartHeight,
-    double xAxisY, {
-    double dx = 0,
-    bool showTooltip = true,
-    required Color tooltipColor,
-  }) {
+    double xAxisY,
+  ) {
     if (index < 0 || index >= altitudes.length) return;
-
-    final alt = altitudes[index];
-    final distMeters = distances[index];
-    final distKm = distMeters / 1000.0;
-
-    final double rel = (alt - minY) / yRange;
+    final double rel = (altitudes[index] - minY) / yRange;
     final double dy = topReserved + (chartHeight - (rel * chartHeight));
 
     final linePaint = Paint()
@@ -266,22 +251,45 @@ class SelectionPainter extends CustomPainter {
       ..color = Colors.white
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke;
-
     canvas.drawCircle(Offset(x, dy), dotRadius, dotPaint);
     canvas.drawCircle(Offset(x, dy), dotRadius, dotBorder);
-
-    if (showTooltip) {
-      _paintTooltipBox(
-        canvas,
-        size,
-        x + dx,
-        "${alt.toStringAsFixed(0)} m\n${distKm.toStringAsFixed(2)} km",
-        tooltipColor,
-      );
-    }
   }
 
-  void _paintTooltipBox(
+  void _paintMainNeedle(
+    Canvas canvas,
+    Size size,
+    double x,
+    int index,
+    double minY,
+    double yRange,
+    double chartHeight,
+    double xAxisY,
+    Color tooltipColor,
+  ) {
+    if (index < 0 || index >= altitudes.length) return;
+    _paintNeedleLineAndDot(
+      canvas,
+      x,
+      index,
+      graphNeedleColor,
+      minY,
+      yRange,
+      chartHeight,
+      xAxisY,
+    );
+
+    final double distKm = distances[index] / 1000.0;
+    _paintDynamicTooltipBox(
+      canvas,
+      size,
+      x,
+      "${distKm.toStringAsFixed(2)} km  |  ${altitudes[index].toStringAsFixed(0)} m",
+      tooltipColor,
+    );
+  }
+
+  // TOOLTIP DINÀMIC: Usat per l'agulla central del dit
+  void _paintDynamicTooltipBox(
     Canvas canvas,
     Size size,
     double x,
@@ -293,9 +301,9 @@ class SelectionPainter extends CustomPainter {
         text: text,
         style: const TextStyle(
           color: Colors.white,
-          fontSize: 12,
+          fontSize: 10.5,
           fontWeight: FontWeight.w600,
-          height: 1.2,
+          height: 1.0,
         ),
       ),
       textAlign: TextAlign.center,
@@ -304,29 +312,55 @@ class SelectionPainter extends CustomPainter {
 
     final double w = textPainter.width + 16;
     final double h = textPainter.height + 12;
+    double rectX = (x - w / 2).clamp(4.0, size.width - w - 4.0);
+    double rectY = 4.0;
 
-    double rectX = x - w / 2;
-    double rectY = 4;
-
-    const double padding = 4.0;
-    rectX = rectX.clamp(padding, size.width - w - padding);
-
-    final rrect = RRect.fromRectAndRadius(
-      Rect.fromLTWH(rectX, rectY, w, h),
-      const Radius.circular(8),
-    );
-
+    final rect = Rect.fromLTWH(rectX, rectY, w, h);
     final bg = Paint()
       ..color = bgColor
       ..style = PaintingStyle.fill
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
 
-    canvas.drawRRect(rrect, bg);
+    canvas.drawRect(rect, bg);
     textPainter.paint(canvas, Offset(rectX + 8, rectY + 6));
   }
 
-  bool _tooltipsOverlap(double x1, double x2, double width) {
-    return (x1 - x2).abs() < width;
+  // TOOLTIP FIXAT EXTREMS: Rectangles quadrats clàssics immutables
+  void _paintTooltipBoxFixed(
+    Canvas canvas,
+    Size size,
+    String text,
+    Color bgColor, {
+    required bool forceLeft,
+  }) {
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 10.5,
+          fontWeight: FontWeight.bold,
+          height: 1.0,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+
+    final double w = textPainter.width + 14;
+    final double h = textPainter.height + 10;
+
+    // Posició clada rígidament horitzontal: costat esquerre o dret completament
+    double rectX = forceLeft ? 4.0 : (size.width - w - 4.0);
+    double rectY = 4.0;
+
+    final rect = Rect.fromLTWH(rectX, rectY, w, h);
+    final bg = Paint()
+      ..color = bgColor
+      ..style = PaintingStyle.fill
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
+
+    canvas.drawRect(rect, bg);
+    textPainter.paint(canvas, Offset(rectX + 7, rectY + 5));
   }
 
   @override

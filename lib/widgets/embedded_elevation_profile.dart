@@ -45,6 +45,7 @@ class EmbeddedElevationProfile extends ConsumerStatefulWidget {
 
 class _EmbeddedElevationProfileState
     extends ConsumerState<EmbeddedElevationProfile> {
+  // 🛡️ NOTIFIERS LOCALS DE MEMÒRIA RAM CONTRA EL COL·LAPSE DE VIDEO D'ANDROIDE
   final ValueNotifier<int?> _localHoverIndex = ValueNotifier<int?>(null);
   final ValueNotifier<int?> _localRangeStart = ValueNotifier<int?>(null);
   final ValueNotifier<int?> _localRangeEnd = ValueNotifier<int?>(null);
@@ -152,10 +153,10 @@ class _EmbeddedElevationProfileState
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       curve: Curves.easeInOut,
-      // 🛡️ RESTRUCTURACIÓ 30%: Estrenyem l'alçada oberta de 220px a 154px estrictes
+      // 🛡️ RECORREGUT ORIGINAL RECONQUERIT: Retornem els 220px de fàbrica per gaudir de la gràfica gran
       height: widget.isCollapsed
           ? (38.0 + systemBottomPadding)
-          : (154.0 + systemBottomPadding),
+          : (220.0 + systemBottomPadding),
       padding: EdgeInsets.only(bottom: systemBottomPadding),
       decoration: BoxDecoration(
         color: AppColors.skyBlueDark.withOpacity(0.96),
@@ -189,10 +190,10 @@ class _EmbeddedElevationProfileState
               ),
             ),
 
-            // 🛡️ RESTRUCTURACIÓ 30%: Ajustem la caixa de fl_chart de 160px a 108px d'alçada
+            // 🛡️ RECORREGUT ORIGINAL RECONQUERIT: Elevem la caixa fins a 166px sòlids i folrats
             if (!widget.isCollapsed)
               SizedBox(
-                height: 108,
+                height: 166,
                 child: AnimatedBuilder(
                   animation: Listenable.merge([
                     _localHoverIndex,
