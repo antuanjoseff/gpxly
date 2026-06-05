@@ -45,7 +45,7 @@ import 'package:senda/utils/distance_utils.dart';
 import 'package:senda/utils/map_animator.dart';
 import 'package:senda/utils/map_layers.dart';
 import 'package:senda/widgets/compass_widget.dart';
-import 'package:senda/widgets/debug_altitude_panel.dart';
+import 'package:senda/widgets/range_info_panel.dart';
 import 'package:senda/widgets/embedded_elevation_profile.dart';
 import 'package:senda/widgets/gps_accuracy_bars.dart';
 import 'package:senda/widgets/recording_status_bar.dart';
@@ -945,9 +945,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 ),
               ),
 
-              // PANEL DE DEBUG D'ALTITUDS (SOTA LA PÍNDOLA)
-              const Positioned(top: 52, left: 10, child: DebugAltitudePanel()),
-
               // COLUMNA DE BOTONS SUPERIOR DRETA
               Positioned(
                 top: 10,
@@ -1070,162 +1067,15 @@ class _MapScreenState extends ConsumerState<MapScreen>
               if (selectedIndexStart != null &&
                   selectedIndexEnd != null &&
                   !_isChartCollapsed)
+                // A dalt a l'esquerra sota la barra de temps de map_screen.dart:
                 Positioned(
-                  // 🛡️ REAJUSTAMENT DE COIXÍ DINÀMIC:
-                  // Si el perfil està obert, calculem 162px reals de fons (154px gràfic + 8px de separació elegant),
-                  // i li sumem el coixí inferior natiu perquè pugi en bloc amb el gràfic a l'S24.
-                  bottom: _isChartCollapsed
-                      ? (44.0 + MediaQuery.of(context).padding.bottom)
-                      : (162.0 + MediaQuery.of(context).padding.bottom),
-                  left: 32,
-                  right: 32,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(
-                        0xFF0F172A,
-                      ).withOpacity(0.94), // Blau fosc de Senda
-                      borderRadius: BorderRadius.circular(
-                        20,
-                      ), // Aspecte de píndola estilitzada
-                      border: Border.all(color: Colors.white.withAlpha(30)),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withAlpha(50),
-                          blurRadius: 6,
-                          offset: const Offset(0, -2),
-                        ),
-                      ],
-                    ),
-                    child: Builder(
-                      builder: (context) {
-                        final realDists = ref
-                            .read(trackRecordingProvider)
-                            .distances;
-                        final imported = ref.read(importedTrackProvider);
-                        final realAlts = ref
-                            .read(trackRecordingProvider)
-                            .altitudes;
-                        final importedAlts = imported?.altitudes ?? <double>[];
-
-                        final List<double> futureDists = imported != null
-                            ? calculateDistances(imported.coordinates)
-                            : [];
-                        final globalDists = <double>[
-                          ...realDists,
-                          ...futureDists,
-                        ];
-                        final globalAlts = <double>[
-                          ...realAlts,
-                          ...importedAlts,
-                        ];
-
-                        double rangeDistance = 0;
-                        double rangeAscent = 0;
-                        double rangeDescent = 0;
-
-                        final start = selectedIndexStart!;
-                        final end = selectedIndexEnd!;
-
-                        if (start < globalDists.length &&
-                            end < globalDists.length) {
-                          rangeDistance =
-                              (globalDists[end] - globalDists[start]).abs();
-                          final int startIdx = start < end ? start : end;
-                          final int endIdx = start < end ? end : start;
-
-                          for (int i = startIdx + 1; i <= endIdx; i++) {
-                            if (i >= globalAlts.length) break;
-                            final diff = globalAlts[i] - globalAlts[i - 1];
-                            if (diff > 0) rangeAscent += diff;
-                            if (diff < 0) rangeDescent += diff.abs();
-                          }
-                        }
-
-                        return Row(
-                          mainAxisAlignment: MainAxisAlignment
-                              .spaceEvenly, // Distribueix les 3 icones equidistants
-                          children: [
-                            // 1. DADA DISTÀNCIA
-                            Row(
-                              children: [
-                                const Icon(
-                                  Icons.straighten,
-                                  size: 15,
-                                  color: Colors.white70,
-                                ),
-                                const SizedBox(width: 5),
-                                Text(
-                                  "${(rangeDistance / 1000).toStringAsFixed(2)} km",
-                                  style: const TextStyle(
-                                    fontSize: 12.5,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ],
-                            ),
-
-                            // Separador visual vertical subtil
-                            Container(
-                              height: 12,
-                              width: 1,
-                              color: Colors.white24,
-                            ),
-
-                            // 2. DADA ASCENS
-                            Row(
-                              children: [
-                                const Icon(
-                                  Icons.arrow_upward,
-                                  size: 15,
-                                  color: Colors.greenAccent,
-                                ),
-                                const SizedBox(width: 3),
-                                Text(
-                                  "${rangeAscent.toStringAsFixed(0)} m",
-                                  style: const TextStyle(
-                                    fontSize: 12.5,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.greenAccent,
-                                  ),
-                                ),
-                              ],
-                            ),
-
-                            // Separador visual vertical subtil
-                            Container(
-                              height: 12,
-                              width: 1,
-                              color: Colors.white24,
-                            ),
-
-                            // 3. DADA DESCENS
-                            Row(
-                              children: [
-                                const Icon(
-                                  Icons.arrow_downward,
-                                  size: 15,
-                                  color: Colors.redAccent,
-                                ),
-                                const SizedBox(width: 3),
-                                Text(
-                                  "${rangeDescent.toStringAsFixed(0)} m",
-                                  style: const TextStyle(
-                                    fontSize: 12.5,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.redAccent,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        );
-                      },
-                    ),
+                  top: 52,
+                  left: 10,
+                  child: RangeInfoPanel(
+                    selectedIndexStart: selectedIndexStart,
+                    selectedIndexEnd: selectedIndexEnd,
+                    isChartCollapsed:
+                        _isChartCollapsed, // Sincronització de visibilitat de la nansa
                   ),
                 ),
               // ───────────────────────────────────────────────────────────
