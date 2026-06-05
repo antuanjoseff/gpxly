@@ -1080,8 +1080,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
                         _isChartCollapsed, // Sincronització de visibilitat de la nansa
                   ),
                 ),
+
               // ───────────────────────────────────────────────────────────
-              // 📈 VISOR D'ELEVACIONS AMB SINCRO EN TEMPS REAL (THROTTLE 32ms)
+              // 📈 VISOR D'ELEVACIONS DEFINITIU AMB VERD FILTRAT NOU
               // ───────────────────────────────────────────────────────────
               Positioned(
                 bottom: 0,
@@ -1101,7 +1102,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     selectedIndexEnd: selectedIndexEnd,
                     selectedIndexGraph: selectedIndexGraph,
 
-                    // 🎚️ A. DRAG DE LA MIRA CONTINU (Amb Throttle temporal actiu)
+                    // 🎚️ A. DRAG DE LA MIRA CONTINU (Amb fixat d'inici blindat)
                     onNeedleMove: (idx) {
                       if (selectedIndexGraph == idx) return;
 
@@ -1111,18 +1112,36 @@ class _MapScreenState extends ConsumerState<MapScreen>
                         selectedIndexEnd = null;
                       });
 
-                      // 🛡️ FILTRE DE TEMPS: Només enviem ordres a la GPU nàtiva si han passat 32ms
                       final now = DateTime.now();
                       if (now.difference(_lastMapUpdateTime).inMilliseconds >=
                           _mapThrottleMs) {
                         if (mapController != null && styleInitialized) {
-                          _lastMapUpdateTime =
-                              now; // Guardem la marca del frame aprovat
+                          _lastMapUpdateTime = now;
+
                           final hoverCoords = _getCoordsFromGlobalIndex(idx);
+
+                          // 🛡️ RECOVERY FIXAT DEL PUNT VERD:
+                          // Si _getCoordsFromGlobalIndex(0) falla, anem a buscar directament
+                          // el primer node de coordenades del track importat de Riverpod en viu
+                          List<double>? startCoords = _getCoordsFromGlobalIndex(
+                            0,
+                          );
+                          if (startCoords == null || startCoords.isEmpty) {
+                            final importedTrack = ref.read(
+                              importedTrackProvider,
+                            );
+                            if (importedTrack != null &&
+                                importedTrack.coordinates.isNotEmpty) {
+                              startCoords = importedTrack.coordinates.first;
+                            }
+                          }
+
                           try {
                             setChartInteractionGeometry(
                               mapController!,
                               hoverCoords: hoverCoords,
+                              rangeStartCoords:
+                                  startCoords, // Força l'injecció de la llista [lon, lat]
                             );
                           } catch (e) {
                             debugPrint("⚠️ Capa gràfica ocupada: $e");
@@ -1131,7 +1150,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                       }
                     },
 
-                    // 📐 B. LONGPRESS DEL TRAM (Gest discret controlat pel throttle)
+                    // 📐 B. LONGPRESS DEL TRAM (Sincronització de cercles i inversions)
                     onRangeSelected: (start, end) {
                       if (selectedIndexStart == start &&
                           selectedIndexEnd == end)
@@ -1148,22 +1167,31 @@ class _MapScreenState extends ConsumerState<MapScreen>
                           _mapThrottleMs) {
                         if (mapController != null && styleInitialized) {
                           _lastMapUpdateTime = now;
-                          final startCoords = _getCoordsFromGlobalIndex(start);
-                          final endCoords = _getCoordsFromGlobalIndex(end);
+
+                          final coordsA = _getCoordsFromGlobalIndex(start);
+                          final coordsB = _getCoordsFromGlobalIndex(end);
+
+                          final bool isCrossed = end < start;
+                          final finalStartCoords = isCrossed
+                              ? coordsB
+                              : coordsA;
+                          final finalEndCoords = isCrossed ? coordsA : coordsB;
+
                           try {
                             setChartInteractionGeometry(
                               mapController!,
-                              rangeStartCoords: startCoords,
-                              rangeEndCoords: endCoords,
+                              rangeStartCoords:
+                                  finalStartCoords, // Es pinta VERD
+                              rangeEndCoords:
+                                  finalEndCoords, // Es pinta VERMELL
                             );
                           } catch (e) {
-                            debugPrint("⚠️ Capa gràfica de rang ocupada: $e");
+                            debugPrint("⚠️ Capa gràfica ocupada: $e");
                           }
                         }
                       }
                     },
 
-                    // 🏁 C. FI DEL GEST / TAP DE NETEJA (Enviament de seguretat immediat)
                     onClearSelection: () {
                       if (selectedIndexStart == null &&
                           selectedIndexEnd == null &&
@@ -1179,10 +1207,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
                       if (mapController != null && styleInitialized) {
                         try {
-                          // Neteja immediata de les geometries del mapa, sense esperar cap throttle
                           setChartInteractionGeometry(mapController!);
                         } catch (e) {
-                          debugPrint("⚠️ Error al netejar geometries: $e");
+                          debugPrint("⚠️ Error de neteja: $e");
                         }
                       }
                     },
@@ -1367,6 +1394,43 @@ class _MapScreenState extends ConsumerState<MapScreen>
       }
     }
     return null;
+  }
+
+  /// 🔥 NOVA FUNCIÓ: Es crida quan l'usuari prem un Waypoint real al mapa
+  void _handleWaypointClick(dynamic waypoint) {
+    // waypoint.trackIndex conté la posició ordinal exacta dins del track complet
+    if (waypoint.trackIndex == null || waypoint.trackIndex < 0) return;
+
+    setState(() {
+      // Fixem el punt d'Inici (Verd) on és el Waypoint premut
+      selectedIndexStart = waypoint.trackIndex;
+
+      // Com a Final (Vermell), forcem que s'estengui un 15% del track o l'últim punt
+      // per crear el segment visual de fàbrica de Senda instantàniament
+      selectedIndexGraph = null;
+    });
+
+    // 🛡️ Sincronitzem a l'acte les capes del mapa de forma reversible
+    if (mapController != null && styleInitialized) {
+      final startCoords = _getCoordsFromGlobalIndex(selectedIndexStart!);
+      // Si tenies un final previ el guardem, sinó usem el mateix punt per inicialitzar
+      final endIdx = selectedIndexEnd ?? selectedIndexStart!;
+      final endCoords = _getCoordsFromGlobalIndex(endIdx);
+
+      final bool isCrossed = endIdx < selectedIndexStart!;
+      final finalStartCoords = isCrossed ? endCoords : startCoords;
+      final finalEndCoords = isCrossed ? startCoords : endCoords;
+
+      try {
+        setChartInteractionGeometry(
+          mapController!,
+          rangeStartCoords: finalStartCoords,
+          rangeEndCoords: finalEndCoords,
+        );
+      } catch (e) {
+        debugPrint("⚠️ Error al sincronitzar clic de waypoint: $e");
+      }
+    }
   }
 
   Future<void> _shareTrack() async {

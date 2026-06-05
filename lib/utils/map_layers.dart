@@ -361,7 +361,6 @@ void setUserLocationGeometry(
   });
 }
 
-/// Actualitza les fites geomètriques de la interacció del gràfic
 /// Actualitza les fites geomètriques de la interacció del gràfic sobre el mapa
 Future<void> setChartInteractionGeometry(
   MapLibreMapController controller, {
@@ -371,38 +370,38 @@ Future<void> setChartInteractionGeometry(
 }) async {
   final List<Map<String, dynamic>> features = [];
 
-  // 1. Mira de Drag Simple (Punt taronja en moviment) [lon, lat]
+  // 1. Mira de Drag Simple (Punt taronja en moviment)
   if (hoverCoords != null && hoverCoords.length == 2) {
     features.add({
       "type": "Feature",
       "properties": {"type": "hover"},
       "geometry": {
         "type": "Point",
-        "coordinates": [hoverCoords[0], hoverCoords[1]],
+        "coordinates": hoverCoords, // Llista [lon, lat] plana corregida
       },
     });
   }
 
-  // 2. Extrem d'Inici del Tram (Punt verd fix) [lon, lat]
+  // 2. Extrem d'Inici del Tram o Punt d'Inici del Drag (Punt verd fix)
   if (rangeStartCoords != null && rangeStartCoords.length == 2) {
     features.add({
       "type": "Feature",
       "properties": {"type": "range_start"},
       "geometry": {
         "type": "Point",
-        "coordinates": [rangeStartCoords[0], rangeStartCoords[1]],
+        "coordinates": rangeStartCoords, // Llista [lon, lat] plana corregida
       },
     });
   }
 
-  // 3. Extrem de Final del Tram (Punt vermell fix) [lon, lat]
+  // 3. Extrem de Final del Tram (Punt vermell fix)
   if (rangeEndCoords != null && rangeEndCoords.length == 2) {
     features.add({
       "type": "Feature",
       "properties": {"type": "range_end"},
       "geometry": {
         "type": "Point",
-        "coordinates": [rangeEndCoords[0], rangeEndCoords[1]],
+        "coordinates": rangeEndCoords, // Llista [lon, lat] plana corregida
       },
     });
   }
@@ -413,35 +412,33 @@ Future<void> setChartInteractionGeometry(
     // Intentem injectar les dades de manera normal si la font ja existeix
     await controller.setGeoJsonSource("chart_interaction_source", geojson);
   } catch (e) {
-    // 🛡️ ENGINYERIA RECOVERY: Si la font no existeix, LA CREEM AL MOMENT A LA GPU
+    // 🛡️ RECOVERY EN CAS QUE L'ESTIL EN MEMÒRIA S'HAGI REINICIAT O CARREGAT DE NOU
     try {
-      // A. Creem la font de dades GeoJSON buida/inicial
       await controller.addSource(
         "chart_interaction_source",
         GeojsonSourceProperties(data: geojson),
       );
 
-      // B. CREEM L'INDICADOR TARONJA (Per al drag continu de la mira)
+      // A. CREEM L'INDICADOR TARONJA (Mira en moviment)
       await controller.addLayer(
         "chart_interaction_source",
         "chart_hover_layer",
         const CircleLayerProperties(
           circleRadius: 7.0,
-          circleColor: "#FF9800", // Taronja Senda vibrant
+          circleColor: "#FF9800",
           circleStrokeWidth: 2.0,
           circleStrokeColor: "#FFFFFF",
         ),
       );
-      // Filtre perquè aquesta capa només pinti el punt de tipus 'hover'
       await controller.setFilter("chart_hover_layer", ["==", "type", "hover"]);
 
-      // C. CREEM L'INDICADOR VERD (Inici de tram seleccionat)
+      // B. CREEM L'INDICADOR VERD (Inici del tram) -> CORREGIT: 'CircleLayerProperties'
       await controller.addLayer(
         "chart_interaction_source",
         "chart_start_layer",
         const CircleLayerProperties(
           circleRadius: 8.0,
-          circleColor: "#4CAF50", // Verd bosc d'inici
+          circleColor: "#4CAF50", // El color Verd de fàbrica de Senda
           circleStrokeWidth: 2.5,
           circleStrokeColor: "#FFFFFF",
         ),
@@ -452,13 +449,13 @@ Future<void> setChartInteractionGeometry(
         "range_start",
       ]);
 
-      // D. CREEM L'INDICADOR VERMELL (Final de tram seleccionat)
+      // C. CREEM L'INDICADOR VERMELL (Final del tram) -> CORREGIT: 'CircleLayerProperties'
       await controller.addLayer(
         "chart_interaction_source",
         "chart_end_layer",
         const CircleLayerProperties(
           circleRadius: 8.0,
-          circleColor: "#F44336", // Vermell stop de final
+          circleColor: "#F44336", // El color Vermell de fàbrica de Senda
           circleStrokeWidth: 2.5,
           circleStrokeColor: "#FFFFFF",
         ),
@@ -470,7 +467,7 @@ Future<void> setChartInteractionGeometry(
       ]);
     } catch (innerError) {
       debugPrint(
-        "⚠️ Error intern en assegurar les capes de la GPU: $innerError",
+        "⚠️ Errada interna en assegurar les capes de la GPU: \$innerError",
       );
     }
   }
