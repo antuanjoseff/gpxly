@@ -1064,25 +1064,14 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 ),
               ),
               // ───────────────────────────────────────────────────────────
-              // CAPA 3: EL PERFIL D'ELEVACIONS AMB FILTRE ANTIBUCLE
-              // ───────────────────────────────────────────────────────────
-              // ───────────────────────────────────────────────────────────
-              // 📈 VISOR D'ELEVACIONS CON ESCUDO DE HARDWARE TOTAL
+              // 📈 VISOR D'ELEVACIONS CON FILTRO DE INICIALIZACIÓN ABSOLUTO
               // ───────────────────────────────────────────────────────────
               Positioned(
                 bottom: 0,
                 left: 0,
                 right: 0,
                 child: Listener(
-                  // 🛡️ ESCUDO SÓLIDO NATIVO: Absorbe los punteros a bajo nivel.
-                  // Evita al 100% que el dedo active "org.maplibre.android.gestures" debajo [INDEX].
                   behavior: HitTestBehavior.opaque,
-                  onPointerDown: (_) {}, // Captura el evento inicial
-                  onPointerMove:
-                      (
-                        _,
-                      ) {}, // Captura el arrastre para que el mapa no se mueva de fondo
-                  onPointerUp: (_) {}, // Captura el levantamiento del dedo
                   child: EmbeddedElevationProfile(
                     key: const ValueKey(
                       'embedded_elevation_profile_sincro_real_pura',
@@ -1096,14 +1085,39 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     selectedIndexGraph: selectedIndexGraph,
 
                     onNeedleMove: (idx) {
+                      // 🛡️ CONTROL 1: Evitamos actualizar si el valor no ha cambiado realmente
+                      if (selectedIndexGraph == idx) return;
+
                       setState(() {
                         selectedIndexGraph = idx;
                         selectedIndexStart = null;
                         selectedIndexEnd = null;
                       });
+
+                      // 🛡️ CONTROL 2: Prohibido hablar con MapLibre si la GPU no está lista
+                      if (mapController != null && styleInitialized) {
+                        final hoverCoords = _getCoordsFromGlobalIndex(idx);
+                        try {
+                          setChartInteractionGeometry(
+                            mapController!,
+                            hoverCoords: hoverCoords,
+                          );
+                        } catch (e) {
+                          debugPrint(
+                            "⚠️ Geometría no disponible en este frame: $e",
+                          );
+                        }
+                      }
                     },
 
+                    // 📐 TRAM SELECCIONAT: Mentres el dit manté el LongPress o l'arrossegament de rang,
+                    // guardem els índexs ordinals de dades EXCLUSIVAMENT a la RAM de Flutter.
+                    // Esborrem 'setChartInteractionGeometry' d'aquí per tancar l'excepció de Java.
                     onRangeSelected: (start, end) {
+                      if (selectedIndexStart == start &&
+                          selectedIndexEnd == end)
+                        return;
+
                       setState(() {
                         selectedIndexStart = start;
                         selectedIndexEnd = end;
@@ -1112,10 +1126,13 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     },
 
                     onClearSelection: () {
-                      // Guardamos el frame final en memoria antes de limpiar
-                      final int? finalGraph = selectedIndexGraph;
-                      final int? finalStart = selectedIndexStart;
-                      final int? finalEnd = selectedIndexEnd;
+                      // 🛡️ CONTROL 4: EL FRE DE MÀ CRÍTIC DEL BUCLE INFINIT
+                      // Si ya está limpio de fábrica, salimos de golpe sin hacer setState ni tocar Java
+                      if (selectedIndexStart == null &&
+                          selectedIndexEnd == null &&
+                          selectedIndexGraph == null) {
+                        return;
+                      }
 
                       setState(() {
                         selectedIndexStart = null;
@@ -1125,33 +1142,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
                       if (mapController != null && styleInitialized) {
                         try {
-                          if (finalGraph != null) {
-                            final hoverCoords = _getCoordsFromGlobalIndex(
-                              finalGraph,
-                            );
-                            setChartInteractionGeometry(
-                              mapController!,
-                              hoverCoords: hoverCoords,
-                            );
-                          } else if (finalStart != null && finalEnd != null) {
-                            final startCoords = _getCoordsFromGlobalIndex(
-                              finalStart,
-                            );
-                            final endCoords = _getCoordsFromGlobalIndex(
-                              finalEnd,
-                            );
-                            setChartInteractionGeometry(
-                              mapController!,
-                              rangeStartCoords: startCoords,
-                              rangeEndCoords: endCoords,
-                            );
-                          } else {
-                            setChartInteractionGeometry(mapController!);
-                          }
+                          setChartInteractionGeometry(mapController!);
                         } catch (e) {
-                          debugPrint(
-                            "⚠️ Error síncron atòmic final a la GPU: $e",
-                          );
+                          debugPrint("⚠️ Error al limpiar geometries: $e");
                         }
                       }
                     },
