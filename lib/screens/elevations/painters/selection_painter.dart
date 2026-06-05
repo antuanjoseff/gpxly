@@ -1,4 +1,4 @@
-// lib/screens/elevations/painters/selection_painter.dart (BLOC 1 DE 2)
+// lib/screens/elevations/painters/selection_painter.dart (BLOC 1 DE 2 CORREGIT)
 import 'package:flutter/material.dart';
 
 class SelectionPainter extends CustomPainter {
@@ -17,14 +17,14 @@ class SelectionPainter extends CustomPainter {
   final List<double>? importedWaypointGlobalDists;
 
   final Color graphNeedleColor;
-  final Color sliderStartNeedleColor; // Color Verd original
-  final Color sliderEndNeedleColor; // Color Vermell original
+  final Color sliderStartNeedleColor;
+  final Color sliderEndNeedleColor;
 
   final Color recordedWaypointColor;
   final Color importedWaypointColor;
 
-  static const double bottomReserved = 40.0;
-  static const double topReserved = 60.0;
+  static const double bottomReserved = 16.0;
+  static const double topReserved = 10.0;
   static const double dotRadius = 5.0;
 
   SelectionPainter({
@@ -67,7 +67,7 @@ class SelectionPainter extends CustomPainter {
 
     final effectiveRange = diff < 50 ? 50 : diff;
     final minY = minAlt - (effectiveRange * 0.3 * exaggeration);
-    final maxY = minY + (effectiveRange * 1.3 * exaggeration);
+    final maxY = minY + (effectiveRange * 1.62 * exaggeration);
     final yRange = maxY - minY;
 
     final usableWidth = size.width;
@@ -85,7 +85,7 @@ class SelectionPainter extends CustomPainter {
         ..color = recordedWaypointColor
         ..style = PaintingStyle.fill;
       for (final d in recordedWaypointGlobalDists!) {
-        canvas.drawCircle(Offset(mapX(d), xAxisY - 4), 4, recWpPaint);
+        canvas.drawCircle(Offset(mapX(d), xAxisY), 4, recWpPaint);
       }
     }
 
@@ -96,7 +96,7 @@ class SelectionPainter extends CustomPainter {
         ..color = importedWaypointColor
         ..style = PaintingStyle.fill;
       for (final d in importedWaypointGlobalDists!) {
-        canvas.drawCircle(Offset(mapX(d), xAxisY - 4), 4, impWpPaint);
+        canvas.drawCircle(Offset(mapX(d), xAxisY), 4, impWpPaint);
       }
     }
 
@@ -106,17 +106,15 @@ class SelectionPainter extends CustomPainter {
     final double? eX = endX;
 
     // ─────────────────────────────────────────────────────────────────────────
-    // 🧮 LÒGICA DE REVERSIBILITAT GEOMÈTRICA DE SENDA (Inversió de Punts)
+    // 🛡️ RECTIFICACIÓ: Moven la definició del flag al capdamunt per evitar l'Undefined Name
     // ─────────────────────────────────────────────────────────────────────────
-    // Determinem si l'usuari ha creuat els dits (Final menor que l'Inici)
     bool isCrossed = false;
     if (sX != null && eX != null) {
       isCrossed = eX < sX;
     }
 
-    // 1. DIBUIX DE L'AGULLA DE L'ESQUERRA (Sempre es pinta en VERD)
+    // 1. DIBUIX DE L'AGULLA DE L'ESQUERRA (Verd)
     if (sX != null && sIndex != null && eX != null && eIndex != null) {
-      // Si s'han creuat, l'agulla de l'esquerra real és la del final (eX)
       final double leftX = isCrossed ? eX : sX;
       final int leftIndex = isCrossed ? eIndex : sIndex;
 
@@ -131,7 +129,6 @@ class SelectionPainter extends CustomPainter {
         xAxisY,
       );
 
-      // El tooltip de l'esquerra mostra sempre la info de l'agulla de l'esquerra en VERD
       final distKm = distances[leftIndex] / 1000.0;
       _paintTooltipBoxFixed(
         canvas,
@@ -141,7 +138,6 @@ class SelectionPainter extends CustomPainter {
         forceLeft: true,
       );
     } else if (sX != null && sIndex != null) {
-      // Cas de seguretat si només s'ha pintat l'inici
       _paintNeedleLineAndDot(
         canvas,
         sX,
@@ -162,9 +158,8 @@ class SelectionPainter extends CustomPainter {
       );
     }
 
-    // 2. DIBUIX DE L'AGULLA DE LA DRETA (Sempre es pinta en VERMELL)
+    // 2. DIBUIX DE L'AGULLA DE LA DRETA (Vermell)
     if (sX != null && sIndex != null && eX != null && eIndex != null) {
-      // Si s'han creuat, l'agulla de la dreta real és la de l'inici (sX)
       final double rightX = isCrossed ? sX : eX;
       final int rightIndex = isCrossed ? sIndex : eIndex;
 
@@ -179,7 +174,6 @@ class SelectionPainter extends CustomPainter {
         xAxisY,
       );
 
-      // El tooltip de la dreta mostra sempre la info de l'agulla de la dreta en VERMELL
       final distKm = distances[rightIndex] / 1000.0;
       _paintTooltipBoxFixed(
         canvas,
@@ -189,7 +183,6 @@ class SelectionPainter extends CustomPainter {
         forceLeft: false,
       );
     } else if (eX != null && eIndex != null) {
-      // Cas de seguretat si només s'ha pintat el final
       _paintNeedleLineAndDot(
         canvas,
         eX,
@@ -210,7 +203,7 @@ class SelectionPainter extends CustomPainter {
       );
     }
 
-    // 3. L'agulla central del dit (S'ARROSSEGA FLUIDA SOTA EL DIT INDEPENDENT!)
+    // 3. L'agulla central del dit (Mira taronja continuat)
     if (graphX != null && graphIndex != null) {
       _paintMainNeedle(
         canvas,
@@ -225,8 +218,8 @@ class SelectionPainter extends CustomPainter {
       );
     }
   }
+  // lib/screens/elevations/painters/selection_painter.dart (BLOC 2 DE 2 CORREGIT)
 
-  // lib/screens/elevations/painters/selection_painter.dart (BLOC 2 DE 2)
   void _paintNeedleLineAndDot(
     Canvas canvas,
     double x,
@@ -238,19 +231,26 @@ class SelectionPainter extends CustomPainter {
     double xAxisY,
   ) {
     if (index < 0 || index >= altitudes.length) return;
+
+    // 🛡️ CÀLCUL DAMUNT LA SILUETA: Amb el topReserved a 10, la rodona s'acobla perfectament al relleu
     final double rel = (altitudes[index] - minY) / yRange;
     final double dy = topReserved + (chartHeight - (rel * chartHeight));
+
+    // 🛡️ FI DE L'AGULLA AL TERRA: Definim el límit de baix en 'xAxisY' exactament.
+    // Així la línia vertical s'atura just a sobre dels quilòmetres, sense foradar el fons.
+    final double absoluteBottom = xAxisY;
 
     final linePaint = Paint()
       ..color = color.withAlpha(150)
       ..strokeWidth = 2;
-    canvas.drawLine(Offset(x, xAxisY), Offset(x, dy), linePaint);
+    canvas.drawLine(Offset(x, absoluteBottom), Offset(x, dy), linePaint);
 
     final dotPaint = Paint()..color = color;
     final dotBorder = Paint()
       ..color = Colors.white
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke;
+
     canvas.drawCircle(Offset(x, dy), dotRadius, dotPaint);
     canvas.drawCircle(Offset(x, dy), dotRadius, dotBorder);
   }
@@ -288,7 +288,7 @@ class SelectionPainter extends CustomPainter {
     );
   }
 
-  // TOOLTIP DINÀMIC: Usat per l'agulla central del dit
+  // Tooltip flotant mòbil per al dit
   void _paintDynamicTooltipBox(
     Canvas canvas,
     Size size,
@@ -325,7 +325,7 @@ class SelectionPainter extends CustomPainter {
     textPainter.paint(canvas, Offset(rectX + 8, rectY + 6));
   }
 
-  // TOOLTIP FIXAT EXTREMS: Rectangles quadrats clàssics immutables
+  // Tooltip rectangular clàssic fixat als cantons laterals
   void _paintTooltipBoxFixed(
     Canvas canvas,
     Size size,
@@ -349,7 +349,6 @@ class SelectionPainter extends CustomPainter {
     final double w = textPainter.width + 14;
     final double h = textPainter.height + 10;
 
-    // Posició clada rígidament horitzontal: costat esquerre o dret completament
     double rectX = forceLeft ? 4.0 : (size.width - w - 4.0);
     double rectY = 4.0;
 
@@ -361,6 +360,10 @@ class SelectionPainter extends CustomPainter {
 
     canvas.drawRect(rect, bg);
     textPainter.paint(canvas, Offset(rectX + 7, rectY + 5));
+  }
+
+  bool _tooltipsOverlap(double x1, double x2, double width) {
+    return (x1 - x2).abs() < width;
   }
 
   @override

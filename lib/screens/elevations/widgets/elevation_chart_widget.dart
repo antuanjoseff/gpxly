@@ -286,14 +286,25 @@ class _ElevationChartWidgetState extends State<ElevationChartWidget> {
     required Color trackColor,
     required Color importedTrackColor,
     required double forcedMinY,
-    required double forcedMaxY,
+    required double forcedMaxY, // El valor que et ve calculat de Riverpod/State
     required double maxDist,
   }) {
     final colors = Theme.of(context).colorScheme;
 
+    // 🛡️ REBAIXA DE LA LÍNIA DEL GRÀFIC (LA CLAU DE L'ÈXIT):
+    // Calculem la diferència real d'altitud (diff) per saber el rang d'ajust
+    final double diffAlt = forcedMaxY - forcedMinY;
+
+    // Augmentem el sostre virtual un 25% extra sobre el forcedMaxY original.
+    // Això fa que la línia real del track d'fl_chart es comprimeixi cap avall,
+    // sincronitzant-se de forma simètrica amb les agulles que hem mogut abans!
+    final double adjustedMaxY =
+        forcedMaxY + (diffAlt > 0 ? diffAlt * 0.25 : 50.0);
+
     return LineChartData(
+      // 🛡️ MODIFICACIÓ: Passem el nou adjustedMaxY en lloc del vell forcedMaxY
       minY: forcedMinY,
-      maxY: forcedMaxY,
+      maxY: adjustedMaxY,
       minX: 0,
       maxX: maxDist,
       gridData: const FlGridData(show: false),
@@ -312,7 +323,8 @@ class _ElevationChartWidgetState extends State<ElevationChartWidget> {
         bottomTitles: AxisTitles(
           sideTitles: SideTitles(
             showTitles: true,
-            reservedSize: 40,
+            // REBAIXA AL BOTTOM mantinguda a 14 píxels
+            reservedSize: 14,
             interval: maxDist > 0 ? maxDist / 2 : 1.0,
             getTitlesWidget: (value, meta) {
               if (value > maxDist + 0.1) return const SizedBox();
@@ -325,48 +337,60 @@ class _ElevationChartWidgetState extends State<ElevationChartWidget> {
               final numberPart = parts.isNotEmpty ? parts[0] : fullText;
               final unitPart = parts.length > 1 ? parts[1] : '';
 
+              // Mantenim l'estil compacte en blanc que teníem d'or
               final textStyle = TextStyle(
-                color: colors.onSurface,
+                color: Colors.white,
                 fontSize: 11,
                 fontWeight: FontWeight.bold,
                 fontFamily: 'monospace',
               );
 
+              // Creem el pintor per calcular l'amplada real del text unificat COMPLET
+              // (número + espai + unitat) per fer el desplaçament horitzontal mil·limètric
+              final String fullTextString = unitPart.isNotEmpty
+                  ? "$numberPart $unitPart"
+                  : numberPart;
               final tp = TextPainter(
-                text: TextSpan(text: numberPart, style: textStyle),
+                text: TextSpan(text: fullTextString, style: textStyle),
                 textDirection: TextDirection.ltr,
               )..layout();
 
+              // 🛡️ LA CLAU D'ALINEACIÓ ANTI-TALLS:
+              // - El primer text s'alinea a l'esquerra (dx = 0), quedant amb el marge net.
+              // - L'últim text s'empeny el 100% de la seva amplada cap a l'esquerra (dx = -tp.width),
+              //   fent que s'alinei perfectament a la dreta sense sortir mai de la vora de la pantalla.
               double dx = 0;
               if (isFirst) {
-                dx = tp.width / 2;
+                dx = 4.0; // Petit marge de respiració a l'esquerra
               } else if (isLast) {
-                dx = -(tp.width / 2);
+                dx =
+                    -tp.width -
+                    4.0; // S'aparta tota la seva amplada cap endins per no tallar-se
+              } else {
+                dx =
+                    -(tp.width /
+                        2); // Els del mig es queden centrats com sempre
               }
 
               return SideTitleWidget(
                 meta: meta,
-                space: 6,
+                space: 2,
                 child: Transform.translate(
                   offset: Offset(dx, 0),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        numberPart,
-                        style: textStyle.copyWith(color: Colors.white),
-                      ),
-                      if (unitPart.isNotEmpty)
-                        Text(
-                          unitPart,
-                          style: textStyle.copyWith(
-                            color: Colors.white,
-                            fontSize: 9,
-                            fontWeight: FontWeight.normal,
-                            height: 0.8,
+                  child: RichText(
+                    text: TextSpan(
+                      children: [
+                        TextSpan(text: numberPart, style: textStyle),
+                        if (unitPart.isNotEmpty)
+                          TextSpan(
+                            text: " $unitPart",
+                            style: textStyle.copyWith(
+                              fontSize: 9,
+                              fontWeight: FontWeight.normal,
+                            ),
                           ),
-                        ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               );
