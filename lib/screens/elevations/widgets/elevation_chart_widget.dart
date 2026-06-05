@@ -338,7 +338,7 @@ class _ElevationChartWidgetState extends State<ElevationChartWidget> {
               final unitPart = parts.length > 1 ? parts[1] : '';
 
               // Mantenim l'estil compacte en blanc que teníem d'or
-              final textStyle = TextStyle(
+              const textStyle = TextStyle(
                 color: Colors.white,
                 fontSize: 11,
                 fontWeight: FontWeight.bold,
@@ -355,17 +355,14 @@ class _ElevationChartWidgetState extends State<ElevationChartWidget> {
                 textDirection: TextDirection.ltr,
               )..layout();
 
-              // 🛡️ LA CLAU D'ALINEACIÓ ANTI-TALLS:
-              // - El primer text s'alinea a l'esquerra (dx = 0), quedant amb el marge net.
-              // - L'últim text s'empeny el 100% de la seva amplada cap a l'esquerra (dx = -tp.width),
-              //   fent que s'alinei perfectament a la dreta sense sortir mai de la vora de la pantalla.
+              // 🛡️ REAJUSTE D'ALINEACIÓ DE BORDES ANTI-TALLS:
+              // - El primer text es mou la meitat de la seva amplada cap a la dreta, més un coixí de 4px per separar-se del marge [INDEX].
+              // - L'últim text s'aparta la meitat de la seva amplada cap a l'esquerra, menys un coixí de 4px perquè s'arrimi de forma precisa [INDEX].
               double dx = 0;
               if (isFirst) {
-                dx = 4.0; // Petit marge de respiració a l'esquerra
+                dx = (tp.width / 2) + 4.0;
               } else if (isLast) {
-                dx =
-                    -tp.width -
-                    4.0; // S'aparta tota la seva amplada cap endins per no tallar-se
+                dx = -(tp.width / 2) - 4.0;
               } else {
                 dx =
                     -(tp.width /
