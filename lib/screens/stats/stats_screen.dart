@@ -270,6 +270,7 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
 }
 
 /// 🛰️ Tarjeta estática para el diagnóstico del GPS
+/// 🛰️ Tarjeta estática para el diagnóstico del GPS
 class _GpsStaticCard extends StatelessWidget {
   final int satellitesUsed;
   final int satellitesInView;
@@ -286,14 +287,16 @@ class _GpsStaticCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.primary.withAlpha(102), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(5),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(
+              alpha: 0.12,
+            ), // Sombra más densa y marcada
+            blurRadius: 14,
+            spreadRadius: 1,
+            offset: const Offset(0, 6), // Desplazamiento vertical pronunciado
           ),
         ],
       ),
@@ -303,57 +306,52 @@ class _GpsStaticCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.all(12.0),
+            padding: const EdgeInsets.all(16.0),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Icon(
-                      Icons.satellite_alt,
-                      color: AppColors.primary,
-                      size: 22,
-                    ),
-                    const SizedBox(width: 6),
                     Text(
                       "ESTAT GPS",
                       style: TextStyle(
-                        color: Colors.grey.shade700,
-                        fontSize: 10,
+                        color: Colors.grey.shade600,
+                        fontSize: 11,
                         fontWeight: FontWeight.bold,
-                        letterSpacing: 1.0,
+                        letterSpacing: 0.8,
                       ),
+                    ),
+                    const Icon(
+                      Icons.satellite_alt_outlined,
+                      color: AppColors.primary,
+                      size: 20,
                     ),
                   ],
                 ),
-                const SizedBox(height: 4),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
-                    children: [
-                      Text(
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
                         "$satellitesUsed/$satellitesInView",
-                        textAlign: TextAlign.center,
                         style: const TextStyle(
                           color: Colors.black87,
-                          fontSize: 24,
-                          fontWeight: FontWeight.w900,
+                          fontSize: 28,
+                          fontWeight: FontWeight.w800,
                           fontFamily: 'monospace',
                         ),
                       ),
-                    ],
+                    ),
                   ),
                 ),
-                const SizedBox(height: 4),
                 Text(
                   "Actius / En vista",
                   style: TextStyle(
                     color: Colors.grey.shade500,
-                    fontSize: 10,
+                    fontSize: 11,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -398,14 +396,16 @@ class _StatCardState extends State<_StatCard> {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.primary.withAlpha(102), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(5),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(
+              alpha: 0.12,
+            ), // Sombra más densa y marcada
+            blurRadius: 14,
+            spreadRadius: 1,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -425,20 +425,20 @@ class _StatCardState extends State<_StatCard> {
             ),
             if (widget.pages.length > 1)
               Positioned(
-                bottom: 8,
-                left: 0,
-                right: 0,
+                bottom: 12,
+                left: 16,
+                right: 16,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: List.generate(widget.pages.length, (index) {
                     final bool isActive = index == _currentPage;
                     return AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
-                      margin: const EdgeInsets.symmetric(horizontal: 3),
-                      width: isActive ? 6 : 4,
-                      height: isActive ? 6 : 4,
+                      margin: const EdgeInsets.symmetric(horizontal: 2.5),
+                      width: isActive ? 12 : 5,
+                      height: 5,
                       decoration: BoxDecoration(
-                        shape: BoxShape.circle,
+                        borderRadius: BorderRadius.circular(10),
                         color: isActive
                             ? AppColors.primary
                             : Colors.grey.shade300,
@@ -480,58 +480,71 @@ class _StatPage extends StatelessWidget {
             ? "--"
             : (isInt ? value!.toStringAsFixed(0) : value!.toStringAsFixed(1)));
 
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: AppColors.primary, size: 22),
-            const SizedBox(width: 6),
-            Text(
-              label.toUpperCase(),
-              style: TextStyle(
-                color: Colors.grey.shade700,
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.0,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                val,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.black87,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w900,
-                  fontFamily: 'monospace',
-                ),
-              ),
-              if (unit.isNotEmpty && val != "--") ...[
-                const SizedBox(width: 2),
-                Text(
-                  unit,
+              Expanded(
+                child: Text(
+                  label.toUpperCase(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: Colors.grey.shade500,
-                    fontSize: 12,
+                    color: Colors
+                        .grey
+                        .shade600, // Ajustado a juego con la elevación
+                    fontSize: 11,
                     fontWeight: FontWeight.bold,
+                    letterSpacing: 0.8,
                   ),
                 ),
-              ],
+              ),
+              const SizedBox(width: 4),
+              Icon(icon, color: AppColors.primary, size: 20),
             ],
           ),
-        ),
-      ],
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Text(
+                      val,
+                      style: const TextStyle(
+                        color: Colors.black87,
+                        fontSize: 28,
+                        fontWeight: FontWeight.w800,
+                        fontFamily: 'monospace',
+                      ),
+                    ),
+                    if (unit.isNotEmpty && val != "--") ...[
+                      const SizedBox(width: 4),
+                      Text(
+                        unit,
+                        style: TextStyle(
+                          color: Colors.grey.shade500,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
+      ),
     );
   }
 }

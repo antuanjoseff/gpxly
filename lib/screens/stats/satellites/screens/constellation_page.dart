@@ -15,6 +15,7 @@ class ConstellationPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final networks = ['GPS', 'GALILEO', 'GLONASS', 'BEIDOU'];
 
+    // Lista fija de 2 enteros: [0] = Activos, [1] = Visibles
     final Map<String, List<int>> counts = {
       'GPS': List<int>.filled(2, 0),
       'GALILEO': List<int>.filled(2, 0),
@@ -28,73 +29,132 @@ class ConstellationPage extends StatelessWidget {
       final netName = parsed['name']!;
 
       if (counts.containsKey(netName)) {
-        // CORRECCIÓN: Accedemos e incrementamos directamente los índices del array sin reasignar la lista
-        counts[netName]![1] =
-            counts[netName]![1] + 1; // Incrementamos visibles (Índice 1)
+        // Incrementamos visibles (Índice 1)
+        counts[netName]![1] = counts[netName]![1] + 1;
 
         if (map['usedInFix'] as bool) {
-          counts[netName]![0] =
-              counts[netName]![0] + 1; // Incrementamos activos (Índice 0)
+          // Incrementamos activos (Índice 0)
+          counts[netName]![0] = counts[netName]![0] + 1;
         }
       }
     }
 
+    // 🗺️ Formas geométricas que coinciden con los símbolos de tu visor/radar
+    final Map<String, IconData> networkIcons = {
+      'GPS': Icons.circle, // Círculo
+      'GALILEO': Icons.square, // Cuadrado
+      'GLONASS': Icons.change_history, // Triángulo
+      'BEIDOU': Icons.hexagon, // Hexágono
+    };
+
     return Padding(
       padding: const EdgeInsets.all(24.0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: networks.map((net) {
-          // Extraemos los valores de los índices correspondientes
-          final used = counts[net]![0]; // Posición 0: Activos
-          final view = counts[net]![1]; // Posición 1: Visibles
-          final double percent = view > 0 ? used / view : 0.0;
-
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 14.0),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 80,
-                  child: Text(
-                    net == 'GALILEO'
-                        ? 'Galileo'
-                        : net == 'GLONASS'
-                        ? 'Glonass'
-                        : net == 'BEIDOU'
-                        ? 'BeiDou'
-                        : 'GPS',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
+      child: Stack(
+        children: [
+          // 🗺️ Leyenda de Formas Geométricas (Esquina superior derecha)
+          Positioned(
+            top: 0,
+            right: 0,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: networks.map((net) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2.0),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          networkIcons[net],
+                          size: 11,
+                          color: Colors.grey.shade700,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          net == 'GALILEO'
+                              ? 'Galileo'
+                              : net == 'GLONASS'
+                              ? 'Glonass'
+                              : net == 'BEIDOU'
+                              ? 'BeiDou'
+                              : 'GPS',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ),
-                Expanded(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: LinearProgressIndicator(
-                      value: percent,
-                      backgroundColor: Colors.grey.shade200,
-                      valueColor: const AlwaysStoppedAnimation<Color>(
-                        Colors.green,
-                      ),
-                      minHeight: 12,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Text(
-                  '$used / $view',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontFamily: 'monospace',
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
+                  );
+                }).toList(),
+              ),
             ),
-          );
-        }).toList(),
+          ),
+
+          // 📊 Gráficos de barras de las constelaciones
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: networks.map((net) {
+              final used = counts[net]![0]; // Posición 0: Activos
+              final view = counts[net]![1]; // Posición 1: Visibles
+              final double percent = view > 0 ? used / view : 0.0;
+
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 14.0),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 80,
+                      child: Text(
+                        net == 'GALILEO'
+                            ? 'Galileo'
+                            : net == 'GLONASS'
+                            ? 'Glonass'
+                            : net == 'BEIDOU'
+                            ? 'BeiDou'
+                            : 'GPS',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: LinearProgressIndicator(
+                          value: percent,
+                          backgroundColor: Colors.grey.shade200,
+                          valueColor: const AlwaysStoppedAnimation<Color>(
+                            Colors.green,
+                          ),
+                          minHeight: 12,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Text(
+                      '$used / $view',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontFamily: 'monospace',
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+        ],
       ),
     );
   }

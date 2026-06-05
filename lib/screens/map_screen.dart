@@ -1103,12 +1103,16 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     selectedIndexGraph: selectedIndexGraph,
 
                     // 🎚️ A. DRAG DE LA MIRA CONTINU (Amb fixat d'inici blindat)
+                    // 🎚️ A. DRAG DE LA MIRA CONTINU (Amb fixat de cota zero obligatori)
                     onNeedleMove: (idx) {
                       if (selectedIndexGraph == idx) return;
 
                       setState(() {
                         selectedIndexGraph = idx;
-                        selectedIndexStart = null;
+                        // 🛡️ CORRECCIÓ DRAG VERD: Fixem l'índex 0 en lloc de null.
+                        // Això fa que el text, el RangeInfoPanel i el SelectionPainter d'abaix
+                        // sàpiguen que s'ha de dibuixar l'indicador verd del km 0 a tot el sistema.
+                        selectedIndexStart = 0;
                         selectedIndexEnd = null;
                       });
 
@@ -1119,29 +1123,15 @@ class _MapScreenState extends ConsumerState<MapScreen>
                           _lastMapUpdateTime = now;
 
                           final hoverCoords = _getCoordsFromGlobalIndex(idx);
-
-                          // 🛡️ RECOVERY FIXAT DEL PUNT VERD:
-                          // Si _getCoordsFromGlobalIndex(0) falla, anem a buscar directament
-                          // el primer node de coordenades del track importat de Riverpod en viu
-                          List<double>? startCoords = _getCoordsFromGlobalIndex(
-                            0,
-                          );
-                          if (startCoords == null || startCoords.isEmpty) {
-                            final importedTrack = ref.read(
-                              importedTrackProvider,
-                            );
-                            if (importedTrack != null &&
-                                importedTrack.coordinates.isNotEmpty) {
-                              startCoords = importedTrack.coordinates.first;
-                            }
-                          }
+                          final startCoords = _getCoordsFromGlobalIndex(0);
 
                           try {
+                            // Cridem la teva única funció amb els dos paràmetres actius alhora
                             setChartInteractionGeometry(
                               mapController!,
                               hoverCoords: hoverCoords,
                               rangeStartCoords:
-                                  startCoords, // Força l'injecció de la llista [lon, lat]
+                                  startCoords, // Clavem el cercle verd al mapa
                             );
                           } catch (e) {
                             debugPrint("⚠️ Capa gràfica ocupada: $e");
@@ -1396,28 +1386,27 @@ class _MapScreenState extends ConsumerState<MapScreen>
     return null;
   }
 
-  /// 🔥 NOVA FUNCIÓ: Es crida quan l'usuari prem un Waypoint real al mapa
-  void _handleWaypointClick(dynamic waypoint) {
-    // waypoint.trackIndex conté la posició ordinal exacta dins del track complet
+  void _handleWaypointClick(dynamic waypoint, int totalPoints) {
     if (waypoint.trackIndex == null || waypoint.trackIndex < 0) return;
 
     setState(() {
-      // Fixem el punt d'Inici (Verd) on és el Waypoint premut
+      // 🛡️ CORRECCIÓ WAYPOINT: Fixem l'inici al waypoint, i forcem un final calculat
+      // perquè el gràfic rebi un segment vàlid complet i es mogui en sincronia a la pantalla
       selectedIndexStart = waypoint.trackIndex;
 
-      // Com a Final (Vermell), forcem que s'estengui un 15% del track o l'últim punt
-      // per crear el segment visual de fàbrica de Senda instantàniament
+      // Generem un final calculat de proves (un 15% més enllà o el topall del track)
+      final int step = (totalPoints * 0.15).round().clamp(1, totalPoints);
+      selectedIndexEnd = (selectedIndexStart! + step).clamp(0, totalPoints - 1);
+
       selectedIndexGraph = null;
     });
 
-    // 🛡️ Sincronitzem a l'acte les capes del mapa de forma reversible
+    // Enviem de cop les ordres de dibuix estables cap a MapLibre un sol cop
     if (mapController != null && styleInitialized) {
       final startCoords = _getCoordsFromGlobalIndex(selectedIndexStart!);
-      // Si tenies un final previ el guardem, sinó usem el mateix punt per inicialitzar
-      final endIdx = selectedIndexEnd ?? selectedIndexStart!;
-      final endCoords = _getCoordsFromGlobalIndex(endIdx);
+      final endCoords = _getCoordsFromGlobalIndex(selectedIndexEnd!);
 
-      final bool isCrossed = endIdx < selectedIndexStart!;
+      final bool isCrossed = selectedIndexEnd! < selectedIndexStart!;
       final finalStartCoords = isCrossed ? endCoords : startCoords;
       final finalEndCoords = isCrossed ? startCoords : endCoords;
 
@@ -1428,7 +1417,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
           rangeEndCoords: finalEndCoords,
         );
       } catch (e) {
-        debugPrint("⚠️ Error al sincronitzar clic de waypoint: $e");
+        debugPrint("⚠️ Error al pintar el tram del waypoint: $e");
       }
     }
   }
