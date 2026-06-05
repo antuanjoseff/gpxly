@@ -1089,6 +1089,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 left: 0,
                 right: 0,
                 child: EmbeddedElevationProfile(
+                  isCollapsed: _isChartCollapsed,
+                  onToggle: () =>
+                      setState(() => _isChartCollapsed = !_isChartCollapsed),
                   selectedIndexStart: selectedIndexStart,
                   selectedIndexEnd: selectedIndexEnd,
                   selectedIndexGraph: selectedIndexGraph,
