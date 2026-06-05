@@ -531,15 +531,33 @@ class _MapScreenState extends ConsumerState<MapScreen>
     });
 
     // ─────────────────────────────────────────────────────────────
-    // 🗺️ OIENT C: SET DE CAPES DEL TRACK IMPORTAT (GPX)
-    // ─────────────────────────────────────────────────────────────
-    // ─────────────────────────────────────────────────────────────
-    // 🗺️ OIENT C: SET DE CAPES DEL TRACK IMPORTAT (GPX PROGRESSIU)
+    // OIENT C: SET DE CAPES DEL TRACK IMPORTAT (GPX PROGRESSIU)
     // ─────────────────────────────────────────────────────────────
     ref.listen<Track?>(importedTrackProvider, (prev, next) {
       if (!styleInitialized || mapController == null) return;
 
-      // ✅ CANVI CLAU: En lloc de llegir 'next.coordinates' (que és el bloc sencer),
+      if (next == null) {
+        setState(() {
+          selectedIndexGraph = null;
+          selectedIndexStart = null;
+          selectedIndexEnd = null;
+        });
+
+        try {
+          // 1. Netegem la línia progressiva del track importat de fàbrica
+          mapController!.setGeoJsonSource("imported_track", {
+            "type": "FeatureCollection",
+            "features": [],
+          });
+
+          // LA SOLUCIÓ AL TEU PROBLEMA: Netegem fulminantment els cercles de la gràfica al mapa
+          setChartInteractionGeometry(mapController!);
+        } catch (e) {
+          debugPrint("⚠️ Error al netejar geometries en eliminar track: $e");
+        }
+        return;
+      }
+
       // demanem el segment tallat que s'ha estès en aquest mil·lisegon de simulació.
       final List<List<double>> coordsVisibles = ref
           .read(importedTrackProvider.notifier)
@@ -962,7 +980,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
                     const SizedBox(height: 8),
 
-                    // 🗺️ BOTÓ FLOTANT NOU: SEGUIMENT / CONTROL GPX IMPORTAT
+                    // BOTÓ FLOTANT NOU: SEGUIMENT / CONTROL GPX IMPORTAT
                     _buildSquareButton(
                       icon: navigationState.isFollowing
                           ? (ref.watch(
@@ -999,19 +1017,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
                                 ? Icons.play_circle_outline
                                 : Icons.fiber_manual_record),
                       onTap: () => _openRecordingControl(context, ref),
-                    ),
-
-                    const SizedBox(height: 8),
-
-                    // BOTÓ DE PERFIL D'ELEVACIÓ (Obre la pantalla vella de moment)
-                    _buildSquareButton(
-                      icon: Icons.terrain_outlined,
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const ElevationProfileScreen(),
-                        ),
-                      ),
                     ),
 
                     const SizedBox(height: 8),
@@ -1064,7 +1069,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 ),
               ),
               // ───────────────────────────────────────────────────────────
-              // 📊 CONTENIDOR DE TRAM FLOTANT COMPACTE AMB ICONES (HUD)
+              // CONTENIDOR DE TRAM FLOTANT COMPACTE AMB ICONES (HUD)
               // ───────────────────────────────────────────────────────────
               if (selectedIndexStart != null &&
                   selectedIndexEnd != null &&
@@ -1095,24 +1100,47 @@ class _MapScreenState extends ConsumerState<MapScreen>
                       'embedded_elevation_profile_sincro_real_pura',
                     ),
                     isCollapsed: _isChartCollapsed,
-                    onToggle: () =>
-                        setState(() => _isChartCollapsed = !_isChartCollapsed),
+                    onToggle: () {
+                      final bool nextCollapsedState = !_isChartCollapsed;
 
+                      setState(() {
+                        _isChartCollapsed = nextCollapsedState;
+                        // Si passem a estar col·lapsats, opcionalment també podem posar els índexs a null
+                        if (nextCollapsedState) {
+                          selectedIndexGraph = null;
+                          selectedIndexStart = null;
+                          selectedIndexEnd = null;
+                        }
+                      });
+
+                      // 🛡️ ACCIÓ DE SEGURETAT DE LA GPU:
+                      // Si el panell es tanca, enviem l'ordre de neteja immediata a MapLibre
+                      // perquè esborri els cercles taronja, verd i vermell del mapa a l'acte
+                      if (nextCollapsedState &&
+                          mapController != null &&
+                          styleInitialized) {
+                        try {
+                          // Cridem la teva funció de neteja de fàbrica buida
+                          setChartInteractionGeometry(mapController!);
+                        } catch (e) {
+                          debugPrint(
+                            "⚠️ Error al netejar geometries en minimitzar: $e",
+                          );
+                        }
+                      }
+                    },
                     selectedIndexStart: selectedIndexStart,
                     selectedIndexEnd: selectedIndexEnd,
                     selectedIndexGraph: selectedIndexGraph,
 
-                    // 🎚️ A. DRAG DE LA MIRA CONTINU (Amb fixat d'inici blindat)
-                    // 🎚️ A. DRAG DE LA MIRA CONTINU (Amb fixat de cota zero obligatori)
+                    // 🎚️ A. DRAG CONTINU (Mira taronja + creació del Verd a la GPU)
+                    // 🎚️ DRAG AMB TRACES DE DEBUG
                     onNeedleMove: (idx) {
                       if (selectedIndexGraph == idx) return;
 
                       setState(() {
                         selectedIndexGraph = idx;
-                        // 🛡️ CORRECCIÓ DRAG VERD: Fixem l'índex 0 en lloc de null.
-                        // Això fa que el text, el RangeInfoPanel i el SelectionPainter d'abaix
-                        // sàpiguen que s'ha de dibuixar l'indicador verd del km 0 a tot el sistema.
-                        selectedIndexStart = 0;
+                        selectedIndexStart = null;
                         selectedIndexEnd = null;
                       });
 
@@ -1123,24 +1151,44 @@ class _MapScreenState extends ConsumerState<MapScreen>
                           _lastMapUpdateTime = now;
 
                           final hoverCoords = _getCoordsFromGlobalIndex(idx);
-                          final startCoords = _getCoordsFromGlobalIndex(0);
+
+                          // 1. Mirem què ens dóna Riverpod directament
+                          List<double>? routeStartCoords;
+                          final currentTrack = ref.read(importedTrackProvider);
+                          if (currentTrack != null &&
+                              currentTrack.coordinates.isNotEmpty) {
+                            routeStartCoords = currentTrack.coordinates.first;
+                          }
+
+                          // 🔍 PRINT DE DEBUG 1: Mirem què està viatjant cap a la funció
+                          print("🔍 [DEBUG SCREEN] Index: $idx");
+                          print(
+                            "🔍 [DEBUG SCREEN] hoverCoords (Taronja): $hoverCoords",
+                          );
+                          print(
+                            "🔍 [DEBUG SCREEN] routeStartCoords (Verd Riverpod): $routeStartCoords",
+                          );
 
                           try {
-                            // Cridem la teva única funció amb els dos paràmetres actius alhora
                             setChartInteractionGeometry(
                               mapController!,
                               hoverCoords: hoverCoords,
-                              rangeStartCoords:
-                                  startCoords, // Clavem el cercle verd al mapa
+                              rangeStartCoords: routeStartCoords,
                             );
                           } catch (e) {
-                            debugPrint("⚠️ Capa gràfica ocupada: $e");
+                            print(
+                              "⚠️ [DEBUG SCREEN] Excepció en cridar setChartInteractionGeometry: $e",
+                            );
                           }
+                        } else {
+                          print(
+                            "🔍 [DEBUG SCREEN] Saltat perquè mapController és null o styleInitialized és false",
+                          );
                         }
                       }
                     },
 
-                    // 📐 B. LONGPRESS DEL TRAM (Sincronització de cercles i inversions)
+                    // 📐 B. LONGPRESS DISCRET (Crea o actualitza el segment de tram)
                     onRangeSelected: (start, end) {
                       if (selectedIndexStart == start &&
                           selectedIndexEnd == end)
@@ -1161,6 +1209,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                           final coordsA = _getCoordsFromGlobalIndex(start);
                           final coordsB = _getCoordsFromGlobalIndex(end);
 
+                          // Inversió lògica simètrica de Senda per al mapa
                           final bool isCrossed = end < start;
                           final finalStartCoords = isCrossed
                               ? coordsB
@@ -1171,12 +1220,12 @@ class _MapScreenState extends ConsumerState<MapScreen>
                             setChartInteractionGeometry(
                               mapController!,
                               rangeStartCoords:
-                                  finalStartCoords, // Es pinta VERD
+                                  finalStartCoords, // Actualitza la posició del verd existent
                               rangeEndCoords:
-                                  finalEndCoords, // Es pinta VERMELL
+                                  finalEndCoords, // Actualitza la posició del vermell existent
                             );
                           } catch (e) {
-                            debugPrint("⚠️ Capa gràfica ocupada: $e");
+                            debugPrint("⚠️ Capa de rang ocupada: $e");
                           }
                         }
                       }
@@ -1199,7 +1248,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                         try {
                           setChartInteractionGeometry(mapController!);
                         } catch (e) {
-                          debugPrint("⚠️ Error de neteja: $e");
+                          debugPrint("⚠️ Error al netejar: $e");
                         }
                       }
                     },

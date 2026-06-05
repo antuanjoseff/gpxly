@@ -352,11 +352,15 @@ class _ElevationChartWidgetState extends State<ElevationChartWidget> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(numberPart, style: textStyle),
+                      Text(
+                        numberPart,
+                        style: textStyle.copyWith(color: Colors.white),
+                      ),
                       if (unitPart.isNotEmpty)
                         Text(
                           unitPart,
                           style: textStyle.copyWith(
+                            color: Colors.white,
                             fontSize: 9,
                             fontWeight: FontWeight.normal,
                             height: 0.8,

@@ -49,7 +49,8 @@ class _EmbeddedElevationProfileState
   final ValueNotifier<int?> _localHoverIndex = ValueNotifier<int?>(null);
   final ValueNotifier<int?> _localRangeStart = ValueNotifier<int?>(null);
   final ValueNotifier<int?> _localRangeEnd = ValueNotifier<int?>(null);
-
+  DateTime _lastTouchMoveTime = DateTime.fromMillisecondsSinceEpoch(0);
+  static const int _touchThrottleDurationMs = 32;
   List<double> _cachedImportedDists = [];
   int _lastCoordinatesLength = 0;
 
@@ -153,13 +154,14 @@ class _EmbeddedElevationProfileState
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       curve: Curves.easeInOut,
-      // 🛡️ RECORREGUT ORIGINAL RECONQUERIT: Retornem els 220px de fàbrica per gaudir de la gràfica gran
       height: widget.isCollapsed
           ? (38.0 + systemBottomPadding)
           : (220.0 + systemBottomPadding),
       padding: EdgeInsets.only(bottom: systemBottomPadding),
       decoration: BoxDecoration(
-        color: AppColors.skyBlueDark.withOpacity(0.96),
+        // 🛡️ REGLA D'OR SENDA: Usem SEMPRE 'withAlpha(214)' per aconseguir
+        // l'84% de transparència de forma eficient a la GPU, evitant mètodes obsolets.
+        color: AppColors.skyBlueDark.withAlpha(214),
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(20),
           topRight: Radius.circular(20),
@@ -223,12 +225,27 @@ class _EmbeddedElevationProfileState
                       graphNeedleColor: AppColors.skyBlue,
                       sliderStartNeedleColor: Colors.green,
                       sliderEndNeedleColor: Colors.red,
+
+                      // 🔥 SUTURA AMB FRE DE TEMPS THROTTLE INTEGRAT
                       onNeedleMove: (idx) {
                         if (_localHoverIndex.value == idx) return;
+
+                        // A. Actualització a la memòria RAM (Sempre a temps real fluid a 120Hz)
                         _localHoverIndex.value = idx;
                         _localRangeStart.value = null;
                         _localRangeEnd.value = null;
+
+                        // B. 🛡️ FILTRE THROTTLE SÍNCRON: Regulem l'enviament cap al map_screen
+                        final now = DateTime.now();
+                        if (now.difference(_lastTouchMoveTime).inMilliseconds >=
+                            _touchThrottleDurationMs) {
+                          _lastTouchMoveTime = now; // Guardem la marca de temps
+
+                          // Notifiquem cap amunt per sincronitzar el mapa de forma controlada
+                          widget.onNeedleMove(idx);
+                        }
                       },
+
                       onRangeSelected: (start, end) {
                         if (_localRangeStart.value == start &&
                             _localRangeEnd.value == end)
