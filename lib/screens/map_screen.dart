@@ -81,6 +81,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
   int? selectedIndexEnd;
   int? selectedIndexGraph;
   bool _isChartCollapsed = false;
+  DateTime _lastMapUpdateTime = DateTime.fromMillisecondsSinceEpoch(0);
+  static const int _mapThrottleMs = 32;
   late MapAnimator mapAnimator;
 
   final ButtonStyle recordButtonStyle = ElevatedButton.styleFrom(
@@ -1079,7 +1081,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   ),
                 ),
               // ───────────────────────────────────────────────────────────
-              // 📈 VISOR D'ELEVACIONS CON FILTRO DE INICIALIZACIÓN ABSOLUTO
+              // 📈 VISOR D'ELEVACIONS AMB SINCRO EN TEMPS REAL (THROTTLE 32ms)
               // ───────────────────────────────────────────────────────────
               Positioned(
                 bottom: 0,
@@ -1099,8 +1101,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     selectedIndexEnd: selectedIndexEnd,
                     selectedIndexGraph: selectedIndexGraph,
 
+                    // 🎚️ A. DRAG DE LA MIRA CONTINU (Amb Throttle temporal actiu)
                     onNeedleMove: (idx) {
-                      // 🛡️ CONTROL 1: Evitamos actualizar si el valor no ha cambiado realmente
                       if (selectedIndexGraph == idx) return;
 
                       setState(() {
@@ -1109,25 +1111,27 @@ class _MapScreenState extends ConsumerState<MapScreen>
                         selectedIndexEnd = null;
                       });
 
-                      // 🛡️ CONTROL 2: Prohibido hablar con MapLibre si la GPU no está lista
-                      if (mapController != null && styleInitialized) {
-                        final hoverCoords = _getCoordsFromGlobalIndex(idx);
-                        try {
-                          setChartInteractionGeometry(
-                            mapController!,
-                            hoverCoords: hoverCoords,
-                          );
-                        } catch (e) {
-                          debugPrint(
-                            "⚠️ Geometría no disponible en este frame: $e",
-                          );
+                      // 🛡️ FILTRE DE TEMPS: Només enviem ordres a la GPU nàtiva si han passat 32ms
+                      final now = DateTime.now();
+                      if (now.difference(_lastMapUpdateTime).inMilliseconds >=
+                          _mapThrottleMs) {
+                        if (mapController != null && styleInitialized) {
+                          _lastMapUpdateTime =
+                              now; // Guardem la marca del frame aprovat
+                          final hoverCoords = _getCoordsFromGlobalIndex(idx);
+                          try {
+                            setChartInteractionGeometry(
+                              mapController!,
+                              hoverCoords: hoverCoords,
+                            );
+                          } catch (e) {
+                            debugPrint("⚠️ Capa gràfica ocupada: $e");
+                          }
                         }
                       }
                     },
 
-                    // 📐 TRAM SELECCIONAT: Mentres el dit manté el LongPress o l'arrossegament de rang,
-                    // guardem els índexs ordinals de dades EXCLUSIVAMENT a la RAM de Flutter.
-                    // Esborrem 'setChartInteractionGeometry' d'aquí per tancar l'excepció de Java.
+                    // 📐 B. LONGPRESS DEL TRAM (Gest discret controlat pel throttle)
                     onRangeSelected: (start, end) {
                       if (selectedIndexStart == start &&
                           selectedIndexEnd == end)
@@ -1138,11 +1142,29 @@ class _MapScreenState extends ConsumerState<MapScreen>
                         selectedIndexEnd = end;
                         selectedIndexGraph = null;
                       });
+
+                      final now = DateTime.now();
+                      if (now.difference(_lastMapUpdateTime).inMilliseconds >=
+                          _mapThrottleMs) {
+                        if (mapController != null && styleInitialized) {
+                          _lastMapUpdateTime = now;
+                          final startCoords = _getCoordsFromGlobalIndex(start);
+                          final endCoords = _getCoordsFromGlobalIndex(end);
+                          try {
+                            setChartInteractionGeometry(
+                              mapController!,
+                              rangeStartCoords: startCoords,
+                              rangeEndCoords: endCoords,
+                            );
+                          } catch (e) {
+                            debugPrint("⚠️ Capa gràfica de rang ocupada: $e");
+                          }
+                        }
+                      }
                     },
 
+                    // 🏁 C. FI DEL GEST / TAP DE NETEJA (Enviament de seguretat immediat)
                     onClearSelection: () {
-                      // 🛡️ CONTROL 4: EL FRE DE MÀ CRÍTIC DEL BUCLE INFINIT
-                      // Si ya está limpio de fábrica, salimos de golpe sin hacer setState ni tocar Java
                       if (selectedIndexStart == null &&
                           selectedIndexEnd == null &&
                           selectedIndexGraph == null) {
@@ -1157,9 +1179,10 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
                       if (mapController != null && styleInitialized) {
                         try {
+                          // Neteja immediata de les geometries del mapa, sense esperar cap throttle
                           setChartInteractionGeometry(mapController!);
                         } catch (e) {
-                          debugPrint("⚠️ Error al limpiar geometries: $e");
+                          debugPrint("⚠️ Error al netejar geometries: $e");
                         }
                       }
                     },

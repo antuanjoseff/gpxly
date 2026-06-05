@@ -51,3 +51,11 @@ Estàvem implementant el model amb 52 claus setmanals (w01–w52), on la Flutter
 També teníem timestamp anti-replay (30s), capçaleres X-App-Timestamp / X-App-Signature / X-App-Key-Version, i APIM amb rate limit (5 req/min) i quota (500 req/dia).
 A més, ara les meves Function Apps estan desplegades com a contenidors públics i vull continuar reforçant la seguretat i el flux d’autenticació.
 Continuem a partir d’aquí.
+
+
+///////////////////////////////
+//   PROMPT DE CONTINUACIÓ
+///////////////////////////////
+
+
+PROMPT DE CONTINUACIÓ (Copia a partir d'aquí):Hola! Reprenem el projecte Senda des del punt exacte on el vam deixar estabilitzat a Git. La nostra estructura base de gestos a la RAM local i el pintor quadrat reversible funcionen al 100% de rendiment i sense cap mena de penjat.Ara anem a implementar la sincronització en temps real del gràfic amb el mapa [INDEX]. Volem que en fer drag o longpress al perfil, MapLibre dibuixi a sobre del track els punts corresponents (la mira taronja o els extrems verd/vermell del tram) [INDEX].Per fer-ho sense saturar la GPU, hem acordat aplicar un throttle temporal de 32ms a les funcions de retorn (onNeedleMove i onRangeSelected) directament a l'arxiu lib/screens/map/map_screen.dart [INDEX]. D'aquesta manera, el mapa es redibuixarà de forma regulada mentre arrosseguem el dit [INDEX].Explica'm exactament:Com hem d'afegir el rellotge de DateTime per al throttle dins dels callbacks del Positioned(child: EmbeddedElevationProfile(...)) a map_screen.dart [INDEX].Com connectar la crida a setChartInteractionGeometry(mapController!, ...) usant el mètode existent _getCoordsFromGlobalIndex(idx) de manera totalment blindada sota el flag styleInitialized [INDEX].Anem a pams i mostra'm només el fragment de la crida d'aquest giny a map_screen.dart. Estic a punt!

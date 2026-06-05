@@ -362,15 +362,16 @@ void setUserLocationGeometry(
 }
 
 /// Actualitza les fites geomètriques de la interacció del gràfic
-void setChartInteractionGeometry(
+/// Actualitza les fites geomètriques de la interacció del gràfic sobre el mapa
+Future<void> setChartInteractionGeometry(
   MapLibreMapController controller, {
-  List<double>? hoverCoords, // [lon, lat] del drag simple
-  List<double>? rangeStartCoords, // [lon, lat] de l'inici del tram
-  List<double>? rangeEndCoords, // [lon, lat] del final del tram
-}) {
+  List<double>? hoverCoords,
+  List<double>? rangeStartCoords,
+  List<double>? rangeEndCoords,
+}) async {
   final List<Map<String, dynamic>> features = [];
 
-  // 1. Mira de Drag Simple
+  // 1. Mira de Drag Simple (Punt taronja en moviment) [lon, lat]
   if (hoverCoords != null && hoverCoords.length == 2) {
     features.add({
       "type": "Feature",
@@ -382,11 +383,11 @@ void setChartInteractionGeometry(
     });
   }
 
-  // 2. Extrem d'Inici del Tram
+  // 2. Extrem d'Inici del Tram (Punt verd fix) [lon, lat]
   if (rangeStartCoords != null && rangeStartCoords.length == 2) {
     features.add({
       "type": "Feature",
-      "properties": {"type": "range_edge"},
+      "properties": {"type": "range_start"},
       "geometry": {
         "type": "Point",
         "coordinates": [rangeStartCoords[0], rangeStartCoords[1]],
@@ -394,11 +395,11 @@ void setChartInteractionGeometry(
     });
   }
 
-  // 3. Extrem de Final del Tram
+  // 3. Extrem de Final del Tram (Punt vermell fix) [lon, lat]
   if (rangeEndCoords != null && rangeEndCoords.length == 2) {
     features.add({
       "type": "Feature",
-      "properties": {"type": "range_edge"},
+      "properties": {"type": "range_end"},
       "geometry": {
         "type": "Point",
         "coordinates": [rangeEndCoords[0], rangeEndCoords[1]],
@@ -406,8 +407,71 @@ void setChartInteractionGeometry(
     });
   }
 
-  controller.setGeoJsonSource("chart_interaction_source", {
-    "type": "FeatureCollection",
-    "features": features,
-  });
+  final geojson = {"type": "FeatureCollection", "features": features};
+
+  try {
+    // Intentem injectar les dades de manera normal si la font ja existeix
+    await controller.setGeoJsonSource("chart_interaction_source", geojson);
+  } catch (e) {
+    // 🛡️ ENGINYERIA RECOVERY: Si la font no existeix, LA CREEM AL MOMENT A LA GPU
+    try {
+      // A. Creem la font de dades GeoJSON buida/inicial
+      await controller.addSource(
+        "chart_interaction_source",
+        GeojsonSourceProperties(data: geojson),
+      );
+
+      // B. CREEM L'INDICADOR TARONJA (Per al drag continu de la mira)
+      await controller.addLayer(
+        "chart_interaction_source",
+        "chart_hover_layer",
+        const CircleLayerProperties(
+          circleRadius: 7.0,
+          circleColor: "#FF9800", // Taronja Senda vibrant
+          circleStrokeWidth: 2.0,
+          circleStrokeColor: "#FFFFFF",
+        ),
+      );
+      // Filtre perquè aquesta capa només pinti el punt de tipus 'hover'
+      await controller.setFilter("chart_hover_layer", ["==", "type", "hover"]);
+
+      // C. CREEM L'INDICADOR VERD (Inici de tram seleccionat)
+      await controller.addLayer(
+        "chart_interaction_source",
+        "chart_start_layer",
+        const CircleLayerProperties(
+          circleRadius: 8.0,
+          circleColor: "#4CAF50", // Verd bosc d'inici
+          circleStrokeWidth: 2.5,
+          circleStrokeColor: "#FFFFFF",
+        ),
+      );
+      await controller.setFilter("chart_start_layer", [
+        "==",
+        "type",
+        "range_start",
+      ]);
+
+      // D. CREEM L'INDICADOR VERMELL (Final de tram seleccionat)
+      await controller.addLayer(
+        "chart_interaction_source",
+        "chart_end_layer",
+        const CircleLayerProperties(
+          circleRadius: 8.0,
+          circleColor: "#F44336", // Vermell stop de final
+          circleStrokeWidth: 2.5,
+          circleStrokeColor: "#FFFFFF",
+        ),
+      );
+      await controller.setFilter("chart_end_layer", [
+        "==",
+        "type",
+        "range_end",
+      ]);
+    } catch (innerError) {
+      debugPrint(
+        "⚠️ Error intern en assegurar les capes de la GPU: $innerError",
+      );
+    }
+  }
 }
