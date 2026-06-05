@@ -698,22 +698,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
         alarms.cotaEnabled ||
         alarms.timeEnabled;
 
-    // 🔬 TEST DE DEPURACIÓ FLUX MAP_SCREEN
-    print(
-      "📍 [DEBUG MAPA] Estat Gravació: ${ref.read(trackRecordingProvider).recordingState}",
-    );
-    print(
-      "📍 [DEBUG MAPA] Punts Gravats: ${ref.read(trackRecordingProvider).points.length}",
-    );
-    print(
-      "📍 [DEBUG MAPA] Té Track Importat?: ${ref.read(importedTrackProvider) != null}",
-    );
-    if (ref.read(importedTrackProvider) != null) {
-      print(
-        "📍 [DEBUG MAPA] Punts Importats: ${ref.read(importedTrackProvider)!.points.length}",
-      );
-    }
-
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
@@ -870,7 +854,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
               child: Listener(
                 behavior: HitTestBehavior.translucent,
                 onPointerDown: (PointerDownEvent event) {
-                  // 🔥 BLINDATGE CRÍTIC: Si l'aplicació està movent el mapa per codi (SmartCenter actiu),
                   // ignorem completament el toc perquè no desconnecti el seguiment en temps real.
                   if (isProgrammaticMove) return;
 
@@ -1083,29 +1066,96 @@ class _MapScreenState extends ConsumerState<MapScreen>
               // ───────────────────────────────────────────────────────────
               // CAPA 3: EL PERFIL D'ELEVACIONS AMB FILTRE ANTIBUCLE
               // ───────────────────────────────────────────────────────────
-              // ─── EL GRÀFIC FIX A BAIX DE TOT A MAP_SCREEN.DART ───
+              // ───────────────────────────────────────────────────────────
+              // 📈 VISOR D'ELEVACIONS CON ESCUDO DE HARDWARE TOTAL
+              // ───────────────────────────────────────────────────────────
               Positioned(
                 bottom: 0,
                 left: 0,
                 right: 0,
-                child: EmbeddedElevationProfile(
-                  isCollapsed: _isChartCollapsed,
-                  onToggle: () =>
-                      setState(() => _isChartCollapsed = !_isChartCollapsed),
-                  selectedIndexStart: selectedIndexStart,
-                  selectedIndexEnd: selectedIndexEnd,
-                  selectedIndexGraph: selectedIndexGraph,
-                  onNeedleMove: (idx) =>
-                      setState(() => selectedIndexGraph = idx),
-                  onRangeSelected: (start, end) => setState(() {
-                    selectedIndexStart = start;
-                    selectedIndexEnd = end;
-                  }),
-                  onClearSelection: () => setState(() {
-                    selectedIndexStart = null;
-                    selectedIndexEnd = null;
-                    selectedIndexGraph = null;
-                  }),
+                child: Listener(
+                  // 🛡️ ESCUDO SÓLIDO NATIVO: Absorbe los punteros a bajo nivel.
+                  // Evita al 100% que el dedo active "org.maplibre.android.gestures" debajo [INDEX].
+                  behavior: HitTestBehavior.opaque,
+                  onPointerDown: (_) {}, // Captura el evento inicial
+                  onPointerMove:
+                      (
+                        _,
+                      ) {}, // Captura el arrastre para que el mapa no se mueva de fondo
+                  onPointerUp: (_) {}, // Captura el levantamiento del dedo
+                  child: EmbeddedElevationProfile(
+                    key: const ValueKey(
+                      'embedded_elevation_profile_sincro_real_pura',
+                    ),
+                    isCollapsed: _isChartCollapsed,
+                    onToggle: () =>
+                        setState(() => _isChartCollapsed = !_isChartCollapsed),
+
+                    selectedIndexStart: selectedIndexStart,
+                    selectedIndexEnd: selectedIndexEnd,
+                    selectedIndexGraph: selectedIndexGraph,
+
+                    onNeedleMove: (idx) {
+                      setState(() {
+                        selectedIndexGraph = idx;
+                        selectedIndexStart = null;
+                        selectedIndexEnd = null;
+                      });
+                    },
+
+                    onRangeSelected: (start, end) {
+                      setState(() {
+                        selectedIndexStart = start;
+                        selectedIndexEnd = end;
+                        selectedIndexGraph = null;
+                      });
+                    },
+
+                    onClearSelection: () {
+                      // Guardamos el frame final en memoria antes de limpiar
+                      final int? finalGraph = selectedIndexGraph;
+                      final int? finalStart = selectedIndexStart;
+                      final int? finalEnd = selectedIndexEnd;
+
+                      setState(() {
+                        selectedIndexStart = null;
+                        selectedIndexEnd = null;
+                        selectedIndexGraph = null;
+                      });
+
+                      if (mapController != null && styleInitialized) {
+                        try {
+                          if (finalGraph != null) {
+                            final hoverCoords = _getCoordsFromGlobalIndex(
+                              finalGraph,
+                            );
+                            setChartInteractionGeometry(
+                              mapController!,
+                              hoverCoords: hoverCoords,
+                            );
+                          } else if (finalStart != null && finalEnd != null) {
+                            final startCoords = _getCoordsFromGlobalIndex(
+                              finalStart,
+                            );
+                            final endCoords = _getCoordsFromGlobalIndex(
+                              finalEnd,
+                            );
+                            setChartInteractionGeometry(
+                              mapController!,
+                              rangeStartCoords: startCoords,
+                              rangeEndCoords: endCoords,
+                            );
+                          } else {
+                            setChartInteractionGeometry(mapController!);
+                          }
+                        } catch (e) {
+                          debugPrint(
+                            "⚠️ Error síncron atòmic final a la GPU: $e",
+                          );
+                        }
+                      }
+                    },
+                  ),
                 ),
               ),
             ],

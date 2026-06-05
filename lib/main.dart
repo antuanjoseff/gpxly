@@ -1,8 +1,8 @@
 // main.dart
+import 'package:senda/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:senda/l10n/app_localizations.dart';
 import 'package:senda/notifiers/location_notifier.dart';
 import 'package:senda/notifiers/permissions_notifier.dart';
 import 'package:senda/screens/map_screen.dart';
