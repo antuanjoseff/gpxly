@@ -660,8 +660,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
     });
 
     // ─────────────────────────────────────────────────────────────
-    // OIENT D: GESTIÓ D'ALERTES I DIÀLEGS EN PANTALLA (Navegació Senda)
+    // 🔔 OIENT D: GESTIÓ D'ALERTES I DIÀLEGS EN PANTALLA (Navegació Senda)
     // ─────────────────────────────────────────────────────────────
+    // ✅ ADAPTAT: Substituïm la subscripció del vell trackFollowNotifierProvider pel navigationProvider
     ref.listen<NavigationState>(navigationProvider, (prev, next) {
       if (next.showBackOnTrackSnackbar == true) {
         AppMessages.showBackOnTrackPersistentSnackbar(context, ref);
