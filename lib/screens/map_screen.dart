@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
+import 'package:senda/l10n/app_localizations.dart';
 import 'package:senda/models/navigation_state.dart'; // Afegit per a la nova lògica de navegació
 import 'package:senda/models/track.dart'; // Afegit per l'enum RecordingState si s'usa a la UI
 import 'package:senda/models/user_position.dart';
@@ -1063,6 +1064,170 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   ],
                 ),
               ),
+              // ───────────────────────────────────────────────────────────
+              // 📊 CONTENIDOR DE TRAM FLOTANT COMPACTE AMB ICONES (HUD)
+              // ───────────────────────────────────────────────────────────
+              if (selectedIndexStart != null &&
+                  selectedIndexEnd != null &&
+                  !_isChartCollapsed)
+                Positioned(
+                  // 🛡️ REAJUSTAMENT DE COIXÍ DINÀMIC:
+                  // Si el perfil està obert, calculem 162px reals de fons (154px gràfic + 8px de separació elegant),
+                  // i li sumem el coixí inferior natiu perquè pugi en bloc amb el gràfic a l'S24.
+                  bottom: _isChartCollapsed
+                      ? (44.0 + MediaQuery.of(context).padding.bottom)
+                      : (162.0 + MediaQuery.of(context).padding.bottom),
+                  left: 32,
+                  right: 32,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(
+                        0xFF0F172A,
+                      ).withOpacity(0.94), // Blau fosc de Senda
+                      borderRadius: BorderRadius.circular(
+                        20,
+                      ), // Aspecte de píndola estilitzada
+                      border: Border.all(color: Colors.white.withAlpha(30)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withAlpha(50),
+                          blurRadius: 6,
+                          offset: const Offset(0, -2),
+                        ),
+                      ],
+                    ),
+                    child: Builder(
+                      builder: (context) {
+                        final realDists = ref
+                            .read(trackRecordingProvider)
+                            .distances;
+                        final imported = ref.read(importedTrackProvider);
+                        final realAlts = ref
+                            .read(trackRecordingProvider)
+                            .altitudes;
+                        final importedAlts = imported?.altitudes ?? <double>[];
+
+                        final List<double> futureDists = imported != null
+                            ? calculateDistances(imported.coordinates)
+                            : [];
+                        final globalDists = <double>[
+                          ...realDists,
+                          ...futureDists,
+                        ];
+                        final globalAlts = <double>[
+                          ...realAlts,
+                          ...importedAlts,
+                        ];
+
+                        double rangeDistance = 0;
+                        double rangeAscent = 0;
+                        double rangeDescent = 0;
+
+                        final start = selectedIndexStart!;
+                        final end = selectedIndexEnd!;
+
+                        if (start < globalDists.length &&
+                            end < globalDists.length) {
+                          rangeDistance =
+                              (globalDists[end] - globalDists[start]).abs();
+                          final int startIdx = start < end ? start : end;
+                          final int endIdx = start < end ? end : start;
+
+                          for (int i = startIdx + 1; i <= endIdx; i++) {
+                            if (i >= globalAlts.length) break;
+                            final diff = globalAlts[i] - globalAlts[i - 1];
+                            if (diff > 0) rangeAscent += diff;
+                            if (diff < 0) rangeDescent += diff.abs();
+                          }
+                        }
+
+                        return Row(
+                          mainAxisAlignment: MainAxisAlignment
+                              .spaceEvenly, // Distribueix les 3 icones equidistants
+                          children: [
+                            // 1. DADA DISTÀNCIA
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.straighten,
+                                  size: 15,
+                                  color: Colors.white70,
+                                ),
+                                const SizedBox(width: 5),
+                                Text(
+                                  "${(rangeDistance / 1000).toStringAsFixed(2)} km",
+                                  style: const TextStyle(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            // Separador visual vertical subtil
+                            Container(
+                              height: 12,
+                              width: 1,
+                              color: Colors.white24,
+                            ),
+
+                            // 2. DADA ASCENS
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.arrow_upward,
+                                  size: 15,
+                                  color: Colors.greenAccent,
+                                ),
+                                const SizedBox(width: 3),
+                                Text(
+                                  "${rangeAscent.toStringAsFixed(0)} m",
+                                  style: const TextStyle(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.greenAccent,
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            // Separador visual vertical subtil
+                            Container(
+                              height: 12,
+                              width: 1,
+                              color: Colors.white24,
+                            ),
+
+                            // 3. DADA DESCENS
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.arrow_downward,
+                                  size: 15,
+                                  color: Colors.redAccent,
+                                ),
+                                const SizedBox(width: 3),
+                                Text(
+                                  "${rangeDescent.toStringAsFixed(0)} m",
+                                  style: const TextStyle(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.redAccent,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                ),
               // ───────────────────────────────────────────────────────────
               // 📈 VISOR D'ELEVACIONS CON FILTRO DE INICIALIZACIÓN ABSOLUTO
               // ───────────────────────────────────────────────────────────

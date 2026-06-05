@@ -18,7 +18,6 @@ class EmbeddedElevationProfile extends ConsumerStatefulWidget {
   final bool isCollapsed;
   final VoidCallback onToggle;
 
-  // Parámetros de sincronización finales del mapa
   final int? selectedIndexStart;
   final int? selectedIndexEnd;
   final int? selectedIndexGraph;
@@ -46,12 +45,10 @@ class EmbeddedElevationProfile extends ConsumerStatefulWidget {
 
 class _EmbeddedElevationProfileState
     extends ConsumerState<EmbeddedElevationProfile> {
-  // 🛡️ MOTOR DE GESTOS ULTRA-FLUIDO DE BAJA LATENCIA (Consumo cero de GPU en arrastre)
   final ValueNotifier<int?> _localHoverIndex = ValueNotifier<int?>(null);
   final ValueNotifier<int?> _localRangeStart = ValueNotifier<int?>(null);
   final ValueNotifier<int?> _localRangeEnd = ValueNotifier<int?>(null);
 
-  // Memoria caché de distancias trigonométricas
   List<double> _cachedImportedDists = [];
   int _lastCoordinatesLength = 0;
 
@@ -67,7 +64,6 @@ class _EmbeddedElevationProfileState
   Widget build(BuildContext context) {
     final double systemBottomPadding = MediaQuery.of(context).padding.bottom;
 
-    // Escuchadores de dades de tu ecosistema Riverpod
     final real = ref.watch(trackRecordingProvider);
     final imported = ref.watch(importedTrackProvider);
     final remaining = ref.watch(remainingTrackProvider);
@@ -83,9 +79,6 @@ class _EmbeddedElevationProfileState
       return const SizedBox.shrink();
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // 🧮 TU LÓGICA DE VENTANA ASIMÉTRICA DE SENDA (Mantenida intacta)
-    // ─────────────────────────────────────────────────────────────────────────
     late List<double> futureAlts;
     late List<double> futureDistsGlobal;
 
@@ -93,15 +86,12 @@ class _EmbeddedElevationProfileState
       final double maxFutureDistanceVisible = pastLastDist / 3.0;
       final remainingAlts = remaining!.altitudes;
       final remainingDists = remaining.distances;
-
       double elevationOffset = 0.0;
       if (realAlts.isNotEmpty && remainingAlts.isNotEmpty) {
         elevationOffset = realAlts.last - remainingAlts.first;
       }
-
       final List<double> tempFutureAlts = [];
       final List<double> tempFutureDists = [];
-
       for (int i = 0; i < remainingDists.length; i++) {
         if (remainingDists[i] <= maxFutureDistanceVisible) {
           tempFutureAlts.add(remainingAlts[i] + elevationOffset);
@@ -129,9 +119,6 @@ class _EmbeddedElevationProfileState
 
     final globalDists = <double>[...realDists, ...futureDistsGlobal];
     // lib/screens/map/widgets/embedded_elevation_profile.dart (BLOC 2 DE 2)
-    // ─────────────────────────────────────────────
-    // WAYPOINTS Y AJUSTES DE COLOR DE SENDA
-    // ─────────────────────────────────────────────
     final recordedWps = ref.watch(waypointsProvider);
     final importedWps = ref.watch(importedWaypointsProvider);
     final trackColor = ref.watch(trackSettingsProvider).color;
@@ -165,9 +152,10 @@ class _EmbeddedElevationProfileState
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       curve: Curves.easeInOut,
+      // 🛡️ RESTRUCTURACIÓ 30%: Estrenyem l'alçada oberta de 220px a 154px estrictes
       height: widget.isCollapsed
           ? (38.0 + systemBottomPadding)
-          : (220.0 + systemBottomPadding),
+          : (154.0 + systemBottomPadding),
       padding: EdgeInsets.only(bottom: systemBottomPadding),
       decoration: BoxDecoration(
         color: AppColors.skyBlueDark.withOpacity(0.96),
@@ -181,7 +169,7 @@ class _EmbeddedElevationProfileState
         physics: const NeverScrollableScrollPhysics(),
         child: Column(
           children: [
-            // ─── 1. LA NANSA DE CONTROL SUPERIOR (Estable de fàbrica) ───
+            // Nansa superior del panell flotant
             GestureDetector(
               onTap: widget.onToggle,
               behavior: HitTestBehavior.opaque,
@@ -201,10 +189,10 @@ class _EmbeddedElevationProfileState
               ),
             ),
 
-            // ─── 2. RENDERIZACIÓN EXCLUSIVA DE TU GRÁFICO ORIGINAL DE SENDA ───
+            // 🛡️ RESTRUCTURACIÓ 30%: Ajustem la caixa de fl_chart de 160px a 108px d'alçada
             if (!widget.isCollapsed)
               SizedBox(
-                height: 160,
+                height: 108,
                 child: AnimatedBuilder(
                   animation: Listenable.merge([
                     _localHoverIndex,
@@ -212,7 +200,6 @@ class _EmbeddedElevationProfileState
                     _localRangeEnd,
                   ]),
                   builder: (context, _) {
-                    // Combinamos los Notifiers de arrastre rápido local con el estado guardado final
                     final currentHover =
                         _localHoverIndex.value ?? widget.selectedIndexGraph;
                     final currentStart =
@@ -225,12 +212,9 @@ class _EmbeddedElevationProfileState
                       pastDists: realDists,
                       futureAlts: futureAlts,
                       futureDistsGlobal: futureDistsGlobal,
-
-                      // Inyectamos las referencias fluidas de memoria RAM
                       selectedIndexStart: currentStart,
                       selectedIndexEnd: currentEnd,
                       selectedIndexGraph: currentHover,
-
                       recordedWaypointGlobalDists: recordedWaypointGlobalDists,
                       importedWaypointGlobalDists: importedWaypointGlobalDists,
                       realColor: trackColor,
@@ -238,8 +222,6 @@ class _EmbeddedElevationProfileState
                       graphNeedleColor: AppColors.skyBlue,
                       sliderStartNeedleColor: Colors.green,
                       sliderEndNeedleColor: Colors.red,
-
-                      // 🔥 CAPTURA DE CALLBACKS: Sincronización atómica optimizada para Vulkan
                       onNeedleMove: (idx) {
                         if (_localHoverIndex.value == idx) return;
                         _localHoverIndex.value = idx;
@@ -253,8 +235,6 @@ class _EmbeddedElevationProfileState
                         _localRangeStart.value = start;
                         _localRangeEnd.value = end;
                         _localHoverIndex.value = null;
-
-                        // Los rangos fijados (LongPress) sí notifican arriba directo porque no son ráfagas
                         widget.onRangeSelected(start, end);
                       },
                       onClearSelection: () {
