@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/l10n/app_localizations.dart';
+import 'package:senda/models/track.dart';
 import 'package:senda/models/waypoint.dart';
 import 'package:senda/notifiers/navigation_notifier.dart';
 import 'package:senda/notifiers/waypoints_recorded_notifier.dart';
@@ -656,4 +657,221 @@ class AppMessages {
       },
     ),
   );
+
+  // ==========================================
+  // 4. DIÀLEGS CUSTOM DE CONTROL FLOTANT (Pas 2)
+  // ==========================================
+
+  // ==========================================
+  // 4. DIÀLEGS CUSTOM DE CONTROL FLOTANT (Solució de Tipat Certificada)
+  // ==========================================
+
+  /// Diàleg de control de gravació adaptat al mètode mestre Future<bool?>
+  static Future<String?> showRecordingControlDialog({
+    required BuildContext context,
+    required RecordingState state,
+  }) async {
+    final t = AppLocalizations.of(context)!;
+    String? selectedAction; // Variable temporal per desar l'acció
+
+    String message = t.noRecordedTrack;
+    if (state == RecordingState.recording) message = "${t.recording}...";
+    if (state == RecordingState.paused) message = "${t.paused}...";
+
+    // Invoquem el teu mètode mestre original de forma totalment compatible
+    await _showBaseDialog(
+      context: context,
+      title: t.recordingTitle,
+      message: message,
+      icon: Icons.fiber_manual_record,
+      iconColor: Colors.redAccent,
+      actions: [
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              if (state == RecordingState.idle)
+                ElevatedButton.icon(
+                  style: _buttonStyle(Colors.green),
+                  onPressed: () {
+                    selectedAction = "start"; // 1. Desem l'acció
+                    Navigator.pop(
+                      context,
+                      true,
+                    ); // 2. Tanquem amb el bool requerit
+                  },
+                  icon: const Icon(
+                    Icons.play_arrow_rounded,
+                    color: Colors.white,
+                  ),
+                  label: Text(t.startRecording.toUpperCase()),
+                ),
+              if (state == RecordingState.recording)
+                ElevatedButton.icon(
+                  style: _buttonStyle(Colors.orange),
+                  onPressed: () {
+                    selectedAction = "pause";
+                    Navigator.pop(context, true);
+                  },
+                  icon: const Icon(Icons.pause, color: Colors.white),
+                  label: Text(t.pause.toUpperCase()),
+                ),
+              if (state == RecordingState.paused)
+                ElevatedButton.icon(
+                  style: _buttonStyle(Colors.green),
+                  onPressed: () {
+                    selectedAction = "resume";
+                    Navigator.pop(context, true);
+                  },
+                  icon: const Icon(
+                    Icons.play_arrow_rounded,
+                    color: Colors.white,
+                  ),
+                  label: Text(t.resume.toUpperCase()),
+                ),
+              if (state == RecordingState.recording ||
+                  state == RecordingState.paused) ...[
+                const SizedBox(width: 8),
+                ElevatedButton.icon(
+                  style: _buttonStyle(Colors.red),
+                  onPressed: () {
+                    selectedAction = "stop";
+                    Navigator.pop(context, true);
+                  },
+                  icon: const Icon(Icons.stop, color: Colors.white),
+                  label: Text(t.stopShort.toUpperCase()),
+                ),
+              ],
+              const SizedBox(width: 8),
+              TextButton(
+                onPressed: () =>
+                    Navigator.pop(context, false), // Tanca amb false
+                child: Text(
+                  t.close.toUpperCase(),
+                  style: TextStyle(color: Colors.white.withAlpha(130)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+
+    return selectedAction; // Retornem el String a map_screen
+  }
+
+  /// Diàleg de control de seguiment adaptat al mètode mestre Future<bool?>
+  /// Diàleg de control de seguiment adaptat al mètode mestre Future<bool?>
+  static Future<String?> showNavigationControlDialog({
+    required BuildContext context,
+    required bool hasImportedTrack,
+    required bool isFollowing,
+    required bool isFollowPaused,
+  }) async {
+    final t = AppLocalizations.of(context)!;
+    String? selectedAction;
+
+    String message = t.importedTrack;
+    if (isFollowing) {
+      message = isFollowPaused ? "${t.followPaused}..." : "${t.following}...";
+    }
+
+    await _showBaseDialog(
+      context: context,
+      title: t.followingTitle,
+      message: message,
+      icon: Icons.navigation_rounded,
+      iconColor: AppColors.deepGreen,
+      actions: [
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              // 1. Sempre es permet importar un fitxer nou
+              ElevatedButton.icon(
+                style: _buttonStyle(AppColors.skyBlue),
+                onPressed: () {
+                  selectedAction = "import";
+                  Navigator.pop(context, true);
+                },
+                icon: const Icon(Icons.file_upload, color: Colors.white),
+                label: Text(t.importedTrack.toUpperCase()),
+              ),
+              const SizedBox(width: 8),
+
+              // 2. Si té track carregat però NO s'ha iniciat el seguiment
+              if (hasImportedTrack && !isFollowing) ...[
+                ElevatedButton.icon(
+                  style: _buttonStyle(AppColors.deepGreen),
+                  onPressed: () {
+                    selectedAction = "follow";
+                    Navigator.pop(context, true);
+                  },
+                  icon: const Icon(
+                    Icons.navigation_rounded,
+                    color: Colors.white,
+                  ),
+                  label: Text(t.followShort.toUpperCase()),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton.icon(
+                  style: _buttonStyle(Colors.redAccent),
+                  onPressed: () {
+                    selectedAction =
+                        "clear_imported"; // Acció per esborrar el GPX
+                    Navigator.pop(context, true);
+                  },
+                  icon: const Icon(Icons.delete_outline, color: Colors.white),
+                  label: Text(t.discard.toUpperCase()),
+                ),
+              ],
+
+              // 3. Si el seguiment està actiu en aquest moment
+              if (isFollowing) ...[
+                ElevatedButton.icon(
+                  style: _buttonStyle(Colors.orange),
+                  onPressed: () {
+                    selectedAction = "toggle_pause";
+                    Navigator.pop(context, true);
+                  },
+                  icon: Icon(
+                    isFollowPaused ? Icons.play_arrow_rounded : Icons.pause,
+                    color: Colors.white,
+                  ),
+                  label: Text(
+                    isFollowPaused
+                        ? t.resume.toUpperCase()
+                        : t.pause.toUpperCase(),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton.icon(
+                  style: _buttonStyle(Colors.red),
+                  onPressed: () {
+                    selectedAction = "stop_follow";
+                    Navigator.pop(context, true);
+                  },
+                  icon: const Icon(Icons.stop, color: Colors.white),
+                  label: Text(t.stopShort.toUpperCase()),
+                ),
+              ],
+
+              const SizedBox(width: 8),
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text(
+                  t.close.toUpperCase(),
+                  style: TextStyle(color: Colors.white.withAlpha(130)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+
+    return selectedAction;
+  }
 }

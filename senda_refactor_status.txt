@@ -1,17 +1,45 @@
-Hola! Continuem amb el desenvolupament de la pantalla d'estadístiques (stats_screen.dart) de l'app "Senda".
+///////////////////////////////
+//   SENDA DESCRIPCIO INICIAL PEL PROMPT
+///////////////////////////////
 
-Avui vull implementar la nova targeta de diagnòstic de satèl·lits globals (clau 'gps') per a la graella dinàmica de 2x2. Vull que aquesta targeta sigui un carrusel amb les següents dues pàgines:
 
-1. Pàgina 1 (Agrupació per Constel·lacions): Mostra el recompte simètric de satèl·lits actius (usedInFix) i en vista (in view) per a les 4 grans xarxes mundials: EUA (GPS), Europa (Galileo), Rússia (GLONASS) i Xina (BeiDou).
-2. Pàgina 2 (Gràfic de Barres estil Garmin): Un gràfic de barres verticals que mostri la potència del senyal (SNR/CN0 en dBHz) de cada satèl·lit individual, pintant en verd els utilitzats per a la fixació de posició i en gris els que només estan en vista, identificant cadascun a sota amb el seu codi PRN (ex: G12, E05).
+Hola, treballo amb flutter en una app que fa tracking del gps. També en background. A més permet importar un .gpx i fer la navegació. També fa correccions d'altimetries amb un DEM descarregat i correcció baromètrica.
+La app té una pantalla de dades on es mostren moltes dades relacionades amb l'altimetria, la velocitat, el temps , etc.
+Hi ha una altra pàgina amb el perfil d'elevacions que permet fer drag sobre el gràfic o, amb un long press sobre el gràfic, mostrar un rang del track i poder-lo modificar. Les dades del tram seleccionat es mostren en un container.
+La pàgina principal de la app és un mapa on es visualiza la posició actual i el track gravat i/o el track importat. 
+La pàgina principal té un appBar amb actions, un body amb un Stack on hi ha el mapa i altres components i un element bottombarcontainer que mostra els botons de gravació i seguiment del track. 
 
-Recorda el context actual:
-- Utilitzem Riverpod 2.0 i el model d'estat de preferències 'statsPrefsProvider' (que conté la llista 'order' i el mapa 'indices' desats a SharedPreferences). Cal expandir-lo per incloure la clau 'gps' (fent que ara siguin 6 targetes en total, graella simètrica de 3x2).
-- Tenim un 'LocationNotifier' propi (que exposa un estat 'UserPosition?') del qual podem extreure dades com els satèl·lits globals de l'últim punt.
-- Per a les dades individuals detallades a Android (API GnssStatus), utilitzarem el paquet 'gnss_diagnostics' que ens obre un Stream a temps real.
-- Estem substituint els mètodes deprecats de color (withOpacity) per la versió moderna (withAlpha).
+//////////////////
+// DESCRIPCIÓ DEL GRÀFIC D'ELEVACONS I LES SEVES FUNCIONALITATS
+//////////////////
+El tema del layoutbuilder el vull plantejar més endavant. Està bé tenir-ho en compte en el nou disseny.
+Els botons del bottombarpanel, bàsicament gravació i sguiment de track, els vull posar com a botons sobre el mapa. Cada botó tindrà un dialog associat amb les accions que correspongui en cada cas.
+A la part inferior del mapa vull col·locar el mapa d'elevacions. Aquest mapa té un comportament complex que descric a continuació.
+- Es un mapa d'altimetries. Eix X mostra la distància. Eix Y mostra les altimetries. El gràfic de les X també mostra uns petits cercles que corresponent a les posicions dels waypoints. No ho he dit abans, però la app també permet afegir waypoints sempre que s'hagi iniciat la gravació d'un track
+- El gràfic permet moure el dit i mostrar un indicador que mostra els kms i altitud del punt del gràfic que correspon al moviment de drag. Apareix un tooltip per sobre del gràfic que mostra els kms i l'altitud.
+- Al fer un long press sobre el gràfic, apareixen dos indicadors (iguals que l'anterior) que també es poden moure individualment (si l'usuari els arrosega fent drag). Aquests dos indicadors defineixen un tram del track. Apareixen dos tooltips per sobre del gràfic , que no es trepitgen  mai, i també es motren les dades relacionades amb el tram seleccionat. Distància, temps per fer el tram, velocitat mitjana, desnivell acumulat pujant i desnivell acumulat baixant.
 
-Genera, si us plau, el codi complet actualitzat del Notifier (stats_prefs_notifier.dart) i de la pantalla principal (stats_screen.dart) integrant aquesta nova targeta de satèl·lits.
+
+///////////////////////////////
+//   DISSENY Glassmorphism
+///////////////////////////////
+
+Hola! Reprenem la conversa sobre el disseny de la interfície (UI) de l'app de muntanya "Senda" desenvolupada en Flutter. 
+
+Context actual de l'app i decisions preses:
+1. El mapa ocupa el 100% del fons de la pantalla sense comptar el appBar. Sobre el mapa floten els components (HUD).
+2. Tenim 3 components principals flotants, transparents i independents:
+   - Gràfic d'elevacions (perfil lineal).
+   - Panell d'informació / dades en temps real (Temps, Km, Desnivell).
+   - Botons d'acció duals (Pausa gravació i Pausa navegació independents).
+3. Sistema modular avançat: Cada component es pot minimitzar de forma independent (es converteix en una bombolla/cercle translúcid) mitjançant un 'Double Tap'.
+4. Moviment independent: Es pot canviar la posició de cada element fent un 'Long Press' (per evitar conflictes de gestos amb el pan del mapa) amb persistència local mitjançant ràtios en SharedPreferences.
+5. S'aplica Glassmorphism (BackdropFilter amb blur natiu de Flutter) per garantir el contrast dels textos.
+
+OBJECTIU DE LA SESSIÓ ACTUAL:
+Necessito que generis una pàgina de prova completa en Flutter (un prototip funcional de codi en un sol fitxer, estil main.dart) on s'implementi aquest disseny de capes amb el Stack, el simulacre de mapa al fons (pot ser un contenidor que simuli el mapa), els 3 widgets lliures amb LongPressDraggable, el doble toc per minimitzar a bombolla i la persistència de posicions.
+
+Si us plau, genera aquest codi de prototipus detallat i net per provar-ho.
 
 
 ///////////////////////////////

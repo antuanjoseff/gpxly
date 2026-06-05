@@ -360,3 +360,54 @@ void setUserLocationGeometry(
     ],
   });
 }
+
+/// Actualitza les fites geomètriques de la interacció del gràfic
+void setChartInteractionGeometry(
+  MapLibreMapController controller, {
+  List<double>? hoverCoords, // [lon, lat] del drag simple
+  List<double>? rangeStartCoords, // [lon, lat] de l'inici del tram
+  List<double>? rangeEndCoords, // [lon, lat] del final del tram
+}) {
+  final List<Map<String, dynamic>> features = [];
+
+  // 1. Mira de Drag Simple
+  if (hoverCoords != null && hoverCoords.length == 2) {
+    features.add({
+      "type": "Feature",
+      "properties": {"type": "hover"},
+      "geometry": {
+        "type": "Point",
+        "coordinates": [hoverCoords[0], hoverCoords[1]],
+      },
+    });
+  }
+
+  // 2. Extrem d'Inici del Tram
+  if (rangeStartCoords != null && rangeStartCoords.length == 2) {
+    features.add({
+      "type": "Feature",
+      "properties": {"type": "range_edge"},
+      "geometry": {
+        "type": "Point",
+        "coordinates": [rangeStartCoords[0], rangeStartCoords[1]],
+      },
+    });
+  }
+
+  // 3. Extrem de Final del Tram
+  if (rangeEndCoords != null && rangeEndCoords.length == 2) {
+    features.add({
+      "type": "Feature",
+      "properties": {"type": "range_edge"},
+      "geometry": {
+        "type": "Point",
+        "coordinates": [rangeEndCoords[0], rangeEndCoords[1]],
+      },
+    });
+  }
+
+  controller.setGeoJsonSource("chart_interaction_source", {
+    "type": "FeatureCollection",
+    "features": features,
+  });
+}

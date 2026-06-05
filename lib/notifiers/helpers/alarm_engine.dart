@@ -29,6 +29,7 @@ class AlarmEngine {
 
   // LÒGICA 2: Cotes Absolutes (cota)
   int? _lastCotaFloor;
+  double? _baseCotaAlt;
 
   // Temps
   DateTime? _lastTimeAlarm;
@@ -104,53 +105,75 @@ class AlarmEngine {
 
     if (_smoothedAlt < 0) {
       _smoothedAlt = currentAlt;
+      _baseCotaAlt = currentAlt; // Necessari per al progrés net de la cota
       return;
     } else {
       const double alpha = 0.15;
       _smoothedAlt = (_smoothedAlt * (1 - alpha)) + (currentAlt * alpha);
     }
 
+    // 1️⃣ LÒGICA: DESNIVELL ACUMULAT (Corregit: independent i sense llindar alt)
     if (settings.accEnabled && settings.accMeters > 0) {
       double delta = _smoothedAlt - altAnterior;
 
-      if (delta.abs() > 0.3) {
+      // Llindar molt baix (0.05) perquè el filtre alpha ja neteja el soroll
+      if (delta.abs() > 0.05) {
         if (delta > 0) {
-          _accUp += delta;
-          _accDown = 0;
+          _accUp += delta; // Sumem a la pujada
+          // ✅ ELIMINAT: _accDown = 0; (Ja no esborrem el passat)
           if (_accUp >= settings.accMeters) {
             sounds.playAltitudeAlarm();
             _accUp = 0;
           }
         } else {
-          _accDown += delta.abs();
-          _accUp = 0;
+          _accDown += delta.abs(); // Sumem a la baixada
+          // ✅ ELIMINAT: _accUp = 0; (Ja no esborrem el passat)
           if (_accDown >= settings.accMeters) {
             sounds.playAltitudeAlarm();
             _accDown = 0;
           }
         }
       }
+    } else {
+      // Si l'alarma s'apaga des de la pantalla, netegem els comptadors
+      _accUp = 0;
+      _accDown = 0;
     }
 
+    // 2️⃣ LÒGICA: COTES ABSOLUTES (Corregit: histèresi real i independent)
     if (settings.cotaEnabled && settings.cotaMeters > 0) {
       int currentFloor = (_smoothedAlt / settings.cotaMeters).floor();
 
-      if (_lastCotaFloor != null && currentFloor != _lastCotaFloor) {
-        const double hysteresis = 5.0;
+      if (_lastCotaFloor == null) {
+        _lastCotaFloor = currentFloor;
+        _baseCotaAlt = currentFloor * settings.cotaMeters.toDouble();
+      } else if (currentFloor != _lastCotaFloor) {
+        const double hysteresis = 4.0; // 4-5 metres de marge de seguretat
+
         double threshold = (currentFloor > _lastCotaFloor!)
             ? currentFloor * settings.cotaMeters
             : (currentFloor + 1) * settings.cotaMeters;
 
-        if ((currentFloor > _lastCotaFloor! &&
-                _smoothedAlt >= threshold + hysteresis) ||
-            (currentFloor < _lastCotaFloor! &&
-                _smoothedAlt <= threshold - hysteresis)) {
+        bool crossUp =
+            currentFloor > _lastCotaFloor! &&
+            _smoothedAlt >= (threshold + hysteresis);
+        bool crossDown =
+            currentFloor < _lastCotaFloor! &&
+            _smoothedAlt <= (threshold - hysteresis);
+
+        if (crossUp || crossDown) {
           sounds.playAltitudeAlarm();
           _lastCotaFloor = currentFloor;
+          _baseCotaAlt =
+              currentFloor *
+              settings.cotaMeters.toDouble(); // Actualitzem la base per a la UI
         }
-      } else {
-        _lastCotaFloor = currentFloor;
+        // ✅ CORREGIT: Hem eliminat el 'else' erroni d'aquí que trencava la histèresi!
       }
+    } else {
+      // Si l'alarma s'apaga, netegem l'estat de les cotes
+      _lastCotaFloor = null;
+      _baseCotaAlt = null;
     }
   }
 
