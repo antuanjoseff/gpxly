@@ -560,4 +560,22 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get statPositionDMS => 'Posición DMS';
+
+  @override
+  String get demManagerTitle => 'Gestor de Celdas DEM';
+
+  @override
+  String get demManagerDesc => 'Senda descarga automáticamente la altitud si hay cobertura. Acércate al mapa para guardar manualmente hasta 8 zonas de 0.2° para usar offline.';
+
+  @override
+  String get demCellDownloaded => 'Celda descargada en local';
+
+  @override
+  String get demCellAvailable => 'Celda disponible para descargar';
+
+  @override
+  String get demDeleteConfirm => '¿Quieres eliminar esta celda del disco?';
+
+  @override
+  String get demLimitReached => 'Techo alcanzado. Elimina una celda antigua para bajar una nueva.';
 }

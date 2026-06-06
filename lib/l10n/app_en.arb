@@ -232,6 +232,12 @@
 "statRangeTime": "Split time",
 
 "statPositionDecimal": "DD Position",
-"statPositionDMS": "DMS Position"
+"statPositionDMS": "DMS Position",
+"demManagerTitle": "DEM Cell Manager",
+"demManagerDesc": "Senda automatically downloads elevation data when connected. Zoom in on the map to manually save up to 8 zones of 0.2° for offline use.",
+"demCellDownloaded": "Cell downloaded locally",
+"demCellAvailable": "Cell available to download",
+"demDeleteConfirm": "Do you want to delete this cell from disk?",
+"demLimitReached": "Limit reached. Delete an old cell to download a new one."
 }
 

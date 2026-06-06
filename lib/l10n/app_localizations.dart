@@ -1194,6 +1194,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'DMS Position'**
   String get statPositionDMS;
+
+  /// No description provided for @demManagerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'DEM Cell Manager'**
+  String get demManagerTitle;
+
+  /// No description provided for @demManagerDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Senda automatically downloads elevation data when connected. Zoom in on the map to manually save up to 8 zones of 0.2° for offline use.'**
+  String get demManagerDesc;
+
+  /// No description provided for @demCellDownloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Cell downloaded locally'**
+  String get demCellDownloaded;
+
+  /// No description provided for @demCellAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Cell available to download'**
+  String get demCellAvailable;
+
+  /// No description provided for @demDeleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Do you want to delete this cell from disk?'**
+  String get demDeleteConfirm;
+
+  /// No description provided for @demLimitReached.
+  ///
+  /// In en, this message translates to:
+  /// **'Limit reached. Delete an old cell to download a new one.'**
+  String get demLimitReached;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

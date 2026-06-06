@@ -560,4 +560,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get statPositionDMS => 'DMS Position';
+
+  @override
+  String get demManagerTitle => 'DEM Cell Manager';
+
+  @override
+  String get demManagerDesc => 'Senda automatically downloads elevation data when connected. Zoom in on the map to manually save up to 8 zones of 0.2° for offline use.';
+
+  @override
+  String get demCellDownloaded => 'Cell downloaded locally';
+
+  @override
+  String get demCellAvailable => 'Cell available to download';
+
+  @override
+  String get demDeleteConfirm => 'Do you want to delete this cell from disk?';
+
+  @override
+  String get demLimitReached => 'Limit reached. Delete an old cell to download a new one.';
 }

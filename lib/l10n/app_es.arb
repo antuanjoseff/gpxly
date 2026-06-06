@@ -232,6 +232,13 @@
 "statRangeTime": "Tiempo del tramo",
 
 "statPositionDecimal": "Posición GD",
-"statPositionDMS": "Posición DMS"
+"statPositionDMS": "Posición DMS",
+
+"demManagerTitle": "Gestor de Celdas DEM",
+"demManagerDesc": "Senda descarga automáticamente la altitud si hay cobertura. Acércate al mapa para guardar manualmente hasta 8 zonas de 0.2° para usar offline.",
+"demCellDownloaded": "Celda descargada en local",
+"demCellAvailable": "Celda disponible para descargar",
+"demDeleteConfirm": "¿Quieres eliminar esta celda del disco?",
+"demLimitReached": "Techo alcanzado. Elimina una celda antigua para bajar una nueva."
 }
 

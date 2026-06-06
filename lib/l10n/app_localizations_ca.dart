@@ -560,4 +560,22 @@ class AppLocalizationsCa extends AppLocalizations {
 
   @override
   String get statPositionDMS => 'Posició DMS';
+
+  @override
+  String get demManagerTitle => 'Gestor de Cèl·les DEM';
+
+  @override
+  String get demManagerDesc => 'Senda descarrega automàticament l\'altitud si hi ha cobertura. Apropa\'t al mapa per guardar manualment fins a 8 zones de 0.2° per utilitzar offline.';
+
+  @override
+  String get demCellDownloaded => 'Cèl·la descarregada en local';
+
+  @override
+  String get demCellAvailable => 'Cèl·la disponible per descarregar';
+
+  @override
+  String get demDeleteConfirm => 'Vols eliminar aquesta cèl·la del disc?';
+
+  @override
+  String get demLimitReached => 'Sostre assolit. Elimina una cèl·la antiga per baixar-ne una de nova.';
 }
