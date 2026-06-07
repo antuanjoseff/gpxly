@@ -28,11 +28,18 @@ class MapBaseLayer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return RepaintBoundary(
+      // 🔄 RESTAURACIÓ DEL LISTENER ORIGINAL DE SENDA
       child: Listener(
         behavior: HitTestBehavior.translucent,
         onPointerDown: (PointerDownEvent event) {
+          // Si el moviment de la càmera l'està provocant el codi del GPS,
+          // ignorem el toc per evitar falsos positius.
           if (isProgrammaticMove) return;
-          if (smartCenterEnabled) onSmartCenterChanged(false);
+
+          // Si el Smart Center està actiu i detectem un toc real, l'apaguem.
+          if (smartCenterEnabled) {
+            onSmartCenterChanged(false);
+          }
         },
         child: MapLibreMap(
           tiltGesturesEnabled: false,

@@ -171,6 +171,13 @@ class _MapScreenState extends ConsumerState<MapScreen>
   void _centerOnUser() {
     final userGps = ref.read(locationProvider);
     if (userGps == null || mapController == null) return;
+
+    // 🛡️ OBLIGATORI: Reactivar el Smart Center des del botó
+    setState(() {
+      _lastCameraCenter = null; // Força el recàlcul de distància des de zero
+      smartCenterEnabled = true; // Torna a activar el mode automàtic
+    });
+
     safeAnimateCamera(CameraUpdate.newLatLng(userGps.position));
   }
 
@@ -434,6 +441,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
     // ─────────────────────────────────────────────────────────────
 
     // OIENT 1: MOVIMENT DEL PUNT BLAU I CONTROL DE CÀMERA (GPS)
+    // OIENT 1: MOVIMENT DEL PUNT BLAU I CONTROL DE CÀMERA (GPS)
     ref.listen<UserPosition?>(locationProvider, (prev, next) async {
       if (!styleInitialized || mapController == null || next == null) return;
 
@@ -448,12 +456,21 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
       final recordingPoints = ref.read(trackRecordingProvider).points;
       if (prev == null && recordingPoints.isEmpty) {
-        hasDoneFirstFixZoom = true;
-        isProgrammaticMove = true;
-        _lastCameraCenter = next.position;
+        // 🔥 CORRECCIÓ 1: setState per al primer posicionament net a l'iniciar l'app
+        setState(() {
+          hasDoneFirstFixZoom = true;
+          isProgrammaticMove = true;
+          _lastCameraCenter = next.position;
+        });
+
         safeAnimateCamera(CameraUpdate.newLatLngZoom(next.position, 18));
+
         Future.delayed(const Duration(milliseconds: 300), () {
-          isProgrammaticMove = false;
+          if (mounted) {
+            setState(() {
+              isProgrammaticMove = false;
+            });
+          }
         });
         return;
       }
@@ -461,7 +478,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
       if (smartCenterEnabled && !isProgrammaticMove) {
         double distanceSinceLastMove = 999.0;
         if (_lastCameraCenter != null) {
-          //  Codi correcte definitiu per a la línia 373:
           distanceSinceLastMove = calculateDistanceManual(
             _lastCameraCenter!.latitude,
             _lastCameraCenter!.longitude,
@@ -471,11 +487,21 @@ class _MapScreenState extends ConsumerState<MapScreen>
         }
 
         if (distanceSinceLastMove > 3.0) {
-          isProgrammaticMove = true;
-          _lastCameraCenter = next.position;
+          // 🔥 CORRECCIÓ 2: setState synchronous obligatori abans de moure la càmera.
+          // D'aquesta manera el Listener de MapBaseLayer s'assabenta a l'acte i no falla.
+          setState(() {
+            isProgrammaticMove = true;
+            _lastCameraCenter = next.position;
+          });
+
           safeAnimateCamera(CameraUpdate.newLatLng(next.position));
+
           Future.delayed(const Duration(milliseconds: 600), () {
-            isProgrammaticMove = false;
+            if (mounted) {
+              setState(() {
+                isProgrammaticMove = false;
+              });
+            }
           });
         }
       }

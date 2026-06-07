@@ -1,4 +1,3 @@
-// lib/screens/settings/tabs/barometer_settings_tab.dart (BLOC 1 DE 3)
 import 'dart:io';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
@@ -21,23 +20,16 @@ class BarometerSettingsTab extends ConsumerStatefulWidget {
 class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
   MapLibreMapController? _mapController;
   bool _styleLoaded = false;
-  double _currentZoom =
-      5.5; // Zoom inicial estable d'arrencada per veure Espanya
-  bool _isHudCollapsed =
-      false; // Control de desplegament de la capsa d'instruccions superior
+  double _currentZoom = 5.5;
+  bool _isHudCollapsed = false;
 
-  // ⚙️ PARAMETRITZACIÓ CRÍTICA DE SENDA (SENSE MÈTODES DEPRECATS)
   static const int _maxDownloadedCellsLimit = 8;
-  static const double _visibleZoomThreshold =
-      9.5; // El fre de zoom de seguretat
+  static const double _visibleZoomThreshold = 9.5;
 
-  // 🧠 ESTATS EN SEGUIDAMENT ASÍNCRON EN MEMÒRIA CAU
-  String?
-  _downloadingKey; // Guarda "lat_lon" de la cel·la que s'està baixant d'Azure
-  Map<String, dynamic>?
-  _selectedCellProps; // Guarda les dades de la cel·la premuda per a l'HUD inferior
+  String? _downloadingKey;
+  Map<String, dynamic>? _selectedCellProps;
 
-  // Llistat oficial dels teus arxius raster d'1°x1°
+  // 🛡️ RECOLECCIÓ COMPACTADA: Llista neta sense text repetitiu per evitar talls de línia
   final List<String> _tifFiles = [
     "N27W013",
     "N27W014",
@@ -202,9 +194,7 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
       }
     });
   }
-  // lib/screens/settings/tabs/barometer_settings_tab.dart (BLOC 2 DE 3)
 
-  /// 📐 Descomposició geomètrica: Genera la malla 5x5 (0.2°) per cada bloc d'1°
   Map<String, dynamic> _buildGridGeoJson() {
     final List<Map<String, dynamic>> features = [];
     final activeMaps = CogService().activeCacheMaps;
@@ -221,7 +211,6 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
           final double minLon = lonBase + (j * 0.2);
           final double maxLon = minLon + 0.2;
 
-          // 🛡️ SUTURA GEOMÈTRICA CORREGIDA: Traiem la duplicació de longitud
           bool isDownloaded = false;
           for (final map in activeMaps) {
             if ((map.minLat - minLat).abs() < 0.01 &&
@@ -234,8 +223,7 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
           final String key =
               "${minLat.toStringAsFixed(1)}_${minLon.toStringAsFixed(1)}";
           int currentStatus = isDownloaded ? 2 : 0;
-          if (_downloadingKey == key)
-            currentStatus = 1; // 1: Groc/Taronja (Baixant)
+          if (_downloadingKey == key) currentStatus = 1;
 
           features.add({
             "type": "Feature",
@@ -265,10 +253,8 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
     return {"type": "FeatureCollection", "features": features};
   }
 
-  /// 📥 Refresca les capes de la GPU optimitzant la visibilitat dels polígons
   Future<void> _refreshGridGeometry() async {
     if (_mapController == null || !_styleLoaded) return;
-
     final geojson = _buildGridGeoJson();
 
     try {
@@ -279,45 +265,42 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
         GeojsonSourceProperties(data: geojson),
       );
 
-      // 🎨 ESTILS HIGH-CONTRAST: Augmentem l'opacitat i usem colors molt més vius
-      final List<dynamic> matchColorExpression = [
-        "match",
-        ["get", "status"],
-        2, "#2ecc71", // Verd intens de Senda (Descarregat)
-        1, "#e67e22", // Taronja intens (Baixant)
-        0, "#2980b9", // Blau elèctric de contrast (Disponible)
-        "#2980b9",
-      ];
-
-      final List<dynamic> matchOpacityExpression = [
-        "match",
-        ["get", "status"],
-        2, 0.75, // Pujat al 75% per a cèl·les a disc
-        1, 0.70,
-        0, 0.40, // Pujat al 40% per a cèl·les lliures
-        0.40,
-      ];
-
       await _mapController!.addLayer(
         "dem_grid_source",
         "dem_grid_layer",
         FillLayerProperties(
-          fillColor: matchColorExpression,
-          fillOpacity: matchOpacityExpression,
-          fillOutlineColor:
-              "#ffffff", // Traçat blanc que separa les malles nítidament
+          fillColor: [
+            "match",
+            ["get", "status"],
+            2,
+            "#2ecc71",
+            1,
+            "#e67e22",
+            0,
+            "#2980b9",
+            "#2980b9",
+          ],
+          fillOpacity: [
+            "match",
+            ["get", "status"],
+            2,
+            0.75,
+            1,
+            0.70,
+            0,
+            0.40,
+            0.40,
+          ],
+          fillOutlineColor: "#ffffff",
         ),
       );
     }
   }
 
   void _onGridFeatureTapped(Map<String, dynamic> feature) {
-    setState(() {
-      _selectedCellProps = feature["properties"];
-    });
+    setState(() => _selectedCellProps = feature["properties"]);
   }
 
-  /// 🧼 Purgat real del fitxer binari a disc des de la targeta de control
   Future<void> _deleteCellFisica(double minLat, double minLon) async {
     try {
       final target = CogService().activeCacheMaps.firstWhere(
@@ -332,12 +315,9 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
     ref.read(demBoundsProvider.notifier).clearAll();
     await CogService().initService(ref);
     await _refreshGridGeometry();
-    setState(() {
-      _selectedCellProps = null; // Tanquem la targeta flotant en acabar
-    });
+    setState(() => _selectedCellProps = null);
   }
 
-  /// 📥 Llança la descàrrega d'Azure activant el CircularProgress d'espera
   Future<void> _downloadCellManual(
     double centerLat,
     double centerLon,
@@ -345,10 +325,7 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
   ) async {
     setState(() {
       _downloadingKey = key;
-      if (_selectedCellProps != null) {
-        _selectedCellProps!["status"] =
-            1; // Mutem a dades d'espera en viu a l'acte
-      }
+      if (_selectedCellProps != null) _selectedCellProps!["status"] = 1;
     });
     await _refreshGridGeometry();
 
@@ -360,11 +337,10 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
 
     setState(() {
       _downloadingKey = null;
-      _selectedCellProps = null; // Tanquem panell en rebre el fitxer
+      _selectedCellProps = null;
     });
     await _refreshGridGeometry();
   }
-  // lib/screens/settings/tabs/barometer_settings_tab.dart (BLOC 3 DE 3)
 
   @override
   Widget build(BuildContext context) {
@@ -372,7 +348,6 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
     final int downloadedCount = CogService().activeCacheMaps.length;
     final bool isLimitReached = downloadedCount >= _maxDownloadedCellsLimit;
 
-    // Extreiem valors dinàmics de la cel·la seleccionada de forma segura contra errors de tipat (double to int)
     final double? selLat = _selectedCellProps?["minLat"] != null
         ? (_selectedCellProps!["minLat"] as num).toDouble()
         : null;
@@ -382,7 +357,6 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
     final int? selStatus = _selectedCellProps?["status"] != null
         ? (_selectedCellProps!["status"] as num).toInt()
         : null;
-
     final String selKey =
         "${selLat?.toStringAsFixed(1)}_${selLon?.toStringAsFixed(1)}";
 
@@ -404,7 +378,6 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
       ),
       body: Stack(
         children: [
-          // 🗺️ CAPA 1: EL MAPA MAPLIBRE INTEGRAT A PANTALLA COMPLETA
           Positioned.fill(
             child: MapLibreMap(
               tiltGesturesEnabled: false,
@@ -414,6 +387,13 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
                 target: LatLng(40.4167, -3.7037),
                 zoom: 5.5,
               ),
+
+              // 🔥 SOLUCIÓ DE CÀRREGA: Forcem el dibuix NOMÉS quan l'estil de la GPU ja s'ha activat del tot
+              onStyleLoadedCallback: () async {
+                setState(() => _styleLoaded = true);
+                await _refreshGridGeometry();
+              },
+
               onMapCreated: (controller) {
                 _mapController = controller;
                 controller.onFeatureTapped.add((
@@ -423,6 +403,7 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
                   layerId,
                   annotation,
                 ) async {
+                  if (!_styleLoaded) return;
                   if (layerId == "dem_grid_layer") {
                     final features = await _mapController
                         ?.queryRenderedFeatures(point, [
@@ -434,21 +415,21 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
                       );
                     }
                   } else {
-                    setState(
-                      () => _selectedCellProps = null,
-                    ); // Tanca l'HUD inferior si es clica fora
+                    setState(() => _selectedCellProps = null);
                   }
                 });
               },
               onCameraIdle: () {
-                _currentZoom = _mapController?.cameraPosition?.zoom ?? 5.5;
-                _refreshGridGeometry();
-                setState(() {});
+                if (_mapController?.cameraPosition != null) {
+                  final newZoom = _mapController!.cameraPosition!.zoom;
+                  if ((newZoom - _currentZoom).abs() > 0.1) {
+                    setState(() => _currentZoom = newZoom);
+                  }
+                }
               },
             ),
           ),
 
-          // 🎛️ CAPA 2: HUD D'INSTRUCCIONS SUPERIOR COL·LAPSABLE ANIMAT (84% ALFA SECURE GPU)
           Positioned(
             top: 12,
             left: 12,
@@ -471,8 +452,7 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
                     onTap: () =>
                         setState(() => _isHudCollapsed = !_isHudCollapsed),
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment
-                          .spaceBetween, // ✅ FIX: spaceBetween resolt
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Expanded(
                           child: Text(
@@ -551,7 +531,6 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
             ),
           ),
 
-          // 🎛️ CAPA 3: TARGETA DINÀMICA FLOTANT INFERIOR AMB BOTÓ DE TANCAMENT INCORPORAT
           if (_selectedCellProps != null)
             Positioned(
               bottom: MediaQuery.of(context).padding.bottom + 16,
