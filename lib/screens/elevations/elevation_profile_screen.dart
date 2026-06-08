@@ -67,6 +67,8 @@ class _ElevationProfileScreenState
 
     // 🚨 LLEGIM EL PROVIDER DE SELECCIÓ COMPARTIT
     final selection = ref.watch(elevationSelectionProvider);
+    final int? currentStart = selection[0];
+    final int? currentEnd = selection[1];
     selectedIndexStart = selection[0];
     selectedIndexEnd = selection[1];
 
@@ -247,17 +249,18 @@ class _ElevationProfileScreenState
             ),
             height: MediaQuery.of(context).size.height * 0.32,
             child: ElevationChartWidget(
-              // 🚨 1. LA CLAU REACTIVA: Força el gràfic a redibuixar el CustomPaint i moure les agulles
-              key: ValueKey(
-                "chart_sync_${selectedIndexStart}_${selectedIndexEnd}",
-              ),
+              // 🟢 CLAU ESTÀTICA TOTALMENT FIXA: Evita la destrucció del widget
+              key: const ValueKey("elevation_chart_static_pure"),
               pastAlts: realAlts,
               pastDists: realDists,
               futureAlts: futureAlts,
               futureDistsGlobal: futureDistsGlobal,
-              selectedIndexStart: selectedIndexStart,
-              selectedIndexEnd: selectedIndexEnd,
+
+              // 🟢 APUNTEM ALS VALORS REALS DE RIVERPOD (No a les variables de la classe)
+              selectedIndexStart: currentStart,
+              selectedIndexEnd: currentEnd,
               selectedIndexGraph: selectedIndexGraph,
+
               recordedWaypointGlobalDists: recordedWaypointGlobalDists,
               importedWaypointGlobalDists: importedWaypointGlobalDists,
               realColor: trackColor,
@@ -268,25 +271,28 @@ class _ElevationProfileScreenState
               onNeedleMove: (idx) => setState(() {
                 selectedIndexGraph = idx;
               }),
-              onRangeSelected: (start, end) => setState(() {
-                selectedIndexStart = start;
-                selectedIndexEnd = end;
-                selectedIndexGraph = null;
+              onRangeSelected: (start, end) {
+                // 🟢 NOTIFIQUEM DIRECTAMENT AL TEU CUSTOM NOTIFIER
+                ref
+                    .read(elevationSelectionProvider.notifier)
+                    .setManualRange(start, end);
 
-                // 🚨 2. REPARAT: Si l'usuari fa drag, la memòria dels clics anteriors
-                // s'ha de sincronitzar amb la nova realitat de les agulles lliures
-                _prevWpIndex = start;
-                _lastWpIndex = end;
-              }),
-              onClearSelection: () => setState(() {
-                selectedIndexStart = null;
-                selectedIndexEnd = null;
-                selectedIndexGraph = null;
-
-                // 🚨 3. REPARAT: Si es neteja la selecció, l'historial es posa a zero
-                _prevWpIndex = null;
-                _lastWpIndex = null;
-              }),
+                setState(() {
+                  selectedIndexGraph = null;
+                  // Sincronitzem l'historial intern de la teva pantalla si el fas servir a posteriori
+                  _prevWpIndex = start;
+                  _lastWpIndex = end;
+                });
+              },
+              onClearSelection: () {
+                // 🟢 NETEJA A TRAVÉS DE RIVERPOD
+                ref.read(elevationSelectionProvider.notifier).clearSelection();
+                setState(() {
+                  selectedIndexGraph = null;
+                  _prevWpIndex = null;
+                  _lastWpIndex = null;
+                });
+              },
             ),
           ),
 

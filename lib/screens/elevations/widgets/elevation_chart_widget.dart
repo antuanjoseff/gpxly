@@ -59,6 +59,25 @@ class ElevationChartWidget extends StatefulWidget {
 
 class _ElevationChartWidgetState extends State<ElevationChartWidget> {
   int _draggingNeedle = 0;
+  int? _localStartIdx;
+  int? _localEndIdx;
+  int? _localGraphIdx;
+
+  @override
+  void didUpdateWidget(covariant ElevationChartWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    // 🟢 LA CLAU DE LA SINCRONITZACIÓ EXTERNA (Clic al mapa / Waypoint):
+    // Si l'usuari NO està arrossegant amb el dit ara mateix (_draggingNeedle == 0),
+    // forcetm els índexs locals del gràfic a agafar instantàniament el que mana Riverpod.
+    if (_draggingNeedle == 0) {
+      setState(() {
+        _localStartIdx = widget.selectedIndexStart;
+        _localEndIdx = widget.selectedIndexEnd;
+        _localGraphIdx = widget.selectedIndexGraph;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
