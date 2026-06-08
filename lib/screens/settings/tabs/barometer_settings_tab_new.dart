@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
@@ -7,8 +8,6 @@ import 'package:senda/notifiers/dem_bounds_notifier.dart';
 import 'package:senda/services/cog_service.dart';
 import 'package:senda/theme/app_colors.dart';
 import 'package:senda/ui/app_messages.dart';
-import 'package:senda/notifiers/location_notifier.dart';
-import 'package:senda/utils/map_animator.dart';
 
 class BarometerSettingsTab extends ConsumerStatefulWidget {
   const BarometerSettingsTab({super.key});
@@ -20,21 +19,17 @@ class BarometerSettingsTab extends ConsumerStatefulWidget {
 
 class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
   MapLibreMapController? _mapController;
-  MapAnimator? _mapAnimator;
-
   bool _styleLoaded = false;
   double _currentZoom = 5.5;
   bool _isHudCollapsed = false;
 
-  // Controls de guàrdia per saber si l'usuari interacciona amb el mapa
-  bool _hasCenteredOnUser = false;
-  bool _userMovedMap = false;
-
   static const int _maxDownloadedCellsLimit = 8;
+  static const double _visibleZoomThreshold = 9.5;
+
   String? _downloadingKey;
-  String? _selectedKey;
   Map<String, dynamic>? _selectedCellProps;
 
+  // 🛡️ RECOLECCIÓ COMPACTADA: Llista neta sense text repetitiu per evitar talls de línia
   final List<String> _tifFiles = [
     "N27W013",
     "N27W014",
@@ -200,10 +195,9 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
     });
   }
 
-  // (Aquí van les funcions _buildGridGeoJson, _refreshGridGeometry, _onGridFeatureTapped, etc. del Bloc 2 anterior)
-
-  Map<String, dynamic> _buildGridGeoJson(List<DemBounds> downloadedCells) {
+  Map<String, dynamic> _buildGridGeoJson() {
     final List<Map<String, dynamic>> features = [];
+    final activeMaps = CogService().activeCacheMaps;
 
     for (final filename in _tifFiles) {
       final latBase = double.parse(filename.substring(1, 3));
@@ -218,9 +212,9 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
           final double maxLon = minLon + 0.2;
 
           bool isDownloaded = false;
-          for (final cell in downloadedCells) {
-            if ((cell.minLat - minLat).abs() < 0.01 &&
-                (cell.minLon - minLon).abs() < 0.01) {
+          for (final map in activeMaps) {
+            if ((map.minLat - minLat).abs() < 0.01 &&
+                (map.minLon - minLon).abs() < 0.01) {
               isDownloaded = true;
               break;
             }
@@ -235,12 +229,10 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
             "type": "Feature",
             "properties": {
               "status": currentStatus,
-              "isSelected": _selectedKey == key,
               "minLat": minLat,
               "minLon": minLon,
               "maxLat": maxLat,
               "maxLon": maxLon,
-              "key": key,
             },
             "geometry": {
               "type": "Polygon",
@@ -263,8 +255,7 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
 
   Future<void> _refreshGridGeometry() async {
     if (_mapController == null || !_styleLoaded) return;
-    final demState = ref.read(demBoundsProvider);
-    final geojson = _buildGridGeoJson(demState.cells);
+    final geojson = _buildGridGeoJson();
 
     try {
       await _mapController!.setGeoJsonSource("dem_grid_source", geojson);
@@ -273,41 +264,32 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
         "dem_grid_source",
         GeojsonSourceProperties(data: geojson),
       );
+
       await _mapController!.addLayer(
         "dem_grid_source",
         "dem_grid_layer",
-        const FillLayerProperties(
+        FillLayerProperties(
           fillColor: [
-            "case",
-            ["get", "isSelected"],
-            "#f1c40f",
-            [
-              "match",
-              ["get", "status"],
-              2,
-              "#2ecc71",
-              1,
-              "#e67e22",
-              0,
-              "#2980b9",
-              "#2980b9",
-            ],
+            "match",
+            ["get", "status"],
+            2,
+            "#2ecc71",
+            1,
+            "#e67e22",
+            0,
+            "#2980b9",
+            "#2980b9",
           ],
           fillOpacity: [
-            "case",
-            ["get", "isSelected"],
-            0.85,
-            [
-              "match",
-              ["get", "status"],
-              2,
-              0.75,
-              1,
-              0.70,
-              0,
-              0.35,
-              0.35,
-            ],
+            "match",
+            ["get", "status"],
+            2,
+            0.75,
+            1,
+            0.70,
+            0,
+            0.40,
+            0.40,
           ],
           fillOutlineColor: "#ffffff",
         ),
@@ -316,12 +298,7 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
   }
 
   void _onGridFeatureTapped(Map<String, dynamic> feature) {
-    final props = feature["properties"];
-    setState(() {
-      _selectedCellProps = props;
-      _selectedKey = props["key"];
-    });
-    _refreshGridGeometry();
+    setState(() => _selectedCellProps = feature["properties"]);
   }
 
   Future<void> _deleteCellFisica(double minLat, double minLon) async {
@@ -338,10 +315,7 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
     ref.read(demBoundsProvider.notifier).clearAll();
     await CogService().initService(ref);
     await _refreshGridGeometry();
-    setState(() {
-      _selectedCellProps = null;
-      _selectedKey = null;
-    });
+    setState(() => _selectedCellProps = null);
   }
 
   Future<void> _downloadCellManual(
@@ -364,7 +338,6 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
     setState(() {
       _downloadingKey = null;
       _selectedCellProps = null;
-      _selectedKey = null;
     });
     await _refreshGridGeometry();
   }
@@ -372,30 +345,8 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context)!;
-
-    final demState = ref.watch(demBoundsProvider);
-    final downloadedCells = demState.cells;
-    final isDownloadingGlobal = demState.isDownloading;
-
-    if (_styleLoaded) _refreshGridGeometry();
-
-    final int downloadedCount = downloadedCells.length;
+    final int downloadedCount = CogService().activeCacheMaps.length;
     final bool isLimitReached = downloadedCount >= _maxDownloadedCellsLimit;
-
-    final userPositionState = ref.watch(locationProvider);
-
-    if (userPositionState != null && _mapController != null) {
-      if (!_hasCenteredOnUser) {
-        _hasCenteredOnUser = true;
-        _mapController!.animateCamera(
-          CameraUpdate.newLatLngZoom(userPositionState.position, 6.0),
-        );
-      } else if (!_userMovedMap) {
-        _mapController!.animateCamera(
-          CameraUpdate.newLatLng(userPositionState.position),
-        );
-      }
-    }
 
     final double? selLat = _selectedCellProps?["minLat"] != null
         ? (_selectedCellProps!["minLat"] as num).toDouble()
@@ -406,9 +357,8 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
     final int? selStatus = _selectedCellProps?["status"] != null
         ? (_selectedCellProps!["status"] as num).toInt()
         : null;
-    final String selKey = (selLat != null && selLon != null)
-        ? "${selLat.toStringAsFixed(1)}_${selLon.toStringAsFixed(1)}"
-        : "";
+    final String selKey =
+        "${selLat?.toStringAsFixed(1)}_${selLon?.toStringAsFixed(1)}";
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F7),
@@ -424,55 +374,28 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
           ),
         ),
         elevation: 0,
+        centerTitle: false,
       ),
       body: Stack(
         children: [
           Positioned.fill(
-            // 🟢 SOLUCIÓ COMPLETADA: S'esborra el GestureDetector que segrestava el pan i el zoom de la GPU
             child: MapLibreMap(
               tiltGesturesEnabled: false,
               compassEnabled: false,
               styleString: "assets/osm_style.json",
-              myLocationEnabled: true,
               initialCameraPosition: const CameraPosition(
-                target: LatLng(36.5, -4.5),
-                zoom: 4.8,
+                target: LatLng(40.4167, -3.7037),
+                zoom: 5.5,
               ),
 
-              // 🔥 CONTROL NATIU DE MOVIMENT (PAN / ZOOM MANUAL):
-              // S'executa a l'instant cada cop que els dits de l'usuari desplacen el mapa.
-              onCameraMove: (cameraPosition) {
-                // Filtrem el semàfor de l'animador del track unificat per evitar falsos positius de fons
-                final bool isAnimating = _mapAnimator?.isAnimating ?? false;
-
-                if (_styleLoaded && !_userMovedMap && !isAnimating) {
-                  setState(() => _userMovedMap = true);
-                }
-              },
-
+              // 🔥 SOLUCIÓ DE CÀRREGA: Forcem el dibuix NOMÉS quan l'estil de la GPU ja s'ha activat del tot
               onStyleLoadedCallback: () async {
-                if (_mapController == null) return;
-
-                // Enquadrament matemàtic forçat per encabir absolutament totes les cel·les a la pantalla
-                await _mapController!.animateCamera(
-                  CameraUpdate.newLatLngBounds(
-                    LatLngBounds(
-                      southwest: const LatLng(26.5, -19.5),
-                      northeast: const LatLng(44.5, 4.5),
-                    ),
-                    left: 20,
-                    right: 20,
-                    top: 40,
-                    bottom: 40,
-                  ),
-                );
-
                 setState(() => _styleLoaded = true);
                 await _refreshGridGeometry();
               },
+
               onMapCreated: (controller) {
                 _mapController = controller;
-
                 controller.onFeatureTapped.add((
                   point,
                   latlng,
@@ -492,11 +415,7 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
                       );
                     }
                   } else {
-                    setState(() {
-                      _selectedCellProps = null;
-                      _selectedKey = null;
-                    });
-                    _refreshGridGeometry();
+                    setState(() => _selectedCellProps = null);
                   }
                 });
               },
@@ -510,18 +429,6 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
               },
             ),
           ),
-
-          if (isDownloadingGlobal)
-            const Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: LinearProgressIndicator(
-                backgroundColor: Colors.transparent,
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.orangeAccent),
-                minHeight: 4,
-              ),
-            ),
 
           Positioned(
             top: 12,
@@ -623,24 +530,6 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
               ),
             ),
           ),
-
-          if (_userMovedMap && userPositionState != null)
-            Positioned(
-              right: 16,
-              bottom: _selectedCellProps != null ? 140 : 32,
-              child: FloatingActionButton(
-                mini: true,
-                backgroundColor: Colors.white,
-                foregroundColor: AppColors.primary,
-                child: const Icon(Icons.my_location_rounded, size: 20),
-                onPressed: () {
-                  setState(() => _userMovedMap = false);
-                  _mapController!.animateCamera(
-                    CameraUpdate.newLatLng(userPositionState.position),
-                  );
-                },
-              ),
-            ),
 
           if (_selectedCellProps != null)
             Positioned(
@@ -745,16 +634,20 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
                             color: AppColors.primary,
                             size: 28,
                           ),
-                          onPressed: () => isLimitReached
-                              ? AppMessages.showErrorSnackBar(
-                                  context,
-                                  t.demLimitReached,
-                                )
-                              : _downloadCellManual(
-                                  selLat! + 0.1,
-                                  selLon! + 0.1,
-                                  selKey,
-                                ),
+                          onPressed: () {
+                            if (isLimitReached) {
+                              AppMessages.showErrorSnackBar(
+                                context,
+                                t.demLimitReached,
+                              );
+                              return;
+                            }
+                            _downloadCellManual(
+                              selLat! + 0.1,
+                              selLon! + 0.1,
+                              selKey,
+                            );
+                          },
                         ),
                       IconButton(
                         icon: const Icon(
@@ -762,11 +655,8 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
                           color: Colors.grey,
                           size: 22,
                         ),
-                        onPressed: () => setState(() {
-                          _selectedCellProps = null;
-                          _selectedKey = null;
-                          _refreshGridGeometry();
-                        }),
+                        onPressed: () =>
+                            setState(() => _selectedCellProps = null),
                       ),
                     ],
                   ],

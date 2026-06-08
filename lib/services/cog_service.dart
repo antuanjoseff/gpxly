@@ -260,64 +260,59 @@ class CogService {
   }
 
   Future<void> _downloadNewArea(double lat, double lon, dynamic ref) async {
-  final uri = Uri.https(
-    'cog-tiles-euaeg7eaavbqczgf.spaincentral-01.azurewebsites.net',
-    '/api/getTileGrid',   // <-- NOVA FUNCIÓ
-    {
-      'lat': lat.toString(),
-      'lon': lon.toString(),
-      // ja NO cal buf
-    },
-  );
+    // 🌀 1. Activem el ProgressIndicator unificat
+    ref.read(demBoundsProvider.notifier).setDownloading(true);
 
-  try {
-    final response = await http.get(uri).timeout(const Duration(seconds: 15));
-
-    if (response.statusCode == 200) {
-      final bbox = response.headers['x-bbox']!
-          .split(',')
-          .map(double.parse)
-          .toList();
-
-      final width = int.parse(response.headers['x-width']!);
-      final height = int.parse(response.headers['x-height']!);
-
-      final dir = await getApplicationDocumentsDirectory();
-      final path =
-          "${dir.path}/elev_${DateTime.now().millisecondsSinceEpoch}.bin";
-
-      final file = File(path);
-      await file.writeAsBytes(response.bodyBytes);
-
-      final newMap = CogMap(
-        path: path,
-        minLon: bbox[0],
-        minLat: bbox[1],
-        maxLon: bbox[2],
-        maxLat: bbox[3],
-        width: width,
-        height: height,
-        data: response.bodyBytes,
-      );
-
-      await _managePersistentCache(newMap);
-
-      ref.read(demBoundsProvider.notifier).addCell(
-            bbox[0],
-            bbox[1],
-            bbox[2],
-            bbox[3],
-          );
-    }
-  } catch (e) {
-    _lastFailedDownload = DateTime.now();
-    AltitudeLoggerService().log(
-      "❌ COG DESCARGA -> Error descarregant cel·la d'Azure: $e",
+    final uri = Uri.https(
+      'cog-tiles-euaeg7eaavbqczgf.spaincentral-01.azurewebsites.net',
+      '/api/getTileGrid',
+      {'lat': lat.toString(), 'lon': lon.toString()},
     );
-    rethrow;
-  }
-}
 
+    try {
+      final response = await http.get(uri).timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 200) {
+        final bbox = response.headers['x-bbox']!
+            .split(',')
+            .map(double.parse)
+            .toList();
+        final width = int.parse(response.headers['x-width']!);
+        final height = int.parse(response.headers['x-height']!);
+        final dir = await getApplicationDocumentsDirectory();
+        final path =
+            "${dir.path}/elev_${DateTime.now().millisecondsSinceEpoch}.bin";
+
+        final file = File(path);
+        await file.writeAsBytes(response.bodyBytes);
+
+        final newMap = CogMap(
+          path: path,
+          minLon: bbox[0],
+          minLat: bbox[1],
+          maxLon: bbox[2],
+          maxLat: bbox[3],
+          width: width,
+          height: height,
+          data: response.bodyBytes,
+        );
+
+        await _managePersistentCache(newMap);
+
+        // 🟢 2. Afegim la cel·la a la llista inmutable
+        ref
+            .read(demBoundsProvider.notifier)
+            .addCell(bbox[0], bbox[1], bbox[2], bbox[3]);
+      }
+    } catch (e) {
+      _lastFailedDownload = DateTime.now();
+      AltitudeLoggerService().log("❌ COG DESCARGA -> Error: $e");
+      rethrow;
+    } finally {
+      // 🌀 3. Apaguem el ProgressIndicator de forma garantida
+      ref.read(demBoundsProvider.notifier).setDownloading(false);
+    }
+  }
 
   // ───────────────────────────────────────────────
   // NETEJA DE MEMÒRIA I DISC

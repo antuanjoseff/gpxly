@@ -27,6 +27,7 @@ import 'package:senda/screens/main_map/widgets/map_app_bar.dart';
 import 'package:senda/screens/main_map/widgets/map_base_layer.dart';
 import 'package:senda/screens/main_map/widgets/map_bottom_controls.dart';
 import 'package:senda/screens/main_map/widgets/map_top_controls.dart';
+import 'package:senda/screens/main_map/widgets/senda_brand_label.dart';
 import 'package:senda/theme/app_colors.dart';
 import 'package:senda/widgets/range_info_panel.dart';
 import 'package:senda/widgets/embedded_elevation_profile.dart';
@@ -740,7 +741,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 );
               },
             ),
-
+            const Positioned(top: 10, left: 12, child: SendaBrandLabel()),
             // 🎛️ CAPA 2: INTERFÍCIE FLOTANT HUD (Només si no està en fullScreen)
             if (!_fullScreen) ...[
               // 🚀 COMPONENT EXTRET 3: Píndola de temps i controls de dalt a la dreta
@@ -749,7 +750,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 smartCenterEnabled: smartCenterEnabled,
                 onCenterOnUser: _centerOnUser,
                 onAddWaypoint: () => _onAddWaypoint(context, ref),
-                buildSquareButton: _buildSquareButton,
               ),
 
               // 📐 ELEMENT FLOTANT: Panell de dades de selecció de camí (LongPress)
@@ -776,7 +776,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 onOpenNavigationControl: (hasTrack) =>
                     _openNavigationControl(context, ref, hasTrack),
                 onHandleNavigationAction: _handleSendaNavigationAction,
-                buildSquareButton: _buildSquareButton,
               ),
 
               // 📈 ELEMENT FLOTANT: Perfil d'elevació basat en ValueNotifier

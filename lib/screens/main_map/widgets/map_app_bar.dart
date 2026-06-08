@@ -1,13 +1,16 @@
+// lib/widgets/map_app_bar.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/notifiers/alarm_settings_notifier.dart';
 import 'package:senda/notifiers/imported_track_notifier.dart';
 import 'package:senda/notifiers/location_notifier.dart';
+import 'package:senda/notifiers/recording_notifier.dart';
+import 'package:senda/notifiers/timer_notifier.dart';
 import 'package:senda/screens/settings/tabs/alarm_settings_tab.dart';
 import 'package:senda/services/altitude_logger.dart';
 import 'package:senda/theme/app_colors.dart';
 import 'package:senda/widgets/gps_accuracy_bars.dart';
-import 'package:senda/screens/settings/settings_screen.dart';
+import 'package:senda/widgets/recording_status_bar.dart';
 
 class MapAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final double? pressure;
@@ -26,6 +29,7 @@ class MapAppBar extends ConsumerWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // 📡 Escuita reactiva de les alarmes de seguretat actives
     final alarms = ref.watch(alarmSettingsProvider);
     final anyAlarmActive =
         alarms.distanceEnabled ||
@@ -34,24 +38,53 @@ class MapAppBar extends ConsumerWidget implements PreferredSizeWidget {
         alarms.timeEnabled;
 
     return AppBar(
-      centerTitle: false,
       backgroundColor: AppColors.primary,
       automaticallyImplyLeading: false,
       titleSpacing: 16,
+
+      // 🟢 COBERTURA GPS NETEJA: Retorna al seu format estàndard a l'esquerra [INDEX]
       leading: const GpsAccuracyBars(),
-      title: const Text("SENDA"),
+
+      // Forcem el centratge mil·limètric de la telemetria central
+      centerTitle: true,
+
+      // ⏱️ CRONÒMETRE I ALTITUD: El mòdul transparent de text gran al cor de la barra [INDEX]
+      title: RecordingStatusBar(
+        state: ref.watch(
+          trackRecordingProvider.select((t) => t.recordingState),
+        ),
+        duration: ref.watch(timerProvider),
+      ),
+
       actions: [
-        IconButton(
-          icon: const Icon(Icons.share),
-          onPressed: () => AltitudeLoggerService().shareLog(),
-        ),
-        IconButton(
-          icon: const Icon(Icons.delete, color: Colors.red),
-          onPressed: () => AltitudeLoggerService().clearLog(),
-        ),
+        // 🟢 NOU EMPLAÇAMENT: La campana de notificació es mou neta i blanca a la dreta [INDEX]
+        if (anyAlarmActive)
+          Padding(
+            padding: const EdgeInsets.only(right: 10),
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AlarmSettingsTab()),
+                );
+              },
+              child: const SizedBox(
+                width: 32,
+                height: 32,
+                child: Icon(
+                  Icons.notifications_active_rounded,
+                  color: Colors.white, // Sempre blanc pur obligatori [INDEX]
+                  size: 22,
+                ),
+              ),
+            ),
+          ),
+
+        // 🛰️ Botó de control del simulador de rutes del track
         if (ref.watch(importedTrackProvider) != null)
           Padding(
-            padding: const EdgeInsets.only(right: 8),
+            padding: const EdgeInsets.only(right: 12),
             child: GestureDetector(
               onTap: () {
                 final notifier = ref.read(locationProvider.notifier);
@@ -81,62 +114,7 @@ class MapAppBar extends ConsumerWidget implements PreferredSizeWidget {
               ),
             ),
           ),
-        if (pressure != null)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 6),
-            child: Text(
-              "${pressure!.toStringAsFixed(1)} hPa",
-              style: const TextStyle(color: Colors.white),
-            ),
-          ),
-        if (anyAlarmActive)
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const AlarmSettingsTab()),
-                );
-              },
-              child: Container(
-                width: 32,
-                height: 32,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.notifications_active,
-                  color: Colors.red,
-                  size: 20,
-                ),
-              ),
-            ),
-          ),
-        Padding(
-          padding: const EdgeInsets.only(right: 8),
-          child: GestureDetector(
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const SettingsScreen()),
-            ),
-            child: Container(
-              width: 32,
-              height: 32,
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.settings_outlined,
-                color: AppColors.primary,
-                size: 20,
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 4),
       ],
     );
   }

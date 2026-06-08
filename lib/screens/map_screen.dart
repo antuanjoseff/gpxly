@@ -890,38 +890,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
             if (!_fullScreen) ...[
               // -------------------------
-              // PÍNDOLA FLOTANT (CENTRAT DALT)
-              // -------------------------
-              // -------------------------
-              // PÍNDOLA FLOTANT (CENTRAT DALT)
-              // -------------------------
-              Positioned(
-                top: 10,
-                left: 10,
-                child: RecordingStatusBar(
-                  // ✅ ADAPTAT: Passem el RecordingState real des del nou gravador inalterable
-                  state: ref.watch(
-                    trackRecordingProvider.select((t) => t.recordingState),
-                  ),
-                  duration: ref.watch(timerProvider),
-                ),
-              ),
-              // ─────────────────────────────────────────────────────────────
-              // 🔥 NOU: PANEL FLOTANTE DE DEBUG DE ALTITUDES SINCRO
-              // ─────────────────────────────────────────────────────────────
-              // ─────────────────────────────────────────────────────────────
-              // 🔥 NOU: PANEL FLOTANTE DE DEBUG DE ALTITUDES SINCRO
-              // ─────────────────────────────────────────────────────────────
-              // Positioned(
-              //   // 🛡️ SENSE 'const' AQUÍ
-              //   top:
-              //       52, // Colocado a 52px de arriba para dejar espacio a la píndola de tiempo
-              //   left: 10,
-              //   child:
-              //       const DebugAltitudePanel(), // El 'const' pot anar aquí si el giny fill ho permet
-              // ),
-
-              // -------------------------
               // COLUMNA DE BOTONS SUPERIOR DRETA
               // -------------------------
               Positioned(

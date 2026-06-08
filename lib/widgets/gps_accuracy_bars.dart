@@ -1,12 +1,9 @@
-// lib/widgets/gps_accuracy_bars.dart
+// lib/widgets/gps_accuracy_bars.dart (Bloc 1 de 2)
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:senda/notifiers/gps_accuracy_notifier.dart';
-import 'package:senda/notifiers/navigation_notifier.dart';
 import 'package:senda/notifiers/permissions_notifier.dart';
-// ✅ ADAPTAT: Importem els nous proveïdors optimitzats
-import 'package:senda/notifiers/recording_notifier.dart'; // Bloc 2: Gravació
 import 'package:senda/services/location_permission_flow.dart';
 import 'package:senda/ui/app_messages.dart';
 import 'package:senda/utils/gps_accuracy.dart';
@@ -21,14 +18,6 @@ class GpsAccuracyBars extends ConsumerWidget {
     final level = ref.watch(gpsAccuracyLevelProvider);
     final accuracy = ref.watch(gpsAccuracyProvider);
 
-    // ✅ ADAPTAT: Escoltem de forma eficient els nous estats immutables
-    final isRecording = ref.watch(
-      trackRecordingProvider.select((t) => t.recording),
-    );
-    final isFollowing = ref.watch(
-      navigationProvider.select((n) => n.isFollowing),
-    );
-
     // ───────────────────────────────────────────────
     // 1. SENSE PERMISOS
     // ───────────────────────────────────────────────
@@ -37,11 +26,9 @@ class GpsAccuracyBars extends ConsumerWidget {
         behavior: HitTestBehavior.opaque,
         onTap: () async {
           final ok = await requestLocationPermissionsUnified(context, ref);
-
           final permNotifier = ref.read(permissionsProvider.notifier);
           await permNotifier.checkPermissions();
           await permNotifier.checkServiceStatus();
-
           if (!ok) return;
         },
         child: Container(
@@ -55,7 +42,7 @@ class GpsAccuracyBars extends ConsumerWidget {
     }
 
     // ───────────────────────────────────────────────
-    // 2. GPS DESACTIVAT AL DISPOSITIU
+    // 2. GPS DESACTIVAT AL MAQUINARI
     // ───────────────────────────────────────────────
     if (!permissions.serviceEnabled) {
       return GestureDetector(
@@ -78,18 +65,7 @@ class GpsAccuracyBars extends ConsumerWidget {
     }
 
     // ───────────────────────────────────────────────
-    // 3. COMPROVACIÓ D'ACTIVITAT (Opcional, desactiva si vols que es mostri sempre)
-    // ───────────────────────────────────────────────
-    // final bool isActive = isRecording || isFollowing;
-    // if (!isActive) {
-    //   return _wrapWithAccuracyText(
-    //     bars: _buildBars(0, Colors.white),
-    //     accuracy: null,
-    //   );
-    // }
-
-    // ───────────────────────────────────────────────
-    // 4. LÒGICA NORMAL D’ACCURACY (Nivells de senyal)
+    // 3. SELECCIÓ DE FILTRE CROMÀTIC SEGONS SENYAL
     // ───────────────────────────────────────────────
     late Color color;
     late int activeBars;
@@ -116,25 +92,24 @@ class GpsAccuracyBars extends ConsumerWidget {
         activeBars = 1;
         break;
     }
+    // (Continuació del mètode build dins de lib/widgets/gps_accuracy_bars.dart - Bloc 2 de 2)
+    final bool showText = accuracy != null && accuracy != 999.0;
 
-    return _wrapWithAccuracyText(
-      bars: _buildBars(activeBars, color),
-      accuracy: accuracy == 999.0 ? null : accuracy,
-    );
-  }
-
-  Widget _wrapWithAccuracyText({required Widget bars, double? accuracy}) {
+    // 🟢 RESTAURAT: Retornem l'antic Stack de mides exactes amb clip invisible de fons [INDEX]
     return SizedBox(
       width: 32,
       height: 32,
       child: Stack(
         alignment: Alignment.center,
-        clipBehavior: Clip.none,
+        clipBehavior: Clip
+            .none, // Permet que el text surti de la caixa sense retallar-se [INDEX]
         children: [
-          if (accuracy != null)
+          // A) El text de metres flotant a dalt de tot a l'esquerra, exactament com abans [INDEX]
+          if (showText)
             Positioned(
-              left: 12,
-              top: 10,
+              left:
+                  10, // Desplaçat cap a l'esquerra a sobre de les barres [INDEX]
+              top: 10, // Desplaçat cap a dalt de tot [INDEX]
               child: Text(
                 "${accuracy.round()}m",
                 style: const TextStyle(
@@ -144,33 +119,29 @@ class GpsAccuracyBars extends ConsumerWidget {
                 ),
               ),
             ),
-          bars,
+
+          // B) Les barres de cobertura verticals sòlides inferiors [INDEX]
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: List.generate(totalBars, (index) {
+              final active = index < activeBars;
+              final height = (index + 1) * 4.0;
+              final Color inactiveColor = Colors.white.withAlpha(75);
+
+              return Container(
+                width: 3,
+                height: height,
+                margin: const EdgeInsets.symmetric(horizontal: 1),
+                decoration: BoxDecoration(
+                  color: active ? color : inactiveColor,
+                  borderRadius: BorderRadius.circular(1),
+                ),
+              );
+            }),
+          ),
         ],
       ),
-    );
-  }
-
-  Widget _buildBars(int activeBars, Color color) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: List.generate(totalBars, (index) {
-        final active = index < activeBars;
-        final height = (index + 1) * 4.0;
-        final Color inactiveColor = Colors.white.withAlpha(
-          75,
-        ); // Corregit de 225 a 75 per donar el 30% d'opacitat real real sobre el blau
-
-        return Container(
-          width: 3,
-          height: height,
-          margin: const EdgeInsets.symmetric(horizontal: 1),
-          decoration: BoxDecoration(
-            color: active ? color : inactiveColor,
-            borderRadius: BorderRadius.circular(1),
-          ),
-        );
-      }),
     );
   }
 }

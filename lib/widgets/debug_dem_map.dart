@@ -1,6 +1,5 @@
-// lib/widgets/debug_dem_map.dart
+// lib/widgets/debug_dem_map.dart (Bloc 1 de 2)
 import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -50,20 +49,22 @@ class _DebugDemMapState extends ConsumerState<DebugDemMap>
       }
     }
 
-    // 🛰️ OYENTE GPS: Animación unificada del punto azul original
+    // 🛰️ OYENTE GPS: Animació unificada del punt blau original
     ref.listen(locationProvider, (previous, next) {
       if (!styleInitialized || mapController == null || next == null) return;
-
       mapAnimator?.animateUserPosition(next.position);
     });
 
-    // 🗺️ OYENTE DEM: Inyección idéntica a tu lógica de trazo de líneas
-    ref.listen<List<DemBounds>>(demBoundsProvider, (previous, next) {
+    // 🗺️ OYENTE DEM ACTUALITZAT: Corregim el tipus genèric a DemBoundsState i escoltem .cells
+    ref.listen<DemBoundsState>(demBoundsProvider, (previous, next) {
       if (styleInitialized && mapController != null) {
-        setDemBoundsGeometry(mapController!, next);
+        setDemBoundsGeometry(
+          mapController!,
+          next.cells,
+        ); // Envia la llista interna filtrada [INDEX]
       }
     });
-
+    // (Continuació directa del mètode build)
     return SizedBox(
       height: 180,
       child: MapLibreMap(
@@ -80,13 +81,12 @@ class _DebugDemMapState extends ConsumerState<DebugDemMap>
         onMapCreated: (controller) {
           mapController = controller;
         },
-        // 🎨 FIRMA OFICIAL: Corregimos el orden de parámetros de addLayer basándonos en el repositorio
         onStyleLoadedCallback: () async {
           print(
             "🎨 [DEBUG MAP] Inicialitzant capes segons el repositori oficial...",
           );
           try {
-            // 1. Añadimos primero la fuente GeoJSON para los polígonos DEM
+            // 1. Afegim primer la font GeoJSON per als polígonos DEM
             await mapController!.addSource(
               "dem_bounds_source",
               const GeojsonSourceProperties(
@@ -95,10 +95,9 @@ class _DebugDemMapState extends ConsumerState<DebugDemMap>
             );
 
             // 2. Capa de relleno naranja (Capa Base)
-            // Estructura oficial: addLayer(sourceId, layerId, properties)
             await mapController!.addLayer(
-              "dem_bounds_source", // sourceId
-              "dem_bounds_fill_layer", // layerId
+              "dem_bounds_source",
+              "dem_bounds_fill_layer",
               const FillLayerProperties(
                 fillColor: "#FF9800",
                 fillOpacity: 0.25,
@@ -107,8 +106,8 @@ class _DebugDemMapState extends ConsumerState<DebugDemMap>
 
             // 3. Capa de línea discontinua de contorno
             await mapController!.addLayer(
-              "dem_bounds_source", // sourceId
-              "dem_bounds_layer", // layerId
+              "dem_bounds_source",
+              "dem_bounds_layer",
               const LineLayerProperties(
                 lineColor: "#FF9800",
                 lineWidth: 3.0,
@@ -127,8 +126,9 @@ class _DebugDemMapState extends ConsumerState<DebugDemMap>
               styleInitialized = true;
             });
 
-            // Volcado inicial en caliente de los datos existentes en Riverpod
-            setDemBoundsGeometry(mapController!, ref.read(demBoundsProvider));
+            // 🔥 VOLCADO INICIAL ACTUALITZAT: Llegim correctament .cells del nou estat inmutable [INDEX]
+            final currentDemState = ref.read(demBoundsProvider);
+            setDemBoundsGeometry(mapController!, currentDemState.cells);
 
             final currentPos = ref.read(locationProvider);
             if (currentPos != null) {

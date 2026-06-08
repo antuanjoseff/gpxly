@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-// 📦 1. La estructura de un rectángulo simple
 class DemBounds {
   final double minLon;
   final double minLat;
@@ -15,17 +14,33 @@ class DemBounds {
   });
 }
 
-// 🧠 2. El controlador que gestiona la lista en la memoria de la App
-class DemBoundsNotifier extends Notifier<List<DemBounds>> {
+// 📦 L'estat unificat: la llista de cel·les + l'estat del ProgressIndicator
+class DemBoundsState {
+  final List<DemBounds> cells;
+  final bool isDownloading;
+
+  const DemBoundsState({required this.cells, required this.isDownloading});
+
+  DemBoundsState copyWith({List<DemBounds>? cells, bool? isDownloading}) {
+    return DemBoundsState(
+      cells: cells ?? this.cells,
+      isDownloading: isDownloading ?? this.isDownloading,
+    );
+  }
+}
+
+class DemBoundsNotifier extends Notifier<DemBoundsState> {
   @override
-  List<DemBounds> build() {
-    return const []; // Al arrancar la app, la lista empieza vacía
+  DemBoundsState build() {
+    return const DemBoundsState(cells: [], isDownloading: false);
   }
 
-  // Función para apuntar un nuevo rectángulo en la pizarra
+  void setDownloading(bool value) {
+    state = state.copyWith(isDownloading: value);
+  }
+
   void addCell(double minLon, double minLat, double maxLon, double maxLat) {
-    // Si ya lo tenemos apuntado exactamente igual, lo ignoramos para ahorrar RAM
-    final exists = state.any(
+    final exists = state.cells.any(
       (b) =>
           b.minLon == minLon &&
           b.minLat == minLat &&
@@ -34,27 +49,26 @@ class DemBoundsNotifier extends Notifier<List<DemBounds>> {
     );
 
     if (!exists) {
-      // Añadimos el nuevo rectángulo a la lista de forma inmutable
-      state = [
-        ...state,
-        DemBounds(
-          minLon: minLon,
-          minLat: minLat,
-          maxLon: maxLon,
-          maxLat: maxLat,
-        ),
-      ];
+      state = state.copyWith(
+        cells: [
+          ...state.cells,
+          DemBounds(
+            minLon: minLon,
+            minLat: minLat,
+            maxLon: maxLon,
+            maxLat: maxLat,
+          ),
+        ],
+      );
     }
   }
 
-  // Por si en algún momento necesitas vaciar el mapa
   void clearAll() {
-    state = const [];
+    state = const DemBoundsState(cells: [], isDownloading: false);
   }
 }
 
-// 🌍 3. El proveedor global que escuchará el mapa
-final demBoundsProvider = NotifierProvider<DemBoundsNotifier, List<DemBounds>>(
+final demBoundsProvider = NotifierProvider<DemBoundsNotifier, DemBoundsState>(
   () {
     return DemBoundsNotifier();
   },
