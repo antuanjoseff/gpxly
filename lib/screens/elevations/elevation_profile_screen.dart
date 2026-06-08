@@ -30,28 +30,51 @@ class _ElevationProfileScreenState
   int? selectedIndexStart;
   int? selectedIndexEnd;
   int? selectedIndexGraph;
+  // 1. Afegeix aquestes dues variables a dalt de tot de la classe de l'Estat, a vora de selectedIndexStart:
+  int? _prevWpIndex; // Guarda l'índex del Waypoint (N - 1)
+  int? _lastWpIndex; // Guarda l'índex del Waypoint (N)
 
   void _onToggleWaypoint(Waypoint wp) {
     final int idx = wp.trackIndex;
+
     setState(() {
-      selectedIndexGraph = null;
-      if (selectedIndexStart == idx) {
-        selectedIndexStart = null;
-      } else if (selectedIndexEnd == idx) {
-        selectedIndexEnd = null;
-      } else if (selectedIndexStart == null) {
-        selectedIndexStart = idx;
-      } else if (selectedIndexEnd == null) {
-        selectedIndexEnd = idx;
-      } else {
-        selectedIndexEnd = idx;
+      selectedIndexGraph = null; // Neteja el pin vertical flotant del gràfic
+
+      // 🔄 GESTIÓ CONTINUA DE L'HISTORIAL: L'antic N passa a ser el nou N-1, i el toc actual és el nou N
+      _prevWpIndex = _lastWpIndex;
+      _lastWpIndex = idx;
+
+      if (_prevWpIndex == null) {
+        // 🟢 CAS 1: PRIMER CLIC DE WAYPOINT (N-1 encara és null)
+        // Busquem quin dels dos extrems del Long Press inicial està més a prop del Waypoint actual (N)
+        if (selectedIndexStart != null && selectedIndexEnd != null) {
+          final int distToStart = (selectedIndexStart! - idx).abs();
+          final int distToEnd = (selectedIndexEnd! - idx).abs();
+
+          if (distToStart <= distToEnd) {
+            // El Waypoint N està més a vora de l'inici. Per tant, l'inici del Long Press és el nostre (N-1)
+            _prevWpIndex = selectedIndexStart;
+          } else {
+            // El Waypoint N està más a vora del final. El final del Long Press esdevé el nostre (N-1)
+            _prevWpIndex = selectedIndexEnd;
+          }
+        } else {
+          // Salvaguarda per si l'usuari no hagués fet cap Long Press abans
+          _prevWpIndex = idx;
+        }
       }
 
-      if (selectedIndexStart != null && selectedIndexEnd != null) {
-        if (selectedIndexStart! > selectedIndexEnd!) {
-          final temp = selectedIndexStart;
-          selectedIndexStart = selectedIndexEnd;
-          selectedIndexEnd = temp;
+      // 🟢 CAS 2: SEGON CLIC I POSTERIORS (N i N-1 ja estan perfectament definits)
+      // Ara el tram seleccionat queda definit estrictament entre _lastWpIndex (N) i _prevWpIndex (N-1).
+      // Com que N pot ser l'inici o el final (i el mateix amb N-1), fem una comprovació purament numèrica
+      // per col·locar el més petit a l'esquerra del gràfic i el més gran a la dreta, salvant la GPU.
+      if (_prevWpIndex != null && _lastWpIndex != null) {
+        if (_prevWpIndex! <= _lastWpIndex!) {
+          selectedIndexStart = _prevWpIndex;
+          selectedIndexEnd = _lastWpIndex;
+        } else {
+          selectedIndexStart = _lastWpIndex;
+          selectedIndexEnd = _prevWpIndex;
         }
       }
     });
@@ -255,12 +278,27 @@ class _ElevationProfileScreenState
                 selectedIndexStart = start;
                 selectedIndexEnd = end;
                 selectedIndexGraph = null;
+                // 🎯 CRÍTIC: Un nou Long Press esborra l'historial de Waypoints per arrencar net el cicle N i N-1
+                _prevWpIndex = null;
+                _lastWpIndex = null;
               }),
               onClearSelection: () => setState(() {
                 selectedIndexStart = null;
                 selectedIndexEnd = null;
                 selectedIndexGraph = null;
+                _prevWpIndex = null;
+                _lastWpIndex = null;
               }),
+              // onRangeSelected: (start, end) => setState(() {
+              //   selectedIndexStart = start;
+              //   selectedIndexEnd = end;
+              //   selectedIndexGraph = null;
+              // }),
+              // onClearSelection: () => setState(() {
+              //   selectedIndexStart = null;
+              //   selectedIndexEnd = null;
+              //   selectedIndexGraph = null;
+              // }),
             ),
           ),
 
