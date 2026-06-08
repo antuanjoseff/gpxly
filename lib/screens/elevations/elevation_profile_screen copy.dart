@@ -30,6 +30,8 @@ class _ElevationProfileScreenState
   int? selectedIndexStart;
   int? selectedIndexEnd;
   int? selectedIndexGraph;
+  int? _prevWpIndex;
+  int? _lastWpIndex;
 
   void _onToggleWaypoint(Waypoint wp) {
     final int idx = wp.trackIndex;
@@ -226,6 +228,10 @@ class _ElevationProfileScreenState
             ),
             height: MediaQuery.of(context).size.height * 0.32,
             child: ElevationChartWidget(
+              // 🚨 1. LA CLAU REACTIVA: Força el gràfic a redibuixar el CustomPaint i moure les agulles
+              key: ValueKey(
+                "chart_sync_${selectedIndexStart}_${selectedIndexEnd}",
+              ),
               pastAlts: realAlts,
               pastDists: realDists,
               futureAlts: futureAlts,
@@ -247,11 +253,20 @@ class _ElevationProfileScreenState
                 selectedIndexStart = start;
                 selectedIndexEnd = end;
                 selectedIndexGraph = null;
+
+                // 🚨 2. REPARAT: Si l'usuari fa drag, la memòria dels clics anteriors
+                // s'ha de sincronitzar amb la nova realitat de les agulles lliures
+                _prevWpIndex = start;
+                _lastWpIndex = end;
               }),
               onClearSelection: () => setState(() {
                 selectedIndexStart = null;
                 selectedIndexEnd = null;
                 selectedIndexGraph = null;
+
+                // 🚨 3. REPARAT: Si es neteja la selecció, l'historial es posa a zero
+                _prevWpIndex = null;
+                _lastWpIndex = null;
               }),
             ),
           ),

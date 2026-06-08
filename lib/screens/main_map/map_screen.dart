@@ -78,6 +78,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
   int? selectedIndexStart;
   int? selectedIndexEnd;
   int? selectedIndexGraph;
+  int? _prevWpIndex;
+  int? _lastWpIndex;
   bool _isChartCollapsed = false;
   DateTime _lastMapUpdateTime = DateTime.fromMillisecondsSinceEpoch(0);
   static const int _mapThrottleMs = 32;
@@ -335,23 +337,23 @@ class _MapScreenState extends ConsumerState<MapScreen>
     // 🛡️ UNIFICACIÓ TOTAL DE LÒGIQUES: Creació Seqüencial + Refinament Ordinal
     // ─────────────────────────────────────────────────────────────────────────
 
-    // 📐 REGLA 1: SEGON CLIC (Ja teníem l'Inici fixat i aquest és el segon toc a un waypoint diferent)
+    // 📐 REGLA 1: SEGON CLIC (Teníem l'Inici fixat i aquest és el segon toc a un waypoint diferent)
     if (selectedIndexStart != null && selectedIndexEnd == null) {
       if (wpTrackIndex != selectedIndexStart) {
         // Evitem col·lisió del mateix punt
         setState(() {
-          int startIdx = selectedIndexStart!;
-          int endIdx = wpTrackIndex;
+          // El primer (N-1) és el que ja teníem a l'inici, i el nou (N) és el clicat ara
+          _prevWpIndex = selectedIndexStart;
+          _lastWpIndex = wpTrackIndex;
 
-          // FIX SIMÈTRIC DE SENDA: Si es clica a la inversa cronològica, els reordenem
-          if (endIdx < startIdx) {
-            final temp = startIdx;
-            startIdx = endIdx;
-            endIdx = temp;
+          // Ordenem numèricament perquè el gràfic rebi el menor a l'esquerra i el major a la dreta
+          if (_prevWpIndex! <= _lastWpIndex!) {
+            selectedIndexStart = _prevWpIndex;
+            selectedIndexEnd = _lastWpIndex;
+          } else {
+            selectedIndexStart = _lastWpIndex;
+            selectedIndexEnd = _prevWpIndex;
           }
-
-          selectedIndexStart = startIdx;
-          selectedIndexEnd = endIdx;
           selectedIndexGraph = null;
         });
 
@@ -363,27 +365,21 @@ class _MapScreenState extends ConsumerState<MapScreen>
         return; // 🛑 Aturem propagació (Rang tancat i desat)
       }
     }
-    // 📐 REGLA 2: REFINAMENT D'UN RANG JA EXISTENT (Tots dos punts ja són visibles al mapa)
+    // 📐 REGLA 2: REFINAMENT D'UN RANG JA EXISTENT (Tots dos punts ja estan seleccionats)
+    // 🔄 GESTIÓ CRONOLÒGICA: El que fins ara era l'últim (N), passa a ser l'anterior (N-1), i el toc actual és el nou N.
     else if (selectedIndexStart != null && selectedIndexEnd != null) {
       setState(() {
-        // A. Si el waypoint està a l'esquerra de l'inici, mou el cercle Verd
-        if (wpTrackIndex <= selectedIndexStart!) {
-          selectedIndexStart = wpTrackIndex;
-        }
-        // B. Si el waypoint està a la dreta del final, mou el cercle Vermell
-        else if (wpTrackIndex >= selectedIndexEnd!) {
-          selectedIndexEnd = wpTrackIndex;
-        }
-        // C. Si cau a l'interior, apliquem proximitat per veure quin costat refinar
-        else {
-          final int distToStart = (selectedIndexStart! - wpTrackIndex).abs();
-          final int distToEnd = (selectedIndexEnd! - wpTrackIndex).abs();
+        // Rescatem quin era l'últim clic real per moure'l a la memòria anterior
+        _prevWpIndex = _lastWpIndex ?? selectedIndexStart;
+        _lastWpIndex = wpTrackIndex;
 
-          if (distToStart < distToEnd) {
-            selectedIndexStart = wpTrackIndex;
-          } else {
-            selectedIndexEnd = wpTrackIndex;
-          }
+        // Tornem a ordenar numèricament exclusivament per enviar el rang en ordre correcte a fl_chart
+        if (_prevWpIndex! <= _lastWpIndex!) {
+          selectedIndexStart = _prevWpIndex;
+          selectedIndexEnd = _lastWpIndex;
+        } else {
+          selectedIndexStart = _lastWpIndex;
+          selectedIndexEnd = _prevWpIndex;
         }
 
         selectedIndexGraph = null;
@@ -396,12 +392,16 @@ class _MapScreenState extends ConsumerState<MapScreen>
       );
       return; // 🛑 Aturem propagació
     }
-    // 📐 REGLA 3: PRIMER CLIC ABSOLUT (Tot estava a null, la fita es converteix en l'Inici Verd)
+    // 📐 REGLA 3: PRIMER CLIC ABSOLUT (Tot estava a null, arrenquem el cicle)
     else {
       setState(() {
         selectedIndexStart = wpTrackIndex;
         selectedIndexEnd = null;
         selectedIndexGraph = null;
+
+        // Inicialitzem l'historial amb aquest primer punt ocupant el lloc de l'últim clicat
+        _lastWpIndex = wpTrackIndex;
+        _prevWpIndex = null;
       });
 
       setChartInteractionGeometry(
