@@ -6,8 +6,8 @@
 Hola, treballo amb flutter en una app que fa tracking del gps. També en background. A més permet importar un .gpx i fer la navegació. També fa correccions d'altimetries amb un DEM descarregat i correcció baromètrica.
 La app té una pantalla de dades on es mostren moltes dades relacionades amb l'altimetria, la velocitat, el temps , etc.
 Hi ha una altra pàgina amb el perfil d'elevacions que permet fer drag sobre el gràfic o, amb un long press sobre el gràfic, mostrar un rang del track i poder-lo modificar. Les dades del tram seleccionat es mostren en un container.
-La pàgina principal de la app és un mapa on es visualiza la posició actual i el track gravat i/o el track importat. 
-La pàgina principal té un appBar amb actions, un body amb un Stack on hi ha el mapa i altres components i un element bottombarcontainer que mostra els botons de gravació i seguiment del track. 
+La pàgina principal de la app és un mapa on es visualiza la posició actual i el track gravat i/o el track importat.
+La pàgina principal té un appBar amb actions, un body amb un Stack on hi ha el mapa i altres components i un element bottombarcontainer que mostra els botons de gravació i seguiment del track.
 
 //////////////////
 // DESCRIPCIÓ DEL GRÀFIC D'ELEVACONS I LES SEVES FUNCIONALITATS
@@ -24,7 +24,7 @@ A la part inferior del mapa vull col·locar el mapa d'elevacions. Aquest mapa t�
 //   DISSENY Glassmorphism
 ///////////////////////////////
 
-Hola! Reprenem la conversa sobre el disseny de la interfície (UI) de l'app de muntanya "Senda" desenvolupada en Flutter. 
+Hola! Reprenem la conversa sobre el disseny de la interfície (UI) de l'app de muntanya "Senda" desenvolupada en Flutter.
 
 Context actual de l'app i decisions preses:
 1. El mapa ocupa el 100% del fons de la pantalla sense comptar el appBar. Sobre el mapa floten els components (HUD).
@@ -56,23 +56,4 @@ Continuem a partir d’aquí.
 ///////////////////////////////
 //   PROMPT DE CONTINUACIÓ
 ///////////////////////////////
-
-
-Hola! Estic desenvolupant una aplicació de Flutter amb mapes (MapLibre GL) i gràfics d'elevació (FL Chart / CustomPaint) sincronitzats per fer seleccions de trams en tracks de GPS mitjançant punts o agulles (cercle verd/vermell al mapa, agulles start/end al gràfic).
-
-Tenim un problema de desincronització:
-1. Quan moc les agulles fent drag manual sobre el gràfic, els cercles del mapa es col·loquen malament (desplaçats).
-2. Quan faig onTap sobre un Waypoint al mapa, s'executa la màquina d'estats del Notifier però les agulles del gràfic NO es mouen gens de lloc.
-
-Flux actual d'arquitectura configurat avui:
-- Tenim un `ElevationSelectionNotifier` (Notifier de Riverpod) que gestiona l'estat global `[int?, int?]` de la selecció (Start i End). Té els mètodes `setManualRange`, `clearSelection` i `toggleWaypoint(idx, allWpIndexes)`.
-- La pantalla `ElevationProfileScreen` escolta aquest provider via `ref.watch` i injecta els valors `selectedIndexStart` i `selectedIndexEnd` al widget del gràfic.
-- El gràfic `ElevationChartWidget` (StatefulWidget) utilitza un estat local (`_localStartIdx`, `_localEndIdx`) per pintar fluidament les agulles amb un CustomPaint i té un mètode `didUpdateWidget` per capturar els canvis externs que vinguin de Riverpod (com el clic al mapa) quan `_draggingNeedle == 0`. També hem tret la `ValueKey` dinàmica per evitar que es reconstrueixi des de zero a cada frame.
-
-Tot i tenir aquesta estructura polida, continua sense funcionar (les agulles no es mouen en fer clic al waypoint del mapa, i fent drag els cercles van desplaçats). 
-
-Necessito ajuda per fer un diagnòstic profund en els punts on se sospita que hi ha la trencadissa:
-1. Revisar com el mapa injecta i extreu la propietat 'track_index' a la 'Feature' dins de `_onFeatureTapped` (podria estar arribant buit o null).
-2. Comprovar si el 'MapGeometryHelper' i la funció 'getCoordsFromGlobalIndex' utilitzen exactament la mateixa finestra asimètrica de dades concatenades (past + future) que fa servir el perfil d'elevacions per pintar l'eix X de distàncies globals.
-
-Comencem revisant el codi del mètode del mapa `_onFeatureTapped` i el `MapGeometryHelper`.
+PROMPT DE DESENVOLUPAMENT: REFACTORITZACIÓ UX DELS BOTONS MUTABLES (MAP_SCREEN)Context del projecte:Estem desenvolupant una aplicació de muntanya en Flutter anomenada Senda. El frontend utilitza un Stack sobre un mapa de MapLibre GL i l'estat global es gestiona de forma centralitzada i reactiva amb Riverpod (navigationProvider, trackRecordingProvider i importedTrackProvider). L'arxiu de referència de la interfície és map_screen.dart.Objectiu:Volem refactoritzar de dalt a baix la UX dels botons inferiors d'acció de la pantalla del mapa (que actualment són botons flotants verticals independents: Enregistrar, Importar i Ajustos) per unificar-los en un únic component flotant mutant, reactiu i contextual anomenat MapActionSpeedDial situat a la cantonada inferior dreta. Aquest botó ha d'actuar com una màquina d'estats visual en calent avaluant els proveïdors de Riverpod per evitar l'acumulació de botons verticals i blindar la seguretat en ruta.Requisits i Casuístiques de la Màquina d'Estats (3 Escenaris de la UI):ESTAT A: REPÒS COMPLET (SelectionMode.none o inicial)Condició: No hi ha cap track gravant-se ni cap fitxer GPX importat a la pantalla.Comportament de la UI: Es mostra un únic botó flotant blau fosc centralitzat (52x52px) amb una icona neutra de configuració d'activitat (menú d'accions).Acció (Speed Dial): En fer un tap ordinari, es desplega verticalment cap amunt un ventall animat lleuger amb tres sub-botons flotants compactes:🔴 Enregistrar ruta (Activa la línia de gravació).📤 Importar track (Obre el flux de càrrega de fitxers GPX).⚙️ Ajustos (Obre el panell de configuració de capes).ESTAT B: TRACK IMPORTAT CARREGAT (Però encara NO s'està seguint)Condició: importedTrackProvider != null i navigationState.isFollowing == false.Comportament de la UI: El menú de repòs s'amaga completament de l'arbre. En el seu lloc, apareix un gran botó de crida a l'acció directa en color cian o blau marí vibrant amb la icona de brúixola/exploració i un text compacte que diu: [ 🧭 NAVEGAR ].Acció: En prémer-lo, arrenca directament el flux de seguiment natiu del camí (startFollowing). Si es manté premut, desplega la sub-opció de ❌ Eliminar track importat o 🔴 Enregistrar alhora.ESTAT C: ACTIVITAT EN CURS (Enregistrant o Navegant de forma activa)Condició: isRecording == true o navigationState.isFollowing == true.Comportament de la UI: Qualsevol botó anterior desapareix del mapa. Es col·loca un únic botó mestre de PAUSA (⏸️) en color ambre o groc translúcid.Acció de Pausa (El control mutable de seguretat): En prémer Pausa, l'activitat s'atura temporalment en segon pla i el botó es divideix síncronament en dues úniques opcions separades de forma física per evitar errors de polsat:Botó ▶️ REPRENDRE (Verd): Ocupa el lloc principal del dit per continuar la marxa còmodament.Botó ⏹️ FINALITZAR (Vermell): Es col·loca de forma apartada. Per seguretat estricta de muntanya, un tap ordinari no fa res (mostra un avís: "Mantén premut per desar"). L'usuari ha d'executar obligatòriament un Long Press mantingut de 2 segons exactes (amb un indicador visual de cercle de càrrega o progrés circular) per poder finalitzar, aturar i desar la ruta a la base de dades de fons amb èxit.Implementació Tècnica:El component ha de rebre l'estat de forma totalment passiva utilitzant ref.watch dels proveïdors esmentats per garantir que la UI es reconstrueixi sola de manera aïllada, evitant llançar setState massius a la pantalla del mapa contenidora que puguin provocar sobrecàrregues o parpellejos a la GPU de MapLibre GL.S'ha d'integrar harmònicament amb el desplaçament vertical (l'efecte ascensor) del perfil d'elevacions (_isChartCollapsed), adaptant la seva alçada inferior de forma fluida.

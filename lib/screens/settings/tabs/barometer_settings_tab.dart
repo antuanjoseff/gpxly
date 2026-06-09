@@ -9,6 +9,7 @@ import 'package:senda/theme/app_colors.dart';
 import 'package:senda/ui/app_messages.dart';
 import 'package:senda/notifiers/location_notifier.dart';
 import 'package:senda/utils/map_animator.dart';
+import 'package:senda/utils/map_constants.dart';
 
 class BarometerSettingsTab extends ConsumerStatefulWidget {
   const BarometerSettingsTab({super.key});
@@ -23,8 +24,7 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
   MapAnimator? _mapAnimator;
 
   bool _styleLoaded = false;
-  double _currentZoom = 5.5;
-  bool _isHudCollapsed = false;
+  bool _isHudCollapsed = true;
 
   // Controls de guàrdia per saber si l'usuari interacciona amb el mapa
   bool _hasCenteredOnUser = false;
@@ -34,160 +34,6 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
   String? _downloadingKey;
   String? _selectedKey;
   Map<String, dynamic>? _selectedCellProps;
-
-  final List<String> _tifFiles = [
-    "N27W013",
-    "N27W014",
-    "N27W015",
-    "N27W016",
-    "N27W017",
-    "N27W018",
-    "N27W019",
-    "N28W013",
-    "N28W014",
-    "N28W015",
-    "N28W016",
-    "N28W017",
-    "N28W018",
-    "N28W019",
-    "N29W013",
-    "N29W014",
-    "N29W015",
-    "N29W016",
-    "N29W017",
-    "N29W018",
-    "N29W019",
-    "N36W003",
-    "N36W004",
-    "N36W005",
-    "N36W006",
-    "N36W007",
-    "N36W008",
-    "N36W009",
-    "N36W010",
-    "N36W011",
-    "N37W003",
-    "N37W004",
-    "N37W005",
-    "N37W006",
-    "N37W007",
-    "N37W008",
-    "N37W009",
-    "N37W010",
-    "N37W011",
-    "N38E000",
-    "N38E001",
-    "N38E002",
-    "N38E003",
-    "N38E004",
-    "N38W001",
-    "N38W002",
-    "N38W003",
-    "N38W004",
-    "N38W005",
-    "N38W006",
-    "N38W007",
-    "N38W008",
-    "N38W009",
-    "N38W010",
-    "N38W011",
-    "N39E000",
-    "N39E001",
-    "N39E002",
-    "N39E003",
-    "N39E004",
-    "N39W001",
-    "N39W002",
-    "N39W003",
-    "N39W004",
-    "N39W005",
-    "N39W006",
-    "N39W007",
-    "N39W008",
-    "N39W009",
-    "N39W010",
-    "N39W011",
-    "N40E000",
-    "N40E001",
-    "N40E002",
-    "N40E003",
-    "N40E004",
-    "N40W001",
-    "N40W002",
-    "N40W003",
-    "N40W004",
-    "N40W005",
-    "N40W006",
-    "N40W007",
-    "N40W008",
-    "N40W009",
-    "N40W010",
-    "N40W011",
-    "N41E000",
-    "N41E001",
-    "N41E002",
-    "N41E003",
-    "N41E004",
-    "N41W001",
-    "N41W002",
-    "N41W003",
-    "N41W004",
-    "N41W005",
-    "N41W006",
-    "N41W007",
-    "N41W008",
-    "N41W009",
-    "N41W010",
-    "N41W011",
-    "N42E000",
-    "N42E001",
-    "N42E002",
-    "N42E003",
-    "N42E004",
-    "N42W001",
-    "N42W002",
-    "N42W003",
-    "N42W004",
-    "N42W005",
-    "N42W006",
-    "N42W007",
-    "N42W008",
-    "N42W009",
-    "N42W010",
-    "N42W011",
-    "N43E000",
-    "N43E001",
-    "N43E002",
-    "N43E003",
-    "N43E004",
-    "N43W001",
-    "N43W002",
-    "N43W003",
-    "N43W004",
-    "N43W005",
-    "N43W006",
-    "N43W007",
-    "N43W008",
-    "N43W009",
-    "N43W010",
-    "N43W011",
-    "N44E000",
-    "N44E001",
-    "N44E002",
-    "N44E003",
-    "N44E004",
-    "N44W001",
-    "N44W002",
-    "N44W003",
-    "N44W004",
-    "N44W005",
-    "N44W006",
-    "N44W007",
-    "N44W008",
-    "N44W009",
-    "N44W010",
-    "N44W011",
-  ];
 
   @override
   void initState() {
@@ -205,7 +51,7 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
   Map<String, dynamic> _buildGridGeoJson(List<DemBounds> downloadedCells) {
     final List<Map<String, dynamic>> features = [];
 
-    for (final filename in _tifFiles) {
+    for (final filename in MapConstants.tifFilesEspanya) {
       final latBase = double.parse(filename.substring(1, 3));
       final lonSign = filename.substring(3, 4) == 'E' ? 1.0 : -1.0;
       final lonBase = double.parse(filename.substring(4, 7)) * lonSign;
@@ -382,28 +228,16 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
 
     final userPositionState = ref.watch(locationProvider);
 
-    if (userPositionState != null && _mapController != null && _styleLoaded) {
-      if (!_hasCenteredOnUser) {
-        _hasCenteredOnUser = true;
-        _mapController!.animateCamera(
-          CameraUpdate.newLatLngZoom(userPositionState.position, 6.0),
-        );
-      } else if (!_userMovedMap) {
-        _mapController!.animateCamera(
-          CameraUpdate.newLatLng(userPositionState.position),
-        );
-      }
-    }
-
     final double? selLat = _selectedCellProps?["minLat"] != null
-        ? (_selectedCellProps!["minLat"] as num).toDouble()
+        ? double.tryParse(_selectedCellProps!["minLat"].toString())
         : null;
     final double? selLon = _selectedCellProps?["minLon"] != null
-        ? (_selectedCellProps!["minLon"] as num).toDouble()
+        ? double.tryParse(_selectedCellProps!["minLon"].toString())
         : null;
     final int? selStatus = _selectedCellProps?["status"] != null
-        ? (_selectedCellProps!["status"] as num).toInt()
+        ? int.tryParse(_selectedCellProps!["status"].toString())
         : null;
+
     final String selKey = (selLat != null && selLon != null)
         ? "${selLat.toStringAsFixed(1)}_${selLon.toStringAsFixed(1)}"
         : "";
@@ -498,14 +332,7 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
                   }
                 });
               },
-              onCameraIdle: () {
-                if (_mapController?.cameraPosition != null) {
-                  final newZoom = _mapController!.cameraPosition!.zoom;
-                  if ((newZoom - _currentZoom).abs() > 0.1) {
-                    setState(() => _currentZoom = newZoom);
-                  }
-                }
-              },
+              onCameraIdle: () {},
             ),
           ),
 
@@ -596,21 +423,12 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
                             ),
                           ),
                         ),
-                        Row(
+                        const Row(
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.zoom_in,
                               color: Colors.orangeAccent,
                               size: 16,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              "Zoom: ${_currentZoom.toStringAsFixed(1)}",
-                              style: TextStyle(
-                                color: Colors.orangeAccent.withAlpha(230),
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                              ),
                             ),
                           ],
                         ),

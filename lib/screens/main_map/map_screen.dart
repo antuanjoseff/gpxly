@@ -30,7 +30,6 @@ import 'package:senda/screens/main_map/widgets/map_bottom_controls.dart';
 import 'package:senda/screens/main_map/widgets/map_top_controls.dart';
 import 'package:senda/screens/main_map/widgets/senda_brand_label.dart';
 import 'package:senda/theme/app_colors.dart';
-import 'package:senda/widgets/range_info_panel.dart';
 import 'package:senda/widgets/embedded_elevation_profile.dart';
 
 // Els 3 HELPERS d'extracció de codi massiu
