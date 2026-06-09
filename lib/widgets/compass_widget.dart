@@ -10,12 +10,13 @@ import 'package:senda/theme/app_colors.dart';
 class CompassScalePanel extends ConsumerWidget {
   final VoidCallback? onTapCompass;
   const CompassScalePanel({super.key, this.onTapCompass});
+
   String _formatMeters(double m) {
     if (m >= 1000) {
-      final km = (m / 1000).round(); // sense decimals
+      final km = (m / 1000).round();
       return "$km km";
     }
-    return "${m.round()} m"; // també sense decimals
+    return "${m.round()} m";
   }
 
   @override
@@ -23,8 +24,7 @@ class CompassScalePanel extends ConsumerWidget {
     final deviceHeading = ref.watch(gpsBearingProvider);
     final mapBearing = ref.watch(mapBearingProvider);
 
-    // Rotació real de la brúixola
-    final compassRotation = (deviceHeading - mapBearing) % 360;
+    // Ja no ens cal la variable compassRotation aquí perquè ho dividim en dues animacions netes
 
     final zoom = ref.watch(mapZoomProvider);
     final latitude = ref.watch(mapCenterLatProvider);
@@ -32,9 +32,10 @@ class CompassScalePanel extends ConsumerWidget {
     // Càlcul escala
     final metersPerPixel =
         156543.03392 * math.cos(latitude * math.pi / 180) / math.pow(2, zoom);
-
-    const maxWidthPx =
-        40.0; // Reduït una mica per anar a joc amb els 52px totals
+    debugPrint(
+      "BRÚIXOLA REBUT -> Zoom a Riverpod: $zoom | Metres/Pixel calculats: $metersPerPixel",
+    );
+    const maxWidthPx = 40.0;
     final niceScales = <double>[
       10,
       20,
@@ -67,7 +68,7 @@ class CompassScalePanel extends ConsumerWidget {
     }
 
     return Container(
-      width: 52, // 🎯 Amplada fixa per a tot el panell
+      width: 52,
       padding: const EdgeInsets.symmetric(vertical: 10),
       decoration: BoxDecoration(
         color: AppColors.tertiary,
@@ -84,54 +85,78 @@ class CompassScalePanel extends ConsumerWidget {
             child: SizedBox(
               width: 32,
               height: 32,
-
-              // 🔥 TOT EL DISC GIRA AMB EL MAPA
-              child: AnimatedRotation(
-                turns: -mapBearing / 360,
-                duration: const Duration(milliseconds: 250),
-                curve: Curves.easeOut,
-
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    // Cercle
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white.withOpacity(0.9),
-                      ),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  // Cercle blanc de fons (Estàtic, no cal que giri de fons)
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withOpacity(0.9),
                     ),
+                  ),
 
-                    // Lletres
-                    Positioned(top: 1, child: _label("N")),
-                    Positioned(bottom: 1, child: _label("S")),
-                    Positioned(left: 1, child: _label("W")),
-                    Positioned(right: 1, child: _label("E")),
-
-                    // 🔥 LA FLETXA APUNTA AL NORD REAL
-                    AnimatedRotation(
-                      turns: deviceHeading / 360,
-                      duration: const Duration(milliseconds: 250),
-                      curve: Curves.easeOut,
-                      child: CustomPaint(
-                        size: const Size(10, 10),
-                        painter: _CompassArrowPainter(),
-                      ),
+                  // 🔥 CAPA 1: NOMÉS LES LLETRES GIREN AMB EL MAPA
+                  AnimatedRotation(
+                    turns: -mapBearing / 360,
+                    duration: const Duration(milliseconds: 250),
+                    curve: Curves.easeOut,
+                    child: Stack(
+                      children: [
+                        Positioned(
+                          top: 1,
+                          left: 0,
+                          right: 0,
+                          child: Center(child: _label("N")),
+                        ),
+                        Positioned(
+                          bottom: 1,
+                          left: 0,
+                          right: 0,
+                          child: Center(child: _label("S")),
+                        ),
+                        Positioned(
+                          left: 1,
+                          top: 0,
+                          bottom: 0,
+                          child: Center(child: _label("W")),
+                        ),
+                        Positioned(
+                          right: 1,
+                          top: 0,
+                          bottom: 0,
+                          child: Center(child: _label("E")),
+                        ),
+                      ],
                     ),
+                  ),
 
-                    // Punt central
-                    Container(
-                      width: 2,
-                      height: 2,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.black,
-                      ),
+                  // 🔥 CAPA 2: LA FLETXA VA INDEPENDENT (Apunta al Nord GPS real sense heretar el gir de les lletres)
+                  AnimatedRotation(
+                    turns: deviceHeading / 360,
+                    duration: const Duration(milliseconds: 250),
+                    curve: Curves.easeOut,
+                    child: CustomPaint(
+                      size: const Size(
+                        10,
+                        12,
+                      ), // He donat 2px més d'alçada perquè llueixi més estilitzada
+                      painter: _CompassArrowPainter(),
                     ),
-                  ],
-                ),
+                  ),
+
+                  // Punt central decoratiu superior
+                  Container(
+                    width: 2,
+                    height: 2,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.black,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -145,14 +170,14 @@ class CompassScalePanel extends ConsumerWidget {
               Text(
                 _formatMeters(chosenMeters),
                 style: const TextStyle(
-                  fontSize: 10, // Text un pèl més petit
+                  fontSize: 10,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),
               ),
               const SizedBox(height: 3),
               Container(
-                width: chosenWidthPx.clamp(4, maxWidthPx),
+                width: chosenWidthPx.clamp(20, maxWidthPx),
                 height: 2,
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -170,13 +195,13 @@ class CompassScalePanel extends ConsumerWidget {
     return Text(
       text,
       style: const TextStyle(
-        fontSize: 7, // Reduït de 8 a 7
+        fontSize: 7,
         fontWeight: FontWeight.bold,
         color: Colors.black87,
       ),
     );
   }
-}
+} // 👈 CORRECCIÓ: Tancament de la classe principal CompassScalePanel afegit de forma neta
 
 class _CompassArrowPainter extends CustomPainter {
   @override
@@ -189,7 +214,7 @@ class _CompassArrowPainter extends CustomPainter {
     final path = Path()
       ..moveTo(w / 2, 0)
       ..lineTo(w, h)
-      ..lineTo(w / 2, h * 0.8) // Li dono un toc més estilitzat a la base
+      ..lineTo(w / 2, h * 0.8)
       ..lineTo(0, h)
       ..close();
     canvas.drawPath(path, paint);

@@ -11,6 +11,7 @@ class MapBaseLayer extends StatelessWidget {
   final void Function(bool) onFullScreenChanged;
   final void Function(MapLibreMapController) onMapCreated;
   final VoidCallback onStyleLoaded;
+  final void Function(CameraPosition)? onCameraMove;
 
   const MapBaseLayer({
     super.key,
@@ -23,6 +24,7 @@ class MapBaseLayer extends StatelessWidget {
     required this.onFullScreenChanged,
     required this.onMapCreated,
     required this.onStyleLoaded,
+    this.onCameraMove,
   });
 
   @override
@@ -52,6 +54,7 @@ class MapBaseLayer extends StatelessWidget {
           ),
           onMapLongClick: (point, latlng) => onFullScreenChanged(true),
           onMapClick: (point, latlng) => onFullScreenChanged(false),
+          onCameraMove: onCameraMove,
           onCameraIdle: () {
             // Nota: La lògica asíncrona de desar SharedPreferences es delega al controller del pare
           },

@@ -10,11 +10,13 @@ import 'package:senda/models/track.dart';
 import 'package:senda/models/user_position.dart';
 import 'package:senda/models/waypoint.dart';
 import 'package:senda/notifiers/elevation_selection_provider.dart';
+import 'package:senda/notifiers/gps_speed_notifier.dart';
 
 // Notifiers natius de Senda
 import 'package:senda/notifiers/imported_track_notifier.dart';
 import 'package:senda/notifiers/imported_track_settings_notifier.dart';
 import 'package:senda/notifiers/location_notifier.dart';
+import 'package:senda/notifiers/map_bearing_provider.dart';
 import 'package:senda/notifiers/navigation_notifier.dart';
 import 'package:senda/notifiers/permissions_notifier.dart';
 import 'package:senda/notifiers/recording_notifier.dart';
@@ -684,6 +686,19 @@ class _MapScreenState extends ConsumerState<MapScreen>
               onSmartCenterChanged: (val) =>
                   setState(() => smartCenterEnabled = val),
               onFullScreenChanged: (val) => setState(() => _fullScreen = val),
+              onCameraMove: (CameraPosition position) {
+                debugPrint(
+                  "BRÚIXOLA MAPA MOVIMENT -> Zoom real detectat: ${position.zoom}",
+                );
+                // 1. Actualitza la rotació de la brúixola (el mapa s'ha girat)
+                ref.read(mapBearingProvider.notifier).update(position.bearing);
+
+                // 2. Actualitza el zoom i la latitud perquè l'escala mètrica canviï de mida alhora!
+                ref.read(mapZoomProvider.notifier).update(position.zoom);
+                ref
+                    .read(mapCenterLatProvider.notifier)
+                    .update(position.target.latitude);
+              },
 
               onMapCreated: (controller) {
                 mapController = controller;
