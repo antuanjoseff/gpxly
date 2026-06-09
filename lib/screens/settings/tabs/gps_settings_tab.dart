@@ -18,21 +18,32 @@ class GpsSettingsTab extends ConsumerWidget {
       backgroundColor: const Color(0xFFF5F5F7),
       appBar: AppBar(
         backgroundColor: AppColors.primary,
-        title: Text(t.gpsTab, style: const TextStyle(color: Colors.white)),
+        iconTheme: const IconThemeData(
+          color: Colors.white,
+        ), // ✅ Asegura icono volver blanco
+        title: Text(
+          t.gpsTab,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         elevation: 0,
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          // 🎯 TEXT EXPLICATIU REFACTORITZAT A L'ESTIL CORPORATIU DE SENDA
           _buildInfoBanner(t.gpsAutoConfigInfo),
-          const SizedBox(height: 8),
+          const SizedBox(
+            height: 16,
+          ), // ✅ Incrementado a 16 para mejor aireado visual
           const SectionTitle("Mètode de registre"),
 
           // --- BLOC TEMPS ---
           SettingsCard(
-            // Es pot moure si no seguim un track
             isActive: !isFollowing,
-            // Es veu blau si no seguim i és el mètode seleccionat
             isStyleActive: !isFollowing && gps.useTime,
             title: t.gpsRecordByTime,
             valueText: "${gps.seconds} s",
@@ -50,9 +61,7 @@ class GpsSettingsTab extends ConsumerWidget {
 
           // --- BLOC DISTÀNCIA ---
           SettingsCard(
-            // Es pot moure si no seguim un track
             isActive: !isFollowing,
-            // Es veu blau si no seguim i NO és mode temps
             isStyleActive: !isFollowing && !gps.useTime,
             title: t.gpsRecordByDistance,
             valueText: "${gps.meters.toInt()} m",
@@ -66,12 +75,12 @@ class GpsSettingsTab extends ConsumerWidget {
             },
           ),
 
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           const SectionTitle("Qualitat del senyal"),
 
           SettingsCard(
             isActive: !isFollowing,
-            isStyleActive: !isFollowing, // Sempre blau si no seguim
+            isStyleActive: !isFollowing,
             title: t.gpsMaxAccuracy,
             valueText: "${gps.accuracy.toInt()} m",
             value: gps.accuracy,
@@ -88,27 +97,47 @@ class GpsSettingsTab extends ConsumerWidget {
     );
   }
 
+  // 🎨 DISSENY UNIFICAT: Banner adaptat de forma estricta a l'estètica del mapa
   Widget _buildInfoBanner(String message) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: Colors.blue.shade50,
-        borderRadius: BorderRadius.circular(16), // Unificat a 16 com les cards
-        border: Border.all(color: Colors.blue.shade200),
+        color: AppColors
+            .tertiary, // 🎯 Fons fosc sòlid/identitari de Senda [INDEX]
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.white.withAlpha(20),
+        ), // 🎯 Separació fina neta amb withAlpha [INDEX]
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(
+              25,
+            ), // 🎯 Ombra suau integrada de muntanya [INDEX]
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.info_outline, color: Colors.blue.shade700),
-          const SizedBox(width: 12),
+          const Icon(
+            Icons.info_outline_rounded,
+            color: Colors
+                .white70, // 🎯 Icona clara de contrast lligada a la brúixola
+            size: 22,
+          ),
+          const SizedBox(width: 14),
           Expanded(
             child: Text(
               message,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.blue.shade900,
-                height: 1.3,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: Colors.white, // 🎯 Text net i llegible
+                height: 1.4,
+                letterSpacing: 0.2,
               ),
             ),
           ),

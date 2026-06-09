@@ -24,11 +24,11 @@ import 'package:senda/notifiers/track_settings_notifier.dart';
 import 'package:senda/notifiers/waypoints_imported_notifier.dart';
 import 'package:senda/notifiers/waypoints_recorded_notifier.dart';
 import 'package:senda/providers/barometer_provider.dart';
+import 'package:senda/screens/main_map/widgets/map_action_speed_dial.dart';
 
 // Widgets independents que hem separat
 import 'package:senda/screens/main_map/widgets/map_app_bar.dart';
 import 'package:senda/screens/main_map/widgets/map_base_layer.dart';
-import 'package:senda/screens/main_map/widgets/map_bottom_controls.dart';
 import 'package:senda/screens/main_map/widgets/map_top_controls.dart';
 import 'package:senda/screens/main_map/widgets/senda_brand_label.dart';
 import 'package:senda/theme/app_colors.dart';
@@ -740,16 +740,27 @@ class _MapScreenState extends ConsumerState<MapScreen>
               ),
 
               // 🚀 COMPONENT EXTRET 4: Botons d'acció inferiors amb moviment d'ascensor
-              MapBottomControls(
+              // Dins del teu Stack a map_screen.dart:
+              MapActionSpeedDial(
                 isChartCollapsed: _isChartCollapsed,
                 systemBottomPadding: systemBottomPadding,
-                onAddWaypoint: () => _onAddWaypoint(context, ref),
                 onOpenRecordingControl: () =>
                     _openRecordingControl(context, ref),
                 onOpenNavigationControl: (hasTrack) =>
                     _openNavigationControl(context, ref, hasTrack),
                 onHandleNavigationAction: _handleSendaNavigationAction,
               ),
+
+              // MapBottomControls(
+              //   isChartCollapsed: _isChartCollapsed,
+              //   systemBottomPadding: systemBottomPadding,
+              //   onAddWaypoint: () => _onAddWaypoint(context, ref),
+              //   onOpenRecordingControl: () =>
+              //       _openRecordingControl(context, ref),
+              //   onOpenNavigationControl: (hasTrack) =>
+              //       _openNavigationControl(context, ref, hasTrack),
+              //   onHandleNavigationAction: _handleSendaNavigationAction,
+              // ),
 
               // 📈 ELEMENT FLOTANT: Perfil d'elevació basat en Riverpod (SENSE CALLBACKS NI PARÀMETRES VELLS)
               Positioned(
