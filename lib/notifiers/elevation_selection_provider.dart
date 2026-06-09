@@ -1,38 +1,125 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class ElevationSelectionNotifier extends Notifier<List<int?>> {
-  // Memòria cronològica dels teus dos últims clics manuals a waypoints
+enum SelectionMode {
+  none, // Cap agulla, cap punt.
+  single, // Mode punt únic: Cercle taronja al mapa / 1 agulla al gràfic.
+  range, // Mode tram (Requerix Long Press): Cercles verd i vermell / 2 agulles al gràfic.
+}
+
+class ElevationSelectionState {
+  final SelectionMode mode;
+  final int? singlePointIndex; // Cercle taronja (Mode single)
+  final int? startTrackIndex; // Cercle verd (Mode range)
+  final int? endTrackIndex; // Cercle vermell (Mode range)
+
+  const ElevationSelectionState({
+    required this.mode,
+    this.singlePointIndex,
+    this.startTrackIndex,
+    this.endTrackIndex,
+  });
+
+  factory ElevationSelectionState.initial() {
+    return const ElevationSelectionState(mode: SelectionMode.none);
+  }
+
+  // 🟢 AFEGIT: El mètode copyWith indispensable per a les modificacions dels trams
+  ElevationSelectionState copyWith({
+    SelectionMode? mode,
+    int? singlePointIndex,
+    int? startTrackIndex,
+    int? endTrackIndex,
+    bool clearSinglePoint = false, // Permet forçar el buidat del taronja
+    bool clearStartTrack = false, // Permet forçar el buidat del verd
+    bool clearEndTrack = false, // Permet forçar el buidat del vermell
+  }) {
+    return ElevationSelectionState(
+      mode: mode ?? this.mode,
+      singlePointIndex: clearSinglePoint
+          ? null
+          : (singlePointIndex ?? this.singlePointIndex),
+      startTrackIndex: clearStartTrack
+          ? null
+          : (startTrackIndex ?? this.startTrackIndex),
+      endTrackIndex: clearEndTrack
+          ? null
+          : (endTrackIndex ?? this.endTrackIndex),
+    );
+  }
+}
+
+class ElevationSelectionNotifier extends Notifier<ElevationSelectionState> {
   int? _prevWpIndex;
   int? _lastWpIndex;
-
-  // Guardem de forma fixa quin ha estat el darrer ID real clicat pel dit
   int? _darrerWpClicat;
 
   @override
-  List<int?> build() => [null, null]; // [0] = selectedIndexStart, [1] = selectedIndexEnd
+  ElevationSelectionState build() => ElevationSelectionState.initial();
 
-  /// 📊 ACCIÓ DEL DRAG MANUAL / LONG PRESS AL GRÀFIC
-  void setManualRange(int start, int end) {
-    // Mantinguem els índexs que arrossega l'usuari, però conservem la memòria
-    // del darrer waypoint clicat per si després torna a interactuar amb el mapa
-    state = [start, end];
+  void startSelectionWithLongPress(int startIdx, int endIdx) {
+    _prevWpIndex = startIdx;
+    _lastWpIndex = endIdx;
+    _darrerWpClicat = endIdx;
+
+    state = ElevationSelectionState(
+      mode: SelectionMode.range,
+      startTrackIndex: startIdx,
+      endTrackIndex: endIdx,
+      singlePointIndex: null,
+    );
   }
 
-  /// 🧹 NETEJA TOTAL DE LA SELECCIÓ
+  /// 📊 ACCIÓ DEL DRAG MANUAL DENTRE DEL GRÀFIC (Només en mode range)
+  void setManualRange(int start, int end) {
+    _prevWpIndex = start;
+    _lastWpIndex = end;
+    _darrerWpClicat =
+        null; // Desvinculem el passat del mapa per evitar desplaçaments
+
+    state = ElevationSelectionState(
+      mode: SelectionMode.range,
+      startTrackIndex: start,
+      endTrackIndex: end,
+      singlePointIndex: null,
+    );
+  }
+
+  /// 🟠 ACCIÓ DE SELECCIÓ DE PUNT ÚNIC (Tap ordinari al mapa o gràfic)
+  void setSinglePoint(int index) {
+    _prevWpIndex = null;
+    _lastWpIndex = null;
+    _darrerWpClicat = null;
+
+    state = ElevationSelectionState(
+      mode: SelectionMode.single, // Activem el cercle taronja
+      singlePointIndex: index,
+      startTrackIndex: null,
+      endTrackIndex: null,
+    );
+  }
+
+  /// 🧹 NETEJA TOTAL
   void clearSelection() {
     _prevWpIndex = null;
     _lastWpIndex = null;
     _darrerWpClicat = null;
-    state = [null, null];
+    state = ElevationSelectionState.initial();
   }
 
-  /// 📍 ACCIÓ DEL MAPA / LLISTA (Clic net a un Waypoint)
+  /// 📍 ACCIÓ DEL MAPA: Clic net a un Waypoint
   void toggleWaypoint(int idx, Set<int> allWpIndexes) {
-    final start = state[0];
-    final end = state[1];
+    // 📐 REGLA 1: Si no s'ha fet long press previ, ESTÀ PROHIBIT crear un tram.
+    // El tap al waypoint es comporta com un punt únic ordinar i mou el cercle taronja.
+    if (state.mode != SelectionMode.range) {
+      setSinglePoint(idx);
+      return;
+    }
 
-    // 1. Analitzem si les barres actuals de la pantalla coincideixen amb un WP real
+    // 📐 REGLA 2: Som en mode RANGE (S'havia fet long press). Gestionem la selecció del tram.
+    final start = state.startTrackIndex;
+    final end = state.endTrackIndex;
+
     final bool startIsOnWaypoint =
         start != null && allWpIndexes.contains(start);
     final bool endIsOnWaypoint = end != null && allWpIndexes.contains(end);
@@ -40,11 +127,7 @@ class ElevationSelectionNotifier extends Notifier<List<int?>> {
     int? nouPrev;
     int? nouLast;
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // MÀQUINA D'ESTATS (Les 3 Regles de Negoci Exactes)
-    // ─────────────────────────────────────────────────────────────────────────
-
-    // 🟢 CAS 3: Les dues barres del gràfic ja estan sobre Waypoints -> Dos últims clics
+    // CAS 3: Les dues barres ja estan sobre Waypoints -> Dos últims clics cronològics
     if (startIsOnWaypoint && endIsOnWaypoint) {
       if (_darrerWpClicat == start) {
         nouPrev = start;
@@ -59,7 +142,7 @@ class ElevationSelectionNotifier extends Notifier<List<int?>> {
         nouLast = idx;
       }
     }
-    // 🟡 CAS 2: Només una de les dues barres coincideix amb un Waypoint
+    // CAS 2: Només una de les dues barres coincideix amb un Waypoint
     else if (startIsOnWaypoint || endIsOnWaypoint) {
       if (startIsOnWaypoint) {
         nouPrev = start;
@@ -69,47 +152,49 @@ class ElevationSelectionNotifier extends Notifier<List<int?>> {
         nouLast = idx;
       }
     }
-    // 🔴 CAS 1: Cap de les dues barres coincideix amb un Waypoint (Venim d'un Drag lliure)
+    // CAS 1: Cap barreja amb Waypoint (Venim d'un Drag manual)
     else {
       if (start != null && end != null) {
         final int distToStart = (start - idx).abs();
         final int distToEnd = (end - idx).abs();
 
         if (distToStart <= distToEnd) {
-          nouPrev = end; // L'altre extrem fa de base quieta
-          nouLast = idx; // L'inici viatja cap al waypoint
+          nouPrev = end;
+          nouLast = idx;
         } else {
-          nouPrev = start; // L'altre extrem fa de base quieta
-          nouLast = idx; // El final viatja cap al waypoint
+          nouPrev = start;
+          nouLast = idx;
         }
       } else {
-        nouPrev = idx;
+        nouPrev = start ?? idx;
         nouLast = idx;
       }
     }
 
-    // Actualitzem les variables de l'historial intern
     _prevWpIndex = nouPrev;
     _lastWpIndex = nouLast;
     _darrerWpClicat = idx;
 
-    // 2. ORDENACIÓ NUMÈRICA STRICTA PER AL GRÀFIC (Menor a l'esquerra, Major a la dreta)
+    // AVALUEM EL SWAP I L'ORDENACIÓ DELS EXTREMS DEL TRAM
     if (_prevWpIndex != null && _lastWpIndex != null) {
-      if (_prevWpIndex! <= _lastWpIndex!) {
-        state = [_prevWpIndex, _lastWpIndex];
-      } else {
-        state = [_lastWpIndex, _prevWpIndex];
-      }
-    }
+      final int menor = _prevWpIndex! <= _lastWpIndex!
+          ? _prevWpIndex!
+          : _lastWpIndex!;
+      final int major = _prevWpIndex! > _lastWpIndex!
+          ? _prevWpIndex!
+          : _lastWpIndex!;
 
-    debugPrint(
-      "🎯 [Riverpod Custom] Rang aplicat -> Start: \${state[0]} | End: \${state[1]}",
-    );
+      state = ElevationSelectionState(
+        mode: SelectionMode.range,
+        startTrackIndex: menor,
+        endTrackIndex: major,
+        singlePointIndex: null,
+      );
+    }
   }
 }
 
-// DEFINICIÓ DEL PROVIDER EXACTAMENT COM EL TEU TIMER
 final elevationSelectionProvider =
-    NotifierProvider<ElevationSelectionNotifier, List<int?>>(
+    NotifierProvider<ElevationSelectionNotifier, ElevationSelectionState>(
       ElevationSelectionNotifier.new,
     );

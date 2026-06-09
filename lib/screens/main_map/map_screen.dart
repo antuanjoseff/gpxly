@@ -9,6 +9,7 @@ import 'package:senda/models/navigation_state.dart';
 import 'package:senda/models/track.dart';
 import 'package:senda/models/user_position.dart';
 import 'package:senda/models/waypoint.dart';
+import 'package:senda/notifiers/elevation_selection_provider.dart';
 
 // Notifiers natius de Senda
 import 'package:senda/notifiers/imported_track_notifier.dart';
@@ -213,7 +214,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
     );
   }
 
-  // 🚀 PUENT DE SEGURETAT DE NAVEGACIÓ DIRECTE AMB EL PROPI FLOW_HANDLER
   // 🧭 PONT DE NAVEGACIÓ CRÍTIC AMB COMPROVACIÓ PROACTIVA DE PERMISOS
   void _openNavigationControl(
     BuildContext context,
@@ -307,7 +307,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
     ref.read(waypointsProvider.notifier).add(wp);
   }
 
-  // Detector de fites pitjades al mapa (Mapejat de dades nates)
   void _onFeatureTapped(
     Point<double> point,
     LatLng latLng,
@@ -331,89 +330,40 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final waypoint = [...recorded, ...imported].firstWhere((w) => w.id == wpId);
 
     final int wpTrackIndex = waypoint.trackIndex;
-    final geom = MapGeometryHelper(ref: ref, mapController: mapController);
 
     // ─────────────────────────────────────────────────────────────────────────
-    // 🛡️ UNIFICACIÓ TOTAL DE LÒGIQUES: Creació Seqüencial + Refinament Ordinal
+    // 🟢 COGNICIÓ DE SELECCIÓ (Gràfic visible i obert):
     // ─────────────────────────────────────────────────────────────────────────
+    if (!_isChartCollapsed) {
+      final currentSelection = ref.read(elevationSelectionProvider);
 
-    // 📐 REGLA 1: SEGON CLIC (Teníem l'Inici fixat i aquest és el segon toc a un waypoint diferent)
-    if (selectedIndexStart != null && selectedIndexEnd == null) {
-      if (wpTrackIndex != selectedIndexStart) {
-        // Evitem col·lisió del mateix punt
-        setState(() {
-          // El primer (N-1) és el que ja teníem a l'inici, i el nou (N) és el clicat ara
-          _prevWpIndex = selectedIndexStart;
-          _lastWpIndex = wpTrackIndex;
+      // 📐 REGLA A: EL TRAM JA HA ESTAT INICIAT (Mode Range per Long Press previ)
+      if (currentSelection.mode == SelectionMode.range) {
+        final Set<int> allWpIndexes = [
+          ...recorded,
+          ...imported,
+        ].map((w) => w.trackIndex).toSet();
 
-          // Ordenem numèricament perquè el gràfic rebi el menor a l'esquerra i el major a la dreta
-          if (_prevWpIndex! <= _lastWpIndex!) {
-            selectedIndexStart = _prevWpIndex;
-            selectedIndexEnd = _lastWpIndex;
-          } else {
-            selectedIndexStart = _lastWpIndex;
-            selectedIndexEnd = _prevWpIndex;
-          }
-          selectedIndexGraph = null;
-        });
+        // Modifiquem el tram utilitzant la màquina d'estats del Notifier
+        ref
+            .read(elevationSelectionProvider.notifier)
+            .toggleWaypoint(wpTrackIndex, allWpIndexes);
 
-        setChartInteractionGeometry(
-          mapController!,
-          rangeStartCoords: geom.getCoordsFromGlobalIndex(selectedIndexStart),
-          rangeEndCoords: geom.getCoordsFromGlobalIndex(selectedIndexEnd),
-        );
-        return; // 🛑 Aturem propagació (Rang tancat i desat)
+        return; // 🛑 Sortim: Modificació de tram feta, no mostrem diàleg.
+      }
+      // 📐 REGLA B: NO HI HA CAP TRAM INICIAT (Mode Single / Pintem punt verd d'inspecció)
+      else {
+        // Cridem el mètode de Riverpod. L'oient superior s'encarregarà de pintar el punt verd automàticament.
+        ref
+            .read(elevationSelectionProvider.notifier)
+            .setSinglePoint(wpTrackIndex);
+
+        return; // 🛑 Sortim: Punt col·locat amb èxit, evitem diàleg informatiu.
       }
     }
-    // 📐 REGLA 2: REFINAMENT D'UN RANG JA EXISTENT (Tots dos punts ja estan seleccionats)
-    // 🔄 GESTIÓ CRONOLÒGICA: El que fins ara era l'últim (N), passa a ser l'anterior (N-1), i el toc actual és el nou N.
-    else if (selectedIndexStart != null && selectedIndexEnd != null) {
-      setState(() {
-        // Rescatem quin era l'últim clic real per moure'l a la memòria anterior
-        _prevWpIndex = _lastWpIndex ?? selectedIndexStart;
-        _lastWpIndex = wpTrackIndex;
-
-        // Tornem a ordenar numèricament exclusivament per enviar el rang en ordre correcte a fl_chart
-        if (_prevWpIndex! <= _lastWpIndex!) {
-          selectedIndexStart = _prevWpIndex;
-          selectedIndexEnd = _lastWpIndex;
-        } else {
-          selectedIndexStart = _lastWpIndex;
-          selectedIndexEnd = _prevWpIndex;
-        }
-
-        selectedIndexGraph = null;
-      });
-
-      setChartInteractionGeometry(
-        mapController!,
-        rangeStartCoords: geom.getCoordsFromGlobalIndex(selectedIndexStart),
-        rangeEndCoords: geom.getCoordsFromGlobalIndex(selectedIndexEnd),
-      );
-      return; // 🛑 Aturem propagació
-    }
-    // 📐 REGLA 3: PRIMER CLIC ABSOLUT (Tot estava a null, arrenquem el cicle)
-    else {
-      setState(() {
-        selectedIndexStart = wpTrackIndex;
-        selectedIndexEnd = null;
-        selectedIndexGraph = null;
-
-        // Inicialitzem l'historial amb aquest primer punt ocupant el lloc de l'últim clicat
-        _lastWpIndex = wpTrackIndex;
-        _prevWpIndex = null;
-      });
-
-      setChartInteractionGeometry(
-        mapController!,
-        rangeStartCoords: geom.getCoordsFromGlobalIndex(wpTrackIndex),
-        rangeEndCoords: null,
-      );
-      return; // 🛑 Aturem propagació per esperar el segon clic
-    }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // ℹ️ DIÀLEG ORDINARI (Només s'arriba aquí si el comportament de rang està desactivat)
+    // ℹ️ DIÀLEG ORDINARI (Només si el gràfic està tancat / minimitzat)
     // ─────────────────────────────────────────────────────────────────────────
     Duration? elapsed;
     final track = wpId.startsWith('rec_')
@@ -440,9 +390,28 @@ class _MapScreenState extends ConsumerState<MapScreen>
     // ─────────────────────────────────────────────────────────────
     // 🛡️ RECEPTORS I OIENTS DE SEGUIDAMENT ASÍNCRON
     // ─────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────────────
+    // 🛡️ RECEPTORS I OIENTS DE SEGUIDAMENT ASÍNCRON (A map_screen.dart)
+    // ─────────────────────────────────────────────────────────────────────────
+    ref.listen(elevationSelectionProvider, (previous, next) {
+      if (!_isChartCollapsed && mapController != null && styleInitialized) {
+        final geom = MapGeometryHelper(ref: ref, mapController: mapController);
 
-    // OIENT 1: MOVIMENT DEL PUNT BLAU I CONTROL DE CÀMERA (GPS)
-    // OIENT 1: MOVIMENT DEL PUNT BLAU I CONTROL DE CÀMERA (GPS)
+        // Determinem quin és l'índex d'inici real: el de tram o el del punt únic
+        final int? indexIniciUnificat =
+            next.startTrackIndex ?? next.singlePointIndex;
+
+        setChartInteractionGeometry(
+          mapController!,
+          // 🟢 ARA EL PUNT VERD s'il·lumina tant per a punts únics com per a inici de trams
+          rangeStartCoords: geom.getCoordsFromGlobalIndex(indexIniciUnificat),
+          rangeEndCoords: geom.getCoordsFromGlobalIndex(next.endTrackIndex),
+          // 🚫 El taronja (hoverCoords) es passa a null de manera permanent perquè quedi desactivat
+          hoverCoords: null,
+        );
+      }
+    });
+
     ref.listen<UserPosition?>(locationProvider, (prev, next) async {
       if (!styleInitialized || mapController == null || next == null) return;
 
@@ -716,14 +685,15 @@ class _MapScreenState extends ConsumerState<MapScreen>
               onSmartCenterChanged: (val) =>
                   setState(() => smartCenterEnabled = val),
               onFullScreenChanged: (val) => setState(() => _fullScreen = val),
+
               onMapCreated: (controller) {
                 mapController = controller;
+                mapAnimator = MapAnimator(controller); // Unificat de forma neta
                 controller.onFeatureTapped.add(_onFeatureTapped);
               },
               onStyleLoaded: () async {
                 await setupUserLocationLayer(mapController!);
                 await setupWaypointLayers(mapController!);
-                mapAnimator = MapAnimator(mapController!);
 
                 setState(() {
                   waypointLayersReady = true;
@@ -741,7 +711,10 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 );
               },
             ),
+
+            // 🏷️ Marca d'aigua de Senda a la cantonada superior
             const Positioned(top: 10, left: 12, child: SendaBrandLabel()),
+
             // 🎛️ CAPA 2: INTERFÍCIE FLOTANT HUD (Només si no està en fullScreen)
             if (!_fullScreen) ...[
               // 🚀 COMPONENT EXTRET 3: Píndola de temps i controls de dalt a la dreta
@@ -753,18 +726,27 @@ class _MapScreenState extends ConsumerState<MapScreen>
               ),
 
               // 📐 ELEMENT FLOTANT: Panell de dades de selecció de camí (LongPress)
-              if (selectedIndexStart != null &&
-                  selectedIndexEnd != null &&
-                  !_isChartCollapsed)
-                Positioned(
-                  top: 52,
-                  left: 10,
-                  child: RangeInfoPanel(
-                    selectedIndexStart: selectedIndexStart,
-                    selectedIndexEnd: selectedIndexEnd,
-                    isChartCollapsed: _isChartCollapsed,
-                  ),
-                ),
+              // 🟢 SOLUCIÓ MODERNA: Ara escolta Riverpod a l'acte per saber si hi ha un tram actiu (mode range)
+              Consumer(
+                builder: (context, ref, _) {
+                  final selectionState = ref.watch(elevationSelectionProvider);
+                  if (selectionState.mode != SelectionMode.range ||
+                      _isChartCollapsed) {
+                    return const SizedBox.shrink();
+                  }
+
+                  return Positioned(
+                    top: 52,
+                    left: 10,
+                    child: RangeInfoPanel(
+                      // Passem les propietats de l'objecte global unificat a les teves variables del panell
+                      selectedIndexStart: selectionState.startTrackIndex,
+                      selectedIndexEnd: selectionState.endTrackIndex,
+                      isChartCollapsed: _isChartCollapsed,
+                    ),
+                  );
+                },
+              ),
 
               // 🚀 COMPONENT EXTRET 4: Botons d'acció inferiors amb moviment d'ascensor
               MapBottomControls(
@@ -778,7 +760,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 onHandleNavigationAction: _handleSendaNavigationAction,
               ),
 
-              // 📈 ELEMENT FLOTANT: Perfil d'elevació basat en ValueNotifier
+              // 📈 ELEMENT FLOTANT: Perfil d'elevació basat en Riverpod (SENSE CALLBACKS NI PARÀMETRES VELLS)
               Positioned(
                 bottom: 0,
                 left: 0,
@@ -794,110 +776,30 @@ class _MapScreenState extends ConsumerState<MapScreen>
                       final bool nextCollapsedState = !_isChartCollapsed;
                       setState(() {
                         _isChartCollapsed = nextCollapsedState;
-                        if (nextCollapsedState) {
-                          selectedIndexGraph = null;
-                          selectedIndexStart = null;
-                          selectedIndexEnd = null;
-                        }
+
+                        // Mantinguem la neteja de les teves variables primitives si en fas ús de fons
+                        selectedIndexGraph = null;
+                        selectedIndexStart = null;
+                        selectedIndexEnd = null;
                       });
+
+                      // 🧹 Si l'usuari tanca la persiana del perfil, buidem Riverpod globalment
+                      if (nextCollapsedState) {
+                        ref
+                            .read(elevationSelectionProvider.notifier)
+                            .clearSelection();
+                      }
+
                       if (nextCollapsedState &&
                           mapController != null &&
                           styleInitialized) {
                         try {
+                          // Esborrem completament les geometries del mapa (cercles)
                           setChartInteractionGeometry(mapController!);
                         } catch (e) {
                           debugPrint(
                             "⚠️ Error al netejar geometries en minimitzar: $e",
                           );
-                        }
-                      }
-                    },
-                    selectedIndexStart: selectedIndexStart,
-                    selectedIndexEnd: selectedIndexEnd,
-                    selectedIndexGraph: selectedIndexGraph,
-                    onNeedleMove: (idx) {
-                      if (selectedIndexGraph == idx) return;
-                      setState(() {
-                        selectedIndexGraph = idx;
-                        selectedIndexStart = null;
-                        selectedIndexEnd = null;
-                      });
-                      final now = DateTime.now();
-                      if (now.difference(_lastMapUpdateTime).inMilliseconds >=
-                          _mapThrottleMs) {
-                        if (mapController != null && styleInitialized) {
-                          _lastMapUpdateTime = now;
-                          final hoverCoords = MapGeometryHelper(
-                            ref: ref,
-                            mapController: mapController,
-                          ).getCoordsFromGlobalIndex(idx);
-                          try {
-                            setChartInteractionGeometry(
-                              mapController!,
-                              hoverCoords: hoverCoords,
-                            );
-                          } catch (e) {
-                            print(
-                              "⚠️ Excepció en cridar setChartInteractionGeometry: $e",
-                            );
-                          }
-                        }
-                      }
-                    },
-                    onRangeSelected: (start, end) {
-                      if (selectedIndexStart == start &&
-                          selectedIndexEnd == end)
-                        return;
-                      setState(() {
-                        selectedIndexStart = start;
-                        selectedIndexEnd = end;
-                        selectedIndexGraph = null;
-                      });
-                      final now = DateTime.now();
-                      if (now.difference(_lastMapUpdateTime).inMilliseconds >=
-                          _mapThrottleMs) {
-                        if (mapController != null && styleInitialized) {
-                          _lastMapUpdateTime = now;
-                          final coordsA = MapGeometryHelper(
-                            ref: ref,
-                            mapController: mapController,
-                          ).getCoordsFromGlobalIndex(start);
-                          final coordsB = MapGeometryHelper(
-                            ref: ref,
-                            mapController: mapController,
-                          ).getCoordsFromGlobalIndex(end);
-                          final bool isCrossed = end < start;
-                          final finalStartCoords = isCrossed
-                              ? coordsB
-                              : coordsA;
-                          final finalEndCoords = isCrossed ? coordsA : coordsB;
-                          try {
-                            setChartInteractionGeometry(
-                              mapController!,
-                              rangeStartCoords: finalStartCoords,
-                              rangeEndCoords: finalEndCoords,
-                            );
-                          } catch (e) {
-                            debugPrint("⚠️ Capa de rang ocupada: $e");
-                          }
-                        }
-                      }
-                    },
-                    onClearSelection: () {
-                      if (selectedIndexStart == null &&
-                          selectedIndexEnd == null &&
-                          selectedIndexGraph == null)
-                        return;
-                      setState(() {
-                        selectedIndexStart = null;
-                        selectedIndexEnd = null;
-                        selectedIndexGraph = null;
-                      });
-                      if (mapController != null && styleInitialized) {
-                        try {
-                          setChartInteractionGeometry(mapController!);
-                        } catch (e) {
-                          debugPrint("⚠️ Error al netejar: $e");
                         }
                       }
                     },
@@ -923,6 +825,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
         break;
 
       case "clear_imported":
+        // 🚀 AFEGIT: Netegem també el panell d'elevacions de fons si l'usuari descarta el track importat
+        ref.read(elevationSelectionProvider.notifier).clearSelection();
         ref.read(importedTrackProvider.notifier).clear();
         ref.read(importedWaypointsProvider.notifier).clear();
         break;
@@ -935,6 +839,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
         break;
 
       case "stop_follow":
+        ref.read(elevationSelectionProvider.notifier).clearSelection();
         ref.read(navigationProvider.notifier).stopFollowing();
         ref.read(importedTrackProvider.notifier).clear();
         ref.read(importedWaypointsProvider.notifier).clear();

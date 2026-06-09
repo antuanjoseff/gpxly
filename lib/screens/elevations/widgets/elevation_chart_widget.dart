@@ -1,80 +1,72 @@
-// lib/screens/elevations/widgets/elevation_chart_widget.dart (BLOC 1 DE 2)
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:senda/screens/elevations/painters/selection_painter.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:senda/screens/elevations/painters/range_highlight_painter.dart';
+import 'package:senda/screens/elevations/painters/selection_painter.dart';
 import 'package:senda/screens/elevations/utils/chart_utils.dart';
 import 'package:senda/theme/app_colors.dart';
+import 'package:senda/notifiers/elevation_selection_provider.dart';
 import 'package:senda/utils/distance_utils.dart';
 
-class ElevationChartWidget extends StatefulWidget {
-  final List<double> pastAlts;
+class ElevationChartWidget extends ConsumerStatefulWidget {
   final List<double> pastDists;
-
-  final List<double> futureAlts;
+  final List<double> pastAlts;
   final List<double> futureDistsGlobal;
-
-  final int? selectedIndexStart;
-  final int? selectedIndexEnd;
-  final int? selectedIndexGraph;
-
-  final List<double>? recordedWaypointGlobalDists;
-  final List<double>? importedWaypointGlobalDists;
-
+  final List<double> futureAlts;
   final Color realColor;
   final Color importedColor;
-
   final Color graphNeedleColor;
   final Color sliderStartNeedleColor;
   final Color sliderEndNeedleColor;
-
-  final void Function(int index) onNeedleMove;
-  final void Function(int start, int end) onRangeSelected;
-  final VoidCallback onClearSelection;
+  final List<double> recordedWaypointGlobalDists;
+  final List<double> importedWaypointGlobalDists;
 
   const ElevationChartWidget({
     super.key,
-    required this.pastAlts,
     required this.pastDists,
-    required this.futureAlts,
+    required this.pastAlts,
     required this.futureDistsGlobal,
-    required this.selectedIndexStart,
-    required this.selectedIndexEnd,
-    required this.selectedIndexGraph,
-    required this.recordedWaypointGlobalDists,
-    required this.importedWaypointGlobalDists,
+    required this.futureAlts,
     required this.realColor,
     required this.importedColor,
     required this.graphNeedleColor,
     required this.sliderStartNeedleColor,
     required this.sliderEndNeedleColor,
-    required this.onNeedleMove,
-    required this.onRangeSelected,
-    required this.onClearSelection,
+    required this.recordedWaypointGlobalDists,
+    required this.importedWaypointGlobalDists,
   });
 
   @override
-  State<ElevationChartWidget> createState() => _ElevationChartWidgetState();
+  ConsumerState<ElevationChartWidget> createState() =>
+      _ElevationChartWidgetState();
 }
 
-class _ElevationChartWidgetState extends State<ElevationChartWidget> {
-  int _draggingNeedle = 0;
+class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
+  // -1 = Repòs absolut (El dit NO toca el gràfic)
+  int _draggingNeedle = -1;
+
+  // Variables de control local per al dibuix fluid contra CustomPaint
   int? _localStartIdx;
   int? _localEndIdx;
   int? _localGraphIdx;
+
+  // Control de Throttle de temps per no saturar el canal de Riverpod al fer Drag
+  DateTime _lastThrottleTime = DateTime.fromMillisecondsSinceEpoch(0);
+  static const int _throttleDurationMs = 32;
 
   @override
   void didUpdateWidget(covariant ElevationChartWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    // 🟢 LA CLAU DE LA SINCRONITZACIÓ EXTERNA (Clic al mapa / Waypoint):
-    // Si l'usuari NO està arrossegant amb el dit ara mateix (_draggingNeedle == 0),
-    // forcetm els índexs locals del gràfic a agafar instantàniament el que mana Riverpod.
-    if (_draggingNeedle == 0) {
+    final currentSelection = ref.read(elevationSelectionProvider);
+
+    // 🟢 CLAU DEL MOVIMENT: Només si estem en repòs (-1), el mapa té permís per trepitjar
+    // els índexs locals (per exemple, en fer tap a un waypoint del mapa).
+    if (_draggingNeedle == -1) {
       setState(() {
-        _localStartIdx = widget.selectedIndexStart;
-        _localEndIdx = widget.selectedIndexEnd;
-        _localGraphIdx = widget.selectedIndexGraph;
+        _localStartIdx = currentSelection.startTrackIndex;
+        _localEndIdx = currentSelection.endTrackIndex;
+        _localGraphIdx = currentSelection.singlePointIndex;
       });
     }
   }
@@ -86,12 +78,12 @@ class _ElevationChartWidgetState extends State<ElevationChartWidget> {
     final futureDists = widget.futureDistsGlobal;
     final futureAlts = widget.futureAlts;
 
-    // Si no hay datos, evitamos pintar un lienzo vacío
+    // Si no hi ha dades, evitem pintar un llenç buit
     if (pastDists.isEmpty && futureDists.isEmpty) {
       return const SizedBox.shrink();
     }
 
-    // Aseguramos de forma robusta la misma longitud en las listas [INDEX]
+    // Assegurem la mateixa longitud de forma robusta
     final safePastLength = (pastDists.length == pastAlts.length)
         ? pastDists.length
         : 0;
@@ -104,7 +96,7 @@ class _ElevationChartWidgetState extends State<ElevationChartWidget> {
     final safeFutureDists = futureDists.take(safeFutureLength).toList();
     final safeFutureAlts = futureAlts.take(safeFutureLength).toList();
 
-    // Estructuramos los ejes globales [INDEX]
+    // Estructurem l'eix global unint passat i futur de la ruta
     final globalDists = <double>[...safePastDists, ...safeFutureDists];
     final globalAlts = <double>[...safePastAlts, ...safeFutureAlts];
 
@@ -112,7 +104,7 @@ class _ElevationChartWidgetState extends State<ElevationChartWidget> {
       return const SizedBox.shrink();
     }
 
-    // Rango vertical automático robusto [INDEX]
+    // Rango vertical de cotes automàtic
     final minAlt = globalAlts.reduce((a, b) => a < b ? a : b);
     final maxAlt = globalAlts.reduce((a, b) => a > b ? a : b);
     final diff = (maxAlt - minAlt).abs();
@@ -142,46 +134,111 @@ class _ElevationChartWidgetState extends State<ElevationChartWidget> {
         }
 
         int clampIndex(int? idx) {
-          if (idx == null) return -1;
-          if (idx < 0) return -1;
-          if (idx >= globalDists.length) return -1;
+          if (idx == null || idx < 0 || idx >= globalDists.length) return -1;
           return idx;
         }
 
-        final graphIdx = clampIndex(widget.selectedIndexGraph);
-        final startIdx = clampIndex(widget.selectedIndexStart);
-        final endIdx = clampIndex(widget.selectedIndexEnd);
+        // Recuperem els índexs locals per pintar les agulles de forma independent durant el drag
+        final graphIdx = clampIndex(_localGraphIdx);
+        final startIdx = clampIndex(_localStartIdx);
+        final endIdx = clampIndex(_localEndIdx);
 
         final graphX = graphIdx >= 0 ? mapX(globalDists[graphIdx]) : null;
         final startX = startIdx >= 0 ? mapX(globalDists[startIdx]) : null;
         final endX = endIdx >= 0 ? mapX(globalDists[endIdx]) : null;
 
+        // Mode del provider per regular tap i gestos
+        final currentMode = ref.watch(elevationSelectionProvider).mode;
+
+        void _updateSelectionThrottled(VoidCallback updateStateAction) {
+          // 1. Executem el setState de Dart a l'acte per moure l'agulla local als ulls de l'usuari a 60 FPS
+          updateStateAction();
+
+          // 2. Regulem l'enviament massiu de dades cap al mapa per no saturar la GPU
+          final ara = DateTime.now();
+          if (ara.difference(_lastThrottleTime).inMilliseconds >=
+              _throttleDurationMs) {
+            _lastThrottleTime = ara;
+
+            if (_draggingNeedle == 1 || _draggingNeedle == 2) {
+              if (_localStartIdx != null && _localEndIdx != null) {
+                ref
+                    .read(elevationSelectionProvider.notifier)
+                    .setManualRange(_localStartIdx!, _localEndIdx!);
+              }
+            } else if (_draggingNeedle == 3) {
+              if (_localGraphIdx != null) {
+                ref
+                    .read(elevationSelectionProvider.notifier)
+                    .setSinglePoint(_localGraphIdx!);
+              }
+            }
+          }
+        }
+
         return GestureDetector(
           behavior: HitTestBehavior.opaque,
+
+          // 🔓 EL LONG PRESS: És l'únic que activa el mode "Selecció de tram" (range)
+          // 🔓 EL LONG PRESS: Obre el mode tram obrint el ventall al 25% i 75% del perfil
           onLongPressStart: (_) {
-            final start = ChartLogic.calculateIndexFromX(
-              width * 0.25,
-              width,
-              globalDists,
+            // 1. Calculem quina posició de la llista unificada correspon a cada percentatge
+            final int totalPoints = globalDists.length;
+
+            // Garantim de forma robusta que l'índex estigui dins del rang de la llista
+            final int startIdx = (totalPoints * 0.25).floor().clamp(
+              0,
+              totalPoints - 1,
             );
-            final end = ChartLogic.calculateIndexFromX(
-              width * 0.75,
-              width,
-              globalDists,
+            final int endIdx = (totalPoints * 0.75).floor().clamp(
+              0,
+              totalPoints - 1,
             );
-            widget.onRangeSelected(start, end);
-            setState(() => _draggingNeedle = 0);
+
+            // 2. Avisem a Riverpod pasant-li els dos extrems reals calculats
+            ref
+                .read(elevationSelectionProvider.notifier)
+                .startSelectionWithLongPress(startIdx, endIdx);
+
+            // 3. Forcem les agulles locals a pintar-se separades al 25% i 75% a l'acte
+            setState(() {
+              _draggingNeedle = 0; // Mode actiu post-longpress
+              _localStartIdx = startIdx;
+              _localEndIdx = endIdx;
+              _localGraphIdx =
+                  null; // Desactivem completament el mode single (taronja)
+            });
           },
+
           onTapUp: (details) {
             final x = details.localPosition.dx;
             final touchedStart = startX != null && (x - startX).abs() < 30;
             final touchedEnd = endX != null && (x - endX).abs() < 30;
 
             if (!touchedStart && !touchedEnd) {
-              widget.onClearSelection();
-              setState(() => _draggingNeedle = 0);
+              final idx = ChartLogic.calculateIndexFromX(x, width, globalDists);
+
+              if (currentMode == SelectionMode.range) {
+                // Si fem un tap net fora, netegem el tram complet
+                ref.read(elevationSelectionProvider.notifier).clearSelection();
+                setState(() {
+                  _localStartIdx = null;
+                  _localEndIdx = null;
+                  _localGraphIdx = null;
+                });
+              } else {
+                ref
+                    .read(elevationSelectionProvider.notifier)
+                    .setSinglePoint(idx);
+                setState(() {
+                  _localGraphIdx = idx;
+                });
+              }
+              setState(() => _draggingNeedle = -1);
             }
           },
+
+          // 🎛️ INICI DE L'ARROSSEGAMENT: Determina quina agulla o mode s'activa
           onPanDown: (details) {
             final x = details.localPosition.dx;
             final touchedStart = startX != null && (x - startX).abs() < 30;
@@ -189,40 +246,106 @@ class _ElevationChartWidgetState extends State<ElevationChartWidget> {
 
             setState(() {
               if (touchedStart) {
-                _draggingNeedle = 1;
+                _draggingNeedle = 1; // Dit sobre agulla d'Inici (Verd)
               } else if (touchedEnd) {
-                _draggingNeedle = 2;
+                _draggingNeedle = 2; // Dit sobre agulla de Final (Vermell)
               } else {
-                widget.onClearSelection();
+                // 🔥 RECUPERAT: Si es fa drag sobre el gràfic sense tocar cap agulla,
+                // destruïm la selecció de tram a l'acte i activem el "drag-simple-point" (taronja)
                 _draggingNeedle = 3;
                 final idx = ChartLogic.calculateIndexFromX(
                   x,
                   width,
                   globalDists,
                 );
-                widget.onNeedleMove(idx);
+                _localStartIdx = null;
+                _localEndIdx = null;
+                _localGraphIdx = idx;
+
+                // Actualitzem Riverpod a l'acte perquè el mapa rebi el cercle taronja immediatament
+                ref
+                    .read(elevationSelectionProvider.notifier)
+                    .setSinglePoint(idx);
               }
             });
           },
+
+          // 🔄 MOVIMENT EN TEMPS REAL: Gestiona el throttle i l'intercanvi dinàmic d'agulles (Swap)
           onPanUpdate: (details) {
-            if (_draggingNeedle == 0) return;
+            if (_draggingNeedle == -1 || _draggingNeedle == 0) return;
 
             final x = details.localPosition.dx;
             final idx = ChartLogic.calculateIndexFromX(x, width, globalDists);
 
+            // 🟢 CAS A: ARROSSEGUEM L'EXTREM D'INICI (Verd)
             if (_draggingNeedle == 1) {
-              widget.onRangeSelected(idx, endIdx >= 0 ? endIdx : idx);
-            } else if (_draggingNeedle == 2) {
-              widget.onRangeSelected(startIdx >= 0 ? startIdx : idx, idx);
-            } else if (_draggingNeedle == 3) {
-              widget.onNeedleMove(idx);
+              final actualEnd = endIdx >= 0 ? endIdx : idx;
+
+              _updateSelectionThrottled(() {
+                setState(() {
+                  if (idx > actualEnd) {
+                    // 🔥 INTERCANVI TOTAL (Swap): Si passem de llarg del final,
+                    // l'inici vell es queda clavat com a nou final, el nou inici és on està el dit,
+                    // i canviem dinàmicament el rol del dit a l'agulla de final (_draggingNeedle = 2)
+                    _localStartIdx = actualEnd;
+                    _localEndIdx = idx;
+                    _draggingNeedle = 2;
+                  } else {
+                    _localStartIdx = idx;
+                    _localEndIdx = actualEnd;
+                  }
+                });
+              });
+            }
+            // 🟢 CAS B: ARROSSEGUEM L'EXTREM DE FINAL (Vermell)
+            else if (_draggingNeedle == 2) {
+              final actualStart = startIdx >= 0 ? startIdx : idx;
+
+              _updateSelectionThrottled(() {
+                setState(() {
+                  if (idx < actualStart) {
+                    // 🔥 INTERCANVI TOTAL (Swap): Si anem per darrere de l'inici,
+                    // el final vell es queda clavat com a nou inici, el nou final és on està el dit,
+                    // i canviem dinàmicament el rol del dit a l'agulla d'inici (_draggingNeedle = 1)
+                    _localStartIdx = idx;
+                    _localEndIdx = actualStart;
+                    _draggingNeedle = 1;
+                  } else {
+                    _localStartIdx = actualStart;
+                    _localEndIdx = idx;
+                  }
+                });
+              });
+            }
+            // 🟢 CAS C: MODE DRAG-SIMPLE-POINT ACTIVE (Taronja)
+            else if (_draggingNeedle == 3) {
+              _updateSelectionThrottled(() {
+                setState(() {
+                  _localGraphIdx = idx;
+                });
+              });
             }
           },
-          onPanEnd: (_) => setState(() => _draggingNeedle = 0),
-          onPanCancel: () => setState(() => _draggingNeedle = 0),
+          onPanEnd: (_) {
+            if (_localStartIdx != null &&
+                _localEndIdx != null &&
+                _draggingNeedle != 3 &&
+                _draggingNeedle != -1) {
+              ref
+                  .read(elevationSelectionProvider.notifier)
+                  .setManualRange(_localStartIdx!, _localEndIdx!);
+            } else if (_localGraphIdx != null && _draggingNeedle == 3) {
+              ref
+                  .read(elevationSelectionProvider.notifier)
+                  .setSinglePoint(_localGraphIdx!);
+            }
+            setState(() => _draggingNeedle = -1);
+          },
+          onPanCancel: () => setState(() => _draggingNeedle = -1),
+
           child: Stack(
             children: [
-              // Capa 1: El gráfico de líneas de fondo de FL Chart
+              // Capa 1: El gràfic de línies de fons de FL Chart
               Positioned.fill(
                 child: Padding(
                   padding: const EdgeInsets.only(
@@ -245,7 +368,7 @@ class _ElevationChartWidgetState extends State<ElevationChartWidget> {
                 ),
               ),
 
-              // Capa 2: El polígono de resaltado degradado (Tu nuevo RangeAreaPainter) [INDEX]
+              // Capa 2: El polígon de ressaltat degradat (Mode range seleccionat)
               if (startIdx >= 0 && endIdx >= 0)
                 Positioned.fill(
                   child: Padding(
@@ -265,7 +388,7 @@ class _ElevationChartWidgetState extends State<ElevationChartWidget> {
                   ),
                 ),
 
-              // Capa 3: Las agujas, nodos y bocadillos flotantes de información
+              // Capa 3: Les agulles verticals, nodes geomètrics i bafarades
               Positioned.fill(
                 child: CustomPaint(
                   painter: SelectionPainter(

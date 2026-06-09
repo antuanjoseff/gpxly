@@ -377,14 +377,12 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
     final downloadedCells = demState.cells;
     final isDownloadingGlobal = demState.isDownloading;
 
-    if (_styleLoaded) _refreshGridGeometry();
-
     final int downloadedCount = downloadedCells.length;
     final bool isLimitReached = downloadedCount >= _maxDownloadedCellsLimit;
 
     final userPositionState = ref.watch(locationProvider);
 
-    if (userPositionState != null && _mapController != null) {
+    if (userPositionState != null && _mapController != null && _styleLoaded) {
       if (!_hasCenteredOnUser) {
         _hasCenteredOnUser = true;
         _mapController!.animateCamera(

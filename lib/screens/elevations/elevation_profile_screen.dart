@@ -66,11 +66,12 @@ class _ElevationProfileScreenState
     final t = AppLocalizations.of(context)!;
 
     // 🚨 LLEGIM EL PROVIDER DE SELECCIÓ COMPARTIT
+    // 🟢 SOLUCIÓ: Llegim les propietats directes de l'objecte d'estat unificat
     final selection = ref.watch(elevationSelectionProvider);
-    final int? currentStart = selection[0];
-    final int? currentEnd = selection[1];
-    selectedIndexStart = selection[0];
-    selectedIndexEnd = selection[1];
+    final int? currentStart = selection.startTrackIndex;
+    final int? currentEnd = selection.endTrackIndex;
+    selectedIndexStart = selection.startTrackIndex;
+    selectedIndexEnd = selection.endTrackIndex;
 
     // Escuchadores de datos de Riverpod
     final real = ref.watch(trackRecordingProvider);
@@ -249,56 +250,26 @@ class _ElevationProfileScreenState
             ),
             height: MediaQuery.of(context).size.height * 0.32,
             child: ElevationChartWidget(
-              // 🟢 CLAU ESTÀTICA TOTALMENT FIXA: Evita la destrucció del widget
+              // 🟢 CLAU ESTÀTICA TOTALMENT FIXA: Es manté per evitar el redibuix de la GPU
               key: const ValueKey("elevation_chart_static_pure"),
               pastAlts: realAlts,
               pastDists: realDists,
               futureAlts: futureAlts,
               futureDistsGlobal: futureDistsGlobal,
 
-              // 🟢 APUNTEM ALS VALORS REALS DE RIVERPOD (No a les variables de la classe)
-              selectedIndexStart: currentStart,
-              selectedIndexEnd: currentEnd,
-              selectedIndexGraph: selectedIndexGraph,
-
+              // 🟢 DADES GEOMÈTRIQUES DE LA RUTA I WAYPOINTS
               recordedWaypointGlobalDists: recordedWaypointGlobalDists,
               importedWaypointGlobalDists: importedWaypointGlobalDists,
+
+              // 🟢 ESTILS VISUALS EN PARÀMETRE
               realColor: trackColor,
               importedColor: importedTrackColor,
               graphNeedleColor: AppColors.primary,
               sliderStartNeedleColor: Colors.green,
               sliderEndNeedleColor: Colors.red,
-              onNeedleMove: (idx) => setState(() {
-                selectedIndexGraph = idx;
-              }),
-              onRangeSelected: (start, end) {
-                // 🟢 NOTIFIQUEM DIRECTAMENT AL TEU CUSTOM NOTIFIER
-                ref
-                    .read(elevationSelectionProvider.notifier)
-                    .setManualRange(start, end);
-
-                setState(() {
-                  selectedIndexGraph = null;
-                  // Sincronitzem l'historial intern de la teva pantalla si el fas servir a posteriori
-                  _prevWpIndex = start;
-                  _lastWpIndex = end;
-                });
-              },
-              onClearSelection: () {
-                // 🟢 NETEJA A TRAVÉS DE RIVERPOD
-                ref.read(elevationSelectionProvider.notifier).clearSelection();
-                setState(() {
-                  selectedIndexGraph = null;
-                  _prevWpIndex = null;
-                  _lastWpIndex = null;
-                });
-              },
             ),
           ),
 
-          // ───────────────────────────────────────────────────────────────────
-          // ✅ NUEVO PANEL DE SELECCIÓN MANTENIDO TOTALMENTE INTACTO
-          // ───────────────────────────────────────────────────────────────────
           if (rangeDistance != null) ...[
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
