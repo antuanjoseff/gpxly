@@ -10,6 +10,7 @@ import 'package:senda/notifiers/track_settings_notifier.dart';
 import 'package:senda/notifiers/waypoints_imported_notifier.dart';
 import 'package:senda/notifiers/waypoints_recorded_notifier.dart';
 import 'package:senda/screens/elevations/widgets/elevation_chart_widget.dart';
+import 'package:senda/notifiers/elevation_selection_provider.dart';
 import 'package:senda/theme/app_colors.dart';
 import 'package:senda/utils/distance_utils.dart';
 
@@ -17,7 +18,6 @@ class EmbeddedElevationProfile extends ConsumerStatefulWidget {
   final bool isCollapsed;
   final VoidCallback onToggle;
 
-  // 🟢 NETEJA TOTAL: S'esborren completament tots els paràmetres de selecció i els callbacks residuals d'aquí.
   const EmbeddedElevationProfile({
     super.key,
     required this.isCollapsed,
@@ -31,7 +31,6 @@ class EmbeddedElevationProfile extends ConsumerStatefulWidget {
 
 class _EmbeddedElevationProfileState
     extends ConsumerState<EmbeddedElevationProfile> {
-  // 🛡️ NOTIFIERS LOCALS DE MEMÒRIA RAM CONTRA EL COL·LAPSE DE VIDEO D'ANDROIDE
   final ValueNotifier<int?> _localHoverIndex = ValueNotifier<int?>(null);
   final ValueNotifier<int?> _localRangeStart = ValueNotifier<int?>(null);
   final ValueNotifier<int?> _localRangeEnd = ValueNotifier<int?>(null);
@@ -57,6 +56,9 @@ class _EmbeddedElevationProfileState
     final remaining = ref.watch(remainingTrackProvider);
     final follow = ref.watch(navigationProvider);
 
+    final selectionState = ref.watch(elevationSelectionProvider);
+    final bool isRangeActive = selectionState.mode == SelectionMode.range;
+
     final realAlts = real.altitudes;
     final realDists = real.distances;
     final double pastLastDist = realDists.isNotEmpty ? realDists.last : 0.0;
@@ -69,6 +71,7 @@ class _EmbeddedElevationProfileState
 
     late List<double> futureAlts;
     late List<double> futureDistsGlobal;
+    List<DateTime> futureTimestamps = [];
 
     if (shouldShowFuture) {
       final double maxFutureDistanceVisible = pastLastDist / 3.0;
@@ -103,10 +106,68 @@ class _EmbeddedElevationProfileState
         futureDistsGlobal = [];
       }
       futureAlts = imported?.altitudes ?? [];
+      futureTimestamps = imported?.timestamps ?? [];
     }
 
     final globalDists = <double>[...realDists, ...futureDistsGlobal];
-    // lib/screens/map/widgets/embedded_elevation_profile.dart (BLOC 2 DE 2)
+    final globalAlts = <double>[...realAlts, ...futureAlts];
+    final globalTimes = <DateTime>[...real.timestamps, ...futureTimestamps];
+
+    // 🧮 LÒGICA DE CÀLCUL DE COMPACTACIÓ DE TRAM DE SENDA
+    double rangeDistance = 0;
+    double rangeAscent = 0;
+    double rangeDescent = 0;
+
+    // 🟢 DEFENICIÓ CORREGIDA: S'assegura l'existència global de les variables per al Bloc 2
+    String timeElapsedStr = "--:--";
+    String avgSpeedStr = "--.- km/h";
+
+    if (isRangeActive &&
+        selectionState.startTrackIndex != null &&
+        selectionState.endTrackIndex != null) {
+      final int start = selectionState.startTrackIndex!;
+      final int end = selectionState.endTrackIndex!;
+
+      if (start < globalDists.length && end < globalDists.length) {
+        rangeDistance = (globalDists[end] - globalDists[start]).abs();
+
+        final int startIdx = start < end ? start : end;
+        final int endIdx = start < end ? end : start;
+
+        for (int i = startIdx + 1; i <= endIdx; i++) {
+          if (i >= globalAlts.length) break;
+          final diff = globalAlts[i] - globalAlts[i - 1];
+          if (diff > 0) rangeAscent += diff;
+          if (diff < 0) rangeDescent += diff.abs();
+        }
+
+        // Càlcul cronològic de temps del tram seleccionat
+        if (startIdx < globalTimes.length && endIdx < globalTimes.length) {
+          final duration = globalTimes[endIdx]
+              .difference(globalTimes[startIdx])
+              .abs();
+          final int totalHours = duration.inHours;
+          final int totalMinutes = duration.inMinutes.remainder(60);
+          final int totalSeconds = duration.inSeconds.remainder(60);
+
+          if (totalHours > 0) {
+            timeElapsedStr =
+                "${totalHours}h ${totalMinutes.toString().padLeft(2, '0')}m";
+          } else {
+            timeElapsedStr =
+                "${totalMinutes}:${totalSeconds.toString().padLeft(2, '0')}";
+          }
+
+          // Càlcul de velocitat mitjana matemàtica directe del segment
+          if (duration.inSeconds > 0 && rangeDistance > 0) {
+            final double speedMps = rangeDistance / duration.inSeconds;
+            final double speedKmh = speedMps * 3.6;
+            avgSpeedStr = "${speedKmh.toStringAsFixed(1)} km/h";
+          }
+        }
+      }
+    }
+    // lib/screens/map/widgets/embedded_elevation_profile.dart (BLOC 2 DE 2 REORDENAT)
     final recordedWps = ref.watch(waypointsProvider);
     final importedWps = ref.watch(importedWaypointsProvider);
     final trackColor = ref.watch(trackSettingsProvider).color;
@@ -137,6 +198,8 @@ class _EmbeddedElevationProfileState
       }
     }
 
+    final String safeSpeedStr = avgSpeedStr.replaceAll(" km/h", "kmh");
+
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       curve: Curves.easeInOut,
@@ -146,34 +209,183 @@ class _EmbeddedElevationProfileState
       padding: EdgeInsets.only(bottom: systemBottomPadding),
       decoration: BoxDecoration(
         color: AppColors.skyBlueDark.withAlpha(214),
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
+        borderRadius: BorderRadius.circular(
+          0,
+        ), // Nansa rectangular per guanyar píxels
+        border: Border(
+          top: BorderSide(color: Colors.white.withAlpha(25), width: 1),
         ),
-        border: Border.all(color: Colors.white.withAlpha(25)),
       ),
       child: SingleChildScrollView(
         physics: const NeverScrollableScrollPhysics(),
         child: Column(
           children: [
-            // Nansa superior del panell flotant
-            GestureDetector(
-              onTap: widget.onToggle,
-              behavior: HitTestBehavior.opaque,
-              child: Container(
-                width: double.infinity,
-                height: 36,
-                color: Colors.transparent,
-                alignment: Alignment.center,
-                child: Container(
-                  width: 44,
-                  height: 5,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withAlpha(90),
-                    borderRadius: BorderRadius.circular(2.5),
-                  ),
-                ),
-              ),
+            // 🚪 BARRA DE NANSA INTEL·LIGENT AMB ORDRE RECONFIGURAT
+            Container(
+              width: double.infinity,
+              height: 36,
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: isRangeActive
+                  ? Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.only(
+                              right: 14,
+                            ), // Marge abans del botó de tancar
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                // 1. 🏁 DISTÀNCIA (Icona recta blanca)
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      Icons.straighten,
+                                      size: 12,
+                                      color: Colors.white70,
+                                    ),
+                                    const SizedBox(width: 3),
+                                    Text(
+                                      "${(rangeDistance / 1000).toStringAsFixed(2)}km",
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
+                                // 2. ⏱️ TEMPS TRANSCORREGUT (Icona rellotge ambre accent)
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      Icons.access_time_rounded,
+                                      size: 12,
+                                      color: Colors.amberAccent,
+                                    ),
+                                    const SizedBox(width: 3),
+                                    Text(
+                                      timeElapsedStr,
+                                      style: const TextStyle(
+                                        color: Colors.amberAccent,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
+                                // 3. ⚡ VELOCITAT MITJANA (Icona velocímetre cian accent)
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      Icons.speed_rounded,
+                                      size: 12,
+                                      color: Colors.cyanAccent,
+                                    ),
+                                    const SizedBox(width: 3),
+                                    Text(
+                                      safeSpeedStr,
+                                      style: const TextStyle(
+                                        color: Colors.cyanAccent,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
+                                // 4. 🗻 ASCENS ACUMULAT (Icona fletxa verd accent)
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      Icons.arrow_upward,
+                                      size: 12,
+                                      color: Colors.greenAccent,
+                                    ),
+                                    const SizedBox(width: 2),
+                                    Text(
+                                      "+${rangeAscent.toStringAsFixed(0)}m",
+                                      style: const TextStyle(
+                                        color: Colors.greenAccent,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
+                                // 5. 📉 DESCENS ACUMULAT (Icona fletxa vermell accent)
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      Icons.arrow_downward,
+                                      size: 12,
+                                      color: Colors.redAccent,
+                                    ),
+                                    const SizedBox(width: 2),
+                                    Text(
+                                      "-${rangeDescent.toStringAsFixed(0)}m",
+                                      style: const TextStyle(
+                                        color: Colors.redAccent,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                        // 🚫 Icona fixa a la dreta per deseleccionar el tram actiu
+                        GestureDetector(
+                          onTap: () {
+                            ref
+                                .read(elevationSelectionProvider.notifier)
+                                .clearSelection();
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withAlpha(20),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.close_rounded,
+                              size: 13,
+                              color: Colors.white70,
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  : GestureDetector(
+                      onTap: widget.onToggle,
+                      behavior: HitTestBehavior.opaque,
+                      child: Container(
+                        width: double.infinity,
+                        height: 36,
+                        color: Colors.transparent,
+                        alignment: Alignment.center,
+                        child: Container(
+                          width: 44,
+                          height: 5,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withAlpha(90),
+                            borderRadius: BorderRadius.circular(2.5),
+                          ),
+                        ),
+                      ),
+                    ),
             ),
 
             // Contenidor del perfil gràfic d'altituds

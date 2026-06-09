@@ -82,8 +82,6 @@ class MapTopControls extends ConsumerWidget {
     );
   }
 
-  // (Continuació del fitxer map_top_controls.dart)
-  // (Substitueix aquest mètode dins de map_top_controls.dart)
   Widget _buildAltitudeCapsule(BuildContext context, WidgetRef ref) {
     final userPos = ref.watch(locationProvider);
     final double? altitude = userPos?.altitude;

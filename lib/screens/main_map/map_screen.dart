@@ -725,29 +725,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 onAddWaypoint: () => _onAddWaypoint(context, ref),
               ),
 
-              // 📐 ELEMENT FLOTANT: Panell de dades de selecció de camí (LongPress)
-              // 🟢 SOLUCIÓ MODERNA: Ara escolta Riverpod a l'acte per saber si hi ha un tram actiu (mode range)
-              Consumer(
-                builder: (context, ref, _) {
-                  final selectionState = ref.watch(elevationSelectionProvider);
-                  if (selectionState.mode != SelectionMode.range ||
-                      _isChartCollapsed) {
-                    return const SizedBox.shrink();
-                  }
-
-                  return Positioned(
-                    top: 52,
-                    left: 10,
-                    child: RangeInfoPanel(
-                      // Passem les propietats de l'objecte global unificat a les teves variables del panell
-                      selectedIndexStart: selectionState.startTrackIndex,
-                      selectedIndexEnd: selectionState.endTrackIndex,
-                      isChartCollapsed: _isChartCollapsed,
-                    ),
-                  );
-                },
-              ),
-
               // 🚀 COMPONENT EXTRET 4: Botons d'acció inferiors amb moviment d'ascensor
               MapBottomControls(
                 isChartCollapsed: _isChartCollapsed,
