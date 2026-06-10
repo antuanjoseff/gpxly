@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 
 class RangeHighlightPainter extends CustomPainter {
   final double? startX;
@@ -43,8 +44,12 @@ class RangeAreaPainter extends CustomPainter {
   final int endIndex;
   final List<double> distances;
   final List<double> altitudes;
-  final int realPointsCount; // Longitud del track gravat (pastDists.length)
-  final Color trackColor; // Color blau corporatiu de Senda
+  final int realPointsCount;
+  final Color trackColor;
+
+  // Marquem les mateixes constants de reserva de dalt i baix que utilitza el SelectionPainter
+  static const double bottomReserved = 16.0;
+  static const double topReserved = 10.0;
 
   RangeAreaPainter({
     required this.startIndex,
@@ -59,10 +64,14 @@ class RangeAreaPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (distances.isEmpty || altitudes.isEmpty) return;
 
-    // 1) Lògica d'escalat vertical automàtic i exageració (La teva fórmula de Senda)
+    // 1) Calculem els espais verticals exactament igual que al SelectionPainter
+    final chartHeight = size.height - bottomReserved - topReserved;
+    final xAxisY = topReserved + chartHeight;
+
+    // 2) Lògica d'escalat vertical de cotes (La teva fórmula exacta de Senda)
     final double minAlt = altitudes.reduce((a, b) => a < b ? a : b);
     final double maxAlt = altitudes.reduce((a, b) => a > b ? a : b);
-    final double diff = maxAlt - minAlt;
+    final double diff = (maxAlt - minAlt).abs();
 
     double exaggeration = 1.0;
     if (diff < 30) {
@@ -73,92 +82,88 @@ class RangeAreaPainter extends CustomPainter {
       exaggeration = 1.2;
     }
 
-    final double effectiveRange = diff < 50 ? 50 : diff;
-    final double forcedMinY = minAlt - (effectiveRange * 0.3 * exaggeration);
-    final double forcedMaxY =
-        forcedMinY + (effectiveRange * 1.3 * exaggeration);
-    final double yRange = forcedMaxY - forcedMinY;
+    final effectiveRange = diff < 50 ? 50 : diff;
+    final minY = minAlt - (effectiveRange * 0.3 * exaggeration);
+    final maxY = minY + (effectiveRange * 1.62 * exaggeration);
+    final yRange = maxY - minY;
 
-    final double usableWidth = size.width;
-    final double chartHeight = size.height - 40; // bottomReserved fixa de 40px
-    final double maxDist = distances.last;
+    final usableWidth = size.width;
+    final maxDist = distances.last;
 
-    final int start = startIndex < endIndex ? startIndex : endIndex;
-    final int end = startIndex < endIndex ? endIndex : startIndex;
-
-    // 2) SEPARACIÓ DE CAMINS MATEMÀTICS (PASAT I FUTUR)
-    final pathPast = Path();
-    final pathFuture = Path();
-
-    bool hasPastPoints = false;
-    bool hasFuturePoints = false;
-
-    // --- CONSTRUCCIÓ DEL POLÍGON DEL PASSAT (ZONA GRADA) ---
-    int lastPastIdx = start;
-    if (start < realPointsCount) {
-      double firstX = (distances[start] / maxDist) * usableWidth;
-      pathPast.moveTo(firstX, chartHeight);
-
-      int endPast = end < realPointsCount ? end : realPointsCount - 1;
-      for (int i = start; i <= endPast; i++) {
-        double x = (distances[i] / maxDist) * usableWidth;
-        double relY = (altitudes[i] - forcedMinY) / yRange;
-        double y = chartHeight - (relY * chartHeight);
-        pathPast.lineTo(x, y);
-        lastPastIdx = i;
-      }
-      double lastPastX = (distances[lastPastIdx] / maxDist) * usableWidth;
-      pathPast.lineTo(lastPastX, chartHeight);
-      pathPast.close();
-      hasPastPoints = true;
+    // Funcions de mapeig de coordenades reals a píxels de pantalla
+    double mapX(double dist) {
+      if (maxDist == 0) return 0;
+      return (dist / maxDist) * usableWidth;
     }
 
-    // --- CONSTRUCCIÓ DEL POLÍGON DEL FUTUR (25% FINESTRA DE RUTA) ---
-    if (end >= realPointsCount) {
-      int startFuture = start >= realPointsCount ? start : realPointsCount - 1;
-      double firstFutureX = (distances[startFuture] / maxDist) * usableWidth;
-      pathFuture.moveTo(firstFutureX, chartHeight);
-
-      for (int i = startFuture; i <= end; i++) {
-        double x = (distances[i] / maxDist) * usableWidth;
-        double relY = (altitudes[i] - forcedMinY) / yRange;
-        double y = chartHeight - (relY * chartHeight);
-        pathFuture.lineTo(x, y);
-      }
-      double lastFutureX = (distances[end] / maxDist) * usableWidth;
-      pathFuture.lineTo(lastFutureX, chartHeight);
-      pathFuture.close();
-      hasFuturePoints = true;
+    double mapY(double alt) {
+      if (yRange == 0) return xAxisY;
+      final double rel = (alt - minY) / yRange;
+      return topReserved + (chartHeight - (rel * chartHeight));
     }
 
-    // 3) RENDERITZACIÓ AMB ELS TEUS ESTILS A LA PANTALLA
-    // Pintem el Passat amb el degradat vertical fluid (Opac dalt, transparent baix)
-    if (hasPastPoints) {
-      final Rect pastBounds = Rect.fromLTWH(0, 0, usableWidth, chartHeight);
-      final gradientPaint = Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            trackColor.withAlpha(90), // Color natiu amb opacitat del 35%
-            trackColor.withAlpha(0), // Difuminat total a la base
-          ],
-        ).createShader(pastBounds)
-        ..style = PaintingStyle.fill;
+    // 3) 🛡️ CONTROL ANTI-SWAP DE SEGURETAT
+    // Trobem quin índex és el més petit i quin és el més gran per si l'usuari els creua
+    final int startIdx = math
+        .min(startIndex, endIndex)
+        .clamp(0, altitudes.length - 1);
+    final int endIdx = math
+        .max(startIndex, endIndex)
+        .clamp(0, altitudes.length - 1);
 
-      canvas.drawPath(pathPast, gradientPaint);
+    if (startIdx == endIdx) return;
+
+    // 4) 📐 CREACIÓ DEL CAMÍ DE LA SILUETA DEL TRAM SELECCIONAT
+    final path = Path();
+
+    // Punt inicial: A l'eix X (a baix), a la distància on comença el tram
+    final double firstX = mapX(distances[startIdx]);
+    path.moveTo(firstX, xAxisY);
+
+    // Pujada i recorregut: Resseguim la línia de la muntanya punt per punt del tram
+    for (int i = startIdx; i <= endIdx; i++) {
+      final double x = mapX(distances[i]);
+      final double y = mapY(altitudes[i]);
+      path.lineTo(x, y);
     }
 
-    // Pintem el Futur amb el format tècnic translúcid gris/blau (10% d'opacitat)
-    if (hasFuturePoints) {
-      final paintFuture = Paint()
-        ..color = Colors.blueGrey
-            .withAlpha(26) // Sutil, net i sense carregar el gràfic
-        ..style = PaintingStyle.fill;
-      canvas.drawPath(pathFuture, paintFuture);
-    }
+    // Baixada: Des de l'últim punt alt de la muntanya recta cap a l'eix X (a baix)
+    final double lastX = mapX(distances[endIdx]);
+    path.lineTo(lastX, xAxisY);
+
+    // Tancat: Tornem en línia recta per sobre de l'eix X fins al punt inicial
+    path.close();
+
+    // 5) 🎨 CONFIGURACIÓ DEL PINZELL DE FARCIT (AMB DEGRADAT)
+    final gradient = LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      colors: [
+        trackColor.withAlpha(
+          191,
+        ), // 👈 Molt més visible a la carena de la muntanya (75%)
+        trackColor.withAlpha(
+          38,
+        ), // 👈 Una mica més de presència a la base de les X (15%)
+      ],
+    );
+
+    final paint = Paint()
+      ..shader = gradient.createShader(
+        Rect.fromLTRB(firstX, topReserved, lastX, xAxisY),
+      )
+      ..style = PaintingStyle.fill;
+
+    // Dibuixem la silueta de la muntanya retallada a sobre del llenç
+    canvas.drawPath(path, paint);
   }
 
   @override
-  bool shouldRepaint(covariant RangeAreaPainter oldDelegate) => true;
+  bool shouldRepaint(covariant RangeAreaPainter oldDelegate) {
+    return oldDelegate.startIndex != startIndex ||
+        oldDelegate.endIndex != endIndex ||
+        oldDelegate.trackColor != trackColor ||
+        oldDelegate.distances != distances ||
+        oldDelegate.altitudes != altitudes;
+  }
 }

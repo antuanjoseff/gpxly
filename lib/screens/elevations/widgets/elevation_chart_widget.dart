@@ -369,7 +369,9 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
               ),
 
               // Capa 2: El polígon de ressaltat degradat (Mode range seleccionat)
-              if (startIdx >= 0 && endIdx >= 0)
+              if (startIdx >= 0 &&
+                  endIdx >= 0 &&
+                  currentMode == SelectionMode.range)
                 Positioned.fill(
                   child: Padding(
                     padding: const EdgeInsets.only(
