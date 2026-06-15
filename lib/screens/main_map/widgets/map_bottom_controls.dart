@@ -1,4 +1,3 @@
-// lib/screens/main_map/widgets/map_bottom_controls.dart (BLOC 1 DE 2)
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/models/navigation_state.dart';
@@ -6,6 +5,7 @@ import 'package:senda/models/track.dart';
 import 'package:senda/notifiers/imported_track_notifier.dart';
 import 'package:senda/notifiers/navigation_notifier.dart';
 import 'package:senda/notifiers/recording_notifier.dart';
+import 'package:senda/screens/elevations/constants/chart_constants.dart';
 import 'package:senda/screens/settings/settings_screen.dart';
 import 'package:senda/theme/app_colors.dart';
 import 'package:senda/widgets/embedded_elevation_profile.dart';
@@ -37,9 +37,9 @@ class MapBottomControls extends ConsumerStatefulWidget {
 class _MapBottomControlsState extends ConsumerState<MapBottomControls> {
   bool _showRecordingSubMenu = false;
   bool _showNavigationSubMenu = false;
-
   @override
   Widget build(BuildContext context) {
+    // 1. Lectures obligatòries de providers de Riverpod
     final importedTrack = ref.watch(importedTrackProvider);
     final navState = ref.watch(navigationProvider);
     final recordingState = ref.watch(
@@ -69,152 +69,215 @@ class _MapBottomControlsState extends ConsumerState<MapBottomControls> {
       recordingColor = Colors.amber;
     }
 
-    // 🧭 TRADUCCIÓ RECTIFICADA: Estats de la pestanya de Seguiment
+    // 🧭 TRADUCCIÓ RECTIFICADA: Estats de la pestanya de Seguiment (Sempre en blanc)
     String navigationLabel = "Carregar track";
-    IconData navigationIcon =
-        Icons.file_upload_outlined; // 🟢 NOVA: Icona d'upload si no hi ha track
+    IconData navigationIcon = Icons.file_upload_outlined;
     Color navigationColor = Colors.white;
+
     if (hasTrack && !navState.isFollowing) {
-      // Un cop importat el gpx, el text canvia a "Seguir" i commuta a la brúixola
       navigationLabel = "Seguir";
       navigationIcon = Icons.explore_outlined;
-      navigationColor = Colors.white; // 🟢 FORÇAT EN BLANC
+      navigationColor = Colors.white;
     } else if (navState.isFollowing) {
       if (navState.isPaused) {
         navigationLabel = "Pausat";
         navigationIcon = Icons.explore_outlined;
-        navigationColor = Colors.white; // 🟢 FORÇAT EN BLANC
+        navigationColor = Colors.white;
       } else {
         navigationLabel = "Seguint...";
-        navigationIcon = Icons.explore; // Brúixola plena en moviment
-        navigationColor = Colors.white; // 🟢 FORÇAT EN BLANC
+        navigationIcon = Icons.explore;
+        navigationColor = Colors.white;
       }
     }
 
-    // Condició: Si el submenú està obert, apliquem opacitat i desactivem esdeveniments al gràfic
     final bool isAnySubMenuOpen =
         _showRecordingSubMenu || _showNavigationSubMenu;
+    // ─────────────────────────────────────────────────────────────────────────
+    // 📐 SECCIÓ DE PROPORCIONS DE L'STACK SUPERIOR (Mides netes al píxel)
+    // ─────────────────────────────────────────────────────────────────────────
+    final double screenHeight = MediaQuery.of(context).size.height;
+    final double chartHeight = screenHeight * kElevationChartHeightRatio;
 
+    // Calculem l'alçada dinàmica que necessita el contenidor Positioned pare
+    // per albergar el gràfic, el menú de 64px i l'aire de seguretat dels submenús
+    final double maxStackHeight = widget.isChartCollapsed
+        ? (64.0 + MediaQuery.of(context).padding.bottom + 60.0)
+        : (64.0 + chartHeight + MediaQuery.of(context).padding.bottom + 60.0);
+
+    // 🟢 OPCIÓ B REORDENADA: Retornem Positioned amb alçada fixa 'maxStackHeight'.
+    // Això obre el sostre geomètric perquè Flutter detecti correctament els clics dels submenús.
     return Positioned(
       bottom: 0,
       left: 0,
       right: 0,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+      height: maxStackHeight,
+      child: Stack(
+        alignment: Alignment.bottomCenter,
+        clipBehavior: Clip.none,
         children: [
-          // 📊 CAPA A: GRÀFIC D'ELEVACIONS - ENGANXAT AL MENÚ
+          // 📊 CAPA 1: EL GRÀFIC D'ELEVACIONS (Es pinta primer, al fons de l'Stack)
           if (isPanelActiveOnScreen)
-            AnimatedOpacity(
-              duration: const Duration(milliseconds: 200),
-              opacity: isAnySubMenuOpen ? 0.35 : 1.0,
-              child: IgnorePointer(
-                ignoring: isAnySubMenuOpen,
-                child: Container(
-                  width: MediaQuery.of(context).size.width,
-
-                  // 🟢 SOLUCIÓN AL OVERFLOW: Eliminamos por completo la suma del 'systemBottomPadding'
-                  // de la altura del contenedor del gráfico. Al ser un Column, el SafeArea del menú
-                  // inferior ya empuja todo el bloque hacia arriba de forma nativa.
-                  height: null,
-
-                  color: Colors.transparent,
-                  child: EmbeddedElevationProfile(
-                    key: const ValueKey(
-                      'embedded_elevation_profile_fix_peanya',
+            Positioned(
+              bottom: 64.0 + MediaQuery.of(context).padding.bottom,
+              left: 0,
+              right: 0,
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 200),
+                opacity: isAnySubMenuOpen ? 0.35 : 1.0,
+                child: IgnorePointer(
+                  // 🟢 Si el submenú s'obre, tornem la caixa 'fantasma' per deixar passar els clics
+                  ignoring: isAnySubMenuOpen,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeInOut,
+                    width: MediaQuery.of(context).size.width,
+                    // Si el perfil està amagat (plegat) la caixa exterior mesura 0.0px.
+                    // Si s'obre, fa exactament el 15% calculat de la pantalla
+                    height: widget.isChartCollapsed ? 0.0 : chartHeight,
+                    color: Colors.transparent,
+                    child: EmbeddedElevationProfile(
+                      key: const ValueKey(
+                        'embedded_elevation_profile_fix_peanya',
+                      ),
+                      isCollapsed: widget.isChartCollapsed,
+                      onToggle: widget.onToggleChart,
                     ),
-                    isCollapsed: widget.isChartCollapsed,
-                    onToggle: widget.onToggleChart,
                   ),
                 ),
               ),
             ),
-
-          // 📱 CAPA B: SUB-MENÚS CONTEXTUALS
-          if (_showRecordingSubMenu) ...[
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: _buildRecordingSubMenu(context, recordingState),
-            ),
-            const SizedBox(height: 8),
-          ],
-          if (_showNavigationSubMenu) ...[
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: _buildNavigationSubMenu(context, hasTrack, navState),
-            ),
-            const SizedBox(height: 8),
-          ],
-
-          // 📱 MENÚ INFERIOR ENGANCHAT AL GRÀFIC - SENSE GAPS
-          Container(
-            color: AppColors
-                .primary, // Fons sòlid que va de punta a punta del telèfon [INDEX]
-            child: SafeArea(
-              top:
-                  false, // Només protegim el topall inferior del SafeArea (barres d'iOS/Android) [INDEX]
-              child: Container(
-                height: 64,
-                width: double.infinity,
-                decoration: const BoxDecoration(
-                  border: Border(
-                    top: BorderSide(color: Colors.white12, width: 0.5),
-                  ),
+          // 📱 CAPA 2: SUB-MENÚS CONTEXTUALS (Es pinten a sobre del gràfic)
+          // Al estar col·locats després en la llista, agafen prioritat absoluta davant del dit [INDEX].
+          Positioned(
+            bottom:
+                64.0 +
+                MediaQuery.of(context).padding.bottom +
+                8.0, // Flota 8px per sobre de la línia del menú [INDEX]
+            left: 12,
+            right: 12,
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              child: Column(
+                key: ValueKey(
+                  'submenus_stack_${_showRecordingSubMenu}_${_showNavigationSubMenu}',
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildMenuTab(
-                      icon: recordingIcon,
-                      label: recordingLabel,
-                      iconColor: recordingColor,
-                      onTap: () {
-                        setState(() {
-                          _showRecordingSubMenu = !_showRecordingSubMenu;
-                          _showNavigationSubMenu = false;
-                        });
-                      },
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (_showRecordingSubMenu)
+                    _buildRecordingSubMenu(context, recordingState),
+                  if (_showNavigationSubMenu)
+                    _buildNavigationSubMenu(context, hasTrack, navState),
+                ],
+              ),
+            ),
+          ),
+
+          // 📱 CAPA 3: MENÚ INFERIOR ORIGINAL (64px) - CLAVAT AL TERRA DELS GESTOS
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              color: AppColors.primary,
+              child: SafeArea(
+                top: false,
+                child: Container(
+                  height: 64, // Alçada original exacta [INDEX]
+                  width: double.infinity,
+                  decoration: const BoxDecoration(
+                    border: Border(
+                      top: BorderSide(color: Colors.white12, width: 0.5),
                     ),
-                    const VerticalDivider(
-                      color: Colors.white12,
-                      indent: 16,
-                      endIndent: 16,
-                      width: 1,
-                    ),
-                    _buildMenuTab(
-                      icon: navigationIcon,
-                      label: navigationLabel,
-                      iconColor: navigationColor,
-                      onTap: () {
-                        setState(() {
-                          _showNavigationSubMenu = !_showNavigationSubMenu;
-                          _showRecordingSubMenu = false;
-                        });
-                      },
-                    ),
-                    const VerticalDivider(
-                      color: Colors.white12,
-                      indent: 16,
-                      endIndent: 16,
-                      width: 1,
-                    ),
-                    _buildMenuTab(
-                      icon: Icons.settings_outlined,
-                      label: "Ajustos",
-                      iconColor: Colors.white,
-                      onTap: () {
-                        setState(() {
-                          _showRecordingSubMenu = false;
-                          _showNavigationSubMenu = false;
-                        });
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const SettingsScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      // 1. GRAVAR
+                      _buildMenuTab(
+                        icon: recordingIcon,
+                        label: recordingLabel,
+                        iconColor: recordingColor,
+                        onTap: () {
+                          setState(() {
+                            _showRecordingSubMenu = !_showRecordingSubMenu;
+                            _showNavigationSubMenu = false;
+                          });
+                        },
+                      ),
+                      const VerticalDivider(
+                        color: Colors.white12,
+                        indent: 16,
+                        endIndent: 16,
+                        width: 1,
+                      ),
+
+                      // 2. SEGUIR / CARREGAR TRACK
+                      _buildMenuTab(
+                        icon: navigationIcon,
+                        label: navigationLabel,
+                        iconColor: navigationColor,
+                        onTap: () {
+                          setState(() {
+                            _showNavigationSubMenu = !_showNavigationSubMenu;
+                            _showRecordingSubMenu = false;
+                          });
+                        },
+                      ),
+                      const VerticalDivider(
+                        color: Colors.white12,
+                        indent: 16,
+                        endIndent: 16,
+                        width: 1,
+                      ),
+
+                      // 3. PERFIL D'ELEVACIONS
+                      _buildMenuTab(
+                        icon: widget.isChartCollapsed
+                            ? Icons.landscape_outlined
+                            : Icons.landscape_rounded,
+                        label: "Perfil",
+                        iconColor: !isPanelActiveOnScreen
+                            ? Colors.white24
+                            : (widget.isChartCollapsed
+                                  ? Colors.white70
+                                  : Colors.greenAccent),
+                        onTap: !isPanelActiveOnScreen
+                            ? null
+                            : () {
+                                setState(() {
+                                  _showRecordingSubMenu = false;
+                                  _showNavigationSubMenu = false;
+                                });
+                                widget.onToggleChart();
+                              },
+                      ),
+                      const VerticalDivider(
+                        color: Colors.white12,
+                        indent: 16,
+                        endIndent: 16,
+                        width: 1,
+                      ),
+
+                      // 4. AJUSTOS
+                      _buildMenuTab(
+                        icon: Icons.settings_outlined,
+                        label: "Ajustos",
+                        iconColor: Colors.white,
+                        onTap: () {
+                          setState(() {
+                            _showRecordingSubMenu = false;
+                            _showNavigationSubMenu = false;
+                          });
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const SettingsScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -224,7 +287,7 @@ class _MapBottomControlsState extends ConsumerState<MapBottomControls> {
     );
   }
 
-  // � MÈTODE AUXILIAR: SUB-MENÚ DE CONTROL DE GRAVACIÓ
+  // 📱 MÈTODE AUXILIAR: SUB-MENÚ DE CONTROL DE GRAVACIÓ
   Widget _buildRecordingSubMenu(BuildContext context, RecordingState state) {
     return Container(
       decoration: BoxDecoration(
@@ -456,8 +519,7 @@ class _MapBottomControlsState extends ConsumerState<MapBottomControls> {
                   style: const TextStyle(color: Colors.white),
                 ),
                 onPressed: () {
-                  // 🟢 PAUSA INSTANTÀNIA SENSE DIÀLEGS: Commuta la pausa directament a Riverpod
-                  // en el mateix mil·lisegon que es fa clic, mantenint el menú tancat.
+                  // 🟢 PAUSA INSTANTÀNIA SENSE DIÀLEGS DES DE LA BARRA
                   setState(() => _showNavigationSubMenu = false);
                   ref.read(navigationProvider.notifier).state = navState
                       .copyWith(isPaused: !navState.isPaused);
@@ -481,10 +543,10 @@ class _MapBottomControlsState extends ConsumerState<MapBottomControls> {
                   style: TextStyle(color: Colors.white),
                 ),
                 onPressed: () {
-                  // 🟢 FINALITZACIÓ PROTEGIDA: Aquest botó sí que va al Handler,
-                  // el qual obrirà el cas "stop_follow" per demanar confirmació i esborrar el track.
                   setState(() => _showNavigationSubMenu = false);
-                  widget.onOpenNavigationControl(true);
+                  widget.onOpenNavigationControl(
+                    true,
+                  ); // Obre el Handler final directe de dos botons
                 },
               ),
             ),
@@ -494,21 +556,22 @@ class _MapBottomControlsState extends ConsumerState<MapBottomControls> {
     );
   }
 
-  // 📱 MÈTODE AUXILIAR REFORMAT: Pestanyes de la barra inferior amb disseny de targeta per a la gravació
+  // 📱 MÈTODE AUXILIAR: Pestanyes individuals restaurades a 1 línia amb FittedBox
   Widget _buildMenuTab({
     required IconData icon,
     required String label,
     required Color iconColor,
-    required VoidCallback onTap,
+    required VoidCallback?
+    onTap, // 🟢 SUPORT DE NULS AMB L'INTERROGANT PER DESACTIVAR EL CLIC
   }) {
-    // 🟢 DETECTOR: Comprovem si el text és "Gravant..." per saber si hem de pintar la targeta blanca
     final bool isRecordingActive = label == "Gravant...";
 
     return Expanded(
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: onTap,
+          onTap:
+              onTap, // Si és null, InkWell es desactiva automàticament visualment
           borderRadius: BorderRadius.circular(16),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -522,7 +585,6 @@ class _MapBottomControlsState extends ConsumerState<MapBottomControls> {
                   fit: BoxFit.scaleDown,
                   child: isRecordingActive
                       ? Container(
-                          // 🟢 DISSENY CARD BLINDAT: Fons blanc amb cantonades arrodonides
                           padding: const EdgeInsets.symmetric(
                             horizontal: 8,
                             vertical: 2,
@@ -541,10 +603,8 @@ class _MapBottomControlsState extends ConsumerState<MapBottomControls> {
                           child: Text(
                             label,
                             style: TextStyle(
-                              color:
-                                  iconColor, // El color vermell corporatiu (Colors.red)
-                              fontSize:
-                                  10.5, // Una mica més petita per cabre dins de la targeta
+                              color: iconColor,
+                              fontSize: 12,
                               fontWeight: FontWeight.bold,
                               letterSpacing: 0.2,
                             ),

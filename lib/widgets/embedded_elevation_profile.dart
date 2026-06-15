@@ -194,12 +194,16 @@ class _EmbeddedElevationProfileState
     }
 
     final String safeSpeedStr = avgSpeedStr.replaceAll(" km/h", "kmh");
+
     final double screenHeight = MediaQuery.of(context).size.height;
     final double chartHeight = (screenHeight * kElevationChartHeightRatio)
         .roundToDouble();
     const double handleHeight = 36.0;
 
-    final double collapsedHeight = 40.0;
+    // 🟢 LA MATEMÀTICA ASIMÈTRICA:
+    // Si està plegat, fa 0px (el mapa és 100% lliure).
+    // Si està desplegat, fa exactament la nansa (36px) per a les estadístiques del tram + el 15% del gràfic.
+    final double collapsedHeight = 0.0;
     final double expandedHeight = handleHeight + chartHeight;
 
     return AnimatedContainer(
@@ -207,177 +211,152 @@ class _EmbeddedElevationProfileState
       curve: Curves.easeInOut,
       height: widget.isCollapsed ? collapsedHeight : expandedHeight,
       padding: EdgeInsets.zero,
-      clipBehavior:
-          Clip.none, // 🟢 ANTI-CLIP: Permet flexibilitat de vores sense alertes
+      clipBehavior: Clip.none,
       decoration: BoxDecoration(
-        color: AppColors.skyBlueDark.withAlpha(214),
+        color: widget.isCollapsed
+            ? Colors.transparent
+            : AppColors.skyBlueDark.withAlpha(214),
         borderRadius: BorderRadius.circular(0),
-        border: Border(
-          top: BorderSide(color: Colors.white.withAlpha(25), width: 1),
-        ),
+        border: widget.isCollapsed
+            ? null
+            : Border(
+                top: BorderSide(color: Colors.white.withAlpha(25), width: 1),
+              ),
       ),
-      // (Mantén el inicio del return AnimatedContainer igual hasta el child)
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // 🚪 BARRA DE NANSA (36px) - Blindada con un SizedBox rígido de contención
-          SizedBox(
-            height:
-                handleHeight, // Forzamos de forma implícita que mida 36.0px exactos pase lo que pase
-            child: GestureDetector(
-              onTap: widget.onToggle,
-              behavior: HitTestBehavior.opaque,
-              child: Container(
-                width: double.infinity,
-                height: handleHeight,
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                color: Colors.transparent,
-                child: isRangeActive
-                    ? Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.only(right: 14),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(
-                                        Icons.straighten,
-                                        size: 12,
-                                        color: Colors.white70,
-                                      ),
-                                      const SizedBox(width: 3),
-                                      Text(
-                                        "${(rangeDistance / 1000).toStringAsFixed(2)}km",
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w600,
+          // 🚪 BARRA D'ESTADÍSTIQUES DEL TRAM
+          // 🟢 CONTROL DINÀMIC: Només es renderitza si el gràfic està desplegat.
+          // Així, quan està plegat, no ocupa espai ni llança overflows residuals.
+          if (widget.isCollapsed == false)
+            SizedBox(
+              height: handleHeight,
+              child: GestureDetector(
+                onTap: widget.onToggle,
+                behavior: HitTestBehavior.opaque,
+                child: Container(
+                  width: double.infinity,
+                  height: handleHeight,
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  color: Colors.transparent,
+                  // 🟢 MANTENIMENT DE DADES: Es mantenen intactes tots els teus indicadors de tram actiu
+                  child: isRangeActive
+                      ? Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.only(right: 14),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(
+                                          Icons.straighten,
+                                          size: 12,
+                                          color: Colors.white70,
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(
-                                        Icons.access_time_rounded,
-                                        size: 12,
-                                        color: Colors.amberAccent,
-                                      ),
-                                      const SizedBox(width: 3),
-                                      Text(
-                                        timeElapsedStr,
-                                        style: const TextStyle(
+                                        const SizedBox(width: 3),
+                                        Text(
+                                          "${(rangeDistance / 1000).toStringAsFixed(2)}km",
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(
+                                          Icons.access_time_rounded,
+                                          size: 12,
                                           color: Colors.amberAccent,
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.bold,
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(
-                                        Icons.speed_rounded,
-                                        size: 12,
-                                        color: Colors.cyanAccent,
-                                      ),
-                                      const SizedBox(width: 3),
-                                      Text(
-                                        safeSpeedStr,
-                                        style: const TextStyle(
+                                        const SizedBox(width: 3),
+                                        Text(
+                                          timeElapsedStr,
+                                          style: const TextStyle(
+                                            color: Colors.amberAccent,
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(
+                                          Icons.speed_rounded,
+                                          size: 12,
                                           color: Colors.cyanAccent,
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.bold,
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(
-                                        Icons.arrow_upward,
-                                        size: 12,
-                                        color: Colors.greenAccent,
-                                      ),
-                                      const SizedBox(width: 2),
-                                      Text(
-                                        "+${rangeAscent.toStringAsFixed(0)}m",
-                                        style: const TextStyle(
+                                        const SizedBox(width: 3),
+                                        Text(
+                                          safeSpeedStr,
+                                          style: const TextStyle(
+                                            color: Colors.cyanAccent,
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(
+                                          Icons.arrow_upward,
+                                          size: 12,
                                           color: Colors.greenAccent,
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.bold,
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(
-                                        Icons.arrow_downward,
-                                        size: 12,
-                                        color: Colors.redAccent,
-                                      ),
-                                      const SizedBox(width: 2),
-                                      Text(
-                                        "-${rangeDescent.toStringAsFixed(0)}m",
-                                        style: const TextStyle(
+                                        const SizedBox(width: 2),
+                                        Text(
+                                          "+${rangeAscent.toStringAsFixed(0)}m",
+                                          style: const TextStyle(
+                                            color: Colors.greenAccent,
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(
+                                          Icons.arrow_downward,
+                                          size: 12,
                                           color: Colors.redAccent,
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.bold,
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
+                                        const SizedBox(width: 2),
+                                        Text(
+                                          "-${rangeDescent.toStringAsFixed(0)}m",
+                                          style: const TextStyle(
+                                            color: Colors.redAccent,
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
-                          ),
-                          GestureDetector(
-                            onTap: () => ref
-                                .read(elevationSelectionProvider.notifier)
-                                .clearSelection(),
-                            child: Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withAlpha(20),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.close_rounded,
-                                size: 13,
-                                color: Colors.white70,
-                              ),
-                            ),
-                          ),
-                        ],
-                      )
-                    : Container(
-                        width: double.infinity,
-                        height: handleHeight,
-                        color: Colors.transparent,
-                        alignment: Alignment.center,
-                        child: Container(
-                          width: 44,
-                          height: 5,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withAlpha(90),
-                            borderRadius: BorderRadius.circular(2.5),
-                          ),
-                        ),
-                      ),
+                          ],
+                        )
+                      : const SizedBox.shrink(), // 🟢 Si el perfil està desplegat però no hi ha selecció activa, la barra es queda completament buida i neta de peanyes grises
+                ),
               ),
             ),
-          ),
 
           // 📊 ÁREA DEL GRÀFIC
           if (widget.isCollapsed == false)
