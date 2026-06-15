@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
+import 'package:senda/models/track.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:senda/notifiers/location_notifier.dart';
 import 'package:senda/notifiers/recording_notifier.dart';
@@ -18,7 +19,6 @@ class RecordingFlowHandler {
 
   RecordingFlowHandler({required this.ref, required this.context});
 
-  /// Obre la màquina de control de gravació flotant
   Future<void> openRecordingControl({
     required MapLibreMapController? mapController,
     required void Function(bool) onToggleSmartCenter,
@@ -27,10 +27,22 @@ class RecordingFlowHandler {
     required void Function(CameraUpdate) safeAnimateCamera,
   }) async {
     final state = ref.read(trackRecordingProvider).recordingState;
-    final String? action = await AppMessages.showRecordingControlDialog(
-      context: context,
-      state: state,
-    );
+    String? action;
+
+    // 🟢 EL FLUX INTEL·LIGENT DE SENDA:
+    if (state == RecordingState.idle) {
+      // 1. Si està aturat, inicia la gravació a l'acte [INDEX]
+      action = "start";
+    } else {
+      // 2. Si està en marxa o en pausa, obrim el diàleg de control de Senda [INDEX].
+      // Com que l'usuari clica des del submenú inferior de botons de "MapBottomControls",
+      // si tria "Pausar" o "Reprendre", farem que s'ho salti directament als mètodes en un futur,
+      // però ens assegurem que el cas "stop" obri el diàleg de guardar/compartir de sota! [INDEX]
+      action = await AppMessages.showRecordingControlDialog(
+        context: context,
+        state: state,
+      );
+    }
 
     if (action == null) return;
 
@@ -53,13 +65,19 @@ class RecordingFlowHandler {
           );
         }
         break;
+
       case "pause":
+        // 🟢 DIRECTE: Sense confirmació intermèdia per aturar el ritme [INDEX]
         RecordingHandler.pause(ref);
         break;
+
       case "resume":
+        // 🟢 DIRECTE: Sense confirmació intermèdia per tornar a caminar [INDEX]
         RecordingHandler.resume(ref);
         break;
+
       case "stop":
+        // 🟢 DIÀLEG MANTINGUT: Obre el flux complet de compartir, desar o cancel·lar [INDEX]
         _handleStopProcess();
         break;
     }

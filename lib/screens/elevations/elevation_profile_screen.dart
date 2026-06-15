@@ -12,6 +12,7 @@ import 'package:senda/notifiers/remaining_track_notifier.dart';
 import 'package:senda/notifiers/track_settings_notifier.dart';
 import 'package:senda/notifiers/waypoints_imported_notifier.dart';
 import 'package:senda/notifiers/waypoints_recorded_notifier.dart';
+import 'package:senda/screens/elevations/constants/chart_constants.dart';
 import 'package:senda/screens/elevations/widgets/elevation_chart_widget.dart';
 import 'package:senda/screens/elevations/widgets/header_legend_widget.dart';
 import 'package:senda/screens/elevations/widgets/waypoints_list_widget.dart';
@@ -248,7 +249,9 @@ class _ElevationProfileScreenState
                 ),
               ],
             ),
-            height: MediaQuery.of(context).size.height * 0.32,
+            // 🟢 MODIFICACIÓ PRECISA: El gràfic passa a ocupar exactament el 20% de la pantalla
+            height:
+                MediaQuery.of(context).size.height * kElevationChartHeightRatio,
             child: ElevationChartWidget(
               // 🟢 CLAU ESTÀTICA TOTALMENT FIXA: Es manté per evitar el redibuix de la GPU
               key: const ValueKey("elevation_chart_static_pure"),

@@ -1,4 +1,3 @@
-// lib/screens/map/widgets/embedded_elevation_profile.dart (BLOC 1 DE 2)
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/notifiers/imported_track_notifier.dart';
@@ -9,6 +8,7 @@ import 'package:senda/notifiers/remaining_track_notifier.dart';
 import 'package:senda/notifiers/track_settings_notifier.dart';
 import 'package:senda/notifiers/waypoints_imported_notifier.dart';
 import 'package:senda/notifiers/waypoints_recorded_notifier.dart';
+import 'package:senda/screens/elevations/constants/chart_constants.dart';
 import 'package:senda/screens/elevations/widgets/elevation_chart_widget.dart';
 import 'package:senda/notifiers/elevation_selection_provider.dart';
 import 'package:senda/theme/app_colors.dart';
@@ -112,13 +112,10 @@ class _EmbeddedElevationProfileState
     final globalDists = <double>[...realDists, ...futureDistsGlobal];
     final globalAlts = <double>[...realAlts, ...futureAlts];
     final globalTimes = <DateTime>[...real.timestamps, ...futureTimestamps];
-
-    // 🧮 LÒGICA DE CÀLCUL DE COMPACTACIÓ DE TRAM DE SENDA
     double rangeDistance = 0;
     double rangeAscent = 0;
     double rangeDescent = 0;
 
-    // 🟢 DEFENICIÓ CORREGIDA: S'assegura l'existència global de les variables per al Bloc 2
     String timeElapsedStr = "--:--";
     String avgSpeedStr = "--.- km/h";
 
@@ -141,7 +138,6 @@ class _EmbeddedElevationProfileState
           if (diff < 0) rangeDescent += diff.abs();
         }
 
-        // Càlcul cronològic de temps del tram seleccionat
         if (startIdx < globalTimes.length && endIdx < globalTimes.length) {
           final duration = globalTimes[endIdx]
               .difference(globalTimes[startIdx])
@@ -158,7 +154,6 @@ class _EmbeddedElevationProfileState
                 "${totalMinutes}:${totalSeconds.toString().padLeft(2, '0')}";
           }
 
-          // Càlcul de velocitat mitjana matemàtica directe del segment
           if (duration.inSeconds > 0 && rangeDistance > 0) {
             final double speedMps = rangeDistance / duration.inSeconds;
             final double speedKmh = speedMps * 3.6;
@@ -167,7 +162,7 @@ class _EmbeddedElevationProfileState
         }
       }
     }
-    // lib/screens/map/widgets/embedded_elevation_profile.dart (BLOC 2 DE 2 REORDENAT)
+
     final recordedWps = ref.watch(waypointsProvider);
     final importedWps = ref.watch(importedWaypointsProvider);
     final trackColor = ref.watch(trackSettingsProvider).color;
@@ -199,181 +194,176 @@ class _EmbeddedElevationProfileState
     }
 
     final String safeSpeedStr = avgSpeedStr.replaceAll(" km/h", "kmh");
+    final double screenHeight = MediaQuery.of(context).size.height;
+    final double chartHeight = (screenHeight * kElevationChartHeightRatio)
+        .roundToDouble();
+    const double handleHeight = 36.0;
+
+    final double collapsedHeight = 40.0;
+    final double expandedHeight = handleHeight + chartHeight;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       curve: Curves.easeInOut,
-      height: widget.isCollapsed
-          ? (38.0 + systemBottomPadding)
-          : (220.0 + systemBottomPadding),
-      padding: EdgeInsets.only(bottom: systemBottomPadding),
+      height: widget.isCollapsed ? collapsedHeight : expandedHeight,
+      padding: EdgeInsets.zero,
+      clipBehavior:
+          Clip.none, // 🟢 ANTI-CLIP: Permet flexibilitat de vores sense alertes
       decoration: BoxDecoration(
         color: AppColors.skyBlueDark.withAlpha(214),
-        borderRadius: BorderRadius.circular(
-          0,
-        ), // Nansa rectangular per guanyar píxels
+        borderRadius: BorderRadius.circular(0),
         border: Border(
           top: BorderSide(color: Colors.white.withAlpha(25), width: 1),
         ),
       ),
-      child: SingleChildScrollView(
-        physics: const NeverScrollableScrollPhysics(),
-        child: Column(
-          children: [
-            // 🚪 BARRA DE NANSA INTEL·LIGENT AMB ORDRE RECONFIGURAT
-            Container(
-              width: double.infinity,
-              height: 36,
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              child: isRangeActive
-                  ? Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.only(
-                              right: 14,
-                            ), // Marge abans del botó de tancar
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                // 1. 🏁 DISTÀNCIA (Icona recta blanca)
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(
-                                      Icons.straighten,
-                                      size: 12,
-                                      color: Colors.white70,
-                                    ),
-                                    const SizedBox(width: 3),
-                                    Text(
-                                      "${(rangeDistance / 1000).toStringAsFixed(2)}km",
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
+      // (Mantén el inicio del return AnimatedContainer igual hasta el child)
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // 🚪 BARRA DE NANSA (36px) - Blindada con un SizedBox rígido de contención
+          SizedBox(
+            height:
+                handleHeight, // Forzamos de forma implícita que mida 36.0px exactos pase lo que pase
+            child: GestureDetector(
+              onTap: widget.onToggle,
+              behavior: HitTestBehavior.opaque,
+              child: Container(
+                width: double.infinity,
+                height: handleHeight,
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                color: Colors.transparent,
+                child: isRangeActive
+                    ? Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.only(right: 14),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(
+                                        Icons.straighten,
+                                        size: 12,
+                                        color: Colors.white70,
                                       ),
-                                    ),
-                                  ],
-                                ),
-
-                                // 2. ⏱️ TEMPS TRANSCORREGUT (Icona rellotge ambre accent)
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(
-                                      Icons.access_time_rounded,
-                                      size: 12,
-                                      color: Colors.amberAccent,
-                                    ),
-                                    const SizedBox(width: 3),
-                                    Text(
-                                      timeElapsedStr,
-                                      style: const TextStyle(
+                                      const SizedBox(width: 3),
+                                      Text(
+                                        "${(rangeDistance / 1000).toStringAsFixed(2)}km",
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(
+                                        Icons.access_time_rounded,
+                                        size: 12,
                                         color: Colors.amberAccent,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.bold,
                                       ),
-                                    ),
-                                  ],
-                                ),
-
-                                // 3. ⚡ VELOCITAT MITJANA (Icona velocímetre cian accent)
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(
-                                      Icons.speed_rounded,
-                                      size: 12,
-                                      color: Colors.cyanAccent,
-                                    ),
-                                    const SizedBox(width: 3),
-                                    Text(
-                                      safeSpeedStr,
-                                      style: const TextStyle(
+                                      const SizedBox(width: 3),
+                                      Text(
+                                        timeElapsedStr,
+                                        style: const TextStyle(
+                                          color: Colors.amberAccent,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(
+                                        Icons.speed_rounded,
+                                        size: 12,
                                         color: Colors.cyanAccent,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.bold,
                                       ),
-                                    ),
-                                  ],
-                                ),
-
-                                // 4. 🗻 ASCENS ACUMULAT (Icona fletxa verd accent)
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(
-                                      Icons.arrow_upward,
-                                      size: 12,
-                                      color: Colors.greenAccent,
-                                    ),
-                                    const SizedBox(width: 2),
-                                    Text(
-                                      "+${rangeAscent.toStringAsFixed(0)}m",
-                                      style: const TextStyle(
+                                      const SizedBox(width: 3),
+                                      Text(
+                                        safeSpeedStr,
+                                        style: const TextStyle(
+                                          color: Colors.cyanAccent,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(
+                                        Icons.arrow_upward,
+                                        size: 12,
                                         color: Colors.greenAccent,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.bold,
                                       ),
-                                    ),
-                                  ],
-                                ),
-
-                                // 5. 📉 DESCENS ACUMULAT (Icona fletxa vermell accent)
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(
-                                      Icons.arrow_downward,
-                                      size: 12,
-                                      color: Colors.redAccent,
-                                    ),
-                                    const SizedBox(width: 2),
-                                    Text(
-                                      "-${rangeDescent.toStringAsFixed(0)}m",
-                                      style: const TextStyle(
+                                      const SizedBox(width: 2),
+                                      Text(
+                                        "+${rangeAscent.toStringAsFixed(0)}m",
+                                        style: const TextStyle(
+                                          color: Colors.greenAccent,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(
+                                        Icons.arrow_downward,
+                                        size: 12,
                                         color: Colors.redAccent,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.bold,
                                       ),
-                                    ),
-                                  ],
-                                ),
-                              ],
+                                      const SizedBox(width: 2),
+                                      Text(
+                                        "-${rangeDescent.toStringAsFixed(0)}m",
+                                        style: const TextStyle(
+                                          color: Colors.redAccent,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
-                        ),
-
-                        // 🚫 Icona fixa a la dreta per deseleccionar el tram actiu
-                        GestureDetector(
-                          onTap: () {
-                            ref
+                          GestureDetector(
+                            onTap: () => ref
                                 .read(elevationSelectionProvider.notifier)
-                                .clearSelection();
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withAlpha(20),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.close_rounded,
-                              size: 13,
-                              color: Colors.white70,
+                                .clearSelection(),
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withAlpha(20),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.close_rounded,
+                                size: 13,
+                                color: Colors.white70,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
-                    )
-                  : GestureDetector(
-                      onTap: widget.onToggle,
-                      behavior: HitTestBehavior.opaque,
-                      child: Container(
+                        ],
+                      )
+                    : Container(
                         width: double.infinity,
-                        height: 36,
+                        height: handleHeight,
                         color: Colors.transparent,
                         alignment: Alignment.center,
                         child: Container(
@@ -385,13 +375,15 @@ class _EmbeddedElevationProfileState
                           ),
                         ),
                       ),
-                    ),
+              ),
             ),
+          ),
 
-            // Contenidor del perfil gràfic d'altituds
-            if (!widget.isCollapsed)
-              SizedBox(
-                height: 166,
+          // 📊 ÁREA DEL GRÀFIC
+          if (widget.isCollapsed == false)
+            Expanded(
+              child: SizedBox(
+                height: chartHeight,
                 child: AnimatedBuilder(
                   animation: Listenable.merge([
                     _localHoverIndex,
@@ -400,6 +392,7 @@ class _EmbeddedElevationProfileState
                   ]),
                   builder: (context, _) {
                     return ElevationChartWidget(
+                      key: const ValueKey("elevation_chart_embedded_pure"),
                       pastAlts: realAlts,
                       pastDists: realDists,
                       futureAlts: futureAlts,
@@ -415,8 +408,8 @@ class _EmbeddedElevationProfileState
                   },
                 ),
               ),
-          ],
-        ),
+            ),
+        ],
       ),
     );
   }

@@ -24,15 +24,14 @@ import 'package:senda/notifiers/track_settings_notifier.dart';
 import 'package:senda/notifiers/waypoints_imported_notifier.dart';
 import 'package:senda/notifiers/waypoints_recorded_notifier.dart';
 import 'package:senda/providers/barometer_provider.dart';
-import 'package:senda/screens/main_map/widgets/map_action_speed_dial.dart';
 
 // Widgets independents que hem separat
 import 'package:senda/screens/main_map/widgets/map_app_bar.dart';
 import 'package:senda/screens/main_map/widgets/map_base_layer.dart';
+import 'package:senda/screens/main_map/widgets/map_bottom_controls.dart';
 import 'package:senda/screens/main_map/widgets/map_top_controls.dart';
 import 'package:senda/screens/main_map/widgets/senda_brand_label.dart';
 import 'package:senda/theme/app_colors.dart';
-import 'package:senda/widgets/embedded_elevation_profile.dart';
 
 // Els 3 HELPERS d'extracció de codi massiu
 import 'package:senda/screens/main_map/helpers/map_geometry_helper.dart';
@@ -730,6 +729,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
             const Positioned(top: 10, left: 12, child: SendaBrandLabel()),
 
             // 🎛️ CAPA 2: INTERFÍCIE FLOTANT HUD (Només si no està en fullScreen)
+            // 🎛️ CAPA 2: INTERFÍCIE FLOTANT HUD (Només si no està en fullScreen)
             if (!_fullScreen) ...[
               // 🚀 COMPONENT EXTRET 3: Píndola de temps i controls de dalt a la dreta
               MapTopControls(
@@ -739,74 +739,22 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 onAddWaypoint: () => _onAddWaypoint(context, ref),
               ),
 
-              // 🚀 COMPONENT EXTRET 4: Botons d'acció inferiors amb moviment d'ascensor
-              // Dins del teu Stack a map_screen.dart:
-              MapActionSpeedDial(
+              // 🟢 CANVI 1: Passem el MapBottomControls AQUÍ dalt.
+              // Això assegura que la nansa es dibuixi en la seva pròpia capa independent de fons.
+              MapBottomControls(
                 isChartCollapsed: _isChartCollapsed,
                 systemBottomPadding: systemBottomPadding,
+                onAddWaypoint: () => _onAddWaypoint(context, ref),
                 onOpenRecordingControl: () =>
                     _openRecordingControl(context, ref),
                 onOpenNavigationControl: (hasTrack) =>
                     _openNavigationControl(context, ref, hasTrack),
                 onHandleNavigationAction: _handleSendaNavigationAction,
-              ),
-
-              // MapBottomControls(
-              //   isChartCollapsed: _isChartCollapsed,
-              //   systemBottomPadding: systemBottomPadding,
-              //   onAddWaypoint: () => _onAddWaypoint(context, ref),
-              //   onOpenRecordingControl: () =>
-              //       _openRecordingControl(context, ref),
-              //   onOpenNavigationControl: (hasTrack) =>
-              //       _openNavigationControl(context, ref, hasTrack),
-              //   onHandleNavigationAction: _handleSendaNavigationAction,
-              // ),
-
-              // 📈 ELEMENT FLOTANT: Perfil d'elevació basat en Riverpod (SENSE CALLBACKS NI PARÀMETRES VELLS)
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: Listener(
-                  behavior: HitTestBehavior.opaque,
-                  child: EmbeddedElevationProfile(
-                    key: const ValueKey(
-                      'embedded_elevation_profile_sincro_real_pura',
-                    ),
-                    isCollapsed: _isChartCollapsed,
-                    onToggle: () {
-                      final bool nextCollapsedState = !_isChartCollapsed;
-                      setState(() {
-                        _isChartCollapsed = nextCollapsedState;
-
-                        // Mantinguem la neteja de les teves variables primitives si en fas ús de fons
-                        selectedIndexGraph = null;
-                        selectedIndexStart = null;
-                        selectedIndexEnd = null;
-                      });
-
-                      // 🧹 Si l'usuari tanca la persiana del perfil, buidem Riverpod globalment
-                      if (nextCollapsedState) {
-                        ref
-                            .read(elevationSelectionProvider.notifier)
-                            .clearSelection();
-                      }
-
-                      if (nextCollapsedState &&
-                          mapController != null &&
-                          styleInitialized) {
-                        try {
-                          // Esborrem completament les geometries del mapa (cercles)
-                          setChartInteractionGeometry(mapController!);
-                        } catch (e) {
-                          debugPrint(
-                            "⚠️ Error al netejar geometries en minimitzar: $e",
-                          );
-                        }
-                      }
-                    },
-                  ),
-                ),
+                onToggleChart: () {
+                  setState(() {
+                    _isChartCollapsed = !_isChartCollapsed;
+                  });
+                },
               ),
             ],
           ],

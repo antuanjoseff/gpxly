@@ -42,26 +42,18 @@ class ElevationChartWidget extends ConsumerStatefulWidget {
 }
 
 class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
-  // -1 = Repòs absolut (El dit NO toca el gràfic)
   int _draggingNeedle = -1;
-
-  // Variables de control local per al dibuix fluid contra CustomPaint
   int? _localStartIdx;
   int? _localEndIdx;
   int? _localGraphIdx;
 
-  // Control de Throttle de temps per no saturar el canal de Riverpod al fer Drag
   DateTime _lastThrottleTime = DateTime.fromMillisecondsSinceEpoch(0);
   static const int _throttleDurationMs = 32;
 
   @override
   void didUpdateWidget(covariant ElevationChartWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-
     final currentSelection = ref.read(elevationSelectionProvider);
-
-    // 🟢 CLAU DEL MOVIMENT: Només si estem en repòs (-1), el mapa té permís per trepitjar
-    // els índexs locals (per exemple, en fer tap a un waypoint del mapa).
     if (_draggingNeedle == -1) {
       setState(() {
         _localStartIdx = currentSelection.startTrackIndex;
@@ -78,12 +70,10 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
     final futureDists = widget.futureDistsGlobal;
     final futureAlts = widget.futureAlts;
 
-    // Si no hi ha dades, evitem pintar un llenç buit
     if (pastDists.isEmpty && futureDists.isEmpty) {
       return const SizedBox.shrink();
     }
 
-    // Assegurem la mateixa longitud de forma robusta
     final safePastLength = (pastDists.length == pastAlts.length)
         ? pastDists.length
         : 0;
@@ -96,7 +86,6 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
     final safeFutureDists = futureDists.take(safeFutureLength).toList();
     final safeFutureAlts = futureAlts.take(safeFutureLength).toList();
 
-    // Estructurem l'eix global unint passat i futur de la ruta
     final globalDists = <double>[...safePastDists, ...safeFutureDists];
     final globalAlts = <double>[...safePastAlts, ...safeFutureAlts];
 
@@ -104,7 +93,6 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
       return const SizedBox.shrink();
     }
 
-    // Rango vertical de cotes automàtic
     final minAlt = globalAlts.reduce((a, b) => a < b ? a : b);
     final maxAlt = globalAlts.reduce((a, b) => a > b ? a : b);
     final diff = (maxAlt - minAlt).abs();
@@ -120,13 +108,19 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
 
     final effectiveRange = diff < 50 ? 50 : diff;
     final forcedMinY = minAlt - (effectiveRange * 0.3 * exaggeration);
-    final forcedMaxY = forcedMinY + (effectiveRange * 1.3 * exaggeration);
+    final forcedMaxY = forcedMinY + (effectiveRange * 1.62 * exaggeration);
+
+    // 🚀 UNIFICACIÓ TOTAL DE LA GRAELLA: Marges únics compartits per a les 3 capes
+    const double globalTopReserved = 8.0;
+    const double globalBottomReserved = 16.0;
 
     final maxDist = globalDists.last > 0 ? globalDists.last : 1.0;
 
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
+        // 🟢 AFACCIÓ CRÍTICA: Llegim l'alçada real del contenidor calculat al 20%
+        final height = constraints.maxHeight;
 
         double mapX(double dist) {
           if (maxDist == 0) return 0;
@@ -138,7 +132,6 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
           return idx;
         }
 
-        // Recuperem els índexs locals per pintar les agulles de forma independent durant el drag
         final graphIdx = clampIndex(_localGraphIdx);
         final startIdx = clampIndex(_localStartIdx);
         final endIdx = clampIndex(_localEndIdx);
@@ -147,79 +140,37 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
         final startX = startIdx >= 0 ? mapX(globalDists[startIdx]) : null;
         final endX = endIdx >= 0 ? mapX(globalDists[endIdx]) : null;
 
-        // Mode del provider per regular tap i gestos
         final currentMode = ref.watch(elevationSelectionProvider).mode;
-
-        void _updateSelectionThrottled(VoidCallback updateStateAction) {
-          // 1. Executem el setState de Dart a l'acte per moure l'agulla local als ulls de l'usuari a 60 FPS
-          updateStateAction();
-
-          // 2. Regulem l'enviament massiu de dades cap al mapa per no saturar la GPU
-          final ara = DateTime.now();
-          if (ara.difference(_lastThrottleTime).inMilliseconds >=
-              _throttleDurationMs) {
-            _lastThrottleTime = ara;
-
-            if (_draggingNeedle == 1 || _draggingNeedle == 2) {
-              if (_localStartIdx != null && _localEndIdx != null) {
-                ref
-                    .read(elevationSelectionProvider.notifier)
-                    .setManualRange(_localStartIdx!, _localEndIdx!);
-              }
-            } else if (_draggingNeedle == 3) {
-              if (_localGraphIdx != null) {
-                ref
-                    .read(elevationSelectionProvider.notifier)
-                    .setSinglePoint(_localGraphIdx!);
-              }
-            }
-          }
-        }
 
         return GestureDetector(
           behavior: HitTestBehavior.opaque,
-
-          // 🔓 EL LONG PRESS: És l'únic que activa el mode "Selecció de tram" (range)
-          // 🔓 EL LONG PRESS: Obre el mode tram obrint el ventall al 25% i 75% del perfil
           onLongPressStart: (_) {
-            // 1. Calculem quina posició de la llista unificada correspon a cada percentatge
             final int totalPoints = globalDists.length;
-
-            // Garantim de forma robusta que l'índex estigui dins del rang de la llista
-            final int startIdx = (totalPoints * 0.25).floor().clamp(
+            final int sIdx = (totalPoints * 0.25).floor().clamp(
               0,
               totalPoints - 1,
             );
-            final int endIdx = (totalPoints * 0.75).floor().clamp(
+            final int eIdx = (totalPoints * 0.75).floor().clamp(
               0,
               totalPoints - 1,
             );
-
-            // 2. Avisem a Riverpod pasant-li els dos extrems reals calculats
             ref
                 .read(elevationSelectionProvider.notifier)
-                .startSelectionWithLongPress(startIdx, endIdx);
-
-            // 3. Forcem les agulles locals a pintar-se separades al 25% i 75% a l'acte
+                .startSelectionWithLongPress(sIdx, eIdx);
             setState(() {
-              _draggingNeedle = 0; // Mode actiu post-longpress
-              _localStartIdx = startIdx;
-              _localEndIdx = endIdx;
-              _localGraphIdx =
-                  null; // Desactivem completament el mode single (taronja)
+              _draggingNeedle = 0;
+              _localStartIdx = sIdx;
+              _localEndIdx = eIdx;
+              _localGraphIdx = null;
             });
           },
-
           onTapUp: (details) {
             final x = details.localPosition.dx;
             final touchedStart = startX != null && (x - startX).abs() < 30;
             final touchedEnd = endX != null && (x - endX).abs() < 30;
-
             if (!touchedStart && !touchedEnd) {
               final idx = ChartLogic.calculateIndexFromX(x, width, globalDists);
-
               if (currentMode == SelectionMode.range) {
-                // Si fem un tap net fora, netegem el tram complet
                 ref.read(elevationSelectionProvider.notifier).clearSelection();
                 setState(() {
                   _localStartIdx = null;
@@ -237,21 +188,16 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
               setState(() => _draggingNeedle = -1);
             }
           },
-
-          // 🎛️ INICI DE L'ARROSSEGAMENT: Determina quina agulla o mode s'activa
           onPanDown: (details) {
             final x = details.localPosition.dx;
             final touchedStart = startX != null && (x - startX).abs() < 30;
             final touchedEnd = endX != null && (x - endX).abs() < 30;
-
             setState(() {
               if (touchedStart) {
-                _draggingNeedle = 1; // Dit sobre agulla d'Inici (Verd)
+                _draggingNeedle = 1;
               } else if (touchedEnd) {
-                _draggingNeedle = 2; // Dit sobre agulla de Final (Vermell)
+                _draggingNeedle = 2;
               } else {
-                // 🔥 RECUPERAT: Si es fa drag sobre el gràfic sense tocar cap agulla,
-                // destruïm la selecció de tram a l'acte i activem el "drag-simple-point" (taronja)
                 _draggingNeedle = 3;
                 final idx = ChartLogic.calculateIndexFromX(
                   x,
@@ -261,71 +207,71 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
                 _localStartIdx = null;
                 _localEndIdx = null;
                 _localGraphIdx = idx;
-
-                // Actualitzem Riverpod a l'acte perquè el mapa rebi el cercle taronja immediatament
                 ref
                     .read(elevationSelectionProvider.notifier)
                     .setSinglePoint(idx);
               }
             });
           },
-
-          // 🔄 MOVIMENT EN TEMPS REAL: Gestiona el throttle i l'intercanvi dinàmic d'agulles (Swap)
           onPanUpdate: (details) {
             if (_draggingNeedle == -1 || _draggingNeedle == 0) return;
-
             final x = details.localPosition.dx;
             final idx = ChartLogic.calculateIndexFromX(x, width, globalDists);
 
-            // 🟢 CAS A: ARROSSEGUEM L'EXTREM D'INICI (Verd)
+            // 1. ACTUALITZACIÓ LOCALS DE LES AGULLES (Sempre a màxima taxa de refresc)
             if (_draggingNeedle == 1) {
               final actualEnd = endIdx >= 0 ? endIdx : idx;
-
-              _updateSelectionThrottled(() {
-                setState(() {
-                  if (idx > actualEnd) {
-                    // 🔥 INTERCANVI TOTAL (Swap): Si passem de llarg del final,
-                    // l'inici vell es queda clavat com a nou final, el nou inici és on està el dit,
-                    // i canviem dinàmicament el rol del dit a l'agulla de final (_draggingNeedle = 2)
-                    _localStartIdx = actualEnd;
-                    _localEndIdx = idx;
-                    _draggingNeedle = 2;
-                  } else {
-                    _localStartIdx = idx;
-                    _localEndIdx = actualEnd;
-                  }
-                });
+              setState(() {
+                if (idx > actualEnd) {
+                  _localStartIdx = actualEnd;
+                  _localEndIdx = idx;
+                  _draggingNeedle =
+                      2; // Commuta a l'agulla de la dreta (anti-swap)
+                } else {
+                  _localStartIdx = idx;
+                  _localEndIdx = actualEnd;
+                }
               });
-            }
-            // 🟢 CAS B: ARROSSEGUEM L'EXTREM DE FINAL (Vermell)
-            else if (_draggingNeedle == 2) {
+            } else if (_draggingNeedle == 2) {
               final actualStart = startIdx >= 0 ? startIdx : idx;
-
-              _updateSelectionThrottled(() {
-                setState(() {
-                  if (idx < actualStart) {
-                    // 🔥 INTERCANVI TOTAL (Swap): Si anem per darrere de l'inici,
-                    // el final vell es queda clavat com a nou inici, el nou final és on està el dit,
-                    // i canviem dinàmicament el rol del dit a l'agulla d'inici (_draggingNeedle = 1)
-                    _localStartIdx = idx;
-                    _localEndIdx = actualStart;
-                    _draggingNeedle = 1;
-                  } else {
-                    _localStartIdx = actualStart;
-                    _localEndIdx = idx;
-                  }
-                });
+              setState(() {
+                if (idx < actualStart) {
+                  _localStartIdx = idx;
+                  _localEndIdx = actualStart;
+                  _draggingNeedle =
+                      1; // Commuta a l'agulla de l'esquerra (anti-swap)
+                } else {
+                  _localStartIdx = actualStart;
+                  _localEndIdx = idx;
+                }
+              });
+            } else if (_draggingNeedle == 3) {
+              setState(() {
+                _localGraphIdx = idx;
               });
             }
-            // 🟢 CAS C: MODE DRAG-SIMPLE-POINT ACTIVE (Taronja)
-            else if (_draggingNeedle == 3) {
-              _updateSelectionThrottled(() {
-                setState(() {
-                  _localGraphIdx = idx;
-                });
-              });
+
+            // 2. FILTRE THROTTLE: Notificació controlada a Riverpod cada 32ms
+            // Així les agulles van fines com la seda i evitem col·lapsar la CPU amb els desnivells
+            final now = DateTime.now();
+            if (now.difference(_lastThrottleTime).inMilliseconds >=
+                _throttleDurationMs) {
+              _lastThrottleTime = now;
+
+              if (_localStartIdx != null &&
+                  _localEndIdx != null &&
+                  _draggingNeedle != 3) {
+                ref
+                    .read(elevationSelectionProvider.notifier)
+                    .setManualRange(_localStartIdx!, _localEndIdx!);
+              } else if (_localGraphIdx != null && _draggingNeedle == 3) {
+                ref
+                    .read(elevationSelectionProvider.notifier)
+                    .setSinglePoint(_localGraphIdx!);
+              }
             }
           },
+
           onPanEnd: (_) {
             if (_localStartIdx != null &&
                 _localEndIdx != null &&
@@ -343,54 +289,52 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
           },
           onPanCancel: () => setState(() => _draggingNeedle = -1),
 
+          // 📐 EL NUCLI SÍNCRON: Eliminem el Padding exterior d'un sol component.
+          // Totes les 3 capes comparteixen exactament el mateix Positioned.fill horitzontal.
           child: Stack(
             children: [
               // Capa 1: El gràfic de línies de fons de FL Chart
               Positioned.fill(
-                child: Padding(
-                  padding: const EdgeInsets.only(
-                    top: SelectionPainter.topReserved,
-                  ),
-                  child: LineChart(
-                    _buildChartData(
-                      context: context,
-                      pastAlts: safePastAlts,
-                      pastDists: safePastDists,
-                      futureAlts: safeFutureAlts,
-                      futureDists: safeFutureDists,
-                      trackColor: widget.realColor,
-                      importedTrackColor: widget.importedColor,
-                      forcedMinY: forcedMinY,
-                      forcedMaxY: forcedMaxY,
-                      maxDist: maxDist,
-                    ),
+                child: LineChart(
+                  _buildChartData(
+                    context: context,
+                    pastAlts: safePastAlts,
+                    pastDists: safePastDists,
+                    futureAlts: safeFutureAlts,
+                    futureDists: safeFutureDists,
+                    trackColor: widget.realColor,
+                    importedTrackColor: widget.importedColor,
+                    // 🚀 UNITAT TOTAL: Enviem forcedMinY i forcedMaxY calculats amb exageració
+                    forcedMinY: forcedMinY,
+                    forcedMaxY: forcedMaxY,
+                    maxDist: maxDist,
+                    topReservedSize: globalTopReserved,
+                    bottomReservedSize: globalBottomReserved,
                   ),
                 ),
               ),
 
-              // Capa 2: El polígon de ressaltat degradat (Mode range seleccionat)
+              // Capa 2: El polígon de ressaltat degradat (Sincronia perfecta a sobre de la línia)
               if (startIdx >= 0 &&
                   endIdx >= 0 &&
                   currentMode == SelectionMode.range)
                 Positioned.fill(
-                  child: Padding(
-                    padding: const EdgeInsets.only(
-                      top: SelectionPainter.topReserved,
-                    ),
-                    child: CustomPaint(
-                      painter: RangeAreaPainter(
-                        startIndex: startIdx,
-                        endIndex: endIdx,
-                        distances: globalDists,
-                        altitudes: globalAlts,
-                        realPointsCount: safePastDists.length,
-                        trackColor: widget.realColor,
-                      ),
+                  child: CustomPaint(
+                    painter: RangeAreaPainter(
+                      startIndex: startIdx,
+                      endIndex: endIdx,
+                      distances: globalDists,
+                      altitudes: globalAlts,
+                      realPointsCount: safePastDists.length,
+                      trackColor: widget.realColor,
+                      topReserved: globalTopReserved, // 👈 Mateixos píxels
+                      bottomReserved:
+                          globalBottomReserved, // 👈 Mateixos píxels
                     ),
                   ),
                 ),
 
-              // Capa 3: Les agulles verticals, nodes geomètrics i bafarades
+              // Capa 3: Les agulles verticals, nodes geomètrics i bafarades (Sincronia perfecta)
               Positioned.fill(
                 child: CustomPaint(
                   painter: SelectionPainter(
@@ -411,6 +355,8 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
                         widget.importedWaypointGlobalDists,
                     recordedWaypointColor: AppColors.recordingTrackColor,
                     importedWaypointColor: AppColors.routeTrackColor,
+                    topReserved: globalTopReserved, // 👈 Mateixos píxels
+                    bottomReserved: globalBottomReserved, // 👈 Mateixos píxels
                   ),
                 ),
               ),
@@ -430,45 +376,50 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
     required Color trackColor,
     required Color importedTrackColor,
     required double forcedMinY,
-    required double forcedMaxY, // El valor que et ve calculat de Riverpod/State
+    required double forcedMaxY,
     required double maxDist,
+    required double topReservedSize, // 🚀 AFEGIT: Mida del coixí superior
+    required double bottomReservedSize, // Rebut síncronament des de la vista
   }) {
-    final colors = Theme.of(context).colorScheme;
-
-    // 🛡️ REBAIXA DE LA LÍNIA DEL GRÀFIC (LA CLAU DE L'ÈXIT):
-    // Calculem la diferència real d'altitud (diff) per saber el rang d'ajust
-    final double diffAlt = forcedMaxY - forcedMinY;
-
-    // Augmentem el sostre virtual un 25% extra sobre el forcedMaxY original.
-    // Això fa que la línia real del track d'fl_chart es comprimeixi cap avall,
-    // sincronitzant-se de forma simètrica amb les agulles que hem mogut abans!
-    final double adjustedMaxY =
-        forcedMaxY + (diffAlt > 0 ? diffAlt * 0.25 : 50.0);
-
     return LineChartData(
-      // 🛡️ MODIFICACIÓ: Passem el nou adjustedMaxY en lloc del vell forcedMaxY
       minY: forcedMinY,
-      maxY: adjustedMaxY,
+      maxY: forcedMaxY,
       minX: 0,
       maxX: maxDist,
       gridData: const FlGridData(show: false),
       borderData: FlBorderData(show: false),
+      clipData: const FlClipData.all(),
       extraLinesData: ExtraLinesData(
         horizontalLines: [
           HorizontalLine(y: forcedMinY, color: Colors.grey, strokeWidth: 1.5),
         ],
       ),
       titlesData: FlTitlesData(
-        topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        rightTitles: const AxisTitles(
-          sideTitles: SideTitles(showTitles: false),
+        // 🚀 RECTIFICACIÓ: Sincronitzem el sostre d'fl_chart amb els teus Painters utilitzant la mida reservada a dalt
+        topTitles: AxisTitles(
+          sideTitles: SideTitles(
+            showTitles: false,
+            reservedSize: topReservedSize,
+          ),
         ),
-        leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        rightTitles: const AxisTitles(
+          sideTitles: SideTitles(
+            showTitles: false,
+            reservedSize: 0, // 🟢 Forcem a ocupar 0px de marge dret
+          ),
+        ),
+        leftTitles: const AxisTitles(
+          sideTitles: SideTitles(
+            showTitles: false,
+            reservedSize: 0, // 🟢 Forcem a ocupar 0px de marge esquerre
+          ),
+        ),
+
         bottomTitles: AxisTitles(
           sideTitles: SideTitles(
             showTitles: true,
-            // REBAIXA AL BOTTOM mantinguda a 14 píxels
-            reservedSize: 14,
+            // Sincronitzem exactament amb els painters: mateixa mida reservada de baix
+            reservedSize: bottomReservedSize,
             interval: maxDist > 0 ? maxDist / 2 : 1.0,
             getTitlesWidget: (value, meta) {
               if (value > maxDist + 0.1) return const SizedBox();
@@ -481,7 +432,6 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
               final numberPart = parts.isNotEmpty ? parts[0] : fullText;
               final unitPart = parts.length > 1 ? parts[1] : '';
 
-              // Mantenim l'estil compacte en blanc que teníem d'or
               const textStyle = TextStyle(
                 color: Colors.white,
                 fontSize: 11,
@@ -489,8 +439,6 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
                 fontFamily: 'monospace',
               );
 
-              // Creem el pintor per calcular l'amplada real del text unificat COMPLET
-              // (número + espai + unitat) per fer el desplaçament horitzontal mil·limètric
               final String fullTextString = unitPart.isNotEmpty
                   ? "$numberPart $unitPart"
                   : numberPart;
@@ -499,20 +447,42 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
                 textDirection: TextDirection.ltr,
               )..layout();
 
-              // 🛡️ REAJUSTE D'ALINEACIÓ DE BORDES ANTI-TALLS:
-              // - El primer text es mou la meitat de la seva amplada cap a la dreta, més un coixí de 4px per separar-se del marge [INDEX].
-              // - L'últim text s'aparta la meitat de la seva amplada cap a l'esquerra, menys un coixí de 4px perquè s'arrimi de forma precisa [INDEX].
               double dx = 0;
               if (isFirst) {
                 dx = (tp.width / 2) + 4.0;
               } else if (isLast) {
                 dx = -(tp.width / 2) - 4.0;
               } else {
-                dx =
-                    -(tp.width /
-                        2); // Els del mig es queden centrats com sempre
+                dx = -(tp.width / 2);
               }
 
+              // 🟢 Si és el del mig, eliminem el translate i deixem que fl_chart apliqui
+              // el centrat absolut alineant el RichText al mig de la seva pròpia caixa.
+              if (!isFirst && !isLast) {
+                return SideTitleWidget(
+                  meta: meta,
+                  space: 2,
+                  child: RichText(
+                    textAlign:
+                        TextAlign.center, // 🟢 Clava el text a l'eix central
+                    text: TextSpan(
+                      children: [
+                        TextSpan(text: numberPart, style: textStyle),
+                        if (unitPart.isNotEmpty)
+                          TextSpan(
+                            text: " $unitPart",
+                            style: textStyle.copyWith(
+                              fontSize: 9,
+                              fontWeight: FontWeight.normal,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+
+              // Per a l'inici i el final mantenim el translate per evitar que es tallin a les vores
               return SideTitleWidget(
                 meta: meta,
                 space: 2,
@@ -548,7 +518,7 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
               (i) => FlSpot(pastDists[i], pastAlts[i]),
             ),
             isCurved: true,
-            curveSmoothness: 0.12,
+            curveSmoothness: 0.5,
             isStrokeCapRound: true,
             preventCurveOverShooting: true,
             color: trackColor,
@@ -558,7 +528,7 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
               show: true,
               color: trackColor.withAlpha(64),
               cutOffY: forcedMinY,
-              applyCutOffY: true,
+              applyCutOffY: false, // Desactivem el retall rígid inferior
             ),
           ),
         if (futureDists.isNotEmpty)
@@ -578,7 +548,7 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
               show: true,
               color: importedTrackColor.withAlpha(48),
               cutOffY: forcedMinY,
-              applyCutOffY: true,
+              applyCutOffY: false, // Desactivem el retall rígid inferior
             ),
           ),
       ],

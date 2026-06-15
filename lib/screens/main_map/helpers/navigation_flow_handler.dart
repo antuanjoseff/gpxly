@@ -14,7 +14,6 @@ class NavigationFlowHandler {
 
   NavigationFlowHandler({required this.ref, required this.context});
 
-  /// Autòmat de selecció de diàlegs GPX basat en l'estat de la navegació de Senda
   Future<void> openNavigationControl({
     required MapLibreMapController? mapController,
     required bool hasImportedTrack,
@@ -26,12 +25,16 @@ class NavigationFlowHandler {
     if (!hasImportedTrack) {
       action = "import";
     } else if (hasImportedTrack && !navigationState.isFollowing) {
-      action = await AppMessages.showPreNavigationDialog(context);
+      action = "follow";
     } else if (navigationState.isFollowing) {
-      action = await AppMessages.showActiveNavigationDialog(
-        context: context,
-        isFollowPaused: navigationState.isPaused,
-      );
+      final confirmStop = await AppMessages.showStopFollowingDialog(context);
+
+      if (confirmStop == true) {
+        action =
+            "stop_follow"; // Si confirma, l'autòmat de sota esborrarà el track i netejarà el mapa
+      } else {
+        return; // Si prem cancel·lar, aturem el flux i no fem res
+      }
     }
 
     if (action == null) return;
@@ -79,12 +82,9 @@ class NavigationFlowHandler {
         break;
 
       case "stop_follow":
-        final confirm = await AppMessages.showStopFollowingDialog(context);
-        if (confirm == true) {
-          ref.read(navigationProvider.notifier).stopFollowing();
-          ref.read(importedTrackProvider.notifier).clear();
-          ref.read(importedWaypointsProvider.notifier).clear();
-        }
+        ref.read(navigationProvider.notifier).stopFollowing();
+        ref.read(importedTrackProvider.notifier).clear();
+        ref.read(importedWaypointsProvider.notifier).clear();
         break;
     }
   }

@@ -23,8 +23,8 @@ class SelectionPainter extends CustomPainter {
   final Color recordedWaypointColor;
   final Color importedWaypointColor;
 
-  static const double bottomReserved = 16.0;
-  static const double topReserved = 10.0;
+  final double topReserved;
+  final double bottomReserved;
   static const double dotRadius = 5.0;
 
   SelectionPainter({
@@ -41,6 +41,8 @@ class SelectionPainter extends CustomPainter {
     required this.sliderEndNeedleColor,
     required this.recordedWaypointColor,
     required this.importedWaypointColor,
+    required this.topReserved,
+    required this.bottomReserved,
     this.recordedWaypointGlobalDists,
     this.importedWaypointGlobalDists,
   });
@@ -54,7 +56,9 @@ class SelectionPainter extends CustomPainter {
 
     final minAlt = altitudes.reduce((a, b) => a < b ? a : b);
     final maxAlt = altitudes.reduce((a, b) => a > b ? a : b);
-    final diff = maxAlt - minAlt;
+
+    // 🟢 UNIFICACIÓ COMPLETA: Afegim l'abs() per blindar el càlcul del desnivell
+    final diff = (maxAlt - minAlt).abs();
 
     double exaggeration = 1.0;
     if (diff < 30) {

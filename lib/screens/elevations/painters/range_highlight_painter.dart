@@ -5,13 +5,14 @@ class RangeHighlightPainter extends CustomPainter {
   final double? startX;
   final double? endX;
   final Color color;
-  final double bottomReserved; // Normalment 40, com al teu gràfic
+  final double bottomReserved;
 
+  // 🟢 CORREGIT: Marquem bottomReserved com a requerit pur i sense valors inventats
   RangeHighlightPainter({
     required this.startX,
     required this.endX,
     required this.color,
-    this.bottomReserved = 40,
+    required this.bottomReserved,
   });
 
   @override
@@ -48,8 +49,8 @@ class RangeAreaPainter extends CustomPainter {
   final Color trackColor;
 
   // Marquem les mateixes constants de reserva de dalt i baix que utilitza el SelectionPainter
-  static const double bottomReserved = 16.0;
-  static const double topReserved = 10.0;
+  final double topReserved;
+  final double bottomReserved;
 
   RangeAreaPainter({
     required this.startIndex,
@@ -58,6 +59,8 @@ class RangeAreaPainter extends CustomPainter {
     required this.altitudes,
     required this.realPointsCount,
     required this.trackColor,
+    required this.topReserved,
+    required this.bottomReserved,
   });
 
   @override
@@ -84,6 +87,7 @@ class RangeAreaPainter extends CustomPainter {
 
     final effectiveRange = diff < 50 ? 50 : diff;
     final minY = minAlt - (effectiveRange * 0.3 * exaggeration);
+
     final maxY = minY + (effectiveRange * 1.62 * exaggeration);
     final yRange = maxY - minY;
 
@@ -138,14 +142,7 @@ class RangeAreaPainter extends CustomPainter {
     final gradient = LinearGradient(
       begin: Alignment.topCenter,
       end: Alignment.bottomCenter,
-      colors: [
-        trackColor.withAlpha(
-          191,
-        ), // 👈 Molt més visible a la carena de la muntanya (75%)
-        trackColor.withAlpha(
-          38,
-        ), // 👈 Una mica més de presència a la base de les X (15%)
-      ],
+      colors: [trackColor.withAlpha(191), trackColor.withAlpha(38)],
     );
 
     final paint = Paint()
