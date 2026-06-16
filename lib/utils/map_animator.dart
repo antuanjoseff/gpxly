@@ -1,5 +1,6 @@
 // lib/utils/map_animator.dart
 import 'dart:async';
+import 'dart:math';
 
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:senda/models/track.dart';
@@ -19,12 +20,37 @@ class MapAnimator {
   MapAnimator(this.controller);
 
   // ─────────────────────────────────────────────────────────────
+  // 🛰️ 0. NOU CENTRE DE MAPA SEGONS PADDING INFERIOR
+  // ─────────────────────────────────────────────────────────────
+  LatLng _calculateOffsetTarget(LatLng position, double padding) {
+    // 1. Obtenim el zoom real actual de la càmera
+    final double currentZoom = controller.cameraPosition?.zoom ?? 14.0;
+
+    // 2. Calculem els píxels que volem desplaçar cap avall (la meitat de l'espai visible ocupat)
+    final double pixelsToMove = padding / 2;
+
+    // 3. Convertim la latitud de l'usuari a radiants per calcular el cosinus (escala Mercator)
+    final double latRadians = position.latitude * (pi / 180.0);
+
+    // 4. Mida geomètrica exacta: 1.40625 graus multiplicat per la deformació de la pantalla
+    final double degreesPerPixel =
+        (1.40625 * cos(latRadians)) / (1 << currentZoom.toInt());
+
+    // 5. Multipliquem els píxels de marge per l'escala final de graus
+    final double latOffset = pixelsToMove * degreesPerPixel;
+
+    // 6. Restem els graus exactes a la latitud per moure la càmera al sud
+    return LatLng(position.latitude - latOffset, position.longitude);
+  }
+
+  // ─────────────────────────────────────────────────────────────
   // 🛰️ 1. LLISCAMENT DEL CERCLE BLAU (Mantenim l'oient A del GPS)
   // ─────────────────────────────────────────────────────────────
-  void animateUserPosition(LatLng? newPos) {
+  void animateUserPosition(LatLng? newPos, {double bottomPadding = 0.0}) {
     if (newPos == null || isAnimating)
       return; // Si està corrent la gravació, el bucle unificat ja ho mourà
 
+    newPos = _calculateOffsetTarget(newPos, bottomPadding);
     if (_lastUserPos == null) {
       setUserLocationGeometry(controller, newPos.latitude, newPos.longitude);
       _lastUserPos = newPos;

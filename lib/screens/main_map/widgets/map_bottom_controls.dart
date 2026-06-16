@@ -52,13 +52,26 @@ class _MapBottomControlsState extends ConsumerState<MapBottomControls> {
     final importedTrack = ref.watch(importedTrackProvider);
     final currentDuration = ref.watch(timerProvider);
 
+    // Escoltem els punts registrats de la gravació en curs
+    final recordingPoints = ref.watch(
+      trackRecordingProvider.select((t) => t.points),
+    );
+
     final layout = LayoutUtils.fromContext(
       context,
       isChartCollapsed: widget.isChartCollapsed,
     );
 
+    // Condició per saber si hi ha un fitxer GPX de ruta importat
     final bool hasTrack =
         importedTrack != null && importedTrack.coordinates.isNotEmpty;
+
+    // Condició per saber si s'estan generant dades de gravació pròpia
+    final bool hasRecordingData =
+        recordingState != RecordingState.idle && recordingPoints.isNotEmpty;
+
+    // L'ElevationPanel és visible si disposem de dades de qualsevol de les dues línies
+    final bool showChartData = hasTrack || hasRecordingData;
 
     final bool isSubMenuOpen = _showRecordingSubMenu || _showNavigationSubMenu;
 
@@ -70,8 +83,8 @@ class _MapBottomControlsState extends ConsumerState<MapBottomControls> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // 📊 1. EL GRÀFIC D'ELEVACIONS (Manté el seu Listener intacte, clics i drags funcionen)
-          if (hasTrack && layout.isPanelActive)
+          // 📊 1. EL GRÀFIC D'ELEVACIONS (Actualitzat per obrir-se també durant la gravació lliure)
+          if (showChartData && layout.isPanelActive)
             Listener(
               behavior: HitTestBehavior.opaque,
               child: ElevationPanel(
@@ -82,6 +95,7 @@ class _MapBottomControlsState extends ConsumerState<MapBottomControls> {
                 onToggle: widget.onToggleChart,
               ),
             ),
+
           // 🧭 2. BAFARADA DE NAVEGACIÓ (Amb separació inferior forçada)
           if (_showNavigationSubMenu && hasTrack)
             Padding(
@@ -89,7 +103,6 @@ class _MapBottomControlsState extends ConsumerState<MapBottomControls> {
                 horizontal: AppDimensions.subMenuHorizontalPadding,
               ),
               child: Container(
-                // 🚀 AFEGIT: Separem la bafarada del menú de baix de forma controlada
                 margin: const EdgeInsets.only(
                   bottom: AppDimensions.verticalSpacing,
                 ),
@@ -125,7 +138,6 @@ class _MapBottomControlsState extends ConsumerState<MapBottomControls> {
                 horizontal: AppDimensions.subMenuHorizontalPadding,
               ),
               child: Container(
-                // 🚀 AFEGIT: Separem la bafarada del menú de baix de forma controlada
                 margin: const EdgeInsets.only(
                   bottom: AppDimensions.verticalSpacing,
                 ),

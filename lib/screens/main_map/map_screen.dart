@@ -29,6 +29,7 @@ import 'package:senda/providers/barometer_provider.dart';
 import 'package:senda/screens/main_map/widgets/map_app_bar.dart';
 import 'package:senda/screens/main_map/widgets/map_base_layer.dart';
 import 'package:senda/screens/main_map/widgets/map_bottom_controls.dart';
+import 'package:senda/screens/main_map/widgets/map_bottom_controls/layout_utils.dart';
 import 'package:senda/screens/main_map/widgets/map_top_controls.dart';
 import 'package:senda/screens/main_map/widgets/senda_brand_label.dart';
 import 'package:senda/theme/app_colors.dart';
@@ -43,6 +44,7 @@ import 'package:senda/services/hgt_service.dart';
 import 'package:senda/services/native_barometer_channel.dart';
 import 'package:senda/services/permissions_service.dart';
 import 'package:senda/services/recording_handler.dart';
+import 'package:senda/theme/app_dimensions.dart';
 import 'package:senda/ui/app_messages.dart';
 import 'package:senda/utils/color_extensions.dart';
 import 'package:senda/utils/map_animator.dart';
@@ -85,6 +87,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
   DateTime _lastMapUpdateTime = DateTime.fromMillisecondsSinceEpoch(0);
   static const int _mapThrottleMs = 32;
   late MapAnimator mapAnimator;
+  double _currentMapPadding = 0;
 
   @override
   void initState() {
@@ -411,7 +414,10 @@ class _MapScreenState extends ConsumerState<MapScreen>
     ref.listen<UserPosition?>(locationProvider, (prev, next) async {
       if (!styleInitialized || mapController == null || next == null) return;
 
-      mapAnimator.animateUserPosition(next.position);
+      mapAnimator.animateUserPosition(
+        next.position,
+        bottomPadding: _currentMapPadding,
+      );
 
       final ara = DateTime.now();
       if (ara.difference(_lastPrefsSave).inMinutes >= 5) {
@@ -749,6 +755,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   setState(() {
                     _isChartCollapsed = !_isChartCollapsed;
                   });
+                  _updateMapPaddingValue();
                 },
               ),
             ],
@@ -790,5 +797,34 @@ class _MapScreenState extends ConsumerState<MapScreen>
         ref.read(importedWaypointsProvider.notifier).clear();
         break;
     }
+  }
+
+  void _updateMapPaddingValue() {
+    if (!mounted) return;
+
+    final importedTrack = ref.read(importedTrackProvider);
+    final bool hasTrack =
+        importedTrack != null && importedTrack.coordinates.isNotEmpty;
+
+    final layout = LayoutUtils.fromContext(
+      context,
+      isChartCollapsed: _isChartCollapsed,
+    );
+
+    setState(() {
+      if (hasTrack && layout.isPanelActive) {
+        final double screenHeight = MediaQuery.of(context).size.height;
+        final double calculatedChartHeight =
+            screenHeight * AppDimensions.elevationChartHeightRatio;
+
+        _currentMapPadding =
+            calculatedChartHeight +
+            AppDimensions.menuBarHeight +
+            AppDimensions.mapSafetyPadding;
+      } else {
+        _currentMapPadding =
+            AppDimensions.menuBarHeight + MediaQuery.of(context).padding.bottom;
+      }
+    });
   }
 }
