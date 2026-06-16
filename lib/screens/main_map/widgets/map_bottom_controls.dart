@@ -49,6 +49,7 @@ class _MapBottomControlsState extends ConsumerState<MapBottomControls> {
       trackRecordingProvider.select((t) => t.recordingState),
     );
     final importedTrack = ref.watch(importedTrackProvider);
+    final currentDuration = ref.watch(timerProvider);
 
     final layout = LayoutUtils.fromContext(
       context,
@@ -65,100 +66,31 @@ class _MapBottomControlsState extends ConsumerState<MapBottomControls> {
       left: 0,
       right: 0,
       child: Stack(
-        clipBehavior: Clip.none,
         alignment: Alignment.bottomCenter,
+        clipBehavior: Clip
+            .none, // Permet que els submenús flotin cap amunt de forma lliure
         children: [
-          // 1. L'ElevationPanel flota al fons de l'Stack.
-          // Com que és condicional o usa la seva alçada dinàmica, no empeny el menú.
-          if (hasTrack && layout.isPanelActive)
-            ElevationPanel(
-              isVisible: layout.isPanelActive,
-              isCollapsed: widget.isChartCollapsed,
-              chartHeight: layout.chartHeight,
-              isSubMenuOpen: isSubMenuOpen,
-              onToggle: widget.onToggleChart,
-            ),
-
+          // 📊 1. EL BLOC DEL GRÀFIC I EL MENÚ PRINCIPAL (Sempre enganxats)
           Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // 1. Submenú de navegació (només si hi ha track)
-              if (_showNavigationSubMenu && hasTrack) ...[
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                  child: Center(
-                    child: NavigationSubMenu(
-                      navState: navState,
-                      hasTrack: hasTrack,
-                      onAction: (bool val) {
-                        widget.onOpenNavigationControl(val);
-                        setState(() {
-                          _showNavigationSubMenu = false;
-                        });
-                      },
-                      onClose: () =>
-                          setState(() => _showNavigationSubMenu = false),
-                    ),
+              // El gràfic d'elevacions amb el Listener de baix nivell per al drag
+              if (hasTrack && layout.isPanelActive)
+                Listener(
+                  behavior: HitTestBehavior.opaque,
+                  child: ElevationPanel(
+                    isVisible: layout.isPanelActive,
+                    isCollapsed: widget.isChartCollapsed,
+                    chartHeight: layout.chartHeight,
+                    isSubMenuOpen: isSubMenuOpen,
+                    onToggle: widget.onToggleChart,
                   ),
                 ),
-                const SizedBox(height: 12),
-              ],
 
-              // ⏱️ GESTIÓ EXCLUSIVA DE LA UX DE GRAVACIÓ
-              if (_showRecordingSubMenu &&
-                  recordingState != RecordingState.idle) ...[
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                  child: Center(
-                    child: RecordingSubMenu(
-                      state: recordingState,
-                      onAction: (String action) async {
-                        setState(() {
-                          _showRecordingSubMenu = false;
-                        });
+              // 🚀 ELIMINAT EL SIZEDBOX: Ara el gràfic i el MenuBar es toquen directament al píxel
 
-                        if (action == 'pause') {
-                          ref
-                              .read(trackRecordingProvider.notifier)
-                              .pauseRecording();
-                        } else if (action == 'resume') {
-                          ref
-                              .read(trackRecordingProvider.notifier)
-                              .resumeRecording();
-                        } else if (action == 'stop') {
-                          // Obrim el diàleg final vertical definit a AppMessages
-                          final result =
-                              await AppMessages.showStopRecordingDialog(
-                                context,
-                              );
-
-                          if (result == 'finish' || result == 'share') {
-                            // 🚀 OBTENIM LA DURADA ACTUAL: Llegim el proveïdor del cronòmetre tal com fas al teu notifier
-                            final currentDuration = ref.read(timerProvider);
-
-                            // Aturem la gravació passant-li el positional argument de tipus Duration requerit
-                            await ref
-                                .read(trackRecordingProvider.notifier)
-                                .stopRecording(currentDuration);
-
-                            if (result == 'share' && context.mounted) {
-                              AppMessages.showExportDialog(context);
-                            }
-
-                            ref.read(waypointsProvider.notifier).clear();
-                          }
-                        }
-                      },
-                      onClose: () =>
-                          setState(() => _showRecordingSubMenu = false),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-              ],
-
-              // 3. Menú principal inferior
+              // Barra de menú inferior principal (Sempre tanca la base)
               Padding(
                 padding: EdgeInsets.only(bottom: widget.systemBottomPadding),
                 child: MenuBar(
@@ -168,17 +100,15 @@ class _MapBottomControlsState extends ConsumerState<MapBottomControls> {
                   navState: navState,
                   hasTrack: hasTrack,
                   onRecordingTap: () {
-                    // IMPLEMENTACIÓ DEL NOU FLUX DE GRAVACIÓ:
                     if (recordingState == RecordingState.idle) {
-                      // CAS INITIAL: No escollit res. El primer clic inicia la gravació de cop.
                       setState(() {
                         _showRecordingSubMenu = false;
                         _showNavigationSubMenu = false;
                       });
-                      // Cridem directament la funció del pare per començar a gravar
-                      widget.onOpenRecordingControl();
+                      ref
+                          .read(trackRecordingProvider.notifier)
+                          .startRecording();
                     } else {
-                      // CAS GRAVANT o PAUSAT: Commuta l'obertura del submenú amb les accions de control
                       setState(() {
                         _showRecordingSubMenu = !_showRecordingSubMenu;
                         _showNavigationSubMenu = false;
@@ -204,6 +134,82 @@ class _MapBottomControlsState extends ConsumerState<MapBottomControls> {
               ),
             ],
           ),
+
+          // 🧭 2. LES BAFARADES FLOTANTS (Floten de forma independent sobre la base)
+          // Les posicionem desplaçades cap amunt exactament l'alçada del MenuBar (72px) per no trepitjar res
+          if (isSubMenuOpen)
+            Positioned(
+              bottom:
+                  72 +
+                  widget.systemBottomPadding +
+                  12, // Alçada de la barra + padding de seguretat + aire
+              left: 24,
+              right: 24,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (_showNavigationSubMenu && hasTrack)
+                    NavigationSubMenu(
+                      navState: navState,
+                      hasTrack: hasTrack,
+                      onAction: (bool val) {
+                        setState(() {
+                          _showNavigationSubMenu = false;
+                        });
+                        if (!navState.isFollowing) {
+                          widget.onHandleNavigationAction(
+                            val ? "follow" : "clear_imported",
+                          );
+                        } else {
+                          widget.onHandleNavigationAction(
+                            val ? "toggle_pause" : "stop_follow",
+                          );
+                        }
+                      },
+                      onClose: () =>
+                          setState(() => _showNavigationSubMenu = false),
+                    ),
+
+                  if (_showRecordingSubMenu &&
+                      recordingState != RecordingState.idle)
+                    RecordingSubMenu(
+                      state: recordingState,
+                      onAction: (String action) async {
+                        setState(() {
+                          _showRecordingSubMenu = false;
+                        });
+
+                        if (action == 'pause') {
+                          ref
+                              .read(trackRecordingProvider.notifier)
+                              .pauseRecording();
+                        } else if (action == 'resume') {
+                          ref
+                              .read(trackRecordingProvider.notifier)
+                              .resumeRecording();
+                        } else if (action == 'stop') {
+                          final result =
+                              await AppMessages.showStopRecordingDialog(
+                                context,
+                              );
+                          if (result == 'finish' || result == 'share') {
+                            final currentDuration = ref.read(timerProvider);
+                            await ref
+                                .read(trackRecordingProvider.notifier)
+                                .stopRecording(currentDuration);
+                            if (result == 'share' && context.mounted) {
+                              AppMessages.showExportDialog(context);
+                            }
+                            ref.read(waypointsProvider.notifier).clear();
+                          }
+                        }
+                      },
+                      onClose: () =>
+                          setState(() => _showRecordingSubMenu = false),
+                    ),
+                ],
+              ),
+            ),
         ],
       ),
     );

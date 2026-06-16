@@ -46,7 +46,6 @@ import 'package:senda/utils/map_layers.dart';
 import 'package:senda/widgets/compass_widget.dart';
 
 import 'package:senda/widgets/gps_accuracy_bars.dart';
-import 'package:senda/widgets/recording_status_bar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../notifiers/gps_speed_notifier.dart';

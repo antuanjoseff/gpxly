@@ -389,10 +389,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
     // ─────────────────────────────────────────────────────────────
     // 🛡️ RECEPTORS I OIENTS DE SEGUIDAMENT ASÍNCRON
-    // ─────────────────────────────────────────────────────────────
-    // ─────────────────────────────────────────────────────────────────────────
-    // 🛡️ RECEPTORS I OIENTS DE SEGUIDAMENT ASÍNCRON (A map_screen.dart)
-    // ─────────────────────────────────────────────────────────────────────────
     ref.listen(elevationSelectionProvider, (previous, next) {
       if (!_isChartCollapsed && mapController != null && styleInitialized) {
         final geom = MapGeometryHelper(ref: ref, mapController: mapController);

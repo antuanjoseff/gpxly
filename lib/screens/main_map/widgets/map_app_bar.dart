@@ -53,6 +53,7 @@ class MapAppBar extends ConsumerWidget implements PreferredSizeWidget {
           trackRecordingProvider.select((t) => t.recordingState),
         ),
         duration: ref.watch(timerProvider),
+        contentColor: Colors.white, // Sempre blanc pur obligatori [INDEX]
       ),
 
       actions: [

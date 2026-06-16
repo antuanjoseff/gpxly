@@ -1,1 +1,1 @@
-const double kElevationChartHeightRatio = 0.15;
+const double kElevationChartHeightRatio = 0.20;
