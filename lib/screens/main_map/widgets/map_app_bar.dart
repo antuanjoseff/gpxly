@@ -7,7 +7,6 @@ import 'package:senda/notifiers/location_notifier.dart';
 import 'package:senda/notifiers/recording_notifier.dart';
 import 'package:senda/notifiers/timer_notifier.dart';
 import 'package:senda/screens/settings/tabs/alarm_settings_tab.dart';
-import 'package:senda/services/altitude_logger.dart';
 import 'package:senda/theme/app_colors.dart';
 import 'package:senda/widgets/gps_accuracy_bars.dart';
 import 'package:senda/widgets/recording_status_bar.dart';

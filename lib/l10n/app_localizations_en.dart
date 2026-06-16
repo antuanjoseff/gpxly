@@ -261,7 +261,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gpxFilenameHint => 'Enter the file name';
 
   @override
-  String get recording => 'RECORDING';
+  String get recording => 'Recording...';
 
   @override
   String get paused => 'PAUSED';
@@ -578,4 +578,73 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get demLimitReached => 'Limit reached. Delete an old cell to download a new one.';
+
+  @override
+  String get record => 'Record';
+
+  @override
+  String get recordPaused => 'Paused';
+
+  @override
+  String get recordStart => 'Start recording';
+
+  @override
+  String get recordPause => 'Pause';
+
+  @override
+  String get recordResume => 'Resume';
+
+  @override
+  String get recordStop => 'Stop';
+
+  @override
+  String get navigationLoadTrack => 'Load track';
+
+  @override
+  String get navigationFollow => 'Follow';
+
+  @override
+  String get navigationFollowing => 'Following...';
+
+  @override
+  String get navigationPaused => 'Paused';
+
+  @override
+  String get navigationStart => 'Start';
+
+  @override
+  String get navigationCancel => 'Cancel';
+
+  @override
+  String get navigationStop => 'Stop';
+
+  @override
+  String get menuProfile => 'Profile';
+
+  @override
+  String get menuSettings => 'Settings';
+
+  @override
+  String get submenuImportGpx => 'Import GPX';
+
+  @override
+  String get submenuCancel => 'Cancel';
+
+  @override
+  String get submenuStop => 'Stop';
+
+  @override
+  String get submenuPause => 'Pause';
+
+  @override
+  String get submenuResume => 'Resume';
+
+  @override
+  String get submenuFollowingPause => 'Pause';
+
+  @override
+  String get submenuFollowingResume => 'Resume';
+
+  @override
+  String get submenuFollowingStop => 'Stop';
 }

@@ -604,7 +604,7 @@ abstract class AppLocalizations {
   /// No description provided for @recording.
   ///
   /// In en, this message translates to:
-  /// **'RECORDING'**
+  /// **'Recording...'**
   String get recording;
 
   /// No description provided for @paused.
@@ -1230,6 +1230,144 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Limit reached. Delete an old cell to download a new one.'**
   String get demLimitReached;
+
+  /// No description provided for @record.
+  ///
+  /// In en, this message translates to:
+  /// **'Record'**
+  String get record;
+
+  /// No description provided for @recordPaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Paused'**
+  String get recordPaused;
+
+  /// No description provided for @recordStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start recording'**
+  String get recordStart;
+
+  /// No description provided for @recordPause.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get recordPause;
+
+  /// No description provided for @recordResume.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume'**
+  String get recordResume;
+
+  /// No description provided for @recordStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get recordStop;
+
+  /// No description provided for @navigationLoadTrack.
+  ///
+  /// In en, this message translates to:
+  /// **'Load track'**
+  String get navigationLoadTrack;
+
+  /// No description provided for @navigationFollow.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow'**
+  String get navigationFollow;
+
+  /// No description provided for @navigationFollowing.
+  ///
+  /// In en, this message translates to:
+  /// **'Following...'**
+  String get navigationFollowing;
+
+  /// No description provided for @navigationPaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Paused'**
+  String get navigationPaused;
+
+  /// No description provided for @navigationStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get navigationStart;
+
+  /// No description provided for @navigationCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get navigationCancel;
+
+  /// No description provided for @navigationStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get navigationStop;
+
+  /// No description provided for @menuProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get menuProfile;
+
+  /// No description provided for @menuSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get menuSettings;
+
+  /// No description provided for @submenuImportGpx.
+  ///
+  /// In en, this message translates to:
+  /// **'Import GPX'**
+  String get submenuImportGpx;
+
+  /// No description provided for @submenuCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get submenuCancel;
+
+  /// No description provided for @submenuStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get submenuStop;
+
+  /// No description provided for @submenuPause.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get submenuPause;
+
+  /// No description provided for @submenuResume.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume'**
+  String get submenuResume;
+
+  /// No description provided for @submenuFollowingPause.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get submenuFollowingPause;
+
+  /// No description provided for @submenuFollowingResume.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume'**
+  String get submenuFollowingResume;
+
+  /// No description provided for @submenuFollowingStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get submenuFollowingStop;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -739,7 +739,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 onAddWaypoint: () => _onAddWaypoint(context, ref),
               ),
 
-              // 🟢 CANVI 1: Passem el MapBottomControls AQUÍ dalt.
               // Això assegura que la nansa es dibuixi en la seva pròpia capa independent de fons.
               MapBottomControls(
                 isChartCollapsed: _isChartCollapsed,
@@ -765,6 +764,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
   // 🏁 EXECUTOR RECEPTOR DE LA MÀQUINA D'ESTATS SEQÜENCIAL DE SENDA
   void _handleSendaNavigationAction(String? action) {
+    print('action $action');
     if (action == null) return;
 
     switch (action) {
@@ -775,7 +775,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
         break;
 
       case "clear_imported":
-        // 🚀 AFEGIT: Netegem també el panell d'elevacions de fons si l'usuari descarta el track importat
         ref.read(elevationSelectionProvider.notifier).clearSelection();
         ref.read(importedTrackProvider.notifier).clear();
         ref.read(importedWaypointsProvider.notifier).clear();

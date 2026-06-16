@@ -240,6 +240,37 @@
 "demCellDownloaded": "Cèl·la descarregada en local",
 "demCellAvailable": "Cèl·la disponible per descarregar",
 "demDeleteConfirm": "Vols eliminar aquesta cèl·la del disc?",
-"demLimitReached": "Sostre assolit. Elimina una cèl·la antiga per baixar-ne una de nova."
+"demLimitReached": "Sostre assolit. Elimina una cèl·la antiga per baixar-ne una de nova.",
+
+"record": "Gravar",
+"recording": "Gravant...",
+"recordPaused": "Pausat",
+"recordStart": "Iniciar gravació",
+"recordPause": "Pausar",
+"recordResume": "Reprendre",
+"recordStop": "Finalitzar",
+
+"navigationLoadTrack": "Carregar track",
+"navigationFollow": "Seguir",
+"navigationFollowing": "Seguint...",
+"navigationPaused": "Pausat",
+"navigationStart": "Iniciar",
+"navigationCancel": "Cancel·lar",
+"navigationStop": "Finalitzar",
+
+"menuProfile": "Perfil",
+"menuSettings": "Ajustos",
+
+"submenuImportGpx": "Importar GPX",
+
+"submenuCancel": "Cancel·lar",
+"submenuStop": "Finalitzar",
+
+"submenuPause": "Pausar",
+"submenuResume": "Reprendre",
+
+"submenuFollowingPause": "Pausar",
+"submenuFollowingResume": "Reprendre",
+"submenuFollowingStop": "Finalitzar"
 }
 

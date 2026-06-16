@@ -239,6 +239,37 @@
 "demCellDownloaded": "Celda descargada en local",
 "demCellAvailable": "Celda disponible para descargar",
 "demDeleteConfirm": "¿Quieres eliminar esta celda del disco?",
-"demLimitReached": "Techo alcanzado. Elimina una celda antigua para bajar una nueva."
+"demLimitReached": "Techo alcanzado. Elimina una celda antigua para bajar una nueva.",
+
+"record": "Grabar",
+"recording": "Grabando...",
+"recordPaused": "Pausado",
+"recordStart": "Iniciar grabación",
+"recordPause": "Pausar",
+"recordResume": "Reanudar",
+"recordStop": "Finalizar",
+
+"navigationLoadTrack": "Cargar track",
+"navigationFollow": "Seguir",
+"navigationFollowing": "Siguiendo...",
+"navigationPaused": "Pausado",
+"navigationStart": "Iniciar",
+"navigationCancel": "Cancelar",
+"navigationStop": "Finalizar",
+
+"menuProfile": "Perfil",
+"menuSettings": "Ajustes",
+
+"submenuImportGpx": "Importar GPX",
+
+"submenuCancel": "Cancelar",
+"submenuStop": "Finalizar",
+
+"submenuPause": "Pausar",
+"submenuResume": "Reanudar",
+
+"submenuFollowingPause": "Pausar",
+"submenuFollowingResume": "Reanudar",
+"submenuFollowingStop": "Finalizar"
 }
 

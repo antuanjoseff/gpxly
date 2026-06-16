@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/notifiers/location_notifier.dart';
 import 'package:senda/notifiers/permissions_notifier.dart';
 import 'package:senda/screens/main_map/map_screen.dart';
-// 🔥 AFEGIT: Importem el CogService per poder inicialitzar l'índex de cèl·les
 import 'package:senda/services/cog_service.dart';
 import 'package:senda/theme/app_theme.dart';
 
