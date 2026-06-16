@@ -8,10 +8,10 @@ import 'package:senda/notifiers/remaining_track_notifier.dart';
 import 'package:senda/notifiers/track_settings_notifier.dart';
 import 'package:senda/notifiers/waypoints_imported_notifier.dart';
 import 'package:senda/notifiers/waypoints_recorded_notifier.dart';
-import 'package:senda/screens/elevations/constants/chart_constants.dart';
 import 'package:senda/screens/elevations/widgets/elevation_chart_widget.dart';
 import 'package:senda/notifiers/elevation_selection_provider.dart';
 import 'package:senda/theme/app_colors.dart';
+import 'package:senda/theme/app_dimensions.dart';
 import 'package:senda/utils/distance_utils.dart';
 
 class EmbeddedElevationProfile extends ConsumerStatefulWidget {
@@ -196,8 +196,9 @@ class _EmbeddedElevationProfileState
     final String safeSpeedStr = avgSpeedStr.replaceAll(" km/h", "kmh");
 
     final double screenHeight = MediaQuery.of(context).size.height;
-    final double chartHeight = (screenHeight * kElevationChartHeightRatio)
-        .roundToDouble();
+    final double chartHeight =
+        (screenHeight * AppDimensions.elevationChartHeightRatio)
+            .roundToDouble();
     const double handleHeight = 36.0;
 
     // 🟢 LA MATEMÀTICA ASIMÈTRICA:

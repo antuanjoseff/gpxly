@@ -64,7 +64,7 @@ class NavigationSubMenu extends ConsumerWidget {
                 ),
                 onPressed: () {
                   onClose();
-                  onAction(true);
+                  onAction(true); // Manté true per començar (Demanarà permisos)
                 },
               ),
             ),
@@ -77,7 +77,9 @@ class NavigationSubMenu extends ConsumerWidget {
                 ),
                 onPressed: () {
                   onClose();
-                  onAction(true);
+                  onAction(
+                    false,
+                  ); // 🚀 CORREGIT: Ara envia false (Neteja el track sense demanar permisos)
                 },
               ),
             ),
@@ -114,7 +116,9 @@ class NavigationSubMenu extends ConsumerWidget {
                 ),
                 onPressed: () {
                   onClose();
-                  onAction(true);
+                  onAction(
+                    false,
+                  ); // 🚀 CORREGIT: Ara envia false (Atura el seguiment correctament)
                 },
               ),
             ),

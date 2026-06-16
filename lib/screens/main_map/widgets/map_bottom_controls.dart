@@ -6,6 +6,7 @@ import 'package:senda/notifiers/navigation_notifier.dart';
 import 'package:senda/notifiers/recording_notifier.dart';
 import 'package:senda/notifiers/timer_notifier.dart';
 import 'package:senda/notifiers/waypoints_recorded_notifier.dart';
+import 'package:senda/theme/app_dimensions.dart';
 import 'package:senda/ui/app_messages.dart';
 
 import 'map_bottom_controls/layout_utils.dart';
@@ -65,151 +66,147 @@ class _MapBottomControlsState extends ConsumerState<MapBottomControls> {
       bottom: 0,
       left: 0,
       right: 0,
-      child: Stack(
-        alignment: Alignment.bottomCenter,
-        clipBehavior: Clip
-            .none, // Permet que els submenús flotin cap amunt de forma lliure
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // 📊 1. EL BLOC DEL GRÀFIC I EL MENÚ PRINCIPAL (Sempre enganxats)
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // El gràfic d'elevacions amb el Listener de baix nivell per al drag
-              if (hasTrack && layout.isPanelActive)
-                Listener(
-                  behavior: HitTestBehavior.opaque,
-                  child: ElevationPanel(
-                    isVisible: layout.isPanelActive,
-                    isCollapsed: widget.isChartCollapsed,
-                    chartHeight: layout.chartHeight,
-                    isSubMenuOpen: isSubMenuOpen,
-                    onToggle: widget.onToggleChart,
-                  ),
-                ),
-
-              // 🚀 ELIMINAT EL SIZEDBOX: Ara el gràfic i el MenuBar es toquen directament al píxel
-
-              // Barra de menú inferior principal (Sempre tanca la base)
-              Padding(
-                padding: EdgeInsets.only(bottom: widget.systemBottomPadding),
-                child: MenuBar(
-                  isChartCollapsed: widget.isChartCollapsed,
-                  isPanelActive: layout.isPanelActive,
-                  recordingState: recordingState,
-                  navState: navState,
-                  hasTrack: hasTrack,
-                  onRecordingTap: () {
-                    if (recordingState == RecordingState.idle) {
-                      setState(() {
-                        _showRecordingSubMenu = false;
-                        _showNavigationSubMenu = false;
-                      });
-                      ref
-                          .read(trackRecordingProvider.notifier)
-                          .startRecording();
-                    } else {
-                      setState(() {
-                        _showRecordingSubMenu = !_showRecordingSubMenu;
-                        _showNavigationSubMenu = false;
-                      });
-                    }
-                  },
-                  onNavigationTap: () {
-                    if (!hasTrack) {
-                      setState(() {
-                        _showNavigationSubMenu = false;
-                        _showRecordingSubMenu = false;
-                      });
-                      widget.onOpenNavigationControl(false);
-                    } else {
-                      setState(() {
-                        _showNavigationSubMenu = !_showNavigationSubMenu;
-                        _showRecordingSubMenu = false;
-                      });
-                    }
-                  },
-                  onToggleChart: widget.onToggleChart,
-                ),
-              ),
-            ],
-          ),
-
-          // 🧭 2. LES BAFARADES FLOTANTS (Floten de forma independent sobre la base)
-          // Les posicionem desplaçades cap amunt exactament l'alçada del MenuBar (72px) per no trepitjar res
-          if (isSubMenuOpen)
-            Positioned(
-              bottom:
-                  72 +
-                  widget.systemBottomPadding +
-                  12, // Alçada de la barra + padding de seguretat + aire
-              left: 24,
-              right: 24,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (_showNavigationSubMenu && hasTrack)
-                    NavigationSubMenu(
-                      navState: navState,
-                      hasTrack: hasTrack,
-                      onAction: (bool val) {
-                        setState(() {
-                          _showNavigationSubMenu = false;
-                        });
-                        if (!navState.isFollowing) {
-                          widget.onHandleNavigationAction(
-                            val ? "follow" : "clear_imported",
-                          );
-                        } else {
-                          widget.onHandleNavigationAction(
-                            val ? "toggle_pause" : "stop_follow",
-                          );
-                        }
-                      },
-                      onClose: () =>
-                          setState(() => _showNavigationSubMenu = false),
-                    ),
-
-                  if (_showRecordingSubMenu &&
-                      recordingState != RecordingState.idle)
-                    RecordingSubMenu(
-                      state: recordingState,
-                      onAction: (String action) async {
-                        setState(() {
-                          _showRecordingSubMenu = false;
-                        });
-
-                        if (action == 'pause') {
-                          ref
-                              .read(trackRecordingProvider.notifier)
-                              .pauseRecording();
-                        } else if (action == 'resume') {
-                          ref
-                              .read(trackRecordingProvider.notifier)
-                              .resumeRecording();
-                        } else if (action == 'stop') {
-                          final result =
-                              await AppMessages.showStopRecordingDialog(
-                                context,
-                              );
-                          if (result == 'finish' || result == 'share') {
-                            final currentDuration = ref.read(timerProvider);
-                            await ref
-                                .read(trackRecordingProvider.notifier)
-                                .stopRecording(currentDuration);
-                            if (result == 'share' && context.mounted) {
-                              AppMessages.showExportDialog(context);
-                            }
-                            ref.read(waypointsProvider.notifier).clear();
-                          }
-                        }
-                      },
-                      onClose: () =>
-                          setState(() => _showRecordingSubMenu = false),
-                    ),
-                ],
+          // 📊 1. EL GRÀFIC D'ELEVACIONS (Manté el seu Listener intacte, clics i drags funcionen)
+          if (hasTrack && layout.isPanelActive)
+            Listener(
+              behavior: HitTestBehavior.opaque,
+              child: ElevationPanel(
+                isVisible: layout.isPanelActive,
+                isCollapsed: widget.isChartCollapsed,
+                chartHeight: layout.chartHeight,
+                isSubMenuOpen: isSubMenuOpen,
+                onToggle: widget.onToggleChart,
               ),
             ),
+          // 🧭 2. BAFARADA DE NAVEGACIÓ (Amb separació inferior forçada)
+          if (_showNavigationSubMenu && hasTrack)
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppDimensions.subMenuHorizontalPadding,
+              ),
+              child: Container(
+                // 🚀 AFEGIT: Separem la bafarada del menú de baix de forma controlada
+                margin: const EdgeInsets.only(
+                  bottom: AppDimensions.verticalSpacing,
+                ),
+                child: Center(
+                  child: NavigationSubMenu(
+                    navState: navState,
+                    hasTrack: hasTrack,
+                    onAction: (bool val) {
+                      setState(() {
+                        _showNavigationSubMenu = false;
+                      });
+                      if (!navState.isFollowing) {
+                        widget.onHandleNavigationAction(
+                          val ? "follow" : "clear_imported",
+                        );
+                      } else {
+                        widget.onHandleNavigationAction(
+                          val ? "toggle_pause" : "stop_follow",
+                        );
+                      }
+                    },
+                    onClose: () =>
+                        setState(() => _showNavigationSubMenu = false),
+                  ),
+                ),
+              ),
+            ),
+
+          // ⏱️ 3. BAFARADA DE GRAVACIÓ (Amb separació inferior forçada)
+          if (_showRecordingSubMenu && recordingState != RecordingState.idle)
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppDimensions.subMenuHorizontalPadding,
+              ),
+              child: Container(
+                // 🚀 AFEGIT: Separem la bafarada del menú de baix de forma controlada
+                margin: const EdgeInsets.only(
+                  bottom: AppDimensions.verticalSpacing,
+                ),
+                child: Center(
+                  child: RecordingSubMenu(
+                    state: recordingState,
+                    onAction: (String action) async {
+                      setState(() {
+                        _showRecordingSubMenu = false;
+                      });
+
+                      if (action == 'pause') {
+                        ref
+                            .read(trackRecordingProvider.notifier)
+                            .pauseRecording();
+                      } else if (action == 'resume') {
+                        ref
+                            .read(trackRecordingProvider.notifier)
+                            .resumeRecording();
+                      } else if (action == 'stop') {
+                        final result =
+                            await AppMessages.showStopRecordingDialog(context);
+                        if (result == 'finish' || result == 'share') {
+                          final currentDuration = ref.read(timerProvider);
+                          await ref
+                              .read(trackRecordingProvider.notifier)
+                              .stopRecording(currentDuration);
+                          if (result == 'share' && context.mounted) {
+                            AppMessages.showExportDialog(context);
+                          }
+                          ref.read(waypointsProvider.notifier).clear();
+                        }
+                      }
+                    },
+                    onClose: () =>
+                        setState(() => _showRecordingSubMenu = false),
+                  ),
+                ),
+              ),
+            ),
+
+          // 🎛️ 4. BARRA DE MENÚ INFERIOR PRINCIPAL (Tanca la base)
+          Padding(
+            padding: EdgeInsets.only(bottom: widget.systemBottomPadding),
+            child: MenuBar(
+              isChartCollapsed: widget.isChartCollapsed,
+              isPanelActive: layout.isPanelActive,
+              recordingState: recordingState,
+              navState: navState,
+              hasTrack: hasTrack,
+              onRecordingTap: () {
+                if (recordingState == RecordingState.idle) {
+                  setState(() {
+                    _showRecordingSubMenu = false;
+                    _showNavigationSubMenu = false;
+                  });
+                  ref.read(trackRecordingProvider.notifier).startRecording();
+                } else {
+                  setState(() {
+                    _showRecordingSubMenu = !_showRecordingSubMenu;
+                    _showNavigationSubMenu = false;
+                  });
+                }
+              },
+              onNavigationTap: () {
+                if (!hasTrack) {
+                  setState(() {
+                    _showNavigationSubMenu = false;
+                    _showRecordingSubMenu = false;
+                  });
+                  widget.onOpenNavigationControl(false);
+                } else {
+                  setState(() {
+                    _showNavigationSubMenu = !_showNavigationSubMenu;
+                    _showRecordingSubMenu = false;
+                  });
+                }
+              },
+              onToggleChart: widget.onToggleChart,
+            ),
+          ),
         ],
       ),
     );

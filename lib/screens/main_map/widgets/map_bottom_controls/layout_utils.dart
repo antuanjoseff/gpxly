@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:senda/screens/elevations/constants/chart_constants.dart';
+import 'package:senda/theme/app_dimensions.dart';
 
 class LayoutUtils {
   final double chartHeight;
@@ -17,7 +17,7 @@ class LayoutUtils {
     required bool isChartCollapsed,
   }) {
     final screenHeight = MediaQuery.of(context).size.height;
-    final chartHeight = screenHeight * kElevationChartHeightRatio;
+    final chartHeight = screenHeight * AppDimensions.elevationChartHeightRatio;
 
     final maxStackHeight = isChartCollapsed
         ? (64.0 + MediaQuery.of(context).padding.bottom + 60.0)
