@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart'; // 🚀 AFEGIT
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/models/navigation_state.dart';
 import 'package:senda/models/track.dart';
 import 'package:senda/notifiers/timer_notifier.dart';
+import 'package:senda/notifiers/recording_notifier.dart';
+import 'package:senda/notifiers/location_notifier.dart';
 import 'package:senda/screens/settings/settings_screen.dart';
 import 'package:senda/theme/app_colors.dart';
 import 'package:senda/l10n/app_localizations.dart';
-// Importem el fitxer on tenim el giny del cronòmetre independent
 import 'package:senda/widgets/recording_status_bar.dart';
 import 'menu_tab.dart';
 
-// 🚀 CANVIAT: De StatelessWidget a ConsumerWidget per poder llegir Riverpod
 class MenuBar extends ConsumerWidget {
   final bool isChartCollapsed;
   final bool isPanelActive;
@@ -35,14 +35,23 @@ class MenuBar extends ConsumerWidget {
   });
 
   @override
-  // 🚀 AFEGIT: El paràmetre WidgetRef ref al mètode build
   Widget build(BuildContext context, WidgetRef ref) {
     final t = AppLocalizations.of(context)!;
-
-    // 🚀 LLEGIM EL CRONÒMETRE: S'actualitzarà automàticament cada segon
     final currentDuration = ref.watch(timerProvider);
 
-    // Recording: Configuració inicial per defecte (Estat None / Idle)
+    final recordingPoints = ref.watch(
+      trackRecordingProvider.select((t) => t.points),
+    );
+    final bool isRecording =
+        recordingState == RecordingState.recording ||
+        recordingState == RecordingState.paused;
+    final bool hasRecordingData = isRecording && recordingPoints.isNotEmpty;
+
+    final bool isProfileAvailable = hasTrack || hasRecordingData;
+
+    final isRunning = ref.watch(locationProvider.notifier).isSimulationRunning;
+    final isPaused = ref.watch(locationProvider.notifier).isSimulationPaused;
+
     Widget recordingWidget = MenuTab(
       icon: Icons.fiber_manual_record_outlined,
       label: t.record,
@@ -50,14 +59,13 @@ class MenuBar extends ConsumerWidget {
       onTap: onRecordingTap,
     );
 
-    // 🚀 DISSENY CORREGIT: Icona a dalt i el temps a sota dins d'una Card compacta
     if (recordingState == RecordingState.recording ||
         recordingState == RecordingState.paused) {
-      final bool isRecording = recordingState == RecordingState.recording;
-      final Color accentColor = isRecording
+      final bool isRecordingActive = recordingState == RecordingState.recording;
+      final Color accentColor = isRecordingActive
           ? Colors.red.shade700
           : Colors.green.shade700;
-      final IconData currentIcon = isRecording
+      final IconData currentIcon = isRecordingActive
           ? Icons.fiber_manual_record
           : Icons.pause_circle_filled_rounded;
 
@@ -65,23 +73,14 @@ class MenuBar extends ConsumerWidget {
         onTap: onRecordingTap,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize:
-              MainAxisSize.min, // Ocupa el mínim espai vertical possible
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // 1. Icona superior alineada amb la resta de la barra
-            Icon(
-              currentIcon,
-              color: accentColor,
-              size: 24, // Mida estàndard de les icones del teu menú
-            ),
-            const SizedBox(height: 4), // Marge mínim entre icona i targeta
-            // 2. El temps de gravació a sota amb forma de Card blanca super compacta
+            Icon(currentIcon, color: accentColor, size: 24),
+            const SizedBox(height: 4),
             Container(
               decoration: BoxDecoration(
-                color: Colors.white, // Fons blanc per a la targeta
-                borderRadius: BorderRadius.circular(
-                  6,
-                ), // Cantonades arrodonides d'estil Card
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(6),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withAlpha(20),
@@ -90,7 +89,6 @@ class MenuBar extends ConsumerWidget {
                   ),
                 ],
               ),
-              // Padding vertical reduït al mínim (2 píxels) i horitzontal just (6 píxels)
               padding: const EdgeInsets.symmetric(
                 vertical: 2.0,
                 horizontal: 6.0,
@@ -98,10 +96,9 @@ class MenuBar extends ConsumerWidget {
               child: TrackDurationTimer(
                 state: recordingState,
                 duration: currentDuration,
-                color: accentColor, // Text adaptat (vermell o verd)
-                fontSize:
-                    11, // Mida petita ideal per a l'espai d'una etiqueta de menú
-                showIcon: false, // Amaguem la icona interna del temporitzador
+                color: accentColor,
+                fontSize: 11,
+                showIcon: false,
               ),
             ),
           ],
@@ -109,7 +106,6 @@ class MenuBar extends ConsumerWidget {
       );
     }
 
-    // Navigation
     String navigationLabel = t.navigationLoadTrack;
     IconData navigationIcon = Icons.file_upload_outlined;
 
@@ -125,6 +121,17 @@ class MenuBar extends ConsumerWidget {
           : Icons.explore;
     }
 
+    Color profileIconColor = Colors.white.withAlpha(60);
+    if (isProfileAvailable) {
+      if (isChartCollapsed) {
+        profileIconColor = Colors.white.withAlpha(200);
+      } else {
+        profileIconColor = isRunning
+            ? (isPaused ? Colors.blue : Colors.orange)
+            : Colors.amber;
+      }
+    }
+
     return Container(
       color: AppColors.primary,
       child: Container(
@@ -136,7 +143,6 @@ class MenuBar extends ConsumerWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            // 🚀 1. PESTANYA DE GRAVACIÓ: Ara és dinàmica (MenuTab o el cronòmetre customitzat)
             Expanded(child: recordingWidget),
             const VerticalDivider(color: Colors.white12),
 
@@ -151,15 +157,16 @@ class MenuBar extends ConsumerWidget {
             const VerticalDivider(color: Colors.white12),
 
             Expanded(
-              child: MenuTab(
-                icon: isChartCollapsed
-                    ? Icons.landscape_outlined
-                    : Icons.landscape_rounded,
-                label: t.menuProfile,
-                iconColor: !isPanelActive
-                    ? Colors.white24
-                    : (isChartCollapsed ? Colors.white70 : Colors.greenAccent),
-                onTap: !isPanelActive ? null : onToggleChart,
+              child: AbsorbPointer(
+                absorbing: !isProfileAvailable,
+                child: MenuTab(
+                  icon: isChartCollapsed
+                      ? Icons.landscape_outlined
+                      : Icons.landscape_rounded,
+                  label: t.menuProfile,
+                  iconColor: profileIconColor,
+                  onTap: isProfileAvailable ? onToggleChart : null,
+                ),
               ),
             ),
             const VerticalDivider(color: Colors.white12),
