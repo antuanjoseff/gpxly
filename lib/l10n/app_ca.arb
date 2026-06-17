@@ -9,7 +9,7 @@
   "longPressToFinish": "Mantén premut per finalitzar la gravació",
 
   "gpsDisabledTitle": "GPS desactivat",
-  "gpsDisabledMessage": "El GPS està desactivat. Vols activar-lo ara?",
+  "gpsDisabledMessage": "GPS desactivat",
 
   "cancel": "CANCEL·LAR",
   "close": "TANCAR",
@@ -271,6 +271,9 @@
 
 "submenuFollowingPause": "Pausar",
 "submenuFollowingResume": "Reprendre",
-"submenuFollowingStop": "Finalitzar"
+"submenuFollowingStop": "Finalitzar",
+
+"gpsDisabledAppBar": "SENSE GPS",
+"recoverTrackDialogBody": "S'han detectat dades d'una ruta anterior no guardada. Vols recuperar-la o prefereixes començar-ne una de nova des de zero?"
 }
 

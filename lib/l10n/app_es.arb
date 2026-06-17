@@ -9,7 +9,7 @@
   "longPressToFinish": "Mantén pulsado para finalizar la grabación",
 
   "gpsDisabledTitle": "GPS desactivado",
-  "gpsDisabledMessage": "El GPS está desactivado. ¿Quieres activarlo ahora?",
+  "gpsDisabledMessage": "GPS desactivado",
 
   "cancel": "CANCELAR",
   "close": "CERRAR",
@@ -270,6 +270,10 @@
 
 "submenuFollowingPause": "Pausar",
 "submenuFollowingResume": "Reanudar",
-"submenuFollowingStop": "Finalizar"
+"submenuFollowingStop": "Finalizar",
+
+"gpsDisabledAppBar": "SIN GPS",
+"recoverTrackDialogBody": "Se han detectado datos de una ruta anterior no guardada. ¿Quieres recuperarla o prefieres empezar una nueva desde cero?"
+
 }
 

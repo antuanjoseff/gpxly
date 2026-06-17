@@ -4,12 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/notifiers/alarm_settings_notifier.dart';
 import 'package:senda/notifiers/imported_track_notifier.dart';
 import 'package:senda/notifiers/location_notifier.dart';
-import 'package:senda/notifiers/recording_notifier.dart';
-import 'package:senda/notifiers/timer_notifier.dart';
+import 'package:senda/notifiers/permissions_notifier.dart';
 import 'package:senda/screens/settings/tabs/alarm_settings_tab.dart';
 import 'package:senda/theme/app_colors.dart';
 import 'package:senda/widgets/gps_accuracy_bars.dart';
-import 'package:senda/widgets/recording_status_bar.dart';
+import 'package:senda/l10n/app_localizations.dart'; // 🟢 Import de traduccions nates
 
 class MapAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final double? pressure;
@@ -28,6 +27,8 @@ class MapAppBar extends ConsumerWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final t = AppLocalizations.of(context)!; // 🟢 Inicialització del diccionari
+
     // 📡 Escuita reactiva de les alarmes de seguretat actives
     final alarms = ref.watch(alarmSettingsProvider);
     final anyAlarmActive =
@@ -41,23 +42,83 @@ class MapAppBar extends ConsumerWidget implements PreferredSizeWidget {
       automaticallyImplyLeading: false,
       titleSpacing: 16,
 
-      // 🟢 COBERTURA GPS NETEJA: Retorna al seu format estàndard a l'esquerra [INDEX]
       leading: const GpsAccuracyBars(),
 
-      // Forcem el centratge mil·limètric de la telemetria central
       centerTitle: true,
 
-      // ⏱️ CRONÒMETRE I ALTITUD: El mòdul transparent de text gran al cor de la barra [INDEX]
-      title: RecordingStatusBar(
-        state: ref.watch(
-          trackRecordingProvider.select((t) => t.recordingState),
-        ),
-        duration: ref.watch(timerProvider),
-        contentColor: Colors.white, // Sempre blanc pur obligatori [INDEX]
+      title: Consumer(
+        builder: (context, ref, child) {
+          // 📡 1. Llegim l'estat del GPS i dels permisos/serveis simultàniament
+          final userPos = ref.watch(locationProvider);
+          final permissions = ref.watch(permissionsProvider);
+
+          // 🟢 2. LA TEVA LOGICA D'ESTAT REAL UNIFICADA:
+          final bool isGpsDisabled =
+              !permissions.hasPermission ||
+              !permissions.serviceEnabled ||
+              userPos == null;
+
+          final double? altitude = userPos?.altitude;
+          final bool isFixed = userPos?.isHgtFixed ?? false;
+
+          return Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // 🗺️ A) El Nom de l'aplicació
+              const Text(
+                "SENDA",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.5,
+                ),
+              ),
+
+              // Un petit separador estètic vertical
+              Container(
+                height: 16,
+                width: 1,
+                margin: const EdgeInsets.symmetric(horizontal: 12),
+                color: Colors.white24,
+              ),
+
+              // 🏔️ B) El mòdul d'Altimetria integrat en línia i unificat
+              Icon(
+                isGpsDisabled
+                    ? Icons.location_off_rounded
+                    : Icons.filter_hdr_rounded,
+                color: isGpsDisabled
+                    ? Colors.redAccent.shade100
+                    : (isFixed ? Colors.white : AppColors.redAlert),
+                size: 16,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                isGpsDisabled
+                    ? t.gpsDisabled
+                    : (altitude != null
+                          ? "${altitude.toStringAsFixed(0)} m"
+                          : "--- m"),
+                style: TextStyle(
+                  color: isGpsDisabled
+                      ? Colors.redAccent.shade100
+                      : Colors.white,
+                  fontSize: isGpsDisabled
+                      ? 12
+                      : 14, // Un puntet més petit en cas de text de bloqueig llarg
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          );
+        },
       ),
 
       actions: [
-        // 🟢 NOU EMPLAÇAMENT: La campana de notificació es mou neta i blanca a la dreta [INDEX]
+        // 🟢 NOU EMPLAÇAMENT: La campana de notificació es mou neta i blanca a la dreta
         if (anyAlarmActive)
           Padding(
             padding: const EdgeInsets.only(right: 10),
@@ -74,7 +135,7 @@ class MapAppBar extends ConsumerWidget implements PreferredSizeWidget {
                 height: 32,
                 child: Icon(
                   Icons.notifications_active_rounded,
-                  color: Colors.white, // Sempre blanc pur obligatori [INDEX]
+                  color: Colors.white,
                   size: 22,
                 ),
               ),

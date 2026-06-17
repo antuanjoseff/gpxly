@@ -71,37 +71,29 @@ class MenuBar extends ConsumerWidget {
 
       recordingWidget = InkWell(
         onTap: onRecordingTap,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(currentIcon, color: accentColor, size: 24),
-            const SizedBox(height: 4),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(6),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withAlpha(20),
-                    blurRadius: 2,
-                    offset: const Offset(0, 1),
-                  ),
-                ],
-              ),
-              padding: const EdgeInsets.symmetric(
-                vertical: 2.0,
-                horizontal: 6.0,
-              ),
-              child: TrackDurationTimer(
-                state: recordingState,
-                duration: currentDuration,
-                color: accentColor,
-                fontSize: 11,
-                showIcon: false,
-              ),
+        child: Center(
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+            decoration: BoxDecoration(
+              color: Colors.white, // 🟢 Càpsula blanca que aïlla del blau
+              borderRadius: BorderRadius.circular(12),
             ),
-          ],
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(currentIcon, color: accentColor, size: 22),
+                const SizedBox(height: 2),
+                Text(
+                  isRecordingActive ? "Gravant..." : "Pausat",
+                  style: TextStyle(
+                    color: accentColor,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       );
     }
@@ -159,16 +151,59 @@ class MenuBar extends ConsumerWidget {
             Expanded(
               child: AbsorbPointer(
                 absorbing: !isProfileAvailable,
-                child: MenuTab(
-                  icon: isChartCollapsed
-                      ? Icons.landscape_outlined
-                      : Icons.landscape_rounded,
-                  label: t.menuProfile,
-                  iconColor: profileIconColor,
+                child: InkWell(
                   onTap: isProfileAvailable ? onToggleChart : null,
+                  child: Center(
+                    child: Container(
+                      // 📐 MIDES UNIFICADES: Forçem amplada i alçada fixes per dins del Center
+                      // per assegurar que la píndola d'aquest botó sigui simètrica a la de gravació
+                      width: 72,
+                      height: 52,
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      decoration: BoxDecoration(
+                        // 🟢 LA TEVA REGLA: Fons blanc pur NOMÉS quan el gràfic està obert (!isChartCollapsed)
+                        color: (isProfileAvailable && !isChartCollapsed)
+                            ? Colors.white
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            isChartCollapsed
+                                ? Icons.landscape_outlined
+                                : Icons.landscape_rounded,
+                            size: 22,
+                            // 🟢 COLOR ADAPTATIU: Blau si el fons és blanc, Blanc si el fons és blau
+                            color: isProfileAvailable
+                                ? (!isChartCollapsed
+                                      ? AppColors.primary
+                                      : Colors.white)
+                                : Colors.white.withAlpha(60),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            t.menuProfile,
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: isProfileAvailable
+                                  ? (!isChartCollapsed
+                                        ? AppColors.primary
+                                        : Colors.white)
+                                  : Colors.white.withAlpha(60),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
+
             const VerticalDivider(color: Colors.white12),
 
             Expanded(

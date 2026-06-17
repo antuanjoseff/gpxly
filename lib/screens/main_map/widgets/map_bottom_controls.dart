@@ -8,12 +8,15 @@ import 'package:senda/notifiers/timer_notifier.dart';
 import 'package:senda/notifiers/waypoints_recorded_notifier.dart';
 import 'package:senda/theme/app_dimensions.dart';
 import 'package:senda/ui/app_messages.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'map_bottom_controls/layout_utils.dart';
 import 'map_bottom_controls/elevation_panel.dart';
 import 'map_bottom_controls/menu_bar.dart';
 import 'map_bottom_controls/recording_submenu.dart';
 import 'map_bottom_controls/navigation_submenu.dart';
+import 'package:senda/widgets/recording_status_bar.dart'; // Per al TrackDurationTimer
+import 'package:senda/l10n/app_localizations.dart'; // 🟢 Import indispensable per a les traduccions nates
 
 class MapBottomControls extends ConsumerStatefulWidget {
   final bool isChartCollapsed;
@@ -42,9 +45,13 @@ class MapBottomControls extends ConsumerStatefulWidget {
 class _MapBottomControlsState extends ConsumerState<MapBottomControls> {
   bool _showRecordingSubMenu = false;
   bool _showNavigationSubMenu = false;
+  bool _showChart = false;
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(
+      context,
+    )!; // 🟢 Inicialització del diccionari de l'App
     final navState = ref.watch(navigationProvider);
     final recordingState = ref.watch(
       trackRecordingProvider.select((t) => t.recordingState),
@@ -52,7 +59,6 @@ class _MapBottomControlsState extends ConsumerState<MapBottomControls> {
     final importedTrack = ref.watch(importedTrackProvider);
     final currentDuration = ref.watch(timerProvider);
 
-    // Escoltem els punts registrats de la gravació en curs
     final recordingPoints = ref.watch(
       trackRecordingProvider.select((t) => t.points),
     );
@@ -62,18 +68,23 @@ class _MapBottomControlsState extends ConsumerState<MapBottomControls> {
       isChartCollapsed: widget.isChartCollapsed,
     );
 
-    // Condició per saber si hi ha un fitxer GPX de ruta importat
     final bool hasTrack =
         importedTrack != null && importedTrack.coordinates.isNotEmpty;
 
-    // Condició per saber si s'estan generant dades de gravació pròpia
     final bool hasRecordingData =
         recordingState != RecordingState.idle && recordingPoints.isNotEmpty;
 
-    // L'ElevationPanel és visible si disposem de dades de qualsevol de les dues línies
-    final bool showChartData = hasTrack || hasRecordingData;
+    final bool showChartData = hasTrack || (hasRecordingData && _showChart);
 
     final bool isSubMenuOpen = _showRecordingSubMenu || _showNavigationSubMenu;
+
+    final bool isRecordingActive = recordingState == RecordingState.recording;
+    final IconData statusIcon = isRecordingActive
+        ? Icons.fiber_manual_record
+        : Icons.pause_rounded;
+    final Color statusColor = isRecordingActive
+        ? Colors.red.shade700
+        : Colors.green.shade700;
 
     return Positioned(
       bottom: 0,
@@ -83,7 +94,49 @@ class _MapBottomControlsState extends ConsumerState<MapBottomControls> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // 📊 1. EL GRÀFIC D'ELEVACIONS (Actualitzat per obrir-se també durant la gravació lliure)
+          // ⏱️ 0. COMPTADOR FLOTANT ADAPTATIU AMB ICONA MULTI-ESTAT
+          if (recordingState == RecordingState.recording ||
+              recordingState == RecordingState.paused)
+            Padding(
+              padding: const EdgeInsets.only(
+                bottom: AppDimensions.mapSafetyPadding,
+              ),
+              child: Center(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withAlpha(45),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 6.0,
+                    horizontal: 14.0,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(statusIcon, color: statusColor, size: 16),
+                      const SizedBox(width: 8),
+                      TrackDurationTimer(
+                        state: recordingState,
+                        duration: currentDuration,
+                        color: statusColor,
+                        fontSize: 16,
+                        showIcon: false,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+          // 📊 1. EL GRÀFIC D'ELEVACIONS
           if (showChartData && layout.isPanelActive)
             Listener(
               behavior: HitTestBehavior.opaque,
@@ -130,9 +183,8 @@ class _MapBottomControlsState extends ConsumerState<MapBottomControls> {
                 ),
               ),
             ),
-
           // ⏱️ 3. BAFARADA DE GRAVACIÓ (Amb separació inferior forçada)
-          if (_showRecordingSubMenu && recordingState != RecordingState.idle)
+          if (_showRecordingSubMenu)
             Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: AppDimensions.subMenuHorizontalPadding,
@@ -149,7 +201,71 @@ class _MapBottomControlsState extends ConsumerState<MapBottomControls> {
                         _showRecordingSubMenu = false;
                       });
 
-                      if (action == 'pause') {
+                      // 🟢 CONTROL DE RECUPERACIÓ DE GRAVACIÓ ANTERIOR AMB TRANSLATIONS
+                      if (action == 'start') {
+                        final prefs = await SharedPreferences.getInstance();
+                        final hasOldData = prefs.containsKey('temp_track_data');
+
+                        if (hasOldData && context.mounted) {
+                          // 🟢 CRIDA MULTIIDIOMA CORREGIDA: Invoca el diàleg natiu reactiu de l'App
+                          final bool? recuperar =
+                              await AppMessages.showRecoverTrackDialog(context);
+
+                          if (recuperar == true) {
+                            // 1. CAS: L'USUARI RECUPERA LA RUTA ANTERIOR
+                            setState(() {
+                              _showChart = true;
+                            });
+
+                            await ref
+                                .read(trackRecordingProvider.notifier)
+                                .loadFromCache();
+
+                            if (widget.isChartCollapsed) {
+                              widget
+                                  .onToggleChart(); // Obre el panell si estava tancat al pare
+                            }
+
+                            final trackRecuperat = ref.read(
+                              trackRecordingProvider,
+                            );
+                            if (trackRecuperat.recordingState ==
+                                RecordingState.recording) {
+                              ref.read(timerProvider.notifier).start();
+                            } else if (trackRecuperat.recordingState ==
+                                RecordingState.paused) {
+                              ref.read(timerProvider.notifier).pause();
+                            }
+                          } else if (recuperar == false) {
+                            // 2. CAS: L'USUARI ELIMINA LA RUTA I EN COMENÇA UNA DE NOVA
+                            setState(() {
+                              _showChart = false;
+                            });
+                            await ref
+                                .read(trackRecordingProvider.notifier)
+                                .clearCache();
+                            ref
+                                .read(trackRecordingProvider.notifier)
+                                .startRecording();
+
+                            if (!widget.isChartCollapsed) {
+                              widget.onToggleChart();
+                            }
+                          }
+                        } else {
+                          // 3. CAS: NO HI HA DADES VELLES (INICI NET STANDARD DE ZERO)
+                          setState(() {
+                            _showChart = false;
+                          });
+                          ref
+                              .read(trackRecordingProvider.notifier)
+                              .startRecording();
+
+                          if (!widget.isChartCollapsed) {
+                            widget.onToggleChart();
+                          }
+                        }
+                      } else if (action == 'pause') {
                         ref
                             .read(trackRecordingProvider.notifier)
                             .pauseRecording();
@@ -189,18 +305,10 @@ class _MapBottomControlsState extends ConsumerState<MapBottomControls> {
               navState: navState,
               hasTrack: hasTrack,
               onRecordingTap: () {
-                if (recordingState == RecordingState.idle) {
-                  setState(() {
-                    _showRecordingSubMenu = false;
-                    _showNavigationSubMenu = false;
-                  });
-                  ref.read(trackRecordingProvider.notifier).startRecording();
-                } else {
-                  setState(() {
-                    _showRecordingSubMenu = !_showRecordingSubMenu;
-                    _showNavigationSubMenu = false;
-                  });
-                }
+                setState(() {
+                  _showRecordingSubMenu = !_showRecordingSubMenu;
+                  _showNavigationSubMenu = false;
+                });
               },
               onNavigationTap: () {
                 if (!hasTrack) {
@@ -216,7 +324,12 @@ class _MapBottomControlsState extends ConsumerState<MapBottomControls> {
                   });
                 }
               },
-              onToggleChart: widget.onToggleChart,
+              onToggleChart: () {
+                setState(() {
+                  _showChart = widget.isChartCollapsed;
+                });
+                widget.onToggleChart();
+              },
             ),
           ),
         ],

@@ -31,7 +31,6 @@ import 'package:senda/screens/main_map/widgets/map_base_layer.dart';
 import 'package:senda/screens/main_map/widgets/map_bottom_controls.dart';
 import 'package:senda/screens/main_map/widgets/map_bottom_controls/layout_utils.dart';
 import 'package:senda/screens/main_map/widgets/map_top_controls.dart';
-import 'package:senda/screens/main_map/widgets/senda_brand_label.dart';
 import 'package:senda/theme/app_colors.dart';
 
 // Els 3 HELPERS d'extracció de codi massiu
@@ -396,28 +395,32 @@ class _MapScreenState extends ConsumerState<MapScreen>
       if (!_isChartCollapsed && mapController != null && styleInitialized) {
         final geom = MapGeometryHelper(ref: ref, mapController: mapController);
 
-        // Determinem quin és l'índex d'inici real: el de tram o el del punt únic
         final int? indexIniciUnificat =
             next.startTrackIndex ?? next.singlePointIndex;
 
         setChartInteractionGeometry(
           mapController!,
-          // 🟢 ARA EL PUNT VERD s'il·lumina tant per a punts únics com per a inici de trams
           rangeStartCoords: geom.getCoordsFromGlobalIndex(indexIniciUnificat),
           rangeEndCoords: geom.getCoordsFromGlobalIndex(next.endTrackIndex),
-          // 🚫 El taronja (hoverCoords) es passa a null de manera permanent perquè quedi desactivat
           hoverCoords: null,
         );
       }
     });
 
+    // 🛰️ OIENT 1: POSICIÓ DE L'USUARI (Unificat amb la teva regla d'exclusivitat)
     ref.listen<UserPosition?>(locationProvider, (prev, next) async {
       if (!styleInitialized || mapController == null || next == null) return;
 
-      mapAnimator.animateUserPosition(
-        next.position,
-        bottomPadding: _currentMapPadding,
-      );
+      // 🟢 LA TEVA REGLA D'EXCLUSIVITAT:
+      // Si estem gravant de forma activa, demana-li al motor del track que mogui el cercle.
+      // Si està en pausa, en idle o prové de la caché, l'oient del GPS lliure mou la icona síncronament.
+      final recState = ref.read(trackRecordingProvider).recordingState;
+      if (recState != RecordingState.recording) {
+        mapAnimator.animateUserPosition(
+          next.position,
+          bottomPadding: _currentMapPadding,
+        );
+      }
 
       final ara = DateTime.now();
       if (ara.difference(_lastPrefsSave).inMinutes >= 5) {
@@ -426,16 +429,19 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
       if (isImportingGpx) return;
 
-      final recordingPoints = ref.read(trackRecordingProvider).points;
-      if (prev == null && recordingPoints.isEmpty) {
-        // 🔥 CORRECCIÓ 1: setState per al primer posicionament net a l'iniciar l'app
+      // 🟢 DETECTOR DE SINAL REAL (ANTI-BLOQUEIG DE MEMÒRIA CAU):
+      // Si és un senyal vàlid del satèl·lit (accuracy < 100) i encara no hem fet el primer zoom de la sessió,
+      // la càmera llisca de forma fluida i automàtica des de la posició de caché cap a la posició real.
+      final bool isRealSignal = next.accuracy < 100.0;
+
+      if (!hasDoneFirstFixZoom && isRealSignal) {
         setState(() {
           hasDoneFirstFixZoom = true;
           isProgrammaticMove = true;
           _lastCameraCenter = next.position;
         });
 
-        safeAnimateCamera(CameraUpdate.newLatLngZoom(next.position, 18));
+        safeAnimateCamera(CameraUpdate.newLatLngZoom(next.position, 16.0));
 
         Future.delayed(const Duration(milliseconds: 300), () {
           if (mounted) {
@@ -447,7 +453,12 @@ class _MapScreenState extends ConsumerState<MapScreen>
         return;
       }
 
-      if (smartCenterEnabled && !isProgrammaticMove) {
+      // 3. SmartCenter (Seguiment actiu en ruta lliure)
+      // Afegim '&& recState != RecordingState.paused' per congelar la càmera durant els descansos.
+      if (smartCenterEnabled &&
+          !isProgrammaticMove &&
+          isRealSignal &&
+          recState != RecordingState.paused) {
         double distanceSinceLastMove = 999.0;
         if (_lastCameraCenter != null) {
           distanceSinceLastMove = calculateDistanceManual(
@@ -459,8 +470,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
         }
 
         if (distanceSinceLastMove > 3.0) {
-          // 🔥 CORRECCIÓ 2: setState synchronous obligatori abans de moure la càmera.
-          // D'aquesta manera el Listener de MapBaseLayer s'assabenta a l'acte i no falla.
           setState(() {
             isProgrammaticMove = true;
             _lastCameraCenter = next.position;
@@ -479,10 +488,14 @@ class _MapScreenState extends ConsumerState<MapScreen>
       }
     });
 
-    // OIENT 2: GRAVACIÓ FÍSICA (LÍNIA I TRAMS ANIMATS UNIFICATS)
+    // 📊 OIENT 2: GRAVACIÓ FÍSICA (LÍNIA I TRAMS ANIMATS UNIFICATS)
     ref.listen<Track>(trackRecordingProvider, (prev, next) {
       if (!styleInitialized || mapController == null) return;
-      mapAnimator.updateFromTrack(next, !smartCenterEnabled);
+
+      // 🟢 AFECTAT PER LA REGLA SIMÈTRICA: El track només mou geometries si està gravant actiu
+      if (next.recordingState == RecordingState.recording) {
+        mapAnimator.updateFromTrack(next, !smartCenterEnabled);
+      }
 
       if (isImportingGpx) return;
 
@@ -493,14 +506,12 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
       if (isRecoveringTrack) {
         hasDoneRecoveryFit = true;
-
         MapGeometryHelper(
           ref: ref,
           mapController: mapController,
         ).fitToBounds(next.coordinates, instant: true);
       }
     });
-
     // OIENT 3: SET DE CAPES DEL TRACK IMPORTAT (GPX PROGRESSIU)
     ref.listen<Track?>(importedTrackProvider, (prev, next) {
       if (!styleInitialized || mapController == null) return;
@@ -667,7 +678,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
       },
       child: Scaffold(
         extendBody: true,
-        // 🚀 COMPONENT EXTRET 1: Barra superior d'eines i configuració
         appBar: _fullScreen
             ? null
             : MapAppBar(
@@ -677,7 +687,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
               ),
         body: Stack(
           children: [
-            // 🗺️ CAPA 1: COMPONENT EXTRET 2: Visor del mapa MapLibre (Aïllat)
+            // 🗺️ CAPA 1: Visor del mapa MapLibre (Aïllat)
             MapBaseLayer(
               initialCameraTarget: _initialCameraTarget!,
               initialZoom: _initialZoom,
@@ -688,22 +698,15 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   setState(() => smartCenterEnabled = val),
               onFullScreenChanged: (val) => setState(() => _fullScreen = val),
               onCameraMove: (CameraPosition position) {
-                debugPrint(
-                  "BRÚIXOLA MAPA MOVIMENT -> Zoom real detectat: ${position.zoom}",
-                );
-                // 1. Actualitza la rotació de la brúixola (el mapa s'ha girat)
                 ref.read(mapBearingProvider.notifier).update(position.bearing);
-
-                // 2. Actualitza el zoom i la latitud perquè l'escala mètrica canviï de mida alhora!
                 ref.read(mapZoomProvider.notifier).update(position.zoom);
                 ref
                     .read(mapCenterLatProvider.notifier)
                     .update(position.target.latitude);
               },
-
               onMapCreated: (controller) {
                 mapController = controller;
-                mapAnimator = MapAnimator(controller); // Unificat de forma neta
+                mapAnimator = MapAnimator(controller);
                 controller.onFeatureTapped.add(_onFeatureTapped);
               },
               onStyleLoaded: () async {
@@ -727,13 +730,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
               },
             ),
 
-            // 🏷️ Marca d'aigua de Senda a la cantonada superior
-            const Positioned(top: 10, left: 12, child: SendaBrandLabel()),
-
-            // 🎛️ CAPA 2: INTERFÍCIE FLOTANT HUD (Només si no està en fullScreen)
-            // 🎛️ CAPA 2: INTERFÍCIE FLOTANT HUD (Només si no està en fullScreen)
+            // 🎛️ CAPA 2: INTERFÍCIE FLOTANT HUD
             if (!_fullScreen) ...[
-              // 🚀 COMPONENT EXTRET 3: Píndola de temps i controls de dalt a la dreta
               MapTopControls(
                 mapController: mapController,
                 smartCenterEnabled: smartCenterEnabled,
@@ -741,7 +739,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 onAddWaypoint: () => _onAddWaypoint(context, ref),
               ),
 
-              // Això assegura que la nansa es dibuixi en la seva pròpia capa independent de fons.
               MapBottomControls(
                 isChartCollapsed: _isChartCollapsed,
                 systemBottomPadding: systemBottomPadding,

@@ -33,7 +33,7 @@ class AppLocalizationsCa extends AppLocalizations {
   String get gpsDisabledTitle => 'GPS desactivat';
 
   @override
-  String get gpsDisabledMessage => 'El GPS està desactivat. Vols activar-lo ara?';
+  String get gpsDisabledMessage => 'GPS desactivat';
 
   @override
   String get cancel => 'CANCEL·LAR';
@@ -647,4 +647,10 @@ class AppLocalizationsCa extends AppLocalizations {
 
   @override
   String get submenuFollowingStop => 'Finalitzar';
+
+  @override
+  String get gpsDisabledAppBar => 'SENSE GPS';
+
+  @override
+  String get recoverTrackDialogBody => 'S\'han detectat dades d\'una ruta anterior no guardada. Vols recuperar-la o prefereixes començar-ne una de nova des de zero?';
 }

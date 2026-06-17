@@ -104,10 +104,48 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ),
             _SettingsTile(
-              icon: Icons.device_thermostat_rounded,
-              label: t.barometerTitle,
+              label: t.demManagerTitle,
               t: t,
               enabled: hasBarometer,
+              // 🟢 SUPERPOSICIÓ COMPLEMENTÀRIA: Creem un bloc de mapa + graella
+              customIcon: SizedBox(
+                width: 42,
+                height: 42,
+                child: Stack(
+                  children: [
+                    Positioned(
+                      left: 0,
+                      top: 0,
+                      child: Icon(
+                        Icons.landscape_outlined,
+                        size: 34,
+                        color: hasBarometer
+                            ? AppColors.primary
+                            : Colors.grey.shade400,
+                      ),
+                    ),
+                    Positioned(
+                      right: 0,
+                      bottom: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(1.5),
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.grid_on_rounded,
+                          size: 18,
+                          color: hasBarometer
+                              ? AppColors.skyBlue
+                              : Colors.grey.shade500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
               onTap: () {
                 if (!hasBarometer) return;
                 Navigator.push(
@@ -126,7 +164,9 @@ class SettingsScreen extends ConsumerWidget {
 }
 
 class _SettingsTile extends StatelessWidget {
-  final IconData icon;
+  final IconData? icon; // 🔄 Modificat: Ara accepta nuls
+  final Widget?
+  customIcon; // 🟢 Nou paràmetre opcional per a qualsevol Widget (com un Stack)
   final String label;
   final VoidCallback onTap;
   final bool enabled;
@@ -135,7 +175,8 @@ class _SettingsTile extends StatelessWidget {
   final AppLocalizations t;
 
   const _SettingsTile({
-    required this.icon,
+    this.icon, // 🔄 Passa a ser opcional (sense required)
+    this.customIcon, // 🟢 Nou paràmetre opcional
     required this.label,
     required this.onTap,
     required this.t,
@@ -180,21 +221,38 @@ class _SettingsTile extends StatelessWidget {
                 },
           child: Stack(
             children: [
-              Center(
+              SizedBox.expand(
                 child: Padding(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 20,
+                  ),
                   child: Column(
-                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Icon(icon, size: 40, color: colorElements),
-                      const SizedBox(height: 12),
-                      Text(
-                        label,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: colorElements,
+                      // 🟢 CONDICIÓ DE DISSENY:
+                      // Si passem un widget a customIcon, el dibuixa. Si no, utilitza l'IconData tradicional de tota la vida.
+                      if (customIcon != null)
+                        customIcon!
+                      else
+                        Icon(icon, size: 40, color: colorElements),
+
+                      const SizedBox(height: 8),
+                      Expanded(
+                        child: Center(
+                          child: Text(
+                            label,
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: colorElements,
+                              height: 1.2,
+                            ),
+                          ),
                         ),
                       ),
                     ],

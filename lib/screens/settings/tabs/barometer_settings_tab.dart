@@ -46,8 +46,6 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
     });
   }
 
-  // (Aquí van les funcions _buildGridGeoJson, _refreshGridGeometry, _onGridFeatureTapped, etc. del Bloc 2 anterior)
-
   Map<String, dynamic> _buildGridGeoJson(List<DemBounds> downloadedCells) {
     final List<Map<String, dynamic>> features = [];
 
@@ -212,12 +210,18 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
       _selectedCellProps = null;
       _selectedKey = null;
     });
-    await _refreshGridGeometry();
   }
 
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context)!;
+
+    // Cada cop que hi hagi un canvi al proveïdor, forçarem el refresc automàtic de la quadrícula al mapa
+    ref.listen(demBoundsProvider, (previous, next) {
+      if (_styleLoaded) {
+        _refreshGridGeometry();
+      }
+    });
 
     final demState = ref.watch(demBoundsProvider);
     final downloadedCells = demState.cells;

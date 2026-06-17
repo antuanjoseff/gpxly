@@ -148,7 +148,7 @@ abstract class AppLocalizations {
   /// No description provided for @gpsDisabledMessage.
   ///
   /// In en, this message translates to:
-  /// **'GPS is disabled. Do you want to enable it now?'**
+  /// **'GPS is disabled'**
   String get gpsDisabledMessage;
 
   /// No description provided for @cancel.
@@ -1368,6 +1368,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Stop'**
   String get submenuFollowingStop;
+
+  /// No description provided for @gpsDisabledAppBar.
+  ///
+  /// In en, this message translates to:
+  /// **'NO GPS'**
+  String get gpsDisabledAppBar;
+
+  /// No description provided for @recoverTrackDialogBody.
+  ///
+  /// In en, this message translates to:
+  /// **'An unsaved previous recording has been detected. Do you want to recover it or start a new one from scratch?'**
+  String get recoverTrackDialogBody;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

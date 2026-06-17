@@ -405,14 +405,14 @@ class _MapScreenState extends ConsumerState<MapScreen>
     // ─────────────────────────────────────────────────────────────
     // 🛰️ OIENT A: MOVIMENT DEL PUNT BLAU I CONTROL DE CÀMERA (GPS)
     // ─────────────────────────────────────────────────────────────
-    // ─────────────────────────────────────────────────────────────
-    // 🛰️ OIENT A: MOVIMENT DEL PUNT BLAU I CONTROL DE CÀMERA (GPS)
-    // ─────────────────────────────────────────────────────────────
     ref.listen<UserPosition?>(locationProvider, (prev, next) async {
       if (!styleInitialized || mapController == null || next == null) return;
 
-      // 🔄 MODIFICAT: En lloc d'un salt directe, deleguem la posició al motor d'animació fluida
-      mapAnimator.animateUserPosition(next.position); // 👈 CANVIAT AQUÍ!
+      final recState = ref.read(trackRecordingProvider).recordingState;
+
+      if (recState != RecordingState.recording) {
+        mapAnimator.animateUserPosition(next.position);
+      }
 
       // --- GUARDAT EFICIENT EN MEMÒRIA CACHÉ (Cada 5 minuts) ---
       final ara = DateTime.now();
@@ -422,7 +422,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
       if (isImportingGpx) return;
 
-      // 2. PRIMER FIX GPS (Només si la llista del gravador està totalment buida)
+      // 2. PRIMER FIX GPS (Només si la llista del gravador UTS està totalment buida)
       final recordingPoints = ref.read(trackRecordingProvider).points;
       if (prev == null && recordingPoints.isEmpty) {
         hasDoneFirstFixZoom = true;
@@ -438,7 +438,11 @@ class _MapScreenState extends ConsumerState<MapScreen>
       }
 
       // 3. SmartCenter (Seguiment automàtic actiu de la càmera)
-      if (smartCenterEnabled && !isProgrammaticMove) {
+      // 🟢 MODIFICAT: Afegim '&& recState != RecordingState.paused' per a què la càmera neta
+      // es quedi totalment quieta i focalitzada en el descans mentre estiguis en pausa, evitant sotracs.
+      if (smartCenterEnabled &&
+          !isProgrammaticMove &&
+          recState != RecordingState.paused) {
         double distanceSinceLastMove = 999.0;
 
         if (_lastCameraCenter != null) {
@@ -454,8 +458,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
           isProgrammaticMove = true;
           _lastCameraCenter = next.position;
 
-          // 🔄 ADAPTACIÓ FLUIDA: Perquè la pròpia càmera acompanyi el desplaçament fluid
-          // de l'animador del punt blau en lloc de fer un salt ràpid, usem animateCamera.
+          // 🔄 ADAPTACIÓ FLUIDA: La càmera acompanya el desplaçament de forma neta
           safeAnimateCamera(CameraUpdate.newLatLng(next.position));
 
           Future.delayed(const Duration(milliseconds: 600), () {
@@ -471,8 +474,11 @@ class _MapScreenState extends ConsumerState<MapScreen>
     ref.listen<Track>(trackRecordingProvider, (prev, next) {
       if (!styleInitialized || mapController == null) return;
 
-      // ✅ ADAPTAT: Passem el track i el flag '!smartCenterEnabled' de forma unificada
-      mapAnimator.updateFromTrack(next, !smartCenterEnabled);
+      // 🟢 LA TEVA REGLA: Si la gravació està en pausa o aturada, el motor del track es queda en silenci
+      // i evitem que pugui re-situar o trepitjar la posició de la icona de l'usuari.
+      if (next.recordingState == RecordingState.recording) {
+        mapAnimator.updateFromTrack(next, !smartCenterEnabled);
+      }
 
       if (isImportingGpx) return;
 

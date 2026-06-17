@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/l10n/app_localizations.dart';
 import 'package:senda/models/navigation_state.dart';
-import 'package:senda/notifiers/navigation_notifier.dart';
 import 'package:senda/theme/app_colors.dart';
 
 class NavigationSubMenu extends ConsumerWidget {
@@ -77,9 +76,7 @@ class NavigationSubMenu extends ConsumerWidget {
                 ),
                 onPressed: () {
                   onClose();
-                  onAction(
-                    false,
-                  ); // 🚀 CORREGIT: Ara envia false (Neteja el track sense demanar permisos)
+                  onAction(false); // Neteja el track sense demanar permisos
                 },
               ),
             ),
@@ -102,8 +99,7 @@ class NavigationSubMenu extends ConsumerWidget {
                 ),
                 onPressed: () {
                   onClose();
-                  ref.read(navigationProvider.notifier).state = navState
-                      .copyWith(isPaused: !navState.isPaused);
+                  onAction(true);
                 },
               ),
             ),
@@ -118,7 +114,7 @@ class NavigationSubMenu extends ConsumerWidget {
                   onClose();
                   onAction(
                     false,
-                  ); // 🚀 CORREGIT: Ara envia false (Atura el seguiment correctament)
+                  ); // Atura el seguiment de forma unificada enviant false
                 },
               ),
             ),

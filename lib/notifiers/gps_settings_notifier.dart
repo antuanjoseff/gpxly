@@ -49,9 +49,9 @@ class GpsSettingsNotifier extends Notifier<GpsSettings> {
   GpsSettings build() {
     // Valors "falsos" temporals mentre carreguem
     final initial = GpsSettings(
-      useTime: true,
+      useTime: false,
       seconds: 5,
-      meters: 10,
+      meters: 5,
       accuracy: 30,
       isFollowing: false,
     );
@@ -90,10 +90,22 @@ class GpsSettingsNotifier extends Notifier<GpsSettings> {
     final meters = prefs.getDouble('gps_meters');
     final accuracy = prefs.getDouble('gps_accuracy');
 
+    double metersFiltrat = meters ?? 5.0;
+    bool useTimeFiltrat = useTime ?? false;
+
+    if (meters == 10.0) {
+      metersFiltrat = 5.0;
+      useTimeFiltrat = false;
+
+      // Ho guardem immediatament a disc perquè quedi fixat per a les properes vegades
+      await prefs.setBool('gps_useTime', false);
+      await prefs.setDouble('gps_meters', 5.0);
+    }
+
     state = state.copyWith(
-      useTime: useTime ?? state.useTime,
+      useTime: useTimeFiltrat,
       seconds: seconds ?? state.seconds,
-      meters: meters ?? state.meters,
+      meters: metersFiltrat,
       accuracy: accuracy ?? state.accuracy,
     );
   }

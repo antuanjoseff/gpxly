@@ -50,13 +50,14 @@ class MapAnimator {
     if (newPos == null || isAnimating)
       return; // Si està corrent la gravació, el bucle unificat ja ho mourà
 
-    newPos = _calculateOffsetTarget(newPos, bottomPadding);
+    // newPos = _calculateOffsetTarget(newPos, bottomPadding);
     if (_lastUserPos == null) {
       setUserLocationGeometry(controller, newPos.latitude, newPos.longitude);
       _lastUserPos = newPos;
       return;
     }
 
+    _lastUserPos = newPos;
     final from = _lastUserPos!;
     final to = newPos;
 
