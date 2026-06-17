@@ -88,6 +88,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
   static const int _mapThrottleMs = 32;
   late MapAnimator mapAnimator;
   double _currentMapPadding = 0;
+  Timer? _waypointPulseTimer;
+  double _pulseValue = 0.0;
+  bool _pulseIncreasing = true;
 
   @override
   void initState() {
@@ -402,18 +405,12 @@ class _MapScreenState extends ConsumerState<MapScreen>
     // ─────────────────────────────────────────────────────────────
     // 🛡️ RECEPTORS I OIENTS DE SEGUIDAMENT ASÍNCRON
     ref.listen(elevationSelectionProvider, (previous, next) {
-      if (!_isChartCollapsed && mapController != null && styleInitialized) {
-        final geom = MapGeometryHelper(ref: ref, mapController: mapController);
+      final bool isRange = next.mode == SelectionMode.range;
 
-        final int? indexIniciUnificat =
-            next.startTrackIndex ?? next.singlePointIndex;
-
-        setChartInteractionGeometry(
-          mapController!,
-          rangeStartCoords: geom.getCoordsFromGlobalIndex(indexIniciUnificat),
-          rangeEndCoords: geom.getCoordsFromGlobalIndex(next.endTrackIndex),
-          hoverCoords: null,
-        );
+      if (isRange) {
+        startWaypointPulse(mapController!);
+      } else {
+        stopWaypointPulse(mapController!);
       }
     });
 
@@ -810,6 +807,20 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   setState(() {
                     _isChartCollapsed = !_isChartCollapsed;
                   });
+
+                  // 🟢 Quan el gràfic s’amaga → reset total del tram
+                  if (_isChartCollapsed) {
+                    // 1. Reset del provider d’elevació
+                    ref
+                        .read(elevationSelectionProvider.notifier)
+                        .clearSelection();
+
+                    // 2. Aturar animació dels waypoints
+                    if (mapController != null) {
+                      stopWaypointPulse(mapController!);
+                    }
+                  }
+
                   _updateMapPaddingValue();
                 },
               ),

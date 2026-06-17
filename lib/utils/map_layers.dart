@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -6,6 +7,58 @@ import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:senda/models/waypoint.dart';
 import 'package:senda/notifiers/dem_bounds_notifier.dart';
 import 'package:senda/theme/app_colors.dart';
+
+Timer? _waypointPulseTimer;
+double _pulseValue = 0.0;
+bool _pulseIncreasing = true;
+
+void startWaypointPulse(MapLibreMapController controller) {
+  _waypointPulseTimer ??= Timer.periodic(
+    const Duration(milliseconds: 80),
+    (_) => _updateWaypointPulse(controller),
+  );
+}
+
+void stopWaypointPulse(MapLibreMapController controller) {
+  _waypointPulseTimer?.cancel();
+  _waypointPulseTimer = null;
+
+  controller.setLayerProperties(
+    "waypoints_recorded_layer",
+    const CircleLayerProperties(circleRadius: 8.0),
+  );
+
+  controller.setLayerProperties(
+    "waypoints_imported_layer",
+    const CircleLayerProperties(circleRadius: 8.0),
+  );
+
+  _pulseValue = 0.0;
+  _pulseIncreasing = true;
+}
+
+void _updateWaypointPulse(MapLibreMapController controller) {
+  const double baseRadius = 8.0;
+  final double radius = baseRadius + _pulseValue;
+
+  controller.setLayerProperties(
+    "waypoints_recorded_layer",
+    CircleLayerProperties(circleRadius: radius),
+  );
+
+  controller.setLayerProperties(
+    "waypoints_imported_layer",
+    CircleLayerProperties(circleRadius: radius),
+  );
+
+  if (_pulseIncreasing) {
+    _pulseValue += 0.25;
+    if (_pulseValue >= 2.0) _pulseIncreasing = false;
+  } else {
+    _pulseValue -= 0.25;
+    if (_pulseValue <= 0.0) _pulseIncreasing = true;
+  }
+}
 
 /// Configura les capes del mapa:
 /// - track_line (línia vermella)
