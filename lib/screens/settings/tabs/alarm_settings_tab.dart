@@ -5,6 +5,7 @@ import 'package:senda/l10n/app_localizations.dart';
 import 'package:senda/notifiers/alarm_settings_notifier.dart';
 import 'package:senda/services/permissions_service.dart';
 import 'package:senda/theme/app_colors.dart';
+import 'package:senda/screens/settings/tabs/gps_settings_tab.dart'; // Per si utilitzes el SectionTitle heretat
 
 class AlarmSettingsTab extends ConsumerStatefulWidget {
   const AlarmSettingsTab({super.key});
@@ -34,10 +35,15 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
     final settings = ref.watch(alarmSettingsProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F7),
+      backgroundColor: const Color(
+        0xFFF5F5F7,
+      ), // Fons clar de la configuració de Senda
       appBar: AppBar(
         backgroundColor: AppColors.primary,
         elevation: 0,
+        iconTheme: const IconThemeData(
+          color: Colors.white,
+        ), // Fletxa de retorn blanca pura
         title: Text(
           t.alarms,
           style: const TextStyle(
@@ -50,7 +56,7 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // DISTÀNCIA
+          // 📊 1. TARGETA DE DISTÀNCIA
           _buildCompactAlarmCard(
             isActive: settings.distanceEnabled,
             icon: Icons.route,
@@ -76,12 +82,12 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
           ),
           const SizedBox(height: 16),
 
-          // ALTITUD INTEGRADA (Adaptada al teu Notifier actual)
+          // 📊 2. TARGETA D'ALTITUD INTEGRADA (Cotes / Desnivell)
           _buildAltitudeIntegratedCard(settings, t),
 
           const SizedBox(height: 16),
 
-          // TEMPS
+          // 📊 3. TARGETA DE TEMPS
           _buildCompactAlarmCard(
             isActive: settings.timeEnabled,
             icon: Icons.timer,
@@ -107,10 +113,9 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
     );
   }
 
-  Widget _buildAltitudeIntegratedCard(settings, t) {
+  Widget _buildAltitudeIntegratedCard(dynamic settings, AppLocalizations t) {
     final isAccMode = settings.currentViewMode == AltitudeViewMode.accumulated;
 
-    // Ara mirem els booleans individuals que hem creat al model
     final isCurrentModeActive = isAccMode
         ? settings.accEnabled
         : settings.cotaEnabled;
@@ -119,21 +124,22 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
         ? "+ ${settings.accMeters.toInt()} m"
         : "Cota ${settings.cotaMeters.toInt()} m";
 
+    // 🟢 DISSENY REFACTORITZAT: Vores fines clares, la línia de contorn ara utilitza fons fi en lloc de 2px forts
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: (settings.accEnabled || settings.cotaEnabled)
-              ? AppColors.primary.withAlpha(80)
-              : Colors.transparent,
-          width: 2,
+          color: isCurrentModeActive
+              ? AppColors.primary.withAlpha(40) // Contorn suau corporatiu
+              : Colors.white.withAlpha(30),
+          width: 1.0,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(10),
-            blurRadius: 10,
+            color: Colors.black.withAlpha(15),
+            blurRadius: 12,
             offset: const Offset(0, 4),
           ),
         ],
@@ -142,13 +148,9 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
         children: [
           Row(
             children: [
-              // Dins del Row de _buildAltitudeIntegratedCard:
               Consumer(
                 builder: (context, ref, child) {
-                  // Escoltem el progrés només aquí dins per no molestar la resta
                   final progress = ref.watch(alarmProgressProvider).value;
-
-                  // Triem el valor segons si estem en mode Desnivell o Cotes
                   final progressValue = isAccMode
                       ? (progress?.accProgress ?? 0.0)
                       : (progress?.cotaProgress ?? 0.0);
@@ -163,7 +165,6 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
                   );
                 },
               ),
-
               const SizedBox(width: 12),
               const Text(
                 "Altitud",
@@ -173,7 +174,6 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
               Switch(
                 value: isCurrentModeActive,
                 onChanged: (_) => _handleToggle(() {
-                  // CRIDA ALS MÈTODES REALS DEL NOTIFIER
                   if (isAccMode) {
                     ref
                         .read(alarmSettingsProvider.notifier)
@@ -187,12 +187,11 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
                         );
                   }
                 }),
-                activeTrackColor: AppColors.primary.withAlpha(
-                  150,
-                ), // Color del fons
+                activeTrackColor: AppColors.primary.withAlpha(150),
                 thumbColor: WidgetStateProperty.resolveWith<Color?>((states) {
-                  if (states.contains(WidgetState.selected))
-                    return AppColors.primary; // Botó blau fort
+                  if (states.contains(WidgetState.selected)) {
+                    return AppColors.primary;
+                  }
                   return null;
                 }),
               ),
@@ -216,9 +215,7 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
                     : const Icon(Icons.straighten, size: 16),
               ),
             ],
-            // LLEGIM DEL NOTIFIER
             selected: {settings.currentViewMode},
-            // ESCRIVIM AL NOTIFIER
             onSelectionChanged: (newSelection) {
               HapticFeedback.selectionClick();
               ref
@@ -231,22 +228,14 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
               selectedForegroundColor: Colors.white,
             ),
           ),
-
           const SizedBox(height: 16),
           _buildSliderSection(
             isActive: isCurrentModeActive,
             valueText: valueText,
             value: isAccMode ? settings.accMeters : settings.cotaMeters,
-
-            // 🏔️ DESNIVELL: Mínim 10 | 📍 COTA: Mínim 50
             min: isAccMode ? 10.0 : 50.0,
-
-            // 🏔️ DESNIVELL: Màxim 1000 | 📍 COTA: Màxim 1000
             max: isAccMode ? 1000.0 : 1000.0,
-
-            // 🏔️ DESNIVELL: Steps de 10 | 📍 COTA: Steps de 50
             step: isAccMode ? 10.0 : 50.0,
-
             onChanged: (val) {
               if (isAccMode) {
                 ref
@@ -324,7 +313,6 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
               onPressed: isActive && value > min
                   ? () {
                       HapticFeedback.lightImpact();
-                      // 🔥 CORREGIDO: Restamos el 'step' real (100m), no 10 fijo
                       final newVal = (value - step).clamp(min, max);
                       onChanged(newVal);
                     }
@@ -347,7 +335,6 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
               onPressed: isActive && value < max
                   ? () {
                       HapticFeedback.lightImpact();
-                      // 🔥 CORREGIDO: Sumamos el 'step' real (100m) para sincronizar con el Slider
                       final newVal = (value + step).clamp(min, max);
                       onChanged(newVal);
                     }
@@ -372,6 +359,7 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
     required VoidCallback onPlaySound,
     required double step,
   }) {
+    // 🟢 REFACTORITZAT: Unificació de línia fina i ombres integrades
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -379,14 +367,14 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isActive
-              ? AppColors.primary.withAlpha(80)
-              : Colors.transparent,
-          width: 2,
+              ? AppColors.primary.withAlpha(40)
+              : Colors.white.withAlpha(30),
+          width: 1.0,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(10),
-            blurRadius: 10,
+            color: Colors.black.withAlpha(15),
+            blurRadius: 12,
             offset: const Offset(0, 4),
           ),
         ],
@@ -395,13 +383,9 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
         children: [
           Row(
             children: [
-              // Dins del Row de _buildCompactAlarmCard:
               Consumer(
                 builder: (context, ref, child) {
-                  // Escoltem el progrés aquí dins
                   final progress = ref.watch(alarmProgressProvider).value;
-
-                  // Decidim quin valor mostrar segons la icona de la targeta
                   double pVal = 0.0;
                   if (isActive && progress != null) {
                     if (icon == Icons.route) pVal = progress.distance;
@@ -411,7 +395,6 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
                   return _buildProgressIcon(isActive, pVal, icon, onPlaySound);
                 },
               ),
-
               const SizedBox(width: 12),
               Text(
                 title,
@@ -425,12 +408,11 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
               Switch(
                 value: isActive,
                 onChanged: (_) => onToggle(),
-                activeTrackColor: AppColors.primary.withAlpha(
-                  150,
-                ), // Color del fons
+                activeTrackColor: AppColors.primary.withAlpha(150),
                 thumbColor: WidgetStateProperty.resolveWith<Color?>((states) {
-                  if (states.contains(WidgetState.selected))
-                    return AppColors.primary; // Botó blau fort
+                  if (states.contains(WidgetState.selected)) {
+                    return AppColors.primary;
+                  }
                   return null;
                 }),
               ),
