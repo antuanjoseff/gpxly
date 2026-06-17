@@ -599,6 +599,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
     // OIENT 5: ESTILS VISUALS DE CAPA
     ref.listen(trackSettingsProvider, (previous, next) {
       if (mapController == null || !styleInitialized) return;
+
+      // A) Actualitza la línia (Ja ho feies)
       mapController!.setLayerProperties(
         "track_line_layer",
         LineLayerProperties(
@@ -608,10 +610,18 @@ class _MapScreenState extends ConsumerState<MapScreen>
           lineJoin: "round",
         ),
       );
+
+      // Sincronitza el fons de les fites rodones amb el nou color del track
+      mapController!.setLayerProperties(
+        "waypoints_recorded_layer",
+        CircleLayerProperties(circleColor: next.color.toMapLibreColor()),
+      );
     });
 
     ref.listen(importedTrackSettingsProvider, (previous, next) {
       if (!styleInitialized || mapController == null) return;
+
+      // A) Actualitza la línia (Ja ho feies)
       mapController!.setLayerProperties(
         "imported_track_layer",
         LineLayerProperties(
@@ -620,6 +630,12 @@ class _MapScreenState extends ConsumerState<MapScreen>
           lineCap: "round",
           lineJoin: "round",
         ),
+      );
+
+      // Sincronitza el fons de les fites importades amb el nou color
+      mapController!.setLayerProperties(
+        "waypoints_imported_layer",
+        CircleLayerProperties(circleColor: next.color.toMapLibreColor()),
       );
     });
 
@@ -710,7 +726,15 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 controller.onFeatureTapped.add(_onFeatureTapped);
               },
               onStyleLoaded: () async {
+                // 1. Llegim l'estat actual en fred de les SharedPreferences des de Riverpod
+                final trackSettings = ref.read(trackSettingsProvider);
+                final importedSettings = ref.read(
+                  importedTrackSettingsProvider,
+                );
+
                 await setupUserLocationLayer(mapController!);
+
+                // Engeguem les capes dels Waypoints (Que ara neixen vectorials gràcies al teu canvi)
                 await setupWaypointLayers(mapController!);
 
                 setState(() {
@@ -718,6 +742,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   styleInitialized = true;
                 });
 
+                // Sincronitzem síncronament la línia I ELS CERCLES en néixer l'estil al mapa.
                 mapController!.setLayerProperties(
                   "track_line_layer",
                   LineLayerProperties(
@@ -725,6 +750,29 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     lineWidth: trackSettings.width,
                     lineCap: "round",
                     lineJoin: "round",
+                  ),
+                );
+                mapController!.setLayerProperties(
+                  "waypoints_recorded_layer",
+                  CircleLayerProperties(
+                    circleColor: trackSettings.color.toMapLibreColor(),
+                  ),
+                );
+
+                // B) Track Importat i les seves fites
+                mapController!.setLayerProperties(
+                  "imported_track_layer",
+                  LineLayerProperties(
+                    lineColor: importedSettings.color.toMapLibreColor(),
+                    lineWidth: importedSettings.width,
+                    lineCap: "round",
+                    lineJoin: "round",
+                  ),
+                );
+                mapController!.setLayerProperties(
+                  "waypoints_imported_layer",
+                  CircleLayerProperties(
+                    circleColor: importedSettings.color.toMapLibreColor(),
                   ),
                 );
               },

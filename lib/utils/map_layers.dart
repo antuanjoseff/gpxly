@@ -162,6 +162,7 @@ void updateWaypointSource(
   });
 }
 
+//  WAYPOINTS LAYERS
 Future<void> animateWaypointAppearance(
   MapLibreMapController controller,
   String layerId,
@@ -172,9 +173,10 @@ Future<void> animateWaypointAppearance(
   for (int i = 0; i <= steps; i++) {
     final double t = i / steps;
 
+    // 🟢 ACTUALITZAT: Apliquem l'animació sobre les opacitats del cercle vectorial natiu
     await controller.setLayerProperties(
       layerId,
-      SymbolLayerProperties(iconSize: 0.05 + (0.25 * t), iconOpacity: t),
+      CircleLayerProperties(circleOpacity: t, circleStrokeOpacity: t),
     );
 
     await Future.delayed(stepDuration);
@@ -182,21 +184,7 @@ Future<void> animateWaypointAppearance(
 }
 
 Future<void> setupWaypointLayers(MapLibreMapController controller) async {
-  // ICONA WAYPOINT GRAVAT
-  final ByteData wpRecordedBytes = await rootBundle.load(
-    'assets/icon/waypoint.png',
-  );
-  final Uint8List wpRecordedIcon = wpRecordedBytes.buffer.asUint8List();
-  await controller.addImage('waypoint_recorded_icon', wpRecordedIcon);
-
-  // ICONA WAYPOINT IMPORTAT
-  final ByteData wpImportedBytes = await rootBundle.load(
-    'assets/icon/waypoint_imported.png',
-  );
-  final Uint8List wpImportedIcon = wpImportedBytes.buffer.asUint8List();
-  await controller.addImage('waypoint_imported_icon', wpImportedIcon);
-
-  // SOURCE: recorded
+  // 1. SOURCE: recorded (Font de dades per a fites gravades)
   await controller.addSource(
     'waypoints_recorded_source',
     const GeojsonSourceProperties(
@@ -204,7 +192,7 @@ Future<void> setupWaypointLayers(MapLibreMapController controller) async {
     ),
   );
 
-  // SOURCE: imported
+  // 2. SOURCE: imported (Font de dades per a fites importades)
   await controller.addSource(
     'waypoints_imported_source',
     const GeojsonSourceProperties(
@@ -212,31 +200,34 @@ Future<void> setupWaypointLayers(MapLibreMapController controller) async {
     ),
   );
 
-  // LAYER: recorded
+  // 3. recorded (Fites gravades actives a la ruta)
   await controller.addLayer(
     'waypoints_recorded_source',
     'waypoints_recorded_layer',
-    const SymbolLayerProperties(
-      iconImage: 'waypoint_recorded_icon',
-      iconSize: 0.05,
-      iconOpacity: 0.0,
-      iconAllowOverlap: true,
-      iconIgnorePlacement: true,
-      iconAnchor: "bottom",
+    const CircleLayerProperties(
+      circleRadius: 8.0, // Mida de l'esfera interior sòlida [INDEX]
+      circleColor: "#4CAF50", // El teu verd corporatiu de Senda [INDEX]
+      circleStrokeWidth: 2.0, // Vora exterior de contrast [INDEX]
+      circleStrokeColor:
+          "#FFFFFF", // Blanca pura obligatòria per a fons foscos [INDEX]
+      circleOpacity:
+          0.0, // Comença invisible per coordinar-se amb l'animació [INDEX]
+      circleStrokeOpacity: 0.0,
     ),
   );
 
-  // LAYER: imported
+  // LAYER: imported (Fites importades del fitxer GPX de referència)
   await controller.addLayer(
     'waypoints_imported_source',
     'waypoints_imported_layer',
-    const SymbolLayerProperties(
-      iconImage: 'waypoint_imported_icon',
-      iconSize: 0.05,
-      iconOpacity: 0.0,
-      iconAllowOverlap: true,
-      iconIgnorePlacement: true,
-      iconAnchor: "bottom",
+    const CircleLayerProperties(
+      circleRadius: 8.0, // Mida simètrica [INDEX]
+      circleColor: "#00A8E8", // Blau clàssic de guia de Senda [INDEX]
+      circleStrokeWidth: 2.0, // Vora exterior de contrast [INDEX]
+      circleStrokeColor: "#FFFFFF",
+      circleOpacity:
+          0.0, // Comença invisible per coordinar-se amb l'animació [INDEX]
+      circleStrokeOpacity: 0.0,
     ),
   );
 }
