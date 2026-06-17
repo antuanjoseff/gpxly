@@ -143,7 +143,7 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
         final currentMode = ref.watch(elevationSelectionProvider).mode;
 
         return GestureDetector(
-          behavior: HitTestBehavior.opaque,
+          behavior: HitTestBehavior.translucent,
           onLongPressStart: (_) {
             final int totalPoints = globalDists.length;
             final int sIdx = (totalPoints * 0.25).floor().clamp(

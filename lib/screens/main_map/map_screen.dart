@@ -405,6 +405,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
     // ─────────────────────────────────────────────────────────────
     // 🛡️ RECEPTORS I OIENTS DE SEGUIDAMENT ASÍNCRON
     ref.listen(elevationSelectionProvider, (previous, next) {
+      if (!styleInitialized || mapController == null) return;
+
       final bool isRange = next.mode == SelectionMode.range;
 
       if (isRange) {
@@ -808,15 +810,14 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     _isChartCollapsed = !_isChartCollapsed;
                   });
 
-                  // 🟢 Quan el gràfic s’amaga → reset total del tram
                   if (_isChartCollapsed) {
-                    // 1. Reset del provider d’elevació
+                    // Neteja estat de selecció
                     ref
                         .read(elevationSelectionProvider.notifier)
                         .clearSelection();
 
-                    // 2. Aturar animació dels waypoints
-                    if (mapController != null) {
+                    // Atura pulsació de waypoints si el mapa ja està llest
+                    if (styleInitialized && mapController != null) {
                       stopWaypointPulse(mapController!);
                     }
                   }

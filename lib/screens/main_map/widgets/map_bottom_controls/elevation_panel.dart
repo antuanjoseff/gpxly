@@ -18,25 +18,23 @@ class ElevationPanel extends StatelessWidget {
   });
 
   @override
+  @override
   Widget build(BuildContext context) {
     if (!isVisible) return const SizedBox.shrink();
 
-    return Positioned(
-      bottom: 64.0 + MediaQuery.of(context).padding.bottom,
-      left: 0,
-      right: 0,
-      child: AnimatedOpacity(
-        duration: const Duration(milliseconds: 200),
-        opacity: isSubMenuOpen ? 0.35 : 1.0,
-        child: IgnorePointer(
-          ignoring: isSubMenuOpen,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            height: isCollapsed ? 0.0 : chartHeight,
-            child: EmbeddedElevationProfile(
-              isCollapsed: isCollapsed,
-              onToggle: onToggle,
-            ),
+    // 🟢 ELIMINADO EL POSITIONED. Ahora el tamaño lo controla la columna padre.
+    return AnimatedOpacity(
+      duration: const Duration(milliseconds: 200),
+      opacity: isSubMenuOpen ? 0.35 : 1.0,
+      child: IgnorePointer(
+        ignoring: isSubMenuOpen,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          // Si está colapsado mide 0, si no, mide su altura calculada
+          height: isCollapsed ? 0.0 : chartHeight,
+          child: EmbeddedElevationProfile(
+            isCollapsed: isCollapsed,
+            onToggle: onToggle,
           ),
         ),
       ),
