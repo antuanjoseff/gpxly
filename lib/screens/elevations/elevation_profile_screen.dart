@@ -51,14 +51,6 @@ class _ElevationProfileScreenState
       selectedIndexStart = idx;
       selectedIndexEnd =
           idx + 5; // Fem una selecció simulada de 5 punts per dibuixar un tram
-
-      // FORÇAR REFRESC: debugPrint per veure si la pantalla mare s'assabenta del clic del mapa
-      debugPrint(
-        "🚨 [CLIC DETECTAT] El mapa/llista ha enviat el trackIndex: $idx",
-      );
-      debugPrint(
-        "🚨 [FORÇANT GRÀFIC] Assignat selectedIndexStart = $selectedIndexStart",
-      );
     });
   }
 
@@ -97,7 +89,7 @@ class _ElevationProfileScreenState
       // Proporción exacta para que el futuro ocupe siempre el 25% de la gráfica visible
       final double maxFutureDistanceVisible = pastLastDist / 3.0;
 
-      final remainingAlts = remaining!.altitudes;
+      final remainingAlts = remaining.altitudes;
       final remainingDists = remaining.distances;
 
       // 🧮 CALCULEM L'OFFSET ENTRE L'ÚLTIM PUNT REAL I EL PRIMER FUTUR
@@ -159,7 +151,7 @@ class _ElevationProfileScreenState
     } else {
       for (final wp in importedWps) {
         final idx = wp.trackIndex;
-        if (idx < remaining!.anchorIndex) continue;
+        if (idx < remaining.anchorIndex) continue;
 
         final futureIdx = idx - remaining.anchorIndex;
         if (futureIdx < remaining.distances.length) {
@@ -306,7 +298,7 @@ class _ElevationProfileScreenState
 
                     // Distancia del tramo
                     Text(
-                      "${t.statRangeDistance}: ${(rangeDistance! / 1000).toStringAsFixed(2)} km",
+                      "${t.statRangeDistance}: ${(rangeDistance / 1000).toStringAsFixed(2)} km",
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
@@ -337,7 +329,7 @@ class _ElevationProfileScreenState
                     // Tiempo invertido en el tramo
                     if (rangeTime != null)
                       Text(
-                        "${t.statRangeTime}: ${rangeTime!.inMinutes} min",
+                        "${t.statRangeTime}: ${rangeTime.inMinutes} min",
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,

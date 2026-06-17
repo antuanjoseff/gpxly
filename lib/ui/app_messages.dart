@@ -130,8 +130,8 @@ class AppMessages {
   static Future<bool?> showGpsDisabledDialog(BuildContext context) =>
       _showBaseDialog(
         context: context,
-        title: AppLocalizations.of(context)!.gpsDisabledTitle,
-        message: AppLocalizations.of(context)!.gpsDisabledMessage,
+        title: AppLocalizations.of(context)!.gpsDisabled,
+        message: '',
         icon: Icons.location_off,
         iconColor: Colors.orangeAccent,
         confirmLabel: AppLocalizations.of(context)!.settings,

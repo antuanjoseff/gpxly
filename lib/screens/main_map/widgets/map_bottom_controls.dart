@@ -139,7 +139,7 @@ class _MapBottomControlsState extends ConsumerState<MapBottomControls> {
           // 📊 1. EL GRÀFIC D'ELEVACIONS
           if (showChartData && layout.isPanelActive)
             Listener(
-              behavior: HitTestBehavior.opaque,
+              behavior: HitTestBehavior.translucent,
               child: ElevationPanel(
                 isVisible: layout.isPanelActive,
                 isCollapsed: widget.isChartCollapsed,

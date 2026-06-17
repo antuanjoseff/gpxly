@@ -20,7 +20,7 @@ class RangeHighlightPainter extends CustomPainter {
     if (startX == null || endX == null) return;
 
     // Definim l'àrea vertical (des de dalt fins on comencen els títols)
-    final double top = 0;
+    const double top = 0;
     final double bottom = size.height - bottomReserved;
 
     final paint = Paint()

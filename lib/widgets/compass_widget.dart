@@ -32,9 +32,7 @@ class CompassScalePanel extends ConsumerWidget {
     // Càlcul escala
     final metersPerPixel =
         156543.03392 * math.cos(latitude * math.pi / 180) / math.pow(2, zoom);
-    debugPrint(
-      "BRÚIXOLA REBUT -> Zoom a Riverpod: $zoom | Metres/Pixel calculats: $metersPerPixel",
-    );
+
     const maxWidthPx = 40.0;
     final niceScales = <double>[
       10,

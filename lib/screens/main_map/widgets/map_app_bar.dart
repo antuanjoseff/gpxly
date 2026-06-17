@@ -98,7 +98,7 @@ class MapAppBar extends ConsumerWidget implements PreferredSizeWidget {
               const SizedBox(width: 6),
               Text(
                 isGpsDisabled
-                    ? t.gpsDisabled
+                    ? t.gpsDisabledTitle
                     : (altitude != null
                           ? "${altitude.toStringAsFixed(0)} m"
                           : "--- m"),

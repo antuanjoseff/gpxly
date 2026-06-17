@@ -6,7 +6,7 @@ import '../models/track_settings.dart';
 class TrackSettingsNotifier extends Notifier<TrackSettings> {
   @override
   TrackSettings build() {
-    final initial = const TrackSettings();
+    const initial = TrackSettings();
     _loadFromPrefs();
     return initial;
   }

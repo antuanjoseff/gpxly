@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/l10n/app_localizations.dart';
 import 'package:senda/notifiers/gpx_settings_notifier.dart';
 import 'package:senda/theme/app_colors.dart';
-import 'package:senda/widgets/custom_settings_card.dart';
 
 class GpxSettingsTab extends ConsumerWidget {
   const GpxSettingsTab({super.key});

@@ -1380,6 +1380,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'An unsaved previous recording has been detected. Do you want to recover it or start a new one from scratch?'**
   String get recoverTrackDialogBody;
+
+  /// No description provided for @waypointNoGps.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for GPS signal...'**
+  String get waypointNoGps;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

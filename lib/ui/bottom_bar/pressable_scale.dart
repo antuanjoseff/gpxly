@@ -31,8 +31,9 @@ class _PressableScaleState extends State<PressableScale> {
       onTapDown: (_) => _press(true),
       onTapUp: (_) {
         _press(false);
-        if (widget.onTap != null)
+        if (widget.onTap != null) {
           widget.onTap!(); // 👈 EXECUTA L’ACCIÓ CORRECTAMENT
+        }
       },
       onTapCancel: () => _press(false),
       child: AnimatedScale(

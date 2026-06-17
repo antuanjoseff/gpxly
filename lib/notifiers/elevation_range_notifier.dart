@@ -59,17 +59,17 @@ class ElevationRangeNotifier extends Notifier<ElevationRange> {
 
     final diff = maxAlt - minAlt;
 
-    const double MIN_RANGE = 30; // metres reals mínims
-    const double COMPRESS_FACTOR = 0.40; // 40% d’alçada visual
+    const double minRange = 30; // metres reals mínims
+    const double compressFactor = 0.40; // 40% d’alçada visual
 
     double visualMin = minAlt;
     double visualMax = maxAlt;
     bool isCompressed = false;
 
-    if (diff < MIN_RANGE) {
+    if (diff < minRange) {
       isCompressed = true;
       final mid = (minAlt + maxAlt) / 2;
-      final forcedRange = MIN_RANGE / COMPRESS_FACTOR;
+      const forcedRange = minRange / compressFactor;
       visualMin = mid - forcedRange / 2;
       visualMax = mid + forcedRange / 2;
     }

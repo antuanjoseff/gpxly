@@ -121,8 +121,9 @@ class _ElevationBackgroundPainter extends CustomPainter {
     void draw(Track t, Color c) {
       if (t.distances.isEmpty) return;
       final path = Path()..moveTo(x(t.distances.first), y(t.altitudes.first));
-      for (int i = 1; i < t.distances.length; i++)
+      for (int i = 1; i < t.distances.length; i++) {
         path.lineTo(x(t.distances[i]), y(t.altitudes[i]));
+      }
       canvas.drawPath(
         path,
         Paint()
@@ -138,8 +139,10 @@ class _ElevationBackgroundPainter extends CustomPainter {
 
   double _getMaxDist() {
     double d = real?.distances.isNotEmpty == true ? real!.distances.last : 0;
-    if (imported?.distances.isNotEmpty == true && imported!.distances.last > d)
+    if (imported?.distances.isNotEmpty == true &&
+        imported!.distances.last > d) {
       d = imported!.distances.last;
+    }
     return d == 0 ? 1 : d;
   }
 
@@ -259,14 +262,17 @@ class _ElevationInteractivePainter extends CustomPainter {
 
   double _getMaxDist() {
     double d = real?.distances.isNotEmpty == true ? real!.distances.last : 0;
-    if (imported?.distances.isNotEmpty == true && imported!.distances.last > d)
+    if (imported?.distances.isNotEmpty == true &&
+        imported!.distances.last > d) {
       d = imported!.distances.last;
+    }
     return d == 0 ? 1 : d;
   }
 
   double _findValue(Track t, double d) {
-    for (int i = 0; i < t.distances.length; i++)
+    for (int i = 0; i < t.distances.length; i++) {
       if (t.distances[i] >= d) return t.altitudes[i];
+    }
     return t.altitudes.isNotEmpty ? t.altitudes.last : 0.0;
   }
 

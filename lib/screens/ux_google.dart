@@ -74,14 +74,14 @@ class _RecordingFollowingSimulatorPageState
 
   Widget _buildBottomPanel() {
     return Container(
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
         boxShadow: [
           BoxShadow(
             color: Colors.black12,
             blurRadius: 15,
-            offset: const Offset(0, -5),
+            offset: Offset(0, -5),
           ),
         ],
       ),
@@ -288,10 +288,11 @@ class _RecordingFollowingSimulatorPageState
 
   void _confirmStop(String title) {
     setState(() {
-      if (title == "Gravació")
+      if (title == "Gravació") {
         recording = RecordingSimulateState.idle;
-      else
+      } else {
         following = FollowingState.idle;
+      }
     });
   }
 }

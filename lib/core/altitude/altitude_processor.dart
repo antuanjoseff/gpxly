@@ -45,8 +45,9 @@ class AltitudeProcessor extends Notifier<AltitudeState> {
   // El barómetro solo normaliza la unidad y actualiza el estado en RAM.
   // Ya no toca variables de fusión globales, eliminando de raíz las corrupciones de memoria.
   void updateBaro(double currentBaroRawValue) {
-    if (currentBaroRawValue < 300.0)
+    if (currentBaroRawValue < 300.0) {
       return; // Protección contra ceros iniciales del canal
+    }
 
     // Convertimos de forma segura los hPa del hardware a metros teóricos estándar
     final double baroAltInMeters =
@@ -79,8 +80,9 @@ class AltitudeProcessor extends Notifier<AltitudeState> {
     // ─── 🏁 EL BAUTISMO INICIAL (Se ejecuta una sola vez en la ruta) ───
     if (_lastFused == null) {
       _lastFused = referenceBaseAlt;
-      if (baroAlt != null)
+      if (baroAlt != null) {
         _lastBaroAltCalculated = baroAlt; // Sincronización en metros impecable
+      }
 
       print(
         "🎯 [ALTITUDE] Calibración QNH inicial completada con éxito: ${_lastFused!.toStringAsFixed(1)}m",

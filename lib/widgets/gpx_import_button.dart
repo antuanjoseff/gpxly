@@ -38,15 +38,17 @@ Future<void> importGpxAndZoom({
   final importedTrack = ref.read(importedTrackProvider);
   if (importedTrack == null ||
       importedTrack.points.isEmpty ||
-      mapController == null)
+      mapController == null) {
     return;
+  }
 
   final stats = importedTrack.stats;
   if (stats.minLat == null ||
       stats.maxLat == null ||
       stats.minLon == null ||
-      stats.maxLon == null)
+      stats.maxLon == null) {
     return;
+  }
 
   // Reconstruïm els límits de MapLibre de forma directa i síncrona
   final bounds = LatLngBounds(

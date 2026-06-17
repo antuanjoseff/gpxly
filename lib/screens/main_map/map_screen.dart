@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
+import 'package:senda/l10n/app_localizations.dart';
 import 'package:senda/models/navigation_state.dart';
 import 'package:senda/models/track.dart';
 import 'package:senda/models/user_position.dart';
@@ -232,9 +233,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
       // Si l'usuari denega els permisos de localització al diàleg, frenem el flux a l'acte
       if (!permisosConcedidos) {
-        debugPrint(
-          "🧭 [SENDA] flux de navegació detingut: Permisos de segon pla denegats.",
-        );
         return;
       }
     }
@@ -275,19 +273,29 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
   // Creador autònom de Fites Senda
   void _onAddWaypoint(BuildContext context, WidgetRef ref) async {
-    final recordingTrack = ref.read(trackRecordingProvider);
-    if (recordingTrack.points.isEmpty) return;
+    // 1) Posició actual del cercle blau (GPS)
+    final pos = ref.read(locationProvider);
+    if (pos == null) {
+      AppMessages.showErrorSnackBar(
+        context,
+        AppLocalizations.of(context)!.waypointNoGps,
+      );
 
-    final lastPoint = recordingTrack.points.last;
-    final lastLat = lastPoint.position.latitude;
-    final lastLon = lastPoint.position.longitude;
-    final lastAlt = lastPoint.altitude;
+      return;
+    }
 
+    final lastLat = pos.position.latitude;
+    final lastLon = pos.position.longitude;
+    final lastAlt = pos.altitude;
+
+    // 2) Corregim altitud amb HGT
     final (correctedAlt, _) = await HgtService().getCorrectedElevation(
       lastLat,
       lastLon,
       lastAlt,
     );
+
+    // 3) Nom suggerit
     final waypoints = ref.read(waypointsProvider);
     final name = await AppMessages.showAddWaypointDialog(
       context,
@@ -296,16 +304,18 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
     if (name == null || name.isEmpty) return;
 
+    // 4) Creem waypoint amb la coordenada del cercle blau
     final wp = Waypoint(
       id: "rec_${DateTime.now().millisecondsSinceEpoch}",
       name: name,
       lat: lastLat,
       lon: lastLon,
-      trackIndex: recordingTrack.points.length - 1,
       ele: correctedAlt,
-      distanceAtPoint: recordingTrack.distance,
+      trackIndex: ref.read(trackRecordingProvider).points.length - 1,
+      distanceAtPoint: ref.read(trackRecordingProvider).distance,
       time: DateTime.now(),
     );
+
     ref.read(waypointsProvider.notifier).add(wp);
   }
 

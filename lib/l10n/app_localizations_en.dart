@@ -653,4 +653,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get recoverTrackDialogBody => 'An unsaved previous recording has been detected. Do you want to recover it or start a new one from scratch?';
+
+  @override
+  String get waypointNoGps => 'Waiting for GPS signal...';
 }

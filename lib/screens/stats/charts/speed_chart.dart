@@ -142,8 +142,9 @@ class _SpeedBackgroundPainter extends CustomPainter {
     void draw(Track t, List<double> s, Color c) {
       if (s.isEmpty) return;
       final path = Path()..moveTo(x(t.distances.first), y(s.first));
-      for (int i = 1; i < s.length; i++)
+      for (int i = 1; i < s.length; i++) {
         path.lineTo(x(t.distances[i]), y(s[i]));
+      }
       canvas.drawPath(
         path,
         Paint()
@@ -153,16 +154,18 @@ class _SpeedBackgroundPainter extends CustomPainter {
       );
     }
 
-    if (imported != null)
+    if (imported != null) {
       draw(imported!, importedSpeeds, AppColors.trackGreen.withAlpha(100));
+    }
     if (real != null) draw(real!, realSpeeds, AppColors.redAlert);
   }
 
   double _getMaxDist() {
     double d = 0;
     if (real != null && real!.distances.isNotEmpty) d = real!.distances.last;
-    if (imported != null && imported!.distances.isNotEmpty)
+    if (imported != null && imported!.distances.isNotEmpty) {
       d = imported!.distances.last > d ? imported!.distances.last : d;
+    }
     return d == 0 ? 1 : d;
   }
 
@@ -296,14 +299,17 @@ class _SpeedInteractivePainter extends CustomPainter {
 
   double _getMaxDist() {
     double d = real?.distances.isNotEmpty == true ? real!.distances.last : 0;
-    if (imported?.distances.isNotEmpty == true && imported!.distances.last > d)
+    if (imported?.distances.isNotEmpty == true &&
+        imported!.distances.last > d) {
       d = imported!.distances.last;
+    }
     return d == 0 ? 1 : d;
   }
 
   double _findValue(Track t, List<double> s, double d) {
-    for (int i = 0; i < t.distances.length; i++)
+    for (int i = 0; i < t.distances.length; i++) {
       if (t.distances[i] >= d) return s[i];
+    }
     return s.isNotEmpty ? s.last : 0.0;
   }
 

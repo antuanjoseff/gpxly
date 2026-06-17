@@ -24,12 +24,12 @@ final ThemeData appTheme = ThemeData(
   ),
 
   // AppBar
-  appBarTheme: AppBarTheme(
+  appBarTheme: const AppBarTheme(
     backgroundColor: AppColors.primary,
     foregroundColor: Colors.white,
     elevation: 0,
     centerTitle: true,
-    titleTextStyle: const TextStyle(
+    titleTextStyle: TextStyle(
       fontSize: 16,
       fontWeight: FontWeight.w800,
       letterSpacing: 0.5,
@@ -44,7 +44,7 @@ final ThemeData appTheme = ThemeData(
     elevation: 0,
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(12),
-      side: BorderSide(color: AppColors.tertiary),
+      side: const BorderSide(color: AppColors.tertiary),
     ),
   ),
 

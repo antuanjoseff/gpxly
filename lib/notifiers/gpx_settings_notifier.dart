@@ -5,7 +5,7 @@ import '../models/gpx_settings.dart';
 class GpxSettingsNotifier extends Notifier<GpxSettings> {
   @override
   GpxSettings build() {
-    final initial = const GpxSettings();
+    const initial = GpxSettings();
     _loadFromPrefs();
     return initial;
   }

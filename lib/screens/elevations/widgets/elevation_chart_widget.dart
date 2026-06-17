@@ -154,16 +154,21 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
               0,
               totalPoints - 1,
             );
+
+            // 🔧 AIXÒ ÉS L’ÚNIC QUE CAL CANVIAR
             ref
                 .read(elevationSelectionProvider.notifier)
-                .startSelectionWithLongPress(sIdx, eIdx);
+                .setManualRange(sIdx, eIdx);
+
             setState(() {
               _draggingNeedle = 0;
               _localStartIdx = sIdx;
               _localEndIdx = eIdx;
               _localGraphIdx = null;
+              _draggingNeedle = -1;
             });
           },
+
           onTapUp: (details) {
             final x = details.localPosition.dx;
             final touchedStart = startX != null && (x - startX).abs() < 30;
@@ -388,12 +393,12 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
       maxX: maxDist,
       gridData: const FlGridData(show: false),
       borderData: FlBorderData(show: false),
-      clipData: const FlClipData.all(),
-      extraLinesData: ExtraLinesData(
-        horizontalLines: [
-          HorizontalLine(y: forcedMinY, color: Colors.grey, strokeWidth: 1.5),
-        ],
-      ),
+      clipData: const FlClipData.none(),
+      // extraLinesData: ExtraLinesData(
+      //   horizontalLines: [
+      //     HorizontalLine(y: forcedMinY, color: Colors.grey, strokeWidth: 1.5),
+      //   ],
+      // ),
       titlesData: FlTitlesData(
         // 🚀 RECTIFICACIÓ: Sincronitzem el sostre d'fl_chart amb els teus Painters utilitzant la mida reservada a dalt
         topTitles: AxisTitles(
@@ -528,7 +533,7 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
               show: true,
               color: trackColor.withAlpha(64),
               cutOffY: forcedMinY,
-              applyCutOffY: false, // Desactivem el retall rígid inferior
+              applyCutOffY: true,
             ),
           ),
         if (futureDists.isNotEmpty)

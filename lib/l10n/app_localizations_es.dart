@@ -653,4 +653,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get recoverTrackDialogBody => 'Se han detectado datos de una ruta anterior no guardada. ¿Quieres recuperarla o prefieres empezar una nueva desde cero?';
+
+  @override
+  String get waypointNoGps => 'Esperando señal GPS...';
 }

@@ -9,7 +9,7 @@ class ReverseDetector {
     if (pts.length < TrackThresholds.minPositionsLevel3) return false;
 
     // --- 2. Definim la finestra de càlcul ---
-    final int N = TrackThresholds.minPositionsLevel3;
+    const int N = TrackThresholds.minPositionsLevel3;
     final window = pts.sublist(pts.length - N);
 
     final LatLng first = window.first;

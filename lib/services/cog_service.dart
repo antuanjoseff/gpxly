@@ -167,7 +167,7 @@ class CogService {
       for (var map in _cache) {
         if (map.contains(lat, lon)) {
           map.lastUsed = DateTime.now();
-          if (map.data == null) map.data = await File(map.path).readAsBytes();
+          map.data ??= await File(map.path).readAsBytes();
 
           // 🔥 CANVI DE SEGURETAT 2
           final alt = _interpolateElevation(map, lat, lon);
@@ -194,7 +194,7 @@ class CogService {
     // 5. Verificación final post-descarga
     for (var map in _cache) {
       if (map.contains(lat, lon)) {
-        if (map.data == null) map.data = await File(map.path).readAsBytes();
+        map.data ??= await File(map.path).readAsBytes();
 
         // 🔥 CANVI DE SEGURETAT 3
         final alt = _interpolateElevation(map, lat, lon);

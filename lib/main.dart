@@ -28,7 +28,7 @@ class GPXlyApp extends StatelessWidget {
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
-        supportedLocales: [Locale('en'), Locale('ca'), Locale('es')],
+        supportedLocales: const [Locale('en'), Locale('ca'), Locale('es')],
         theme: appTheme,
         home: const MapScreen(),
       ),
@@ -40,7 +40,7 @@ class GPXlyApp extends StatelessWidget {
 /// LISTENER DE CICLO DE VIDA (INTEGRACIÓ DE PERSISTÈNCIA SENDA)
 /// ─────────────────────────────────────────────────────────
 class _LifecycleWrapper extends ConsumerStatefulWidget {
-  const _LifecycleWrapper({super.key, required this.child});
+  const _LifecycleWrapper({required this.child});
   final Widget child;
 
   @override

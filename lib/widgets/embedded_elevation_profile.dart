@@ -34,7 +34,7 @@ class _EmbeddedElevationProfileState
   final ValueNotifier<int?> _localHoverIndex = ValueNotifier<int?>(null);
   final ValueNotifier<int?> _localRangeStart = ValueNotifier<int?>(null);
   final ValueNotifier<int?> _localRangeEnd = ValueNotifier<int?>(null);
-  DateTime _lastTouchMoveTime = DateTime.fromMillisecondsSinceEpoch(0);
+  final DateTime _lastTouchMoveTime = DateTime.fromMillisecondsSinceEpoch(0);
   static const int _touchThrottleDurationMs = 32;
   List<double> _cachedImportedDists = [];
   int _lastCoordinatesLength = 0;
@@ -75,7 +75,7 @@ class _EmbeddedElevationProfileState
 
     if (shouldShowFuture) {
       final double maxFutureDistanceVisible = pastLastDist / 3.0;
-      final remainingAlts = remaining!.altitudes;
+      final remainingAlts = remaining.altitudes;
       final remainingDists = remaining.distances;
       double elevationOffset = 0.0;
       if (realAlts.isNotEmpty && remainingAlts.isNotEmpty) {
@@ -151,7 +151,7 @@ class _EmbeddedElevationProfileState
                 "${totalHours}h ${totalMinutes.toString().padLeft(2, '0')}m";
           } else {
             timeElapsedStr =
-                "${totalMinutes}:${totalSeconds.toString().padLeft(2, '0')}";
+                "$totalMinutes:${totalSeconds.toString().padLeft(2, '0')}";
           }
 
           if (duration.inSeconds > 0 && rangeDistance > 0) {
@@ -183,7 +183,7 @@ class _EmbeddedElevationProfileState
     } else {
       for (final wp in importedWps) {
         final idx = wp.trackIndex;
-        if (idx < remaining!.anchorIndex) continue;
+        if (idx < remaining.anchorIndex) continue;
         final futureIdx = idx - remaining.anchorIndex;
         if (futureIdx < remaining.distances.length) {
           importedWaypointGlobalDists.add(
@@ -204,7 +204,7 @@ class _EmbeddedElevationProfileState
     // 🟢 LA MATEMÀTICA ASIMÈTRICA:
     // Si està plegat, fa 0px (el mapa és 100% lliure).
     // Si està desplegat, fa exactament la nansa (36px) per a les estadístiques del tram + el 15% del gràfic.
-    final double collapsedHeight = 0.0;
+    const double collapsedHeight = 0.0;
     final double expandedHeight = handleHeight + chartHeight;
 
     return AnimatedContainer(

@@ -176,10 +176,11 @@ class _RecordingFollowingSimulatorPageState
         icon: hasTrackImported ? Icons.play_arrow : Icons.file_upload,
         color: Colors.blue,
         onTap: () {
-          if (!hasTrackImported)
+          if (!hasTrackImported) {
             _simulateImport();
-          else
+          } else {
             setState(() => following = FollowingState.following);
+          }
         },
       );
     }
@@ -296,7 +297,7 @@ class _RecordingFollowingSimulatorPageState
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
+          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
         ),
         child: Row(
           children: [
@@ -326,10 +327,11 @@ class _RecordingFollowingSimulatorPageState
   void _confirmStop(String type) {
     // Aquí podries posar un Dialog de confirmació real
     setState(() {
-      if (type == "Gravació")
+      if (type == "Gravació") {
         recording = RecordingSimulateState.idle;
-      else
+      } else {
         following = FollowingState.idle;
+      }
     });
   }
 }

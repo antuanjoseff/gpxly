@@ -30,8 +30,9 @@ class _WaypointsListWidgetState extends State<WaypointsListWidget> {
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context)!;
-    if (widget.recorded.isEmpty && widget.imported.isEmpty)
+    if (widget.recorded.isEmpty && widget.imported.isEmpty) {
       return const SizedBox.shrink();
+    }
 
     return Column(
       children: [

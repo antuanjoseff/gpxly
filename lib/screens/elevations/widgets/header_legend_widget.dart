@@ -108,10 +108,11 @@ class HeaderLegendWidget extends ConsumerWidget {
 
     for (int i = s + 1; i <= e; i++) {
       final diff = t.altitudes[i] - t.altitudes[i - 1];
-      if (diff > 0)
+      if (diff > 0) {
         ascent += diff;
-      else
+      } else {
         descent += diff.abs();
+      }
     }
 
     // Durada proporcional (simple i suficient)

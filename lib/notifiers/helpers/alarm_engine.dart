@@ -82,7 +82,7 @@ class AlarmEngine {
       _checkDistanceAlarm(pos, settings.distanceMeters);
     }
 
-    if (gpsAltitude != null && gpsAltitude > 0.1) {
+    if (gpsAltitude > 0.1) {
       _processAltitudeLogics(gpsAltitude, settings);
     }
 

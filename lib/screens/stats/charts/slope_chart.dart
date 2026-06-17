@@ -123,8 +123,9 @@ class _SlopeMiddlePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (size.width <= 0 || (realSlopes.isEmpty && importedSlopes.isEmpty))
+    if (size.width <= 0 || (realSlopes.isEmpty && importedSlopes.isEmpty)) {
       return;
+    }
 
     final maxD = _getMaxDist();
     final allS = [...realSlopes, ...importedSlopes];
@@ -142,7 +143,7 @@ class _SlopeMiddlePainter extends CustomPainter {
       Paint()..color = Colors.grey.withAlpha(40),
     );
 
-    if (imported != null)
+    if (imported != null) {
       _drawTrack(
         canvas,
         imported!,
@@ -151,8 +152,10 @@ class _SlopeMiddlePainter extends CustomPainter {
         x,
         y,
       );
-    if (real != null)
+    }
+    if (real != null) {
       _drawTrack(canvas, real!, realSlopes, AppColors.redAlert, x, y);
+    }
   }
 
   double _getMaxDist() {
@@ -174,7 +177,9 @@ class _SlopeMiddlePainter extends CustomPainter {
   ) {
     if (t.distances.isEmpty) return;
     final path = Path()..moveTo(x(t.distances.first), y(s.first));
-    for (int i = 1; i < s.length; i++) path.lineTo(x(t.distances[i]), y(s[i]));
+    for (int i = 1; i < s.length; i++) {
+      path.lineTo(x(t.distances[i]), y(s[i]));
+    }
     canvas.drawPath(
       path,
       Paint()

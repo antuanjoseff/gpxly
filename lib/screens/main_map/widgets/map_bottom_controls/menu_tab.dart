@@ -32,7 +32,7 @@ class MenuTab extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(icon, color: iconColor, size: 24),
-                SizedBox(height: 4),
+                const SizedBox(height: 4),
                 FittedBox(
                   child: Text(
                     label,

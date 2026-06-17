@@ -118,9 +118,9 @@ class AlarmSettingsNotifier extends Notifier<AlarmSettings> {
 
   void _handleEngineTransition(bool before, bool after) {
     final engine = ref.read(alarmEngineProvider);
-    if (!before && after)
+    if (!before && after) {
       engine.start();
-    else if (before && !after)
+    } else if (before && !after)
       engine.stop();
   }
 

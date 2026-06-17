@@ -39,8 +39,9 @@ class _SendaElevationChartState extends State<SendaElevationChart> {
   @override
   Widget build(BuildContext context) {
     final primary = widget.real ?? widget.imported;
-    if (primary == null || primary.distances.isEmpty)
+    if (primary == null || primary.distances.isEmpty) {
       return const SizedBox.shrink();
+    }
 
     return Container(
       margin: const EdgeInsets.all(16),
@@ -48,7 +49,7 @@ class _SendaElevationChartState extends State<SendaElevationChart> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10)],
+        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10)],
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
@@ -66,9 +67,9 @@ class _SendaElevationChartState extends State<SendaElevationChart> {
               final eX = widget.selectedIndexEnd != null
                   ? mapX(primary.distances[widget.selectedIndexEnd!])
                   : -100.0;
-              if ((x - sX).abs() < 30)
+              if ((x - sX).abs() < 30) {
                 _draggingNeedle = 1;
-              else if ((x - eX).abs() < 30)
+              } else if ((x - eX).abs() < 30)
                 _draggingNeedle = 2;
               else {
                 _draggingNeedle = 3;
@@ -202,7 +203,7 @@ class _StaticProfilePainter extends CustomPainter {
         Paint()..color = Colors.orange.withAlpha(30),
       );
     }
-    if (imported != null)
+    if (imported != null) {
       _drawPath(
         canvas,
         imported!,
@@ -210,6 +211,7 @@ class _StaticProfilePainter extends CustomPainter {
         AppColors.trackGreen.withAlpha(100),
         true,
       );
+    }
     if (real != null) _drawPath(canvas, real!, m, AppColors.redAlert, false);
   }
 
@@ -218,10 +220,11 @@ class _StaticProfilePainter extends CustomPainter {
     for (int i = 0; i < t.distances.length; i++) {
       final x = (t.distances[i] / m.maxDist) * m.usableW + 24;
       final y = m.xAxisY - ((t.altitudes[i] - m.minAlt) / m.yRange * m.chartH);
-      if (i == 0)
+      if (i == 0) {
         path.moveTo(x, y);
-      else
+      } else {
         path.lineTo(x, y);
+      }
     }
     canvas.drawPath(
       path,

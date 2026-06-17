@@ -97,9 +97,9 @@ class SkyplotPainter extends CustomPainter {
 
       // Asignación de colores real de tu imagen según decibelios
       Color satColor = Colors.orange;
-      if (cn0 >= 30.0)
+      if (cn0 >= 30.0) {
         satColor = Colors.green;
-      else if (cn0 >= 20.0)
+      } else if (cn0 >= 20.0)
         satColor = Colors.amber;
 
       final paintNode = Paint()

@@ -75,15 +75,17 @@ Future<void> pickGpxAndImport({
   final importedTrack = ref.read(importedTrackProvider);
   if (importedTrack == null ||
       importedTrack.points.isEmpty ||
-      mapController == null)
+      mapController == null) {
     return;
+  }
 
   final stats = importedTrack.stats;
   if (stats.minLat == null ||
       stats.maxLat == null ||
       stats.minLon == null ||
-      stats.maxLon == null)
+      stats.maxLon == null) {
     return;
+  }
 
   // Reconstruïm els límits de MapLibre usant els valors que el servei ja ha processat
   final bounds = LatLngBounds(
