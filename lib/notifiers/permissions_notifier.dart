@@ -4,6 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/models/gps_permission.dart';
 import 'package:permission_handler/permission_handler.dart' as perm;
 import 'package:geolocator/geolocator.dart' as geo;
+import 'package:senda/models/track.dart';
+import 'package:senda/notifiers/recording_notifier.dart';
+import 'package:senda/services/recording_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class PermissionsNotifier extends Notifier<GpsPermissionState> {
@@ -71,15 +74,32 @@ class PermissionsNotifier extends Notifier<GpsPermissionState> {
     await checkPermissions();
     await checkServiceStatus();
 
-    _serviceSub = geo.Geolocator.getServiceStatusStream().listen((status) {
+    // Escoltem els canvis reals de l'antena GPS en temps real
+    _serviceSub = geo.Geolocator.getServiceStatusStream().listen((
+      status,
+    ) async {
       final bool enabled = status == geo.ServiceStatus.enabled;
 
       if (state.serviceEnabled != enabled) {
-        // Si el GPS s'encén, mirem si hi havia alguna cosa pendent a l'estat
-        state = state.copyWith(
-          serviceEnabled: enabled,
-          // Si teníem la "intenció" guardada, la mantenim perquè el MapScreen la llegeixi
-        );
+        if (enabled) {
+          // 🎯 L'antena s'ha encès: tornem a llegir el disc per activar els "shouldResume"
+          await checkServiceStatus();
+        } else {
+          // 🛑 L'antena s'ha apagat: canviem el flag de servei a l'estat
+          state = state.copyWith(serviceEnabled: false);
+
+          // REGLA DE SEGURETAT: Si el GPS s'apaga i l'app està gravant, la pausem
+          final recordingState = ref
+              .read(trackRecordingProvider)
+              .recordingState;
+
+          if (recordingState == RecordingState.recording) {
+            ref.read(trackRecordingProvider.notifier).pauseRecording();
+
+            // Activem la persistència perquè sàpiga que ha de reprendre en tornar el GPS
+            setPendingAction(true);
+          }
+        }
       }
     });
   }

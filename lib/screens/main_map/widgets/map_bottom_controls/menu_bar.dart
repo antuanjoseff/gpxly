@@ -8,7 +8,6 @@ import 'package:senda/notifiers/location_notifier.dart';
 import 'package:senda/screens/settings/settings_screen.dart';
 import 'package:senda/theme/app_colors.dart';
 import 'package:senda/l10n/app_localizations.dart';
-import 'package:senda/widgets/recording_status_bar.dart';
 import 'menu_tab.dart';
 
 class MenuBar extends ConsumerWidget {
@@ -53,7 +52,7 @@ class MenuBar extends ConsumerWidget {
     final isPaused = ref.watch(locationProvider.notifier).isSimulationPaused;
 
     Widget recordingWidget = MenuTab(
-      icon: Icons.fiber_manual_record_outlined,
+      icon: Icons.fiber_manual_record,
       label: t.record,
       iconColor: Colors.white,
       onTap: onRecordingTap,
@@ -84,7 +83,7 @@ class MenuBar extends ConsumerWidget {
                 Icon(currentIcon, color: accentColor, size: 22),
                 const SizedBox(height: 2),
                 Text(
-                  isRecordingActive ? "Gravant..." : "Pausat",
+                  isRecordingActive ? t.recording : t.recordPaused,
                   style: TextStyle(
                     color: accentColor,
                     fontSize: 10,
@@ -113,16 +112,7 @@ class MenuBar extends ConsumerWidget {
           : Icons.explore;
     }
 
-    Color profileIconColor = Colors.white.withAlpha(60);
-    if (isProfileAvailable) {
-      if (isChartCollapsed) {
-        profileIconColor = Colors.white.withAlpha(200);
-      } else {
-        profileIconColor = isRunning
-            ? (isPaused ? Colors.blue : Colors.orange)
-            : Colors.amber;
-      }
-    }
+    // 🎯 NETEJA DE VARIABLES SENSE ÚS: Esborrem "profileIconColor" vella que no s'usava
 
     return Container(
       color: AppColors.primary,
@@ -155,14 +145,12 @@ class MenuBar extends ConsumerWidget {
                   onTap: isProfileAvailable ? onToggleChart : null,
                   child: Center(
                     child: Container(
-                      // 📐 MIDES UNIFICADES: Forçem amplada i alçada fixes per dins del Center
-                      // per assegurar que la píndola d'aquest botó sigui simètrica a la de gravació
                       width: 72,
                       height: 52,
                       padding: const EdgeInsets.symmetric(vertical: 4),
                       decoration: BoxDecoration(
-                        // 🟢 LA TEVA REGLA: Fons blanc pur NOMÉS quan el gràfic està obert (!isChartCollapsed)
-                        color: (isProfileAvailable && !isChartCollapsed)
+                        // 🟢 CORREGIT: El fons serà blanc ÚNICAMENT si el panell està obert visualment (isPanelActive es true)
+                        color: (isProfileAvailable && isPanelActive)
                             ? Colors.white
                             : Colors.transparent,
                         borderRadius: BorderRadius.circular(12),
@@ -172,13 +160,14 @@ class MenuBar extends ConsumerWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            isChartCollapsed
-                                ? Icons.landscape_outlined
-                                : Icons.landscape_rounded,
+                            // 🟢 CORREGIT: Icona plena si el panell està visible de veritat, perfilada si està tancat
+                            isPanelActive
+                                ? Icons.landscape_rounded
+                                : Icons.landscape_outlined,
                             size: 22,
-                            // 🟢 COLOR ADAPTATIU: Blau si el fons és blanc, Blanc si el fons és blau
+                            // 🟢 CORREGIT: Color adaptatiu dependent en exclusiva de "isPanelActive"
                             color: isProfileAvailable
-                                ? (!isChartCollapsed
+                                ? (isPanelActive
                                       ? AppColors.primary
                                       : Colors.white)
                                 : Colors.white.withAlpha(60),
@@ -189,8 +178,9 @@ class MenuBar extends ConsumerWidget {
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
+                              // 🟢 CORREGIT: Text adaptatiu dependent en exclusiva de "isPanelActive"
                               color: isProfileAvailable
-                                  ? (!isChartCollapsed
+                                  ? (isPanelActive
                                         ? AppColors.primary
                                         : Colors.white)
                                   : Colors.white.withAlpha(60),

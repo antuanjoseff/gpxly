@@ -11,6 +11,8 @@ class SettingsCard extends StatelessWidget {
   final bool isActive; // Controla si l'slider es pot moure (onChanged != null)
   final bool isStyleActive; // Controla si el bloc es pinta de blau o de gris
   final ValueChanged<double> onChanged;
+  final ValueChanged<double>?
+  onChangeEnd; // 🎯 AFEGIT: Callback de finalització del gest
   final IconData? icon;
   final Widget? extraChild;
 
@@ -25,6 +27,7 @@ class SettingsCard extends StatelessWidget {
     this.isActive = true,
     this.isStyleActive = true, // Nova propietat
     required this.onChanged,
+    this.onChangeEnd, // 🎯 AFEGIT: Nou paràmetre al constructor secundari
     this.icon,
     this.extraChild,
   });
@@ -122,7 +125,12 @@ class SettingsCard extends StatelessWidget {
       children: [
         IconButton(
           onPressed: isActive && value > min
-              ? () => onChanged((value - step).clamp(min, max))
+              ? () {
+                  final nouValor = (value - step).clamp(min, max);
+                  onChanged(nouValor);
+                  // 🎯 Executa directament l'apply si es polsa el botó de decrement
+                  onChangeEnd?.call(nouValor);
+                }
               : null,
           icon: const Icon(Icons.remove_circle_outline, size: 28),
           color: color,
@@ -143,12 +151,19 @@ class SettingsCard extends StatelessWidget {
               divisions: divisions,
               // HABILITACIÓ REAL: Només depèn de isActive
               onChanged: isActive ? onChanged : null,
+              // 🎯 ENLLAÇ REAL AMB EL SLIDER: S'activa únicament en aixecar el dit
+              onChangeEnd: isActive ? onChangeEnd : null,
             ),
           ),
         ),
         IconButton(
           onPressed: isActive && value < max
-              ? () => onChanged((value + step).clamp(min, max))
+              ? () {
+                  final nouValor = (value + step).clamp(min, max);
+                  onChanged(nouValor);
+                  // 🎯 Executa directament l'apply si es polsa el botó d'increment
+                  onChangeEnd?.call(nouValor);
+                }
               : null,
           icon: const Icon(Icons.add_circle_outline, size: 28),
           color: color,

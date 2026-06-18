@@ -22,26 +22,31 @@ class NavigationSubMenu extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final t = AppLocalizations.of(context)!;
     final bool isFollowing = navState.isFollowing;
+    final Color fonsDialog = AppColors.skyBlueDark.withAlpha(225);
 
     return Container(
-      decoration: BoxDecoration(
-        color: AppColors.primary,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white12),
-      ),
-      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
       child: Row(
         children: [
+          // CAS 1: NO HI HA TRACK IMPORTAT (Botó únic sencer arrodonit)
           if (!hasTrack)
             Expanded(
-              child: TextButton.icon(
-                icon: const Icon(
-                  Icons.file_upload_outlined,
-                  color: Colors.blueAccent,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.skyBlue,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
+                icon: const Icon(Icons.file_upload_outlined, size: 22),
                 label: Text(
-                  t.submenuImportGpx,
-                  style: const TextStyle(color: Colors.white),
+                  t.submenuImportGpx.toUpperCase(),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
                 ),
                 onPressed: () {
                   onClose();
@@ -50,52 +55,32 @@ class NavigationSubMenu extends ConsumerWidget {
               ),
             ),
 
+          // CAS 2: HI HA TRACK PERÒ NO S'ESTÀ SEGUINT (Inici vs Paperera)
           if (hasTrack && !isFollowing) ...[
+            // ◀️ BOTÓ ESQUERRA: Començar navegació (Verd)
             Expanded(
-              child: TextButton.icon(
-                icon: const Icon(
-                  Icons.play_arrow_rounded,
-                  color: Colors.greenAccent,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green.shade700,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(12),
+                      bottomLeft: Radius.circular(12),
+                      topRight: Radius.zero,
+                      bottomRight: Radius.zero,
+                    ),
+                  ),
                 ),
+                icon: const Icon(Icons.play_arrow_rounded, size: 22),
                 label: Text(
-                  t.navigationStart,
-                  style: const TextStyle(color: Colors.white),
-                ),
-                onPressed: () {
-                  onClose();
-                  onAction(true); // Manté true per començar (Demanarà permisos)
-                },
-              ),
-            ),
-            Expanded(
-              child: TextButton.icon(
-                icon: const Icon(Icons.close_rounded, color: Colors.grey),
-                label: Text(
-                  t.navigationCancel,
-                  style: const TextStyle(color: Colors.white),
-                ),
-                onPressed: () {
-                  onClose();
-                  onAction(false); // Neteja el track sense demanar permisos
-                },
-              ),
-            ),
-          ],
-
-          if (isFollowing) ...[
-            Expanded(
-              child: TextButton.icon(
-                icon: Icon(
-                  navState.isPaused
-                      ? Icons.play_arrow_rounded
-                      : Icons.pause_rounded,
-                  color: Colors.amber,
-                ),
-                label: Text(
-                  navState.isPaused
-                      ? t.submenuFollowingResume
-                      : t.submenuFollowingPause,
-                  style: const TextStyle(color: Colors.white),
+                  t.navigationStart.toUpperCase(),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
                 ),
                 onPressed: () {
                   onClose();
@@ -103,18 +88,110 @@ class NavigationSubMenu extends ConsumerWidget {
                 },
               ),
             ),
+            // ▶️ BOTÓ DRETA: Descarta / Esborra GPX (Vermell Alert)
             Expanded(
-              child: TextButton.icon(
-                icon: const Icon(Icons.stop_rounded, color: AppColors.redAlert),
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.redAlert,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.zero,
+                      bottomLeft: Radius.zero,
+                      topRight: Radius.circular(12),
+                      bottomRight: Radius.circular(12),
+                    ),
+                  ),
+                ),
+                icon: const Icon(Icons.delete_outline_rounded, size: 22),
                 label: Text(
-                  t.submenuFollowingStop,
-                  style: const TextStyle(color: Colors.white),
+                  t.navigationCancel.toUpperCase(),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
                 ),
                 onPressed: () {
                   onClose();
-                  onAction(
-                    false,
-                  ); // Atura el seguiment de forma unificada enviant false
+                  onAction(false);
+                },
+              ),
+            ),
+          ],
+
+          // CAS 3: NAVEGACIÓ ACTIVA (Pausa/Reprendre vs Stop)
+          if (isFollowing) ...[
+            // ◀️ BOTÓ ESQUERRA: Pausa o Reprendre el seguiment
+            Expanded(
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: navState.isPaused
+                      ? Colors.green.shade700
+                      : Colors.amber.shade700,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(12),
+                      bottomLeft: Radius.circular(12),
+                      topRight: Radius.zero,
+                      bottomRight: Radius.zero,
+                    ),
+                  ),
+                ),
+                icon: Icon(
+                  navState.isPaused
+                      ? Icons.play_arrow_rounded
+                      : Icons.pause_rounded,
+                  size: 22,
+                ),
+                label: Text(
+                  (navState.isPaused
+                          ? t.submenuFollowingResume
+                          : t.submenuFollowingPause)
+                      .toUpperCase(),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                ),
+                onPressed: () {
+                  onClose();
+                  onAction(true);
+                },
+              ),
+            ),
+            // ▶️ BOTÓ DRETA: Aturar seguiment (Stop)
+            Expanded(
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.redAlert,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.zero,
+                      bottomLeft: Radius.zero,
+                      topRight: Radius.circular(12),
+                      bottomRight: Radius.circular(12),
+                    ),
+                  ),
+                ),
+                icon: const Icon(Icons.stop_rounded, size: 22),
+                label: Text(
+                  t.submenuFollowingStop.toUpperCase(),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                ),
+                onPressed: () {
+                  onClose();
+                  onAction(false);
                 },
               ),
             ),

@@ -25,28 +25,33 @@ class RecordingFlowHandler {
     required void Function(LatLng) onUpdateLastCamera,
     required void Function(bool) onToggleProgrammaticMove,
     required void Function(CameraUpdate) safeAnimateCamera,
+    String?
+    action, // 🎯 AFEGIT: Paràmetre opcional per rebre accions directes del submenú
   }) async {
     final state = ref.read(trackRecordingProvider).recordingState;
-    String? action;
+    String? finalAction = action; // Utilitzem una variable interna combinada
 
     // 🟢 EL FLUX INTEL·LIGENT DE SENDA:
-    if (state == RecordingState.idle) {
-      // 1. Si està aturat, inicia la gravació a l'acte [INDEX]
-      action = "start";
-    } else {
-      // 2. Si està en marxa o en pausa, obrim el diàleg de control de Senda [INDEX].
-      // Com que l'usuari clica des del submenú inferior de botons de "MapBottomControls",
-      // si tria "Pausar" o "Reprendre", farem que s'ho salti directament als mètodes en un futur,
-      // però ens assegurem que el cas "stop" obri el diàleg de guardar/compartir de sota! [INDEX]
-      action = await AppMessages.showRecordingControlDialog(
-        context: context,
-        state: state,
-      );
+    // Només obrim el diàleg si no hem rebut cap acció directa forçada del submenú inferior
+    if (finalAction == null) {
+      if (state == RecordingState.idle) {
+        // 1. Si està aturat, inicia la gravació a l'acte [INDEX]
+        finalAction = "start";
+      } else {
+        // 2. Si està en marxa o en pausa, obrim el diàleg de control de Senda [INDEX].
+        // Com que l'usuari clica des del submenú inferior de botons de "MapBottomControls",
+        // si tria "Pausar" o "Reprendre", farem que s'ho salti directament als mètodes en un futur,
+        // però ens assegurem que el cas "stop" obri el diàleg de guardar/compartir de sota! [INDEX]
+        finalAction = await AppMessages.showRecordingControlDialog(
+          context: context,
+          state: state,
+        );
+      }
     }
 
-    if (action == null) return;
+    if (finalAction == null) return;
 
-    switch (action) {
+    switch (finalAction) {
       case "start":
         final ok = await requestLocationPermissionsUnified(context, ref);
         if (!ok) return;
@@ -73,6 +78,10 @@ class RecordingFlowHandler {
 
       case "resume":
         // 🟢 DIRECTE: Sense confirmació intermèdia per tornar a caminar [INDEX]
+        // 🛡️ Ara també es comprova i s'assegura que el GPS estigui actiu en reprendre
+        final ok = await requestLocationPermissionsUnified(context, ref);
+        if (!ok) return;
+
         RecordingHandler.resume(ref);
         break;
 

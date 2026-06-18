@@ -16,8 +16,6 @@ class MenuTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isRecordingActive = label == "Gravant...";
-
     return Expanded(
       child: Material(
         color: Colors.transparent,

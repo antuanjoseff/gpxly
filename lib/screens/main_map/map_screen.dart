@@ -203,7 +203,11 @@ class _MapScreenState extends ConsumerState<MapScreen>
   }
 
   // 🚀 PUENT DE SEGURETAT DE GRAVACIÓ DIRECTE AMB EL PROPI FLOW_HANDLER
-  void _openRecordingControl(BuildContext context, WidgetRef ref) {
+  void _openRecordingControl(
+    BuildContext context,
+    WidgetRef ref, [
+    String? action,
+  ]) {
     RecordingFlowHandler(ref: ref, context: context).openRecordingControl(
       mapController: mapController,
       onToggleSmartCenter: (val) => setState(() => smartCenterEnabled = val),
@@ -217,6 +221,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
         });
       },
       safeAnimateCamera: safeAnimateCamera,
+      action: action,
     );
   }
 
@@ -413,6 +418,23 @@ class _MapScreenState extends ConsumerState<MapScreen>
         startWaypointPulse(mapController!);
       } else {
         stopWaypointPulse(mapController!);
+      }
+
+      if (!_isChartCollapsed) {
+        final geom = MapGeometryHelper(ref: ref, mapController: mapController);
+
+        // Determinem quin és l'índex d'inici real: el de tram o el del punt únic
+        final int? indexIniciUnificat =
+            next.startTrackIndex ?? next.singlePointIndex;
+
+        setChartInteractionGeometry(
+          mapController!,
+          // 🟢 ARA EL PUNT VERD s'il·lumina tant per a punts únics com per a inici de trams
+          rangeStartCoords: geom.getCoordsFromGlobalIndex(indexIniciUnificat),
+          rangeEndCoords: geom.getCoordsFromGlobalIndex(next.endTrackIndex),
+          // 🚫 El taronja (hoverCoords) es passa a null de manera permanent perquè quedi desactivat
+          hoverCoords: null,
+        );
       }
     });
 
@@ -800,8 +822,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 isChartCollapsed: _isChartCollapsed,
                 systemBottomPadding: systemBottomPadding,
                 onAddWaypoint: () => _onAddWaypoint(context, ref),
-                onOpenRecordingControl: () =>
-                    _openRecordingControl(context, ref),
+                onOpenRecordingControl: (action) =>
+                    _openRecordingControl(context, ref, action),
                 onOpenNavigationControl: (hasTrack) =>
                     _openNavigationControl(context, ref, hasTrack),
                 onHandleNavigationAction: _handleSendaNavigationAction,

@@ -5,10 +5,7 @@ import 'package:senda/notifiers/imported_track_notifier.dart';
 import 'package:senda/notifiers/navigation_notifier.dart';
 import 'package:senda/notifiers/recording_notifier.dart';
 import 'package:senda/notifiers/timer_notifier.dart';
-import 'package:senda/notifiers/waypoints_recorded_notifier.dart';
 import 'package:senda/theme/app_dimensions.dart';
-import 'package:senda/ui/app_messages.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'map_bottom_controls/layout_utils.dart';
 import 'map_bottom_controls/elevation_panel.dart';
@@ -22,7 +19,7 @@ class MapBottomControls extends ConsumerStatefulWidget {
   final bool isChartCollapsed;
   final double systemBottomPadding;
   final VoidCallback onAddWaypoint;
-  final VoidCallback onOpenRecordingControl;
+  final void Function(String?) onOpenRecordingControl;
   final void Function(bool) onOpenNavigationControl;
   final void Function(String?) onHandleNavigationAction;
   final VoidCallback onToggleChart;
@@ -45,7 +42,26 @@ class MapBottomControls extends ConsumerStatefulWidget {
 class _MapBottomControlsState extends ConsumerState<MapBottomControls> {
   bool _showRecordingSubMenu = false;
   bool _showNavigationSubMenu = false;
-  bool _showChart = false;
+  late bool
+  _showChart; // 🎯 S'inicialitza dinàmicament d'acord amb l'estat del pare
+
+  @override
+  void initState() {
+    super.initState();
+    // 🎯 SINCRONITZACIÓ INICIAL: En néixer, agafa l'estat de col·lapse que demana el pare Senda
+    _showChart = !widget.isChartCollapsed;
+  }
+
+  @override
+  void didUpdateWidget(MapBottomControls oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 🎯 SINCRONITZACIÓ EN CALENT: Si el pare canvia el col·lapse (ex: en importar), alineem la UI local a l'acte
+    if (oldWidget.isChartCollapsed != widget.isChartCollapsed) {
+      setState(() {
+        _showChart = !widget.isChartCollapsed;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -74,7 +90,8 @@ class _MapBottomControlsState extends ConsumerState<MapBottomControls> {
     final bool hasRecordingData =
         recordingState != RecordingState.idle && recordingPoints.isNotEmpty;
 
-    final bool showChartData = hasTrack || (hasRecordingData && _showChart);
+    // 🎯 REGLA DE SINCRONITZACIÓ ESTRICTA: El gràfic només és visible si tenim dades i ADEMÉS _showChart local es true
+    final bool showChartData = _showChart && (hasTrack || hasRecordingData);
 
     final bool isSubMenuOpen = _showRecordingSubMenu || _showNavigationSubMenu;
 
@@ -137,11 +154,10 @@ class _MapBottomControlsState extends ConsumerState<MapBottomControls> {
             ),
 
           // 📊 1. EL GRÀFIC D'ELEVACIONS
-          // 📊 1. EL GRÀFIC D'ELEVACIONS
           if (showChartData && layout.isPanelActive)
             SizedBox(
               height: layout
-                  .chartHeight, // Asegura que solo ocupe su espacio real inferior
+                  .chartHeight, // Ocupa exactament el seu espai inferior real
               child: ElevationPanel(
                 isVisible: layout.isPanelActive,
                 isCollapsed: widget.isChartCollapsed,
@@ -185,6 +201,7 @@ class _MapBottomControlsState extends ConsumerState<MapBottomControls> {
                 ),
               ),
             ),
+
           // ⏱️ 3. BAFARADA DE GRAVACIÓ (Amb separació inferior forçada)
           if (_showRecordingSubMenu)
             Padding(
@@ -198,97 +215,13 @@ class _MapBottomControlsState extends ConsumerState<MapBottomControls> {
                 child: Center(
                   child: RecordingSubMenu(
                     state: recordingState,
-                    onAction: (String action) async {
+                    onAction: (String action) {
                       setState(() {
                         _showRecordingSubMenu = false;
                       });
 
-                      // 🟢 CONTROL DE RECUPERACIÓ DE GRAVACIÓ ANTERIOR AMB TRANSLATIONS
-                      if (action == 'start') {
-                        final prefs = await SharedPreferences.getInstance();
-                        final hasOldData = prefs.containsKey('temp_track_data');
-
-                        if (hasOldData && context.mounted) {
-                          // 🟢 CRIDA MULTIIDIOMA CORREGIDA: Invoca el diàleg natiu reactiu de l'App
-                          final bool? recuperar =
-                              await AppMessages.showRecoverTrackDialog(context);
-
-                          if (recuperar == true) {
-                            // 1. CAS: L'USUARI RECUPERA LA RUTA ANTERIOR
-                            setState(() {
-                              _showChart = true;
-                            });
-
-                            await ref
-                                .read(trackRecordingProvider.notifier)
-                                .loadFromCache();
-
-                            if (widget.isChartCollapsed) {
-                              widget
-                                  .onToggleChart(); // Obre el panell si estava tancat al pare
-                            }
-
-                            final trackRecuperat = ref.read(
-                              trackRecordingProvider,
-                            );
-                            if (trackRecuperat.recordingState ==
-                                RecordingState.recording) {
-                              ref.read(timerProvider.notifier).start();
-                            } else if (trackRecuperat.recordingState ==
-                                RecordingState.paused) {
-                              ref.read(timerProvider.notifier).pause();
-                            }
-                          } else if (recuperar == false) {
-                            // 2. CAS: L'USUARI ELIMINA LA RUTA I EN COMENÇA UNA DE NOVA
-                            setState(() {
-                              _showChart = false;
-                            });
-                            await ref
-                                .read(trackRecordingProvider.notifier)
-                                .clearCache();
-                            ref
-                                .read(trackRecordingProvider.notifier)
-                                .startRecording();
-
-                            if (!widget.isChartCollapsed) {
-                              widget.onToggleChart();
-                            }
-                          }
-                        } else {
-                          // 3. CAS: NO HI HA DADES VELLES (INICI NET STANDARD DE ZERO)
-                          setState(() {
-                            _showChart = false;
-                          });
-                          ref
-                              .read(trackRecordingProvider.notifier)
-                              .startRecording();
-
-                          if (!widget.isChartCollapsed) {
-                            widget.onToggleChart();
-                          }
-                        }
-                      } else if (action == 'pause') {
-                        ref
-                            .read(trackRecordingProvider.notifier)
-                            .pauseRecording();
-                      } else if (action == 'resume') {
-                        ref
-                            .read(trackRecordingProvider.notifier)
-                            .resumeRecording();
-                      } else if (action == 'stop') {
-                        final result =
-                            await AppMessages.showStopRecordingDialog(context);
-                        if (result == 'finish' || result == 'share') {
-                          final currentDuration = ref.read(timerProvider);
-                          await ref
-                              .read(trackRecordingProvider.notifier)
-                              .stopRecording(currentDuration);
-                          if (result == 'share' && context.mounted) {
-                            AppMessages.showExportDialog(context);
-                          }
-                          ref.read(waypointsProvider.notifier).clear();
-                        }
-                      }
+                      // 🚀 Deleguem l'acció cap al pare directament al RecordingFlowHandler
+                      widget.onOpenRecordingControl(action);
                     },
                     onClose: () =>
                         setState(() => _showRecordingSubMenu = false),
@@ -302,7 +235,8 @@ class _MapBottomControlsState extends ConsumerState<MapBottomControls> {
             padding: EdgeInsets.only(bottom: widget.systemBottomPadding),
             child: MenuBar(
               isChartCollapsed: widget.isChartCollapsed,
-              isPanelActive: layout.isPanelActive,
+              isPanelActive:
+                  _showChart, // 🎯 BIDIRECCIONAL: El botó s'il·lumina en perfecta simetria amb el gràfic de dalt
               recordingState: recordingState,
               navState: navState,
               hasTrack: hasTrack,

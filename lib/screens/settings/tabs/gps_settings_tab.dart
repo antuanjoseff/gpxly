@@ -52,8 +52,13 @@ class GpsSettingsTab extends ConsumerWidget {
             max: 60,
             divisions: 58,
             onChanged: (val) {
+              // 🔴 Mentres arrossega el dit: canvia el text a la UI a cada mil·lisegon suau
               ref.read(gpsSettingsProvider.notifier).setSeconds(val.toInt());
               ref.read(gpsSettingsProvider.notifier).setUseTime(true);
+            },
+            onChangeEnd: (val) {
+              // 🎯 En aixecar el dit: Aplica la configuració a Kotlin d'un sol cop
+              ref.read(gpsSettingsProvider.notifier).apply();
             },
           ),
 
@@ -70,8 +75,13 @@ class GpsSettingsTab extends ConsumerWidget {
             max: 100,
             divisions: 99,
             onChanged: (val) {
+              // 🔴 Mentres arrossega el dit: canvia el text a la UI a cada mil·lisegon suau
               ref.read(gpsSettingsProvider.notifier).setMeters(val);
               ref.read(gpsSettingsProvider.notifier).setUseTime(false);
+            },
+            onChangeEnd: (val) {
+              // 🎯 En aixecar el dit: Aplica la configuració a Kotlin d'un sol cop
+              ref.read(gpsSettingsProvider.notifier).apply();
             },
           ),
 
@@ -88,7 +98,12 @@ class GpsSettingsTab extends ConsumerWidget {
             max: 100,
             divisions: 19,
             onChanged: (val) {
+              // 🔴 Mentres arrossega el dit: canvia el text a la UI a cada mil·lisegon suau
               ref.read(gpsSettingsProvider.notifier).setAccuracy(val);
+            },
+            onChangeEnd: (val) {
+              // 🎯 En aixecar el dit: Aplica la configuració a Kotlin d'un sol cop
+              ref.read(gpsSettingsProvider.notifier).apply();
             },
           ),
           const SizedBox(height: 40),
@@ -103,17 +118,12 @@ class GpsSettingsTab extends ConsumerWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: AppColors
-            .tertiary, // 🎯 Fons fosc sòlid/identitari de Senda [INDEX]
+        color: AppColors.tertiary,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.white.withAlpha(20),
-        ), // 🎯 Separació fina neta amb withAlpha [INDEX]
+        border: Border.all(color: Colors.white.withAlpha(20)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(
-              25,
-            ), // 🎯 Ombra suau integrada de muntanya [INDEX]
+            color: Colors.black.withAlpha(25),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -124,8 +134,7 @@ class GpsSettingsTab extends ConsumerWidget {
         children: [
           const Icon(
             Icons.info_outline_rounded,
-            color: Colors
-                .white70, // 🎯 Icona clara de contrast lligada a la brúixola
+            color: Colors.white70,
             size: 22,
           ),
           const SizedBox(width: 14),
@@ -135,7 +144,7 @@ class GpsSettingsTab extends ConsumerWidget {
               style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
-                color: Colors.white, // 🎯 Text net i llegible
+                color: Colors.white,
                 height: 1.4,
                 letterSpacing: 0.2,
               ),
