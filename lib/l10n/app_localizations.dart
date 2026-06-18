@@ -1386,6 +1386,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Waiting for GPS signal...'**
   String get waypointNoGps;
+
+  /// No description provided for @gpsSearching.
+  ///
+  /// In en, this message translates to:
+  /// **'Searching...'**
+  String get gpsSearching;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

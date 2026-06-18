@@ -656,4 +656,7 @@ class AppLocalizationsCa extends AppLocalizations {
 
   @override
   String get waypointNoGps => 'Esperant senyal GPS...';
+
+  @override
+  String get gpsSearching => 'Searching...';
 }

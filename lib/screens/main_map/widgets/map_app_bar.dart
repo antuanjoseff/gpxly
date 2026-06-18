@@ -52,12 +52,11 @@ class MapAppBar extends ConsumerWidget implements PreferredSizeWidget {
           final userPos = ref.watch(locationProvider);
           final permissions = ref.watch(permissionsProvider);
 
-          // 🟢 2. LA TEVA LOGICA D'ESTAT REAL UNIFICADA:
+          // 🛡️ CONTROL REAL: El GPS està desactivat si manquen permisos o l'antena està apagada
           final bool isGpsDisabled =
-              !permissions.hasPermission ||
-              !permissions.serviceEnabled ||
-              userPos == null;
+              !permissions.hasPermission || !permissions.serviceEnabled;
 
+          final bool isSearchingSignal = !isGpsDisabled && userPos == null;
           final double? altitude = userPos?.altitude;
           final bool isFixed = userPos?.isHgtFixed ?? false;
 
@@ -85,33 +84,77 @@ class MapAppBar extends ConsumerWidget implements PreferredSizeWidget {
                 color: Colors.white24,
               ),
 
-              // 🏔️ B) El mòdul d'Altimetria integrat en línia i unificat
-              Icon(
-                isGpsDisabled
-                    ? Icons.location_off_rounded
-                    : Icons.filter_hdr_rounded,
-                color: isGpsDisabled
-                    ? Colors.redAccent.shade100
-                    : (isFixed ? Colors.white : AppColors.redAlert),
-                size: 16,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                isGpsDisabled
-                    ? t.gpsDisabledTitle
-                    : (altitude != null
-                          ? "${altitude.toStringAsFixed(0)} m"
-                          : "--- m"),
-                style: TextStyle(
-                  color: isGpsDisabled
-                      ? Colors.redAccent.shade100
-                      : Colors.white,
-                  fontSize: isGpsDisabled
-                      ? 12
-                      : 14, // Un puntet més petit en cas de text de bloqueig llarg
-                  fontWeight: FontWeight.w600,
+              // 🏔️ B) El mòdul d'Altimetria adaptatiu estil comptador
+              if (isGpsDisabled)
+                // 🎯 CAS ERROR: Càpsula amb fons blanc i text vermell idèntica al teu cronòmetre
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withAlpha(30),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 4.0,
+                    horizontal: 10.0,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.location_off_rounded,
+                        color: AppColors.redAlert,
+                        size: 15,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        t.gpsDisabledTitle.toUpperCase(),
+                        style: const TextStyle(
+                          color: AppColors.redAlert,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                // CAS STANDARD / CERCA: Es manté integrat en línia net sobre el fons de l'AppBar
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      isSearchingSignal
+                          ? Icons.satellite_alt_rounded
+                          : Icons.filter_hdr_rounded,
+                      color: isSearchingSignal
+                          ? Colors.white54
+                          : (isFixed ? Colors.white : AppColors.redAlert),
+                      size: 16,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      isSearchingSignal
+                          ? t.gpsSearching
+                          : (altitude != null
+                                ? "${altitude.toStringAsFixed(0)} m"
+                                : "--- m"),
+                      style: TextStyle(
+                        color: isSearchingSignal
+                            ? Colors.white54
+                            : Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
             ],
           );
         },
