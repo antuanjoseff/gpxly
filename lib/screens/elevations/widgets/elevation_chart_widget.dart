@@ -383,9 +383,31 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
     required double forcedMinY,
     required double forcedMaxY,
     required double maxDist,
-    required double topReservedSize, // 🚀 AFEGIT: Mida del coixí superior
-    required double bottomReservedSize, // Rebut síncronament des de la vista
+    required double topReservedSize,
+    required double bottomReservedSize,
+    // 🟢 ELIMINADOS: Ya no necesitas pasar 'safePastLength' ni 'safeFutureLength' desde fuera
   }) {
+    // 📊 Determinamos las longitudes seguras emparejando distancias y altitudes
+    final int safePastCount = (pastDists.length == pastAlts.length)
+        ? pastDists.length
+        : 0;
+    final int safeFutureCount = (futureDists.length == futureAlts.length)
+        ? futureDists.length
+        : 0;
+
+    // 🟢 UNIFICACIÓ TOTAL: Generamos los puntos unificados en una sola pasada fija
+    final List<FlSpot> unifiedSpots = [];
+
+    // 1. Añadimos el pasado (Track grabado - 75% del espacio)
+    for (int i = 0; i < safePastCount; i++) {
+      unifiedSpots.add(FlSpot(pastDists[i], pastAlts[i]));
+    }
+
+    // 2. Añadimos el futuro (Track seguido - 25% del espacio)
+    for (int i = 0; i < safeFutureCount; i++) {
+      unifiedSpots.add(FlSpot(futureDists[i], futureAlts[i]));
+    }
+
     return LineChartData(
       minY: forcedMinY,
       maxY: forcedMaxY,
@@ -394,13 +416,7 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
       gridData: const FlGridData(show: false),
       borderData: FlBorderData(show: false),
       clipData: const FlClipData.none(),
-      // extraLinesData: ExtraLinesData(
-      //   horizontalLines: [
-      //     HorizontalLine(y: forcedMinY, color: Colors.grey, strokeWidth: 1.5),
-      //   ],
-      // ),
       titlesData: FlTitlesData(
-        // 🚀 RECTIFICACIÓ: Sincronitzem el sostre d'fl_chart amb els teus Painters utilitzant la mida reservada a dalt
         topTitles: AxisTitles(
           sideTitles: SideTitles(
             showTitles: false,
@@ -408,22 +424,14 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
           ),
         ),
         rightTitles: const AxisTitles(
-          sideTitles: SideTitles(
-            showTitles: false,
-            reservedSize: 0, // 🟢 Forcem a ocupar 0px de marge dret
-          ),
+          sideTitles: SideTitles(showTitles: false, reservedSize: 0),
         ),
         leftTitles: const AxisTitles(
-          sideTitles: SideTitles(
-            showTitles: false,
-            reservedSize: 0, // 🟢 Forcem a ocupar 0px de marge esquerre
-          ),
+          sideTitles: SideTitles(showTitles: false, reservedSize: 0),
         ),
-
         bottomTitles: AxisTitles(
           sideTitles: SideTitles(
             showTitles: true,
-            // Sincronitzem exactament amb els painters: mateixa mida reservada de baix
             reservedSize: bottomReservedSize,
             interval: maxDist > 0 ? maxDist / 2 : 1.0,
             getTitlesWidget: (value, meta) {
@@ -452,24 +460,16 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
                 textDirection: TextDirection.ltr,
               )..layout();
 
-              double dx = 0;
-              if (isFirst) {
-                dx = (tp.width / 2) + 4.0;
-              } else if (isLast) {
-                dx = -(tp.width / 2) - 4.0;
-              } else {
-                dx = -(tp.width / 2);
-              }
+              double dx = isFirst
+                  ? (tp.width / 2) + 4.0
+                  : (isLast ? -(tp.width / 2) - 4.0 : -(tp.width / 2));
 
-              // 🟢 Si és el del mig, eliminem el translate i deixem que fl_chart apliqui
-              // el centrat absolut alineant el RichText al mig de la seva pròpia caixa.
               if (!isFirst && !isLast) {
                 return SideTitleWidget(
                   meta: meta,
                   space: 2,
                   child: RichText(
-                    textAlign:
-                        TextAlign.center, // 🟢 Clava el text a l'eix central
+                    textAlign: TextAlign.center,
                     text: TextSpan(
                       children: [
                         TextSpan(text: numberPart, style: textStyle),
@@ -487,7 +487,6 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
                 );
               }
 
-              // Per a l'inici i el final mantenim el translate per evitar que es tallin a les vores
               return SideTitleWidget(
                 meta: meta,
                 space: 2,
@@ -516,44 +515,54 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
       ),
       lineTouchData: const LineTouchData(enabled: false),
       lineBarsData: [
-        if (pastDists.isNotEmpty)
+        if (unifiedSpots.isNotEmpty)
           LineChartBarData(
-            spots: List.generate(
-              pastAlts.length,
-              (i) => FlSpot(pastDists[i], pastAlts[i]),
-            ),
+            spots: unifiedSpots,
             isCurved: true,
-            curveSmoothness: 0.5,
+            curveSmoothness: 0.3,
             isStrokeCapRound: true,
             preventCurveOverShooting: true,
-            color: trackColor,
             barWidth: 3,
             dotData: const FlDotData(show: false),
+
+            // 🟢 GRADIENT DINÀMIC: Si no hi ha futur, el color és 100% homogeni
+            gradient: safeFutureCount == 0
+                ? LinearGradient(colors: [trackColor, trackColor])
+                : LinearGradient(
+                    colors: [
+                      trackColor,
+                      trackColor,
+                      importedTrackColor,
+                      importedTrackColor,
+                    ],
+                    stops: const [0.0, 0.75, 0.75, 1.0],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                  ),
+
+            // 🟢 DEGRADAT INFERIOR DINÀMIC: S'adapta també a si hi ha futur o no
             belowBarData: BarAreaData(
               show: true,
-              color: trackColor.withAlpha(64),
+              gradient: safeFutureCount == 0
+                  ? LinearGradient(
+                      colors: [
+                        trackColor.withAlpha(64),
+                        trackColor.withAlpha(64),
+                      ],
+                    )
+                  : LinearGradient(
+                      colors: [
+                        trackColor.withAlpha(64),
+                        trackColor.withAlpha(64),
+                        importedTrackColor.withAlpha(48),
+                        importedTrackColor.withAlpha(48),
+                      ],
+                      stops: const [0.0, 0.75, 0.75, 1.0],
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                    ),
               cutOffY: forcedMinY,
               applyCutOffY: true,
-            ),
-          ),
-        if (futureDists.isNotEmpty)
-          LineChartBarData(
-            spots: List.generate(
-              futureAlts.length,
-              (i) => FlSpot(futureDists[i], futureAlts[i]),
-            ),
-            isCurved: true,
-            curveSmoothness: 0.5,
-            preventCurveOverShooting: true,
-            color: importedTrackColor,
-            barWidth: 3,
-            dashArray: const [8, 4],
-            dotData: const FlDotData(show: false),
-            belowBarData: BarAreaData(
-              show: true,
-              color: importedTrackColor.withAlpha(48),
-              cutOffY: forcedMinY,
-              applyCutOffY: false, // Desactivem el retall rígid inferior
             ),
           ),
       ],

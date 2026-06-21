@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:senda/widgets/embedded_elevation_profile.dart';
+import 'package:senda/screens/elevations/widgets/embedded_elevation_profile.dart';
 
 class ElevationPanel extends StatelessWidget {
   final bool isVisible;
