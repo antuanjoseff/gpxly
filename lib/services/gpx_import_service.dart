@@ -12,6 +12,10 @@ import 'package:senda/notifiers/waypoints_imported_notifier.dart';
 import 'package:senda/utils/calculations.dart';
 import 'package:senda/utils/geo_utils.dart';
 
+DateTime truncateSeconds(DateTime t) {
+  return DateTime(t.year, t.month, t.day, t.hour, t.minute, t.second);
+}
+
 class GpxImportService {
   static Future<void> importGpx(WidgetRef ref, String xmlString) async {
     final gpx = GpxReader().fromString(xmlString);
@@ -45,8 +49,7 @@ class GpxImportService {
       final currentLat = p.lat!;
       final currentLon = p.lon!;
       final currentAlt = p.ele ?? 0.0;
-      final rawTime = p.time ?? DateTime.now();
-      final normalizedTime = normalizeGpxTime(rawTime);
+      final normalizedTime = truncateSeconds(p.time!.toLocal());
 
       alts.add(currentAlt);
 

@@ -251,10 +251,18 @@ class _MapScreenState extends ConsumerState<MapScreen>
       NavigationFlowHandler(ref: ref, context: context).openNavigationControl(
         mapController: mapController,
         hasImportedTrack: hasTrack,
-        fitToBounds: (coords, {instant = false}) => MapGeometryHelper(
-          ref: ref,
-          mapController: mapController,
-        ).fitToBounds(coords, instant: instant),
+        fitToBounds: (coords, {instant = false}) {
+          final padding = _computeMapPadding(context, hasTrack);
+
+          MapGeometryHelper(ref: ref, mapController: mapController).fitToBounds(
+            coords,
+            instant: instant,
+            left: 40,
+            right: 40,
+            top: padding.top,
+            bottom: padding.bottom,
+          );
+        },
       );
     }
   }
@@ -447,6 +455,22 @@ class _MapScreenState extends ConsumerState<MapScreen>
       // Si està en pausa, en idle o prové de la caché, l'oient del GPS lliure mou la icona síncronament.
       final recState = ref.read(trackRecordingProvider).recordingState;
       if (recState != RecordingState.recording) {
+        mapController?.setGeoJsonSource("user_location", {
+          "type": "FeatureCollection",
+          "features": [
+            {
+              "type": "Feature",
+              "geometry": {
+                "type": "Point",
+                "coordinates": [
+                  next.position.longitude,
+                  next.position.latitude,
+                ],
+              },
+            },
+          ],
+        });
+
         mapAnimator.animateUserPosition(
           next.position,
           bottomPadding: _currentMapPadding,
@@ -537,10 +561,16 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
       if (isRecoveringTrack) {
         hasDoneRecoveryFit = true;
-        MapGeometryHelper(
-          ref: ref,
-          mapController: mapController,
-        ).fitToBounds(next.coordinates, instant: true);
+        final padding = _computeMapPadding(context, true);
+
+        MapGeometryHelper(ref: ref, mapController: mapController).fitToBounds(
+          next.coordinates,
+          instant: true,
+          left: 40,
+          right: 40,
+          top: padding.top,
+          bottom: padding.bottom,
+        );
       }
     });
     // OIENT 3: SET DE CAPES DEL TRACK IMPORTAT (GPX PROGRESSIU)
@@ -599,10 +629,15 @@ class _MapScreenState extends ConsumerState<MapScreen>
       );
 
       if (isImportingGpx && next.coordinates.isNotEmpty) {
-        MapGeometryHelper(
-          ref: ref,
-          mapController: mapController,
-        ).fitToBounds(next.coordinates);
+        final padding = _computeMapPadding(context, true);
+
+        MapGeometryHelper(ref: ref, mapController: mapController).fitToBounds(
+          next.coordinates,
+          left: 40,
+          right: 40,
+          top: padding.top,
+          bottom: padding.bottom,
+        );
       }
     });
 
@@ -916,4 +951,40 @@ class _MapScreenState extends ConsumerState<MapScreen>
       }
     });
   }
+
+  MapPadding _computeMapPadding(BuildContext context, bool hasTrack) {
+    final media = MediaQuery.of(context);
+
+    // 1. Layout del panell inferior
+    final layout = LayoutUtils.fromContext(
+      context,
+      isChartCollapsed: _isChartCollapsed,
+    );
+
+    // 2. El gràfic és visible quan NO està col·lapsat i hi ha track
+    final bool showChartData = !_isChartCollapsed && hasTrack;
+
+    // 3. Alçada real del gràfic (20% pantalla) o 0 si no és visible
+    final double chartHeight = showChartData ? layout.chartHeight : 0;
+
+    // 4. Padding inferior real
+    final double bottomPadding =
+        media.padding.bottom + // SafeArea bottom
+        AppDimensions.menuBarHeight + // MenuBar (72 px)
+        chartHeight + // Gràfic (si visible)
+        64 +
+        110; // Marges estructurals del panell
+
+    // 5. Padding superior (igual que ja feies)
+    final double topPadding = 10;
+
+    return MapPadding(top: topPadding, bottom: bottomPadding);
+  }
+}
+
+class MapPadding {
+  final double top;
+  final double bottom;
+
+  const MapPadding({required this.top, required this.bottom});
 }

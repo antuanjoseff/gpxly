@@ -6,6 +6,7 @@ import 'package:senda/notifiers/imported_track_notifier.dart';
 import 'package:senda/notifiers/location_notifier.dart';
 import 'package:senda/notifiers/permissions_notifier.dart';
 import 'package:senda/screens/settings/tabs/alarm_settings_tab.dart';
+import 'package:senda/screens/stats/satellites/screens/satellite_detail_screen.dart';
 import 'package:senda/theme/app_colors.dart';
 import 'package:senda/widgets/gps_accuracy_bars.dart';
 import 'package:senda/l10n/app_localizations.dart'; // 🟢 Import de traduccions nates
@@ -186,38 +187,61 @@ class MapAppBar extends ConsumerWidget implements PreferredSizeWidget {
           ),
 
         // 🛰️ Botó de control del simulador de rutes del track
-        if (ref.watch(importedTrackProvider) != null)
-          Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: GestureDetector(
-              onTap: () {
-                final notifier = ref.read(locationProvider.notifier);
-                if (!isRunning) {
-                  final importedData = ref.read(importedTrackProvider);
-                  notifier.simulateImportedTrack(importedData);
-                } else {
-                  notifier.toggleSimulationPause();
-                }
-              },
-              child: Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: isRunning
-                      ? (isPaused ? Colors.blue : Colors.orange)
-                      : Colors.amber,
-                  shape: BoxShape.circle,
+        // if (ref.watch(importedTrackProvider) != null)
+        //   Padding(
+        //     padding: const EdgeInsets.only(right: 12),
+        //     child: GestureDetector(
+        //       onTap: () {
+        //         final notifier = ref.read(locationProvider.notifier);
+        //         if (!isRunning) {
+        //           final importedData = ref.read(importedTrackProvider);
+        //           notifier.simulateImportedTrack(importedData);
+        //         } else {
+        //           notifier.toggleSimulationPause();
+        //         }
+        //       },
+        //       child: Container(
+        //         width: 32,
+        //         height: 32,
+        //         decoration: BoxDecoration(
+        //           color: isRunning
+        //               ? (isPaused ? Colors.blue : Colors.orange)
+        //               : Colors.amber,
+        //           shape: BoxShape.circle,
+        //         ),
+        //         child: Icon(
+        //           !isRunning
+        //               ? Icons.play_arrow
+        //               : (isPaused ? Icons.play_arrow : Icons.pause),
+        //           color: Colors.white,
+        //           size: 20,
+        //         ),
+        //       ),
+        //     ),
+        //   ),
+        Padding(
+          padding: const EdgeInsets.only(right: 12),
+          child: GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const SatelliteDetailScreen(),
                 ),
-                child: Icon(
-                  !isRunning
-                      ? Icons.play_arrow
-                      : (isPaused ? Icons.play_arrow : Icons.pause),
-                  color: Colors.white,
-                  size: 20,
-                ),
+              );
+            },
+            child: const SizedBox(
+              width: 32,
+              height: 32,
+              child: Icon(
+                Icons.satellite_alt_rounded,
+                color: Colors.white,
+                size: 22,
               ),
             ),
           ),
+        ),
+
         const SizedBox(width: 4),
       ],
     );

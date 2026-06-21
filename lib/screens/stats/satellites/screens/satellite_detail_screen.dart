@@ -12,6 +12,13 @@ class SatelliteDetailScreen extends StatefulWidget {
 }
 
 class _SatelliteDetailScreenState extends State<SatelliteDetailScreen> {
+  final Map<int, bool> _enabledConstellations = {
+    1: true, // GPS
+    3: true, // GLONASS
+    6: true, // GALILEO
+    5: true, // BEIDOU
+  };
+
   Map<String, String> _parseConstellation(int type, int svid) {
     switch (type) {
       case 1:
@@ -46,6 +53,12 @@ class _SatelliteDetailScreenState extends State<SatelliteDetailScreen> {
           }
 
           final satellites = snapshot.data ?? [];
+          final filtered = satellites.where((sat) {
+            final map = Map<String, dynamic>.from(sat);
+            final type = map['constellation'] as int;
+            return _enabledConstellations[type] ?? true;
+          }).toList();
+
           if (satellites.isEmpty) {
             return const Center(
               child: Text(
@@ -108,7 +121,7 @@ class _SatelliteDetailScreenState extends State<SatelliteDetailScreen> {
                   height: radarSize,
                   child: CustomPaint(
                     painter: SkyplotPainter(
-                      satellites: satellites,
+                      satellites: filtered,
                       parseFn: _parseConstellation,
                     ),
                   ),
@@ -117,7 +130,7 @@ class _SatelliteDetailScreenState extends State<SatelliteDetailScreen> {
               const SizedBox(height: 30),
 
               // 3. GRÁFICO DE BARRAS ESTILO GARMIN INFERIOR
-              SizedBox(height: 140, child: _buildGarminBarChart(satellites)),
+              SizedBox(height: 140, child: _buildGarminBarChart(filtered)),
             ],
           );
         },
@@ -127,25 +140,54 @@ class _SatelliteDetailScreenState extends State<SatelliteDetailScreen> {
 
   // Widget auxiliar para pintar cada fila de la leyenda de constelaciones
   Widget _buildLegendRow(String label, int type) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2.0),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          CustomPaint(
-            size: const Size(12, 12),
-            painter: _LegendShapePainter(constellationType: type),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey.shade700,
+    final enabled = _enabledConstellations[type] ?? true;
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            _enabledConstellations[type] = !enabled;
+          });
+        },
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 180),
+          opacity: enabled ? 1.0 : 0.35,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 3.0),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // ✔️ Checkbox minimalista
+                Icon(
+                  enabled
+                      ? Icons.check_box_rounded
+                      : Icons.check_box_outline_blank_rounded,
+                  size: 14,
+                  color: enabled ? Colors.green : Colors.grey,
+                ),
+                const SizedBox(width: 6),
+
+                // 🔷 Figura geomètrica de la constel·lació
+                CustomPaint(
+                  size: const Size(12, 12),
+                  painter: _LegendShapePainter(constellationType: type),
+                ),
+                const SizedBox(width: 8),
+
+                // 🏷️ Nom de la constel·lació
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey.shade700,
+                  ),
+                ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }

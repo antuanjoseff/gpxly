@@ -44,7 +44,14 @@ class MapGeometryHelper {
   }
 
   /// Calcula de forma automàtica l'enquadrament de càmera (Bounding Box)
-  void fitToBounds(List<List<double>> coords, {bool instant = false}) {
+  void fitToBounds(
+    List<List<double>> coords, {
+    bool instant = false,
+    double left = 40,
+    double right = 40,
+    double top = 0,
+    double bottom = 0,
+  }) {
     if (coords.isEmpty || mapController == null) return;
 
     final lats = coords.map((c) => c[1]).toList();
@@ -63,11 +70,12 @@ class MapGeometryHelper {
 
     final update = CameraUpdate.newLatLngBounds(
       bounds,
-      left: 50,
-      right: 50,
-      top: 50,
-      bottom: 50,
+      left: left,
+      right: right,
+      top: top,
+      bottom: bottom,
     );
+
     instant
         ? mapController!.moveCamera(update)
         : mapController!.animateCamera(update);

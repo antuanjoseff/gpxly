@@ -1,21 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:reorderable_grid_view/reorderable_grid_view.dart';
-import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:senda/l10n/app_localizations.dart';
-import 'package:senda/models/track.dart';
 import 'package:senda/notifiers/imported_track_notifier.dart';
 import 'package:senda/notifiers/recording_notifier.dart';
-import 'package:senda/notifiers/timer_notifier.dart';
 import 'package:senda/notifiers/location_notifier.dart';
 import 'package:senda/notifiers/barometer_settings_notifier.dart'; // 🆕 El teu notifier de pressió
 import 'package:senda/screens/stats/notifiers/stats_prefs_notifier.dart';
 import 'package:senda/screens/stats/satellites/screens/satellite_detail_screen.dart';
 import 'package:senda/theme/app_colors.dart';
 import 'package:senda/providers/barometer_provider.dart';
-
-// Importem els components del bloc 2 (si els separes en fitxers diferents)
-// import 'widgets/stat_cards.dart';
 
 class TrackStatsScreen extends ConsumerStatefulWidget {
   const TrackStatsScreen({super.key});
@@ -25,12 +19,11 @@ class TrackStatsScreen extends ConsumerStatefulWidget {
 }
 
 class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
-  late Map<String, PageController> _controllers;
+  // Mapa de controladors nullable per a inicialització reactiva segura
+  Map<String, PageController>? _controllers;
 
-  @override
-  void initState() {
-    super.initState();
-    final prefs = ref.read(statsPrefsProvider);
+  void _initControllersOnce(dynamic prefs) {
+    if (_controllers != null) return;
     _controllers = {
       'dist': PageController(initialPage: prefs.indices['dist'] ?? 0),
       'time': PageController(initialPage: prefs.indices['time'] ?? 0),
@@ -42,7 +35,7 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
 
   @override
   void dispose() {
-    _controllers.forEach((_, ctrl) => ctrl.dispose());
+    _controllers?.forEach((_, ctrl) => ctrl.dispose());
     super.dispose();
   }
 
@@ -61,23 +54,34 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
     return "$d°$m'$s\"$direction";
   }
 
+  // 🔥 CORREGIT: Ja no inclou "min/km" en el text per poder posar-ho a baix separat
   String _formatCurrentPace(double speedKmh) {
-    if (speedKmh <= 0.3) return "--:-- min/km";
+    if (speedKmh <= 0.3) return "--:--";
     final double totalMinutes = 60.0 / speedKmh;
     final int minutes = totalMinutes.floor();
     final int seconds = ((totalMinutes - minutes) * 60).round();
     final int displaySeconds = seconds == 60 ? 59 : seconds;
-    return "${minutes.toString().padLeft(2, '0')}:${displaySeconds.toString().padLeft(2, '0')} min/km";
+    return "${minutes.toString().padLeft(2, '0')}:${displaySeconds.toString().padLeft(2, '0')}";
   }
 
-  String _formatLatLngToDMS(LatLng? position) {
+  String _formatLatLngToDMS(dynamic position) {
     if (position == null) return "--";
     return "${_convertToDMS(position.latitude, true)}\n${_convertToDMS(position.longitude, false)}";
   }
 
-  String _formatLatLngToDecimal(LatLng? position) {
+  String _formatLatLngToDecimal(dynamic position) {
     if (position == null) return "--";
     return "${position.latitude.toStringAsFixed(5)}°\n${position.longitude.toStringAsFixed(5)}°";
+  }
+
+  String formatDistanceKm(double? km) {
+    if (km == null) return "--";
+    final totalMeters = (km * 1000).round();
+    final kmPart = totalMeters ~/ 1000;
+    final mPart = totalMeters % 1000;
+
+    if (mPart == 0) return "${kmPart} km";
+    return "${kmPart}km ${mPart}m";
   }
 
   @override
@@ -89,37 +93,41 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
+    _initControllersOnce(prefsState);
+
     final realTrack = ref.watch(trackRecordingProvider);
     final importedTrack = ref.watch(importedTrackProvider);
-    Track? track = realTrack.points.isNotEmpty
+    final track = realTrack.points.isNotEmpty
         ? realTrack
         : (importedTrack != null && importedTrack.points.isNotEmpty
               ? importedTrack
               : null);
 
-    final duration = ref.watch(timerProvider);
+    final duration = track?.stats.duration ?? Duration.zero;
     final liveLocation = ref.watch(locationProvider);
-    final LatLng? activePosition =
-        track?.currentPosition ?? liveLocation?.position;
+    final activePosition = track?.currentPosition ?? liveLocation?.position;
 
     final double? distanceKm = track != null ? (track.distance / 1000.0) : null;
-    final Duration stoppedDuration =
-        track?.stats.stoppedDuration ?? Duration.zero;
-    final Duration movingDuration =
-        duration - stoppedDuration; // Temps en moviment
+    final stoppedDuration = track?.stats.stoppedDuration ?? Duration.zero;
+    final movingDuration = duration - stoppedDuration;
 
     final double? currentAltitude = track != null && track.altitudes.isNotEmpty
         ? track.altitudes.last
         : null;
 
-    // 🆕 LECTURA DELS TEUS PROVIDERS NATIUS DE BARÒMETRE
     final pressure = ref.watch(barometerProvider).value;
     final hasBarometer = ref.watch(barometerSettingsProvider).hasBarometer;
+
     final Map<String, List<Widget>> cardPages = {
       'dist': [
-        // Usen: "statDistance" (DIST) i "statDistance" repetit o una de nova
-        _StatPage(Icons.straighten, distanceKm, "km", t.statDistance),
-        const _StatPage(Icons.flag, null, "km", "RESTANT"), // Text auxiliar fix
+        _StatPage(
+          Icons.straighten,
+          null,
+          "",
+          t.statDistance,
+          customValue: formatDistanceKm(distanceKm),
+        ),
+        const _StatPage(Icons.flag, null, "km", "RESTANT"),
       ],
       'time': [
         _StatPage(
@@ -145,33 +153,66 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
         ),
       ],
 
+      // ... (resta de cardPages: dist i time es mantenen igual)
       'speed': [
         _StatPage(
           Icons.speed,
-          track?.currentSpeedKmH, // Usa el teu getter que ja ve en km/h
+          track != null
+              ? (track.currentSpeedKmH > 0
+                    ? track.currentSpeedKmH
+                    : (track.stats.averageSpeed * 3.6))
+              : null,
           "km/h",
-          t.statSpeed, // Velocitat actual
+          t.statSpeed,
+          unitBelow: true, // Centratives verticals
         ),
         _StatPage(
           Icons.trending_up,
-          track?.averageSpeed,
+          track != null
+              ? (track.stats.averageSpeed > 0
+                    ? track.stats.averageSpeed * 3.6
+                    : track.averageSpeed)
+              : null,
           "km/h",
           t.statSpeedAverage,
+          unitBelow: true,
         ),
-        _StatPage(Icons.bolt, track?.maxSpeed, "km/h", t.statSpeedMax),
+        _StatPage(
+          Icons.bolt,
+          track != null
+              ? (track.stats.maxSpeed > 0
+                    ? track.stats.maxSpeed * 3.6
+                    : track.maxSpeed)
+              : null,
+          "km/h",
+          t.statSpeedMax,
+          unitBelow: true,
+        ),
         _StatPage(
           Icons.av_timer,
           null,
-          "",
+          "min/km",
           t.statPace,
-          customValue: _formatCurrentPace(track?.currentSpeedKmH ?? 0.0),
+          customValue: _formatCurrentPace(
+            track != null
+                ? (track.currentSpeedKmH > 0
+                      ? track.currentSpeedKmH
+                      : (track.stats.averageSpeed * 3.6))
+                : 0.0,
+          ),
+          unitBelow: true,
         ),
         _StatPage(
           Icons.directions_run,
           null,
-          "",
+          "min/km",
           t.statPaceAverage,
-          customValue: track?.formattedAveragePace ?? "--:-- min/km",
+          customValue: track != null
+              ? (track.formattedAveragePace.isNotEmpty
+                    ? track.formattedAveragePace.replaceAll(" min/km", "")
+                    : _formatCurrentPace(track.stats.averageSpeed * 3.6))
+              : "--:--",
+          unitBelow: true,
         ),
       ],
 
@@ -181,32 +222,34 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
           currentAltitude,
           "m",
           t.statElevation,
-        ), // ✅ CORREGIT: Usava "Altitud", la teva clau real és "statElevation"
+          unitBelow: true,
+        ),
         _StatPage(
           Icons.arrow_upward,
           track?.ascent,
           "m",
-          t.statAscent, // Usa "statAscent" (+ASC)
+          t.statAscent,
           isInt: true,
+          unitBelow: true,
         ),
         if (hasBarometer)
           _StatPage(
             Icons.compress,
             pressure,
             "hPa",
-            t.statBarometerPressure, // 🆕 Utilitza la nova clau afegida
+            t.statBarometerPressure,
+            unitBelow: true,
           ),
       ],
-      // 🔍 Busca i REEMPLAÇA el teu bloc 'coords' actual per aquest:
+
       'coords': [
         _StatPage(
           Icons.my_location,
           null,
           "",
           t.statPositionDecimal,
-          customValue: _formatLatLngToDecimal(
-            activePosition,
-          ), // 🔥 Connectat a la teva funció!
+          customValue: _formatLatLngToDecimal(activePosition),
+          unitBelow: true, //
         ),
         _StatPage(
           Icons.explore,
@@ -214,6 +257,7 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
           "",
           t.statPositionDMS,
           customValue: _formatLatLngToDMS(activePosition),
+          unitBelow: true, //
         ),
       ],
     };
@@ -254,7 +298,7 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
               }
               return _StatCard(
                 key: ValueKey(key),
-                controller: _controllers[key]!,
+                controller: _controllers![key]!,
                 height: double.infinity,
                 onPageChanged: (index) => ref
                     .read(statsPrefsProvider.notifier)
@@ -269,8 +313,7 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
   }
 }
 
-/// 🛰️ Tarjeta estática para el diagnóstico del GPS
-/// 🛰️ Tarjeta estática para el diagnóstico del GPS
+/// 🛰️ Targeta estàtica per al diagnòstic del GPS estil llista
 class _GpsStaticCard extends StatelessWidget {
   final int satellitesUsed;
   final int satellitesInView;
@@ -291,12 +334,10 @@ class _GpsStaticCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(
-              alpha: 0.12,
-            ), // Sombra más densa y marcada
+            color: Colors.black.withValues(alpha: 0.12),
             blurRadius: 14,
             spreadRadius: 1,
-            offset: const Offset(0, 6), // Desplazamiento vertical pronunciado
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -308,11 +349,11 @@ class _GpsStaticCard extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
                       "ESTAT GPS",
@@ -323,6 +364,7 @@ class _GpsStaticCard extends StatelessWidget {
                         letterSpacing: 0.8,
                       ),
                     ),
+                    const SizedBox(width: 6),
                     const Icon(
                       Icons.satellite_alt_outlined,
                       color: AppColors.primary,
@@ -332,11 +374,12 @@ class _GpsStaticCard extends StatelessWidget {
                 ),
                 Expanded(
                   child: Align(
-                    alignment: Alignment.centerLeft,
+                    alignment: Alignment.center,
                     child: FittedBox(
                       fit: BoxFit.scaleDown,
                       child: Text(
                         "$satellitesUsed/$satellitesInView",
+                        textAlign: TextAlign.center,
                         style: const TextStyle(
                           color: Colors.black87,
                           fontSize: 28,
@@ -349,6 +392,7 @@ class _GpsStaticCard extends StatelessWidget {
                 ),
                 Text(
                   "Actius / En vista",
+                  textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Colors.grey.shade500,
                     fontSize: 11,
@@ -364,7 +408,7 @@ class _GpsStaticCard extends StatelessWidget {
   }
 }
 
-/// Tarjeta con control de carrusel de una o más páginas
+/// 🗂️ Targeta carrusel multianidada reactiva (Evita pèrdues de state)
 class _StatCard extends StatefulWidget {
   final double height;
   final List<Widget> pages;
@@ -384,12 +428,26 @@ class _StatCard extends StatefulWidget {
 }
 
 class _StatCardState extends State<_StatCard> {
-  int _currentPage = 0;
+  late int _currentPage;
 
   @override
   void initState() {
     super.initState();
-    _currentPage = widget.controller.initialPage;
+    _currentPage = widget.controller.hasClients
+        ? widget.controller.page?.round() ?? widget.controller.initialPage
+        : widget.controller.initialPage;
+  }
+
+  @override
+  void didUpdateWidget(covariant _StatCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.controller != oldWidget.controller) {
+      setState(() {
+        _currentPage = widget.controller.hasClients
+            ? widget.controller.page?.round() ?? widget.controller.initialPage
+            : widget.controller.initialPage;
+      });
+    }
   }
 
   @override
@@ -400,9 +458,7 @@ class _StatCardState extends State<_StatCard> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(
-              alpha: 0.12,
-            ), // Sombra más densa y marcada
+            color: Colors.black.withValues(alpha: 0.12),
             blurRadius: 14,
             spreadRadius: 1,
             offset: const Offset(0, 6),
@@ -454,7 +510,7 @@ class _StatCardState extends State<_StatCard> {
   }
 }
 
-/// Página de datos de una métrica individual
+/// 📊 Pàgina de dades d'una mètrica individual (Alineació central global de la graella)
 class _StatPage extends StatelessWidget {
   final IconData icon;
   final double? value;
@@ -462,6 +518,7 @@ class _StatPage extends StatelessWidget {
   final String label;
   final bool isInt;
   final String? customValue;
+  final bool unitBelow;
 
   const _StatPage(
     this.icon,
@@ -470,11 +527,12 @@ class _StatPage extends StatelessWidget {
     this.label, {
     this.isInt = false,
     this.customValue,
+    this.unitBelow = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    String val =
+    final String val =
         customValue ??
         (value == null
             ? "--"
@@ -486,6 +544,7 @@ class _StatPage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          // 1. CAPÇALERA (Títol + Icona es manté estilitzat a sobre)
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -495,9 +554,7 @@ class _StatPage extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: Colors
-                        .grey
-                        .shade600, // Ajustado a juego con la elevación
+                    color: Colors.grey.shade600,
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 0.8,
@@ -508,40 +565,77 @@ class _StatPage extends StatelessWidget {
               Icon(icon, color: AppColors.primary, size: 20),
             ],
           ),
+
+          // 2. COS CENTRAL DINÀMIC (Sempre centrat en horitzontal i vertical)
           Expanded(
             child: Align(
-              alignment: Alignment.centerLeft,
+              alignment: Alignment.center,
               child: FittedBox(
                 fit: BoxFit.scaleDown,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
-                    Text(
-                      val,
-                      style: const TextStyle(
-                        color: Colors.black87,
-                        fontSize: 28,
-                        fontWeight: FontWeight.w800,
-                        fontFamily: 'monospace',
+                child: unitBelow
+                    ? Column(
+                        // LAYOUT VERTICAL CENTRAT (Velocitats, Ritmes, Alçades i Coordenades)
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            val,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Colors.black87,
+                              fontSize: 34,
+                              fontWeight: FontWeight.w800,
+                              fontFamily: 'monospace',
+                              height:
+                                  1.1, // Un pèl de marge per a la doble línia de coordenades
+                            ),
+                          ),
+                          if (unit.isNotEmpty) ...[
+                            const SizedBox(height: 6),
+                            Text(
+                              unit,
+                              style: TextStyle(
+                                color: Colors.grey.shade700,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                height: 1.0,
+                              ),
+                            ),
+                          ],
+                        ],
+                      )
+                    : Row(
+                        // LAYOUT HORITZONTAL CENTRAT (Distància i Temps)
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          Text(
+                            val,
+                            style: const TextStyle(
+                              color: Colors.black87,
+                              fontSize: 28,
+                              fontWeight: FontWeight.w800,
+                              fontFamily: 'monospace',
+                            ),
+                          ),
+                          if (unit.isNotEmpty && val != "--") ...[
+                            const SizedBox(width: 4),
+                            Text(
+                              unit,
+                              style: TextStyle(
+                                color: Colors.grey.shade500,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
-                    ),
-                    if (unit.isNotEmpty && val != "--") ...[
-                      const SizedBox(width: 4),
-                      Text(
-                        unit,
-                        style: TextStyle(
-                          color: Colors.grey.shade500,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
               ),
             ),
           ),
+
+          // 3. ESPAI DE SEGURETAT INFERIOR
           const SizedBox(height: 12),
         ],
       ),
