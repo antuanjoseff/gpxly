@@ -514,6 +514,51 @@ class AppLocalizationsEn extends AppLocalizations {
   String get statAccuracy => 'Accuracy';
 
   @override
+  String get satelliteSkyplotTitle => 'Skyplot';
+
+  @override
+  String get satelliteFlagsMode => 'Flags';
+
+  @override
+  String get satelliteGeometryMode => 'Geometries';
+
+  @override
+  String get satelliteSearching => 'Searching satellites... Make sure GPS is active outdoors.';
+
+  @override
+  String get satelliteNoVisible => 'No visible satellites';
+
+  @override
+  String get satelliteUtcTime => 'UTC Time';
+
+  @override
+  String get satelliteFixType => 'Fix Type';
+
+  @override
+  String get satelliteFix3dRtk => '3D/RTK Fix';
+
+  @override
+  String get satelliteNoFix => 'No Fix';
+
+  @override
+  String get satelliteSatellitesInView => 'Satellites in View';
+
+  @override
+  String get satelliteSatellitesInUse => 'Satellites in Use';
+
+  @override
+  String get satelliteConstellationGps => 'GPS';
+
+  @override
+  String get satelliteConstellationGlonass => 'GLONASS';
+
+  @override
+  String get satelliteConstellationGalileo => 'GALILEO';
+
+  @override
+  String get satelliteConstellationBeidou => 'BEIDOU';
+
+  @override
   String get deleteWaypoint => 'Delete waypoint';
 
   @override

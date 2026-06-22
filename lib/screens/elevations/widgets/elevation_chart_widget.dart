@@ -395,17 +395,31 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
         ? futureDists.length
         : 0;
 
-    // 🟢 UNIFICACIÓ TOTAL: Generamos los puntos unificados en una sola pasada fija
-    final List<FlSpot> unifiedSpots = [];
+    final List<FlSpot> pastSpots = [
+      for (int i = 0; i < safePastCount; i++) FlSpot(pastDists[i], pastAlts[i]),
+    ];
+    final List<FlSpot> futureSpots = [
+      for (int i = 0; i < safeFutureCount; i++)
+        FlSpot(futureDists[i], futureAlts[i]),
+    ];
 
-    // 1. Añadimos el pasado (Track grabado - 75% del espacio)
-    for (int i = 0; i < safePastCount; i++) {
-      unifiedSpots.add(FlSpot(pastDists[i], pastAlts[i]));
-    }
-
-    // 2. Añadimos el futuro (Track seguido - 25% del espacio)
-    for (int i = 0; i < safeFutureCount; i++) {
-      unifiedSpots.add(FlSpot(futureDists[i], futureAlts[i]));
+    LineChartBarData buildBar(List<FlSpot> spots, Color color) {
+      return LineChartBarData(
+        spots: spots,
+        isCurved: true,
+        curveSmoothness: 0.3,
+        isStrokeCapRound: true,
+        preventCurveOverShooting: true,
+        barWidth: 3,
+        dotData: const FlDotData(show: false),
+        color: color,
+        belowBarData: BarAreaData(
+          show: true,
+          color: color.withAlpha(28),
+          cutOffY: forcedMinY,
+          applyCutOffY: true,
+        ),
+      );
     }
 
     return LineChartData(
@@ -515,56 +529,8 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
       ),
       lineTouchData: const LineTouchData(enabled: false),
       lineBarsData: [
-        if (unifiedSpots.isNotEmpty)
-          LineChartBarData(
-            spots: unifiedSpots,
-            isCurved: true,
-            curveSmoothness: 0.3,
-            isStrokeCapRound: true,
-            preventCurveOverShooting: true,
-            barWidth: 3,
-            dotData: const FlDotData(show: false),
-
-            // 🟢 GRADIENT DINÀMIC: Si no hi ha futur, el color és 100% homogeni
-            gradient: safeFutureCount == 0
-                ? LinearGradient(colors: [trackColor, trackColor])
-                : LinearGradient(
-                    colors: [
-                      trackColor,
-                      trackColor,
-                      importedTrackColor,
-                      importedTrackColor,
-                    ],
-                    stops: const [0.0, 0.75, 0.75, 1.0],
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
-                  ),
-
-            // 🟢 DEGRADAT INFERIOR DINÀMIC: S'adapta també a si hi ha futur o no
-            belowBarData: BarAreaData(
-              show: true,
-              gradient: safeFutureCount == 0
-                  ? LinearGradient(
-                      colors: [
-                        trackColor.withAlpha(64),
-                        trackColor.withAlpha(64),
-                      ],
-                    )
-                  : LinearGradient(
-                      colors: [
-                        trackColor.withAlpha(64),
-                        trackColor.withAlpha(64),
-                        importedTrackColor.withAlpha(48),
-                        importedTrackColor.withAlpha(48),
-                      ],
-                      stops: const [0.0, 0.75, 0.75, 1.0],
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
-                    ),
-              cutOffY: forcedMinY,
-              applyCutOffY: true,
-            ),
-          ),
+        if (pastSpots.isNotEmpty) buildBar(pastSpots, trackColor),
+        if (futureSpots.isNotEmpty) buildBar(futureSpots, importedTrackColor),
       ],
     );
   }

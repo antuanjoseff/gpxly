@@ -117,29 +117,3 @@ class GpsAccuracyBars extends ConsumerWidget {
     );
   }
 }
-
-class GpsDisabledIcon extends StatelessWidget {
-  const GpsDisabledIcon({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 32,
-      height: 32,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(38),
-            blurRadius: 3,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      child: const Center(
-        child: Icon(Icons.location_off, size: 20, color: Colors.redAccent),
-      ),
-    );
-  }
-}

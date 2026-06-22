@@ -514,6 +514,51 @@ class AppLocalizationsEs extends AppLocalizations {
   String get statAccuracy => 'Precisión';
 
   @override
+  String get satelliteSkyplotTitle => 'Carta celeste';
+
+  @override
+  String get satelliteFlagsMode => 'Banderas';
+
+  @override
+  String get satelliteGeometryMode => 'Geometrías';
+
+  @override
+  String get satelliteSearching => 'Buscando satélites... Asegúrate de tener el GPS activo al aire libre.';
+
+  @override
+  String get satelliteNoVisible => 'No hay satélites visibles';
+
+  @override
+  String get satelliteUtcTime => 'Hora UTC';
+
+  @override
+  String get satelliteFixType => 'Tipo de fix';
+
+  @override
+  String get satelliteFix3dRtk => 'Fix 3D/RTK';
+
+  @override
+  String get satelliteNoFix => 'Sin fix';
+
+  @override
+  String get satelliteSatellitesInView => 'Satélites a la vista';
+
+  @override
+  String get satelliteSatellitesInUse => 'Satélites en uso';
+
+  @override
+  String get satelliteConstellationGps => 'GPS';
+
+  @override
+  String get satelliteConstellationGlonass => 'GLONASS';
+
+  @override
+  String get satelliteConstellationGalileo => 'GALILEO';
+
+  @override
+  String get satelliteConstellationBeidou => 'BEIDOU';
+
+  @override
   String get deleteWaypoint => 'Eliminar hito';
 
   @override
@@ -658,5 +703,5 @@ class AppLocalizationsEs extends AppLocalizations {
   String get waypointNoGps => 'Esperando señal GPS...';
 
   @override
-  String get gpsSearching => 'Searching...';
+  String get gpsSearching => 'Buscando...';
 }

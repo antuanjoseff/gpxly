@@ -1099,6 +1099,96 @@ abstract class AppLocalizations {
   /// **'Accuracy'**
   String get statAccuracy;
 
+  /// No description provided for @satelliteSkyplotTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Skyplot'**
+  String get satelliteSkyplotTitle;
+
+  /// No description provided for @satelliteFlagsMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Flags'**
+  String get satelliteFlagsMode;
+
+  /// No description provided for @satelliteGeometryMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Geometries'**
+  String get satelliteGeometryMode;
+
+  /// No description provided for @satelliteSearching.
+  ///
+  /// In en, this message translates to:
+  /// **'Searching satellites... Make sure GPS is active outdoors.'**
+  String get satelliteSearching;
+
+  /// No description provided for @satelliteNoVisible.
+  ///
+  /// In en, this message translates to:
+  /// **'No visible satellites'**
+  String get satelliteNoVisible;
+
+  /// No description provided for @satelliteUtcTime.
+  ///
+  /// In en, this message translates to:
+  /// **'UTC Time'**
+  String get satelliteUtcTime;
+
+  /// No description provided for @satelliteFixType.
+  ///
+  /// In en, this message translates to:
+  /// **'Fix Type'**
+  String get satelliteFixType;
+
+  /// No description provided for @satelliteFix3dRtk.
+  ///
+  /// In en, this message translates to:
+  /// **'3D/RTK Fix'**
+  String get satelliteFix3dRtk;
+
+  /// No description provided for @satelliteNoFix.
+  ///
+  /// In en, this message translates to:
+  /// **'No Fix'**
+  String get satelliteNoFix;
+
+  /// No description provided for @satelliteSatellitesInView.
+  ///
+  /// In en, this message translates to:
+  /// **'Satellites in View'**
+  String get satelliteSatellitesInView;
+
+  /// No description provided for @satelliteSatellitesInUse.
+  ///
+  /// In en, this message translates to:
+  /// **'Satellites in Use'**
+  String get satelliteSatellitesInUse;
+
+  /// No description provided for @satelliteConstellationGps.
+  ///
+  /// In en, this message translates to:
+  /// **'GPS'**
+  String get satelliteConstellationGps;
+
+  /// No description provided for @satelliteConstellationGlonass.
+  ///
+  /// In en, this message translates to:
+  /// **'GLONASS'**
+  String get satelliteConstellationGlonass;
+
+  /// No description provided for @satelliteConstellationGalileo.
+  ///
+  /// In en, this message translates to:
+  /// **'GALILEO'**
+  String get satelliteConstellationGalileo;
+
+  /// No description provided for @satelliteConstellationBeidou.
+  ///
+  /// In en, this message translates to:
+  /// **'BEIDOU'**
+  String get satelliteConstellationBeidou;
+
   /// No description provided for @deleteWaypoint.
   ///
   /// In en, this message translates to:

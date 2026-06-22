@@ -5,8 +5,13 @@ import 'package:flutter/material.dart';
 class SkyplotPainter extends CustomPainter {
   final List<dynamic> satellites;
   final Map<String, String> Function(int, int) parseFn;
+  final bool useFlags;
 
-  SkyplotPainter({required this.satellites, required this.parseFn});
+  SkyplotPainter({
+    required this.satellites,
+    required this.parseFn,
+    required this.useFlags,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -102,52 +107,31 @@ class SkyplotPainter extends CustomPainter {
       } else if (cn0 >= 20.0)
         satColor = Colors.amber;
 
-      final paintNode = Paint()
-        ..color = satColor
-        ..style = PaintingStyle.fill;
-      final paintStroke = Paint()
-        ..color = Colors.white
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.0;
-
-      // Dibujar la figura según la red (1=GPS, 3=GLONASS, 6=GALILEO, 5=BEIDOU)
+      // Dibujar la bandera o la geometría según el modo elegido.
       final constellationType = map['constellation'] as int;
       canvas.save();
       canvas.translate(satX, satY);
 
-      if (constellationType == 1) {
-        // Círculo para GPS
-        canvas.drawCircle(Offset.zero, 7.0, paintNode);
-        canvas.drawCircle(Offset.zero, 7.0, paintStroke);
-      } else if (constellationType == 3) {
-        // Cuadrado para GLONASS
-        canvas.drawRect(
-          Rect.fromCenter(center: Offset.zero, width: 12, height: 12),
-          paintNode,
+      if (useFlags) {
+        final flag = _constellationFlag(constellationType);
+        final flagPainter = TextPainter(
+          text: TextSpan(
+            text: flag,
+            style: TextStyle(
+              fontSize: 14,
+              color: satColor,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          textDirection: TextDirection.ltr,
+        )..layout();
+
+        flagPainter.paint(
+          canvas,
+          Offset(-flagPainter.width / 2, -flagPainter.height / 2),
         );
-        canvas.drawRect(
-          Rect.fromCenter(center: Offset.zero, width: 12, height: 12),
-          paintStroke,
-        );
-      } else if (constellationType == 6) {
-        // Triángulo para GALILEO
-        var path = Path()
-          ..moveTo(0, -8)
-          ..lineTo(7, 6)
-          ..lineTo(-7, 6)
-          ..close();
-        canvas.drawPath(path, paintNode);
-        canvas.drawPath(path, paintStroke);
       } else {
-        // Rombo para BeiDou / Otros
-        var path = Path()
-          ..moveTo(0, -8)
-          ..lineTo(6, 0)
-          ..lineTo(0, 8)
-          ..lineTo(-6, 0)
-          ..close();
-        canvas.drawPath(path, paintNode);
-        canvas.drawPath(path, paintStroke);
+        _paintConstellationShape(canvas, constellationType, satColor);
       }
       canvas.restore();
 
@@ -165,6 +149,67 @@ class SkyplotPainter extends CustomPainter {
         canvas,
         Offset(satX - (textPainter.width / 2), satY - 18),
       );
+    }
+  }
+
+  String _constellationFlag(int type) {
+    switch (type) {
+      case 1:
+        return '🇺🇸';
+      case 3:
+        return '🇷🇺';
+      case 6:
+        return '🇪🇺';
+      case 5:
+        return '🇨🇳';
+      default:
+        return '🏳️';
+    }
+  }
+
+  void _paintConstellationShape(
+    Canvas canvas,
+    int constellationType,
+    Color satColor,
+  ) {
+    final paintNode = Paint()
+      ..color = satColor
+      ..style = PaintingStyle.fill;
+
+    final paintStroke = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+
+    if (constellationType == 1) {
+      canvas.drawCircle(Offset.zero, 7.0, paintNode);
+      canvas.drawCircle(Offset.zero, 7.0, paintStroke);
+    } else if (constellationType == 3) {
+      canvas.drawRect(
+        Rect.fromCenter(center: Offset.zero, width: 12, height: 12),
+        paintNode,
+      );
+      canvas.drawRect(
+        Rect.fromCenter(center: Offset.zero, width: 12, height: 12),
+        paintStroke,
+      );
+    } else if (constellationType == 6) {
+      final path = Path()
+        ..moveTo(0, -8)
+        ..lineTo(7, 6)
+        ..lineTo(-7, 6)
+        ..close();
+      canvas.drawPath(path, paintNode);
+      canvas.drawPath(path, paintStroke);
+    } else {
+      final path = Path()
+        ..moveTo(0, -8)
+        ..lineTo(6, 0)
+        ..lineTo(0, 8)
+        ..lineTo(-6, 0)
+        ..close();
+      canvas.drawPath(path, paintNode);
+      canvas.drawPath(path, paintStroke);
     }
   }
 

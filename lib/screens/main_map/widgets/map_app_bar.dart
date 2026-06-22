@@ -107,7 +107,7 @@ class MapAppBar extends ConsumerWidget implements PreferredSizeWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.location_off_rounded,
                         color: AppColors.redAlert,
                         size: 15,

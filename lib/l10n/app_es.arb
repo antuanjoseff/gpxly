@@ -212,6 +212,22 @@
 "statSatellites": "Satélites",
 "statAccuracy": "Precisión",
 
+"satelliteSkyplotTitle": "Carta celeste",
+"satelliteFlagsMode": "Banderas",
+"satelliteGeometryMode": "Geometrías",
+"satelliteSearching": "Buscando satélites... Asegúrate de tener el GPS activo al aire libre.",
+"satelliteNoVisible": "No hay satélites visibles",
+"satelliteUtcTime": "Hora UTC",
+"satelliteFixType": "Tipo de fix",
+"satelliteFix3dRtk": "Fix 3D/RTK",
+"satelliteNoFix": "Sin fix",
+"satelliteSatellitesInView": "Satélites a la vista",
+"satelliteSatellitesInUse": "Satélites en uso",
+"satelliteConstellationGps": "GPS",
+"satelliteConstellationGlonass": "GLONASS",
+"satelliteConstellationGalileo": "GALILEO",
+"satelliteConstellationBeidou": "BEIDOU",
+
 "deleteWaypoint": "Eliminar hito",
 "deleteWaypointTitle": "¿Eliminar hito?",
 "deleteWaypointMessage": "¿Estás seguro de que quieres borrar este punto de interés definitivamente?",
@@ -274,6 +290,7 @@
 
 "gpsDisabledAppBar": "SIN GPS",
 "recoverTrackDialogBody": "Se han detectado datos de una ruta anterior no guardada. ¿Quieres recuperarla o prefieres empezar una nueva desde cero?",
-"waypointNoGps": "Esperando señal GPS..."
+"waypointNoGps": "Esperando señal GPS...",
+"gpsSearching": "Buscando..."
 }
 

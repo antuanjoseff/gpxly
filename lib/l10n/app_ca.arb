@@ -213,6 +213,22 @@
 "statSatellites": "Satèl·lits",
 "statAccuracy": "Precisió",
 
+"satelliteSkyplotTitle": "Carta del cel",
+"satelliteFlagsMode": "Banderes",
+"satelliteGeometryMode": "Geometries",
+"satelliteSearching": "Buscant satèl·lits... Assegura't de tenir el GPS actiu exterior.",
+"satelliteNoVisible": "Sense satèl·lits visibles",
+"satelliteUtcTime": "Hora UTC",
+"satelliteFixType": "Tipus de fix",
+"satelliteFix3dRtk": "Fix 3D/RTK",
+"satelliteNoFix": "Sense fix",
+"satelliteSatellitesInView": "Satèl·lits a la vista",
+"satelliteSatellitesInUse": "Satèl·lits en ús",
+"satelliteConstellationGps": "GPS",
+"satelliteConstellationGlonass": "GLONASS",
+"satelliteConstellationGalileo": "GALILEO",
+"satelliteConstellationBeidou": "BEIDOU",
+
 "deleteWaypoint": "Eliminar fita",
 "deleteWaypointTitle": "Eliminar fita?",
 "deleteWaypointMessage": "Estàs segur que vols esborrar aquest punt d'interès definitivament?",
@@ -275,6 +291,7 @@
 
 "gpsDisabledAppBar": "SENSE GPS",
 "recoverTrackDialogBody": "S'han detectat dades d'una ruta anterior no guardada. Vols recuperar-la o prefereixes començar-ne una de nova des de zero?",
-"waypointNoGps": "Esperant senyal GPS..."
+"waypointNoGps": "Esperant senyal GPS...",
+"gpsSearching": "Buscant..."
 }
 

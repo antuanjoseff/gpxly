@@ -514,6 +514,51 @@ class AppLocalizationsCa extends AppLocalizations {
   String get statAccuracy => 'Precisió';
 
   @override
+  String get satelliteSkyplotTitle => 'Carta del cel';
+
+  @override
+  String get satelliteFlagsMode => 'Banderes';
+
+  @override
+  String get satelliteGeometryMode => 'Geometries';
+
+  @override
+  String get satelliteSearching => 'Buscant satèl·lits... Assegura\'t de tenir el GPS actiu exterior.';
+
+  @override
+  String get satelliteNoVisible => 'Sense satèl·lits visibles';
+
+  @override
+  String get satelliteUtcTime => 'Hora UTC';
+
+  @override
+  String get satelliteFixType => 'Tipus de fix';
+
+  @override
+  String get satelliteFix3dRtk => 'Fix 3D/RTK';
+
+  @override
+  String get satelliteNoFix => 'Sense fix';
+
+  @override
+  String get satelliteSatellitesInView => 'Satèl·lits a la vista';
+
+  @override
+  String get satelliteSatellitesInUse => 'Satèl·lits en ús';
+
+  @override
+  String get satelliteConstellationGps => 'GPS';
+
+  @override
+  String get satelliteConstellationGlonass => 'GLONASS';
+
+  @override
+  String get satelliteConstellationGalileo => 'GALILEO';
+
+  @override
+  String get satelliteConstellationBeidou => 'BEIDOU';
+
+  @override
   String get deleteWaypoint => 'Eliminar fita';
 
   @override
@@ -658,5 +703,5 @@ class AppLocalizationsCa extends AppLocalizations {
   String get waypointNoGps => 'Esperant senyal GPS...';
 
   @override
-  String get gpsSearching => 'Searching...';
+  String get gpsSearching => 'Buscant...';
 }

@@ -1,5 +1,6 @@
 // lib/stats/satellites/screens/satellite_detail_screen.dart
 import 'package:flutter/material.dart';
+import 'package:senda/l10n/app_localizations.dart';
 import 'package:senda/theme/app_colors.dart';
 import 'package:senda/services/native_gps_channel.dart';
 import '../painters/skyplot_painter.dart';
@@ -18,31 +19,67 @@ class _SatelliteDetailScreenState extends State<SatelliteDetailScreen> {
     6: true, // GALILEO
     5: true, // BEIDOU
   };
+  static const Map<int, Map<String, dynamic>> _constellationMeta = {
+    1: {'name': 'GPS', 'codePrefix': 'G', 'flag': '🇺🇸', 'sortKey': 0},
+    3: {'name': 'GLONASS', 'codePrefix': 'R', 'flag': '🇷🇺', 'sortKey': 1},
+    6: {'name': 'GALILEO', 'codePrefix': 'E', 'flag': '🇪🇺', 'sortKey': 2},
+    5: {'name': 'BEIDOU', 'codePrefix': 'B', 'flag': '🇨🇳', 'sortKey': 3},
+  };
+  bool _useFlags = true;
 
   Map<String, String> _parseConstellation(int type, int svid) {
-    switch (type) {
-      case 1:
-        return {'name': 'GPS', 'code': 'G$svid'};
-      case 3:
-        return {'name': 'GLONASS', 'code': 'R$svid'};
-      case 6:
-        return {'name': 'GALILEO', 'code': 'E$svid'};
-      case 5:
-        return {'name': 'BEIDOU', 'code': 'B$svid'};
-      default:
-        return {'name': 'UNKNOWN', 'code': 'U$svid'};
+    final info = _constellationMeta[type];
+    if (info != null) {
+      return {
+        'name': info['name'] as String,
+        'code': '${info['codePrefix'] as String}$svid',
+      };
     }
+
+    return {'name': 'UNKNOWN', 'code': 'U$svid'};
   }
 
   @override
   Widget build(BuildContext context) {
     final double radarSize = MediaQuery.of(context).size.width * 0.85;
+    final t = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Skyplot'),
+        title: Text(t.satelliteSkyplotTitle),
         backgroundColor: AppColors.primary,
         centerTitle: true,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  _useFlags ? t.satelliteFlagsMode : t.satelliteGeometryMode,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(width: 2),
+                Transform.scale(
+                  scale: 0.72,
+                  child: Switch.adaptive(
+                    value: _useFlags,
+                    onChanged: (value) {
+                      setState(() {
+                        _useFlags = value;
+                      });
+                    },
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
       backgroundColor: Colors.white,
       body: StreamBuilder<List<dynamic>>(
@@ -60,10 +97,11 @@ class _SatelliteDetailScreenState extends State<SatelliteDetailScreen> {
           }).toList();
 
           if (satellites.isEmpty) {
-            return const Center(
+            return Center(
               child: Text(
-                'Buscant satèl·lits... Assegura\'t de tenir el GPS actiu exterior.',
-                style: TextStyle(color: Colors.grey),
+                t.satelliteSearching,
+                style: const TextStyle(color: Colors.grey),
+                textAlign: TextAlign.center,
               ),
             );
           }
@@ -75,6 +113,11 @@ class _SatelliteDetailScreenState extends State<SatelliteDetailScreen> {
               usedCount++;
             }
           }
+
+          final gpsCount = _satelliteCountForConstellation(satellites, 1);
+          final glonassCount = _satelliteCountForConstellation(satellites, 3);
+          final galileoCount = _satelliteCountForConstellation(satellites, 6);
+          final beidouCount = _satelliteCountForConstellation(satellites, 5);
 
           return ListView(
             padding: const EdgeInsets.all(16.0),
@@ -91,9 +134,9 @@ class _SatelliteDetailScreenState extends State<SatelliteDetailScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 10,
-                      vertical: 8,
+                      vertical: 6,
                     ),
-                    margin: const EdgeInsets.only(top: 8.0, right: 8.0),
+                    margin: const EdgeInsets.only(top: 4.0, right: 8.0),
                     decoration: BoxDecoration(
                       color: Colors.grey.shade50,
                       borderRadius: BorderRadius.circular(8),
@@ -103,10 +146,26 @@ class _SatelliteDetailScreenState extends State<SatelliteDetailScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        _buildLegendRow('GPS', 1),
-                        _buildLegendRow('Glonass', 3),
-                        _buildLegendRow('Galileo', 6),
-                        _buildLegendRow('BeiDou', 5),
+                        _buildLegendRow(
+                          t.satelliteConstellationGps,
+                          1,
+                          gpsCount,
+                        ),
+                        _buildLegendRow(
+                          t.satelliteConstellationGlonass,
+                          3,
+                          glonassCount,
+                        ),
+                        _buildLegendRow(
+                          t.satelliteConstellationGalileo,
+                          6,
+                          galileoCount,
+                        ),
+                        _buildLegendRow(
+                          t.satelliteConstellationBeidou,
+                          5,
+                          beidouCount,
+                        ),
                       ],
                     ),
                   ),
@@ -123,6 +182,7 @@ class _SatelliteDetailScreenState extends State<SatelliteDetailScreen> {
                     painter: SkyplotPainter(
                       satellites: filtered,
                       parseFn: _parseConstellation,
+                      useFlags: _useFlags,
                     ),
                   ),
                 ),
@@ -139,7 +199,7 @@ class _SatelliteDetailScreenState extends State<SatelliteDetailScreen> {
   }
 
   // Widget auxiliar para pintar cada fila de la leyenda de constelaciones
-  Widget _buildLegendRow(String label, int type) {
+  Widget _buildLegendRow(String label, int type, int count) {
     final enabled = _enabledConstellations[type] ?? true;
 
     return MouseRegion(
@@ -168,16 +228,20 @@ class _SatelliteDetailScreenState extends State<SatelliteDetailScreen> {
                 ),
                 const SizedBox(width: 6),
 
-                // 🔷 Figura geomètrica de la constel·lació
-                CustomPaint(
-                  size: const Size(12, 12),
-                  painter: _LegendShapePainter(constellationType: type),
-                ),
+                _useFlags
+                    ? Text(
+                        _constellationFlag(type),
+                        style: const TextStyle(fontSize: 12),
+                      )
+                    : CustomPaint(
+                        size: const Size(12, 12),
+                        painter: _LegendShapePainter(constellationType: type),
+                      ),
                 const SizedBox(width: 8),
 
                 // 🏷️ Nom de la constel·lació
                 Text(
-                  label,
+                  '$label ($count)',
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
@@ -193,6 +257,7 @@ class _SatelliteDetailScreenState extends State<SatelliteDetailScreen> {
   }
 
   Widget _buildTelemetryPanel(int totalInView, int totalInUse) {
+    final t = AppLocalizations.of(context)!;
     final TextStyle labelStyle = TextStyle(
       color: Colors.blue.shade700,
       fontSize: 13,
@@ -204,15 +269,18 @@ class _SatelliteDetailScreenState extends State<SatelliteDetailScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'UTC Time: ${DateTime.now().toUtc().toString().split(' ').last.split('.').first}',
+            '${t.satelliteUtcTime}: ${DateTime.now().toUtc().toString().split(' ').last.split('.').first}',
             style: labelStyle,
           ),
           Text(
-            'Fix Type: ${totalInUse >= 4 ? "3D/RTK Fix" : "No Fix"}',
+            '${t.satelliteFixType}: ${totalInUse >= 4 ? t.satelliteFix3dRtk : t.satelliteNoFix}',
             style: labelStyle,
           ),
-          Text('Satellites in View: $totalInView', style: labelStyle),
-          Text('Satellites in Use: $totalInUse', style: labelStyle),
+          Text(
+            '${t.satelliteSatellitesInView}: $totalInView',
+            style: labelStyle,
+          ),
+          Text('${t.satelliteSatellitesInUse}: $totalInUse', style: labelStyle),
         ],
       ),
     );
@@ -220,11 +288,30 @@ class _SatelliteDetailScreenState extends State<SatelliteDetailScreen> {
 
   Widget _buildGarminBarChart(List<dynamic> satellites) {
     final sortedSats = List<dynamic>.from(satellites)
-      ..sort(
-        (a, b) => Map<String, dynamic>.from(a)['constellation'].compareTo(
-          Map<String, dynamic>.from(b)['constellation'],
+      ..sort((a, b) {
+        final aMap = Map<String, dynamic>.from(a);
+        final bMap = Map<String, dynamic>.from(b);
+        final aType = aMap['constellation'] as int;
+        final bType = bMap['constellation'] as int;
+        final typeCompare = _constellationSortKey(
+          aType,
+        ).compareTo(_constellationSortKey(bType));
+        if (typeCompare != 0) return typeCompare;
+        final aCn0 = (aMap['cn0'] as num).toDouble();
+        final bCn0 = (bMap['cn0'] as num).toDouble();
+        return bCn0.compareTo(aCn0);
+      });
+
+    if (satellites.isEmpty) {
+      final t = AppLocalizations.of(context)!;
+      return Center(
+        child: Text(
+          t.satelliteNoVisible,
+          style: const TextStyle(color: Colors.grey),
+          textAlign: TextAlign.center,
         ),
       );
+    }
 
     return Align(
       alignment: Alignment.bottomCenter,
@@ -234,9 +321,10 @@ class _SatelliteDetailScreenState extends State<SatelliteDetailScreen> {
         itemCount: sortedSats.length,
         itemBuilder: (context, index) {
           final map = Map<String, dynamic>.from(sortedSats[index]);
+          final constellationType = map['constellation'] as int;
           final cn0 = (map['cn0'] as num).toDouble();
           final parsed = _parseConstellation(
-            map['constellation'] as int,
+            constellationType,
             map['svid'] as int,
           );
 
@@ -290,6 +378,8 @@ class _SatelliteDetailScreenState extends State<SatelliteDetailScreen> {
                     fontWeight: FontWeight.w500,
                   ),
                 ),
+                const SizedBox(height: 2),
+                _buildMarker(constellationType),
               ],
             ),
           );
@@ -297,9 +387,32 @@ class _SatelliteDetailScreenState extends State<SatelliteDetailScreen> {
       ),
     );
   }
+
+  int _constellationSortKey(int type) {
+    return _constellationMeta[type]?['sortKey'] as int? ?? 99;
+  }
+
+  String _constellationFlag(int type) {
+    return _constellationMeta[type]?['flag'] as String? ?? '🏳️';
+  }
+
+  int _satelliteCountForConstellation(List<dynamic> satellites, int type) {
+    return satellites.where((sat) {
+      final map = Map<String, dynamic>.from(sat);
+      return map['constellation'] as int == type;
+    }).length;
+  }
+
+  Widget _buildMarker(int type) {
+    return _useFlags
+        ? Text(_constellationFlag(type), style: const TextStyle(fontSize: 11))
+        : CustomPaint(
+            size: const Size(12, 12),
+            painter: _LegendShapePainter(constellationType: type),
+          );
+  }
 }
 
-/// 🎨 Pintor miniatura idéntico a las figuras que dibuja tu SkyplotPainter
 class _LegendShapePainter extends CustomPainter {
   final int constellationType;
 
@@ -334,7 +447,7 @@ class _LegendShapePainter extends CustomPainter {
         paintStroke,
       );
     } else if (constellationType == 6) {
-      var path = Path()
+      final path = Path()
         ..moveTo(0, -5)
         ..lineTo(4.5, 3.5)
         ..lineTo(-4.5, 3.5)
@@ -342,7 +455,7 @@ class _LegendShapePainter extends CustomPainter {
       canvas.drawPath(path, paintNode);
       canvas.drawPath(path, paintStroke);
     } else {
-      var path = Path()
+      final path = Path()
         ..moveTo(0, -5)
         ..lineTo(4.5, 0)
         ..lineTo(0, 5)
@@ -351,6 +464,7 @@ class _LegendShapePainter extends CustomPainter {
       canvas.drawPath(path, paintNode);
       canvas.drawPath(path, paintStroke);
     }
+
     canvas.restore();
   }
 

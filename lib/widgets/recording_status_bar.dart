@@ -53,8 +53,6 @@ class TrackDurationTimer extends StatelessWidget {
   }
 }
 
-// ... La resta de classes (LocationAltitude i RecordingStatusBar) es mantenen IGUAL
-
 class LocationAltitude extends ConsumerWidget {
   final Color color; // 🚀 Afegit
 
@@ -79,44 +77,6 @@ class LocationAltitude extends ConsumerWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class RecordingStatusBar extends StatelessWidget {
-  final RecordingState state;
-  final Duration duration;
-  final Color
-  contentColor; // 🚀 Nova propietat per controlar el color del text/icones
-
-  const RecordingStatusBar({
-    super.key,
-    required this.state,
-    required this.duration,
-    required this.contentColor, // 🚀 Afegit
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return FittedBox(
-      fit: BoxFit.scaleDown,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TrackDurationTimer(
-            state: state,
-            duration: duration,
-            color: contentColor, // 🚀 Passat
-          ),
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 12),
-            height: 18,
-            width: 1.5,
-            color: contentColor.withAlpha(60), // 🚀 Adaptat al color de fons
-          ),
-          LocationAltitude(color: contentColor), // 🚀 Passat
-        ],
-      ),
     );
   }
 }
