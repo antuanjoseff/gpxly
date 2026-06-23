@@ -1,103 +1,29 @@
-Estil Senda: Fons gris (0xFFF5F5F7), targetes blanques amb ràdio de 16-20px i ombra suau (black.withAlpha(10)). AppBars de 18px, semibold i blanques.
-Res de 'creativitat' amb el codi: No t'inventis noms de paràmetres, classes ni constructors. Si el codi que et passo navega cap a una altra pantalla o usa un widget que no veus, atura't i demana'm el constructor abans de proposar res.
-Funcionalitat intocable: Manté la lògica de Riverpod, els càlculs i els mètodes privats exactament com estan al fitxer original. Només vull que polis la interfície (UI).
-Waypoints: Selecció per índex (Verd = inici, Vermell = final) comparant automàticament els trackIndex."
+Hola! Vull implementar des de zero una nova eina de selecció i mesura de trams sobre el mapa de la meva aplicació Flutter (anomenada Senda), la qual utilitza el paquet `maplibre_gl` i la gestió d'estats de `flutter_riverpod`.
 
+A continuació tens les especificacions exactes de la UI, la lògica de negoci i el comportament del sistema:
 
+### 1. Objectiu de la funcionalitat
+L'objectiu és permetre a l'usuari analitzar i seleccionar de forma contínua i àgil fragments concrets d'una ruta (el track) a sobre del mapa (com un descens pronunciat o una ascensió a un cim) per sintonitzar síncronament el gràfic de perfil d'elevacions adjunt, sense haver de lluitar amb interaccions tàctils mil·limètriques complexes.
 
-///////////////////////////////////////////////////////////////////////
-// EXPLICAR CONTEXT DISSENY A IA
-///////////////////////////////////////////////////////////////////////
-La proposta per a Waypoints (Senda Compact):
+### 2. Flux d'Activació i Cicle de Vida (Trigger)
+- L'eina de selecció NO està activa per defecte.
+- L'usuari ha d'obrir primer el panell del gràfic d'elevacions inferior. Si el gràfic d'elevacions es tanca o s'amaga, l'eina es desactiva automàticament de forma proactiva.
+- Quan el gràfic està obert, si l'usuari hi realitza un gest de "drag" o "long press" a sobre, s'habilita a la pantalla un botó de disponibilitat (flotant a la dreta sobre el gràfic).
+- L'usuari activa oficialment el mode selecció prement aquest botó flotant de disponibilitat.
 
-Contenidor Únic: En lloc de fer una targeta elevada per a cada punt (que genera massa "soroll" visual i espai perdut), fem servir una sola targeta blanca per a tota la secció.
-Separadors Fins: Dins d'aquesta targeta, els waypoints es separen amb un Divider gairebé invisible (com hem fet avui), guanyant molt espai vertical.
-Sense Ombra Individual: Eliminem l'elevació de cada fila. L'ombra només la té el bloc sencer.
-Visual Density: Apliquem VisualDensity.compact de forma agressiva perquè la llista es pugui llegir ràpidament sense fer un scroll infinit.
+### 3. Comportament de la UI (Mode Selecció Actiu)
+Quan l'eina està en marxa, es pinten dos elements visuals clau a la pantalla (dins d'un Stack sobre el mapa):
+A) Al centre geomètric del mapa: Apareix un reticle o mirilla verd fix de només lectura (`Icons.center_focus_strong`). L'usuari apunta movent i desplaçant el mapa lliurement per sota d'aquesta mira.
+B) A la part superior esquerra (sota la AppBar): Apareix una pastilla gran de text d'acció directa que guia l'usuari de forma dinàmica segons l'estat de les agulles de selecció del gràfic a Riverpod.
 
-///////////////////////////////////////////////////////////////////////
-// STATS PAGE
-///////////////////////////////////////////////////////////////////////
-Proyecto: Interfaz de Estadísticas para App de Tracking (Flutter).
-Escenario:
-Página dedicada (fuera del mapa) que muestra datos de hasta dos tracks simultáneos y opcionales:
+### 4. Lògica del Botó Superior i l'Efecte Snap
+Quan l'usuari prem el botó de la pastilla superior esquerra, s'executa la següent seqüència:
+1. El codi llegeix la coordenada central actual de la càmera (on apunta el reticle fix).
+2. Es calcula quin és l'índex de la ruta (`trackIndex`) més proper a eixa coordenada. Per a la ruta, utilitzem un model de dades `Track` que conté una llista tipada `List<UserPosition> points`, on cada punt té les propietats primitives `.position.latitude` i `.position.longitude`.
+3. Efecte Snap: El mapa fa un recentrat automàtic i suau (`safeAnimateCamera`) cap a la coordenada exacta d'eix punt trobat del track, deixant la ruta imantada just a sota de la mira.
+4. Màquina d'Estats del Bucle Continu: La selecció del tram s'executa en un bucle infinit en funció del nombre d'agulles que demana el gràfic basant-se en l'`elevationSelectionProvider`:
+   - Clic 1 (Punt 1 / Inici): El text del botó posa "Selecciona inici". En prémer-lo, es fa snap, es planta el cercle GeoJSON verd al mapa, el gràfic es queda amb 1 sola agulla, i el text del botó canvia a "Selecciona fi".
+   - Clic 2 (Punt 2 / Final): El text posa "Selecciona fi". En prémer-lo, es fa snap, es planta el cercle GeoJSON vermell, s'il·lumina el tram triat a la pantalla, el gràfic mostra les dues agulles del segment de rang tancat, i el text superior torna a canviar a "Selecciona inici".
+   - Clic 3 (Tercer punt consecutiu): El text posa "Selecciona inici". En prémer-lo, el tram anterior s'esborra síncronament, el gràfic torna instantàniament al mode d'una sola agulla (el nou cercle verd d'inici) i el botó torna a canviar a "Selecciona fi". El procés es repeteix indefinidament d'aquesta manera successiva.
 
-    Track Grabado: Datos generados en tiempo real por el usuario.
-    Track Seguido: Datos de una ruta cargada como referencia.
-
-Datos a mostrar (Modelo Track disponible):
-
-    Tiempo: Total grabado y tiempo parado.
-    Movimiento: Distancia total, velocidad actual, velocidad media y heading (rumbo).
-    Relieve: Altura actual, máxima, mínima, desnivel positivo acumulado (+) y negativo acumulado (-).
-
-Requerimientos de Diseño:
-
-    Modularidad: Uso de tarjetas (Cards) para agrupar datos por categorías (Tiempos, Velocidades, Altimetría).
-    Interactividad: Implementar carruseles horizontales (PageView) en secciones específicas para permitir "hacer swap" entre datos relacionados (ej. alternar entre velocidad actual y media) sin alargar la página.
-    Lógica Adaptativa: La UI debe detectar si hay un track, ambos o ninguno, y diferenciar visualmente los datos del grabado vs. el seguido (mediante colores o etiquetas claras).
-    UX: Priorizar legibilidad de datos críticos (tiempo/distancia) con fuentes grandes y usar una rejilla (Grid) para los datos estadísticos de altura.
-
-Objetivo: Crear una estructura de widgets limpia, reactiva y fácil de leer en movimiento, similar a la experiencia de usuario de Wikiloc o Strava.
-
-///////////////////////////////////////////////////////////////////////
-// GRÀFIC ALTIMETRIA. HISTÒRIC + PROJECCIÓ FUTURA
-///////////////////////////////////////////////////////////////////////
-El objetivo es adaptar un CustomPainter de Flutter para mostrar un gráfico de altimetría dinámico que combine la realidad grabada con la predicción de ruta.
-🛠️ Conceptos Técnicos Acordados
-
-    Punto 0 (Eje X): Coincide siempre con el inicio de la grabación actual (el pasado).
-    Eje X Dinámico: El ancho total del gráfico representa la suma de la distancia ya recorrida + la distancia que falta de la guía.
-    Punto de Anclaje: Cuando el estado es ontrack, el gráfico sincroniza la grabación con la guía usando el punto de la ruta guía más cercano a la posición GPS actual.
-
-🚥 Lógica de Navegación (Estados)
-
-    ONTRACK: El gráfico proyecta el futuro. El punto del GPS une el final de la línea sólida (grabación) con el inicio de la línea proyectada (guía).
-    OFFTRACK: Se detiene la proyección de la guía. El gráfico solo muestra el histórico grabado hasta que el usuario reingrese a la ruta.
-    ENDOFTRACK: El gráfico vuelve a ser 100% histórico.
-
-🎨 Requerimientos Visuales para el SelectionPainter
-
-    Track Grabado: Línea sólida y gruesa (color a definir, ej. rojo/naranja).
-    Track Guía (Futuro): Línea punteada o semitransparente que sale desde la posición actual.
-    Waypoints: Mostrar solo los que están "por delante" de la posición actual en el tramo de guía.
-    Herramientas: Mantener las agujas de rango (SelectionPainter) para análisis de segmentos específicos.
-
-📝 Prompt para continuar:
-
-    "Retomamos el proyecto de la App de Tracking en Flutter. Ya tenemos definido el SelectionPainter con soporte para Waypoints y agujas de rango. El siguiente paso es adaptar el código para que el eje X comience en el inicio de la grabación y proyecte el futuro de la ruta guía solo cuando el estado sea ontrack, usando el punto de anclaje geográfico. Estoy listo para mostrarte los archivos de código para realizar la adaptación."
-
-
-
-///////////////////////////////////////////////////////////////////////
-// OPTIMITZACIÓ DE BATERIA
-///////////////////////////////////////////////////////////////////////
-
-Context del Projecte:
-Estem desenvolupant "Senda", una app de seguiment de muntanya en Flutter/Riverpod. L'app fusiona dades de GPS, Baròmetre i fitxers DEM (HGT) mitjançant un CogService per obtenir altituds precises.
-Estat actual de la implementació:
-
-    Motor d'Alarmes (AlarmEngine):
-        Lògica dual activa: Desnivell Acumulat (metres reals pujats/baixats) i Cotes Absolutes (llindars fixos com 1000m, 2000m).
-        Utilitza un filtre EMA (Exponential Moving Average) per suavitzar el soroll del GPS.
-        Emet un stream de AlarmProgress amb els camps: distance, accProgress, cotaProgress i time.
-    Sistema de Simulació:
-        Capacitat de reproduir tracks importats injectant punts al flux real del GPS.
-        Inclou controls de Pausa i Represa (_isSimulationPaused).
-        Bypass de Seguretat: Durant la simulació, se salta la correcció asíncrona del CogService per mantenir la sincronia total entre posició i altitud.
-        Silenci Baromètric: El GpsAltitudeNotifier té un mode isSimulating que bloqueja el sensor real del mòbil perquè no interfereixi amb el track.
-    Interfície d'Usuari (UI):
-        Targeta d'altitud integrada amb un SegmentedButton per canviar entre vistes.
-        Persistència: El model AlarmSettings recorda l'última pestanya oberta (currentViewMode).
-        Sliders de precisió amb botons + i - i salts (steps) personalitzats: Desnivell (salt 50m, 50-1000m) i Cotes (salt 10m, 10-5000m).
-    Correccions Crítiques Realitzades:
-        S'ha eliminat el "Problema del Zero" sincronitzant l'enviament de la posició després de la correcció de l'altitud.
-        El motor d'alarmes ara s'inicia/atura dinàmicament des del Notifier segons si hi ha alarmes actives, però sempre arrenca en OFF per seguretat.
-
-Proper Objectiu:
-
-    Optimització de Bateria: Implementar estratègies per reduir el consum del GPS i la CPU, com el seguiment adaptatiu (basat en distància mínima o canvis d'activitat) i l'optimització de la freqüència de processament del motor d'alarmes.
-
-Instruccions per a la IA:
-Utilitza aquesta estructura per analitzar qualsevol nou fragment de codi o per proposar millores en l'estalvi d'energia sense trencar la sincronització entre la simulació i el motor real.
-Consell: Guarda aquest text en un fitxer anomenat context_senda.txt o a les teves notes. Quan vulguis continuar, només l'has d'enganxar i la IA sabrà fins i tot quins rangs tenen els teus sliders! 🏔️✨
+Si us plau, ajuda'm a escriure el codi complet, net i estructurat per a `map_screen.dart` per implementar tota aquesta UI flotant, el càlcul d'aproximació de coordenades i la integració reactiva amb els oients de Riverpod.
