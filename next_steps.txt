@@ -27,3 +27,23 @@ Quan l'usuari prem el botó de la pastilla superior esquerra, s'executa la segü
    - Clic 3 (Tercer punt consecutiu): El text posa "Selecciona inici". En prémer-lo, el tram anterior s'esborra síncronament, el gràfic torna instantàniament al mode d'una sola agulla (el nou cercle verd d'inici) i el botó torna a canviar a "Selecciona fi". El procés es repeteix indefinidament d'aquesta manera successiva.
 
 Si us plau, ajuda'm a escriure el codi complet, net i estructurat per a `map_screen.dart` per implementar tota aquesta UI flotant, el càlcul d'aproximació de coordenades i la integració reactiva amb els oients de Riverpod.
+
+
+
+//////////////////////////////////////////////////////////////////////
+EL QUE ESTÀ FET PERÒ NO PROVAT
+//////////////////////////////////////////////////////////////////////
+
+Hola! Continuem amb el projecte Senda a Flutter (MapLibre GL i Riverpod 2.0). Hem dissenyat i deixat llista per provar una nova eina modular de selecció i mesura de trams contínuus des del mapa, sincronitzada amb el gràfic de perfil d'elevacions.
+
+Recorda'm el resum de les peces exactes que hem construït i com s'estructuren:
+
+1. L'Estat de l'Eina (`map_selection_tool_provider.dart`): Un Notifier booleà que controla si el mode selecció està actiu o apagat, i que s'apaga automàticament si es tanca el gràfic.
+2. El Cervell de les Agulles (`elevation_selection_provider.dart`): El Notifier d'elevacions que ara inclou el mètode `setPointFromMapSelectionTool`. Gestiona un bucle infinit en una màquina d'estats cíclica: Clic 1 (Inici) -> Clic 2 (Fi / Tanca el tram) -> Clic 3 (Esborra el tram i torna a ser Inici del següent de forma indefinida).
+3. El Helper Matemàtic (`map_selection_helper.dart`): Cerca el punt més proper recorrent eficientment `track.points` (model `UserPosition`), fa un recentrat automàtic del mapa (`safeAnimateCamera`) cap a la coordenada calculada (efecte Snap) i actualitza Riverpod.
+4. Els Ginys Modulars i l'Stack:
+   - `MapSelectionReticle`: El reticle verd de només lectura en un IgnorePointer fix al bell mig.
+   - `MapSelectionTopButton`: La pastilla superior esquerra que diu "Selecciona inici" o "Selecciona fi" i que en clicar-la llança el helper amb l'snap.
+   - El botó flotant de disponibilitat de l'Stack (a dalt de MapBottomControls) que commuta l'eina (`Icons.gps_not_fixed` / `Icons.gps_fixed`).
+
+Estic a punt per explicar-te el resultat de les meves proves. Digues-me si ho recordes tot i digues quin pas podem fer a continuació per polir-ho.
