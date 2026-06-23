@@ -213,6 +213,7 @@
 "statAccuracy": "Accuracy",
 
 "satelliteSkyplotTitle": "Skyplot",
+"satelliteSkyplotTitle": "Skyplot",
 "satelliteFlagsMode": "Flags",
 "satelliteGeometryMode": "Geometries",
 "satelliteSearching": "Searching satellites... Make sure GPS is active outdoors.",

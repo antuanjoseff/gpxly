@@ -210,7 +210,7 @@ class NavigationNotifier extends Notifier<NavigationState> {
     final List<double> lastCoords = imported.coordinates.last;
     final LatLng goalPoint = LatLng(lastCoords[1], lastCoords[0]);
 
-    if (_checkIfFinished(closest, goalPoint, imported.coordinates.length)) {
+    if (_checkIfFinished(userPos, goalPoint)) {
       HapticFeedback.lightImpact();
       sounds.playEndTrackSound();
       state = state.copyWith(showEndOfTrackSnackbar: true);
@@ -255,11 +255,6 @@ class NavigationNotifier extends Notifier<NavigationState> {
         _reverseDetectionLocked = true;
 
         state = state.copyWith(showReverseTrackDialog: true);
-
-        // Micro-delay per evitar que el rebuild mati el reproductor
-        Future.delayed(const Duration(milliseconds: 30), () {
-          sounds.playReversedTrackSound();
-        });
 
         return;
       }
@@ -412,12 +407,12 @@ class NavigationNotifier extends Notifier<NavigationState> {
   // ─────────────────────────────────────────────────────────────
   // 🏁 COMPLETAT DE LA RUTA (_checkIfFinished)
   // ─────────────────────────────────────────────────────────────
-  bool _checkIfFinished(ClosestResult closest, LatLng goal, int totalPoints) {
+  bool _checkIfFinished(LatLng userPos, LatLng goalPoint) {
     final double distanceToGoal = calculateDistanceManual(
-      closest.projectedPoint.latitude,
-      closest.projectedPoint.longitude,
-      goal.latitude,
-      goal.longitude,
+      userPos.latitude,
+      userPos.longitude,
+      goalPoint.latitude,
+      goalPoint.longitude,
     );
 
     final bool isAtGoal = distanceToGoal < TrackThresholds.minimumDitanceToGoal;

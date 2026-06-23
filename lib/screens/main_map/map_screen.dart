@@ -714,15 +714,23 @@ class _MapScreenState extends ConsumerState<MapScreen>
     });
 
     ref.listen<NavigationState>(navigationProvider, (prev, next) async {
+      // Reverse track dialog
       if (next.showReverseTrackDialog && !_isShowingReverseDialog) {
         _isShowingReverseDialog = true;
-        ref.read(navigationProvider.notifier).sounds.playReversedTrackSound();
+
+        // 🔊 So 100% garantit (després del frame)
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.read(navigationProvider.notifier).sounds.playReversedTrackSound();
+        });
+
         final accept = await AppMessages.showReverseTrackDialog(context);
+
         if (accept == true) {
           ref.read(navigationProvider.notifier).reverseImportedTrack();
         } else {
           ref.read(navigationProvider.notifier).dismissReverseTrackDialog();
         }
+
         _isShowingReverseDialog = false;
       }
     });

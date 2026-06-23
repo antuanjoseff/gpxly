@@ -79,8 +79,8 @@ class GpsAccuracyBars extends ConsumerWidget {
             // A) El text de metres flotant a dalt de tot a l'esquerra
             if (showText)
               Positioned(
-                left: 10,
-                top: 10,
+                left: 0,
+                top: 0,
                 child: Text(
                   "${accuracy.round()}m",
                   style: const TextStyle(

@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/notifiers/alarm_settings_notifier.dart';
-import 'package:senda/notifiers/imported_track_notifier.dart';
 import 'package:senda/notifiers/location_notifier.dart';
 import 'package:senda/notifiers/permissions_notifier.dart';
 import 'package:senda/screens/settings/tabs/alarm_settings_tab.dart';
@@ -43,9 +42,7 @@ class MapAppBar extends ConsumerWidget implements PreferredSizeWidget {
       automaticallyImplyLeading: false,
       titleSpacing: 16,
 
-      leading: const GpsAccuracyBars(),
-
-      centerTitle: true,
+      centerTitle: false,
 
       title: Consumer(
         builder: (context, ref, child) {
@@ -162,12 +159,10 @@ class MapAppBar extends ConsumerWidget implements PreferredSizeWidget {
       ),
 
       actions: [
-        // 🟢 NOU EMPLAÇAMENT: La campana de notificació es mou neta i blanca a la dreta
         if (anyAlarmActive)
           Padding(
             padding: const EdgeInsets.only(right: 10),
             child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
               onTap: () {
                 Navigator.push(
                   context,
@@ -186,39 +181,6 @@ class MapAppBar extends ConsumerWidget implements PreferredSizeWidget {
             ),
           ),
 
-        // 🛰️ Botó de control del simulador de rutes del track
-        // if (ref.watch(importedTrackProvider) != null)
-        //   Padding(
-        //     padding: const EdgeInsets.only(right: 12),
-        //     child: GestureDetector(
-        //       onTap: () {
-        //         final notifier = ref.read(locationProvider.notifier);
-        //         if (!isRunning) {
-        //           final importedData = ref.read(importedTrackProvider);
-        //           notifier.simulateImportedTrack(importedData);
-        //         } else {
-        //           notifier.toggleSimulationPause();
-        //         }
-        //       },
-        //       child: Container(
-        //         width: 32,
-        //         height: 32,
-        //         decoration: BoxDecoration(
-        //           color: isRunning
-        //               ? (isPaused ? Colors.blue : Colors.orange)
-        //               : Colors.amber,
-        //           shape: BoxShape.circle,
-        //         ),
-        //         child: Icon(
-        //           !isRunning
-        //               ? Icons.play_arrow
-        //               : (isPaused ? Icons.play_arrow : Icons.pause),
-        //           color: Colors.white,
-        //           size: 20,
-        //         ),
-        //       ),
-        //     ),
-        //   ),
         Padding(
           padding: const EdgeInsets.only(right: 12),
           child: GestureDetector(
@@ -240,6 +202,12 @@ class MapAppBar extends ConsumerWidget implements PreferredSizeWidget {
               ),
             ),
           ),
+        ),
+
+        // GpsAccuracyBars a la dreta del tot
+        const Padding(
+          padding: EdgeInsets.only(right: 12),
+          child: GpsAccuracyBars(),
         ),
 
         const SizedBox(width: 4),

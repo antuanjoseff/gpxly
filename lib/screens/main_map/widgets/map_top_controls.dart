@@ -5,10 +5,12 @@ import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:senda/models/track.dart';
 import 'package:senda/notifiers/location_notifier.dart';
 import 'package:senda/notifiers/recording_notifier.dart';
+import 'package:senda/notifiers/timer_notifier.dart';
 import 'package:senda/screens/main_map/widgets/map_square_button.dart';
 import 'package:senda/screens/stats/stats_screen.dart';
 import 'package:senda/theme/app_colors.dart';
 import 'package:senda/widgets/compass_widget.dart';
+import 'package:senda/widgets/recording_status_bar.dart';
 
 class MapTopControls extends ConsumerWidget {
   final MapLibreMapController? mapController;
@@ -28,6 +30,66 @@ class MapTopControls extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Stack(
       children: [
+        // ⏱️ Comptador de gravació a l'esquerra
+        Positioned(
+          top: 10,
+          left: 12,
+          child: Consumer(
+            builder: (context, ref, _) {
+              final recordingState = ref.watch(
+                trackRecordingProvider.select((t) => t.recordingState),
+              );
+              final duration = ref.watch(timerProvider);
+
+              final bool isRecording =
+                  recordingState == RecordingState.recording ||
+                  recordingState == RecordingState.paused;
+
+              if (!isRecording) return const SizedBox.shrink();
+
+              final bool isActive = recordingState == RecordingState.recording;
+              final Color color = isActive
+                  ? Colors.red.shade700
+                  : Colors.green.shade700;
+              final IconData icon = isActive
+                  ? Icons.fiber_manual_record
+                  : Icons.pause_rounded;
+
+              return Container(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 6,
+                  horizontal: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withAlpha(40),
+                      blurRadius: 6,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(icon, color: color, size: 16),
+                    const SizedBox(width: 6),
+                    TrackDurationTimer(
+                      state: recordingState,
+                      duration: duration,
+                      color: color,
+                      fontSize: 14,
+                      showIcon: false,
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+
         Positioned(
           top: 10,
           right: 12,

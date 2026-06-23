@@ -111,48 +111,6 @@ class _MapBottomControlsState extends ConsumerState<MapBottomControls> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // ⏱️ 0. COMPTADOR FLOTANT ADAPTATIU AMB ICONA MULTI-ESTAT
-          if (recordingState == RecordingState.recording ||
-              recordingState == RecordingState.paused)
-            Padding(
-              padding: const EdgeInsets.only(
-                bottom: AppDimensions.mapSafetyPadding,
-              ),
-              child: Center(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(10),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withAlpha(45),
-                        blurRadius: 8,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 6.0,
-                    horizontal: 14.0,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(statusIcon, color: statusColor, size: 16),
-                      const SizedBox(width: 8),
-                      TrackDurationTimer(
-                        state: recordingState,
-                        duration: currentDuration,
-                        color: statusColor,
-                        fontSize: 16,
-                        showIcon: false,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
           // 📊 1. EL GRÀFIC D'ELEVACIONS
           if (showChartData && layout.isPanelActive)
             SizedBox(
