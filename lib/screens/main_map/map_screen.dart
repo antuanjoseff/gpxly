@@ -18,6 +18,7 @@ import 'package:senda/notifiers/imported_track_notifier.dart';
 import 'package:senda/notifiers/imported_track_settings_notifier.dart';
 import 'package:senda/notifiers/location_notifier.dart';
 import 'package:senda/notifiers/map_bearing_provider.dart';
+import 'package:senda/notifiers/map_selection_tool_notifier.dart';
 import 'package:senda/notifiers/navigation_notifier.dart';
 import 'package:senda/notifiers/permissions_notifier.dart';
 import 'package:senda/notifiers/recording_notifier.dart';
@@ -31,6 +32,8 @@ import 'package:senda/screens/main_map/widgets/map_app_bar.dart';
 import 'package:senda/screens/main_map/widgets/map_base_layer.dart';
 import 'package:senda/screens/main_map/widgets/map_bottom_controls.dart';
 import 'package:senda/screens/main_map/widgets/map_bottom_controls/layout_utils.dart';
+import 'package:senda/screens/main_map/widgets/map_selection_reticle.dart';
+import 'package:senda/screens/main_map/widgets/map_selection_top_button.dart';
 import 'package:senda/screens/main_map/widgets/map_top_controls.dart';
 import 'package:senda/theme/app_colors.dart';
 
@@ -851,7 +854,11 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 );
               },
             ),
+            // 🎯 NOU Pas 3: El reticle o mirilla central fixa de només lectura
+            const MapSelectionReticle(),
 
+            // 🟢 NOU Pas 4: La pastilla superior esquerra que fa snap i gestiona l'inici/fi
+            MapSelectionTopButton(mapController: mapController),
             // 🎛️ CAPA 2: INTERFÍCIE FLOTANT HUD
             if (!_fullScreen) ...[
               MapTopControls(
@@ -881,6 +888,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                         .read(elevationSelectionProvider.notifier)
                         .clearSelection();
 
+                    ref.read(mapSelectionToolProvider.notifier).deactivate();
                     // Atura pulsació de waypoints si el mapa ja està llest
                     if (styleInitialized && mapController != null) {
                       stopWaypointPulse(mapController!);
@@ -890,6 +898,53 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   _updateMapPaddingValue();
                 },
               ),
+              if (!_isChartCollapsed)
+                Positioned(
+                  right: 16,
+                  // Es desplaça cap amunt acompanyant automàticament l'alçada dinàmica del gràfic
+                  bottom: _currentMapPadding + 16,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    decoration: BoxDecoration(
+                      // Si l'eina està encesa brilla en Verd Senda, si no manté el fons fosc ordinari
+                      color: ref.watch(mapSelectionToolProvider)
+                          ? const Color(0xFF4CAF50)
+                          : AppColors.iconBackgroundColor,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.white10),
+                      boxShadow: ref.watch(mapSelectionToolProvider)
+                          ? [
+                              BoxShadow(
+                                color: const Color(0xFF4CAF50).withAlpha(100),
+                                blurRadius: 12,
+                                spreadRadius: 2,
+                              ),
+                            ]
+                          : [],
+                    ),
+                    child: GestureDetector(
+                      onTap: () {
+                        // Commuta l'estat booleà a Riverpod de l'eina (on/off)
+                        ref.read(mapSelectionToolProvider.notifier).toggle();
+                      },
+                      child: Container(
+                        width: 52,
+                        height: 52,
+                        alignment: Alignment.center,
+                        child: Icon(
+                          // Canvia la icona per indicar si la visualització de la mira està activa
+                          ref.watch(mapSelectionToolProvider)
+                              ? Icons.gps_fixed
+                              : Icons.gps_not_fixed,
+                          color: ref.watch(mapSelectionToolProvider)
+                              ? Colors.white
+                              : AppColors.iconForegroundColor,
+                          size: 26,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
             ],
           ],
         ),
@@ -913,6 +968,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
         ref.read(elevationSelectionProvider.notifier).clearSelection();
         ref.read(importedTrackProvider.notifier).clear();
         ref.read(importedWaypointsProvider.notifier).clear();
+        ref.read(mapSelectionToolProvider.notifier).deactivate();
         break;
 
       case "toggle_pause":
@@ -927,6 +983,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
         ref.read(navigationProvider.notifier).stopFollowing();
         ref.read(importedTrackProvider.notifier).clear();
         ref.read(importedWaypointsProvider.notifier).clear();
+        ref.read(mapSelectionToolProvider.notifier).deactivate();
         break;
     }
   }

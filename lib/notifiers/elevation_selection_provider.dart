@@ -1,8 +1,10 @@
+// lib/notifiers/elevation_selection_provider.dart
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 enum SelectionMode {
   none, // Cap agulla, cap punt.
-  single, // Mode punt únic: Cercle taronja al mapa / 1 agulla al gràfic.
+  single, // Mode punt único: Cercle taronja al mapa / 1 agulla al gràfic.
   range, // Mode tram (Requerix Long Press): Cercles verd i vermell / 2 agulles al gràfic.
 }
 
@@ -23,15 +25,14 @@ class ElevationSelectionState {
     return const ElevationSelectionState(mode: SelectionMode.none);
   }
 
-  // 🟢 AFEGIT: El mètode copyWith indispensable per a les modificacions dels trams
   ElevationSelectionState copyWith({
     SelectionMode? mode,
     int? singlePointIndex,
     int? startTrackIndex,
     int? endTrackIndex,
-    bool clearSinglePoint = false, // Permet forçar el buidat del taronja
-    bool clearStartTrack = false, // Permet forçar el buidat del verd
-    bool clearEndTrack = false, // Permet forçar el buidat del vermell
+    bool clearSinglePoint = false,
+    bool clearStartTrack = false,
+    bool clearEndTrack = false,
   }) {
     return ElevationSelectionState(
       mode: mode ?? this.mode,
@@ -69,12 +70,10 @@ class ElevationSelectionNotifier extends Notifier<ElevationSelectionState> {
     );
   }
 
-  /// 📊 ACCIÓ DEL DRAG MANUAL DENTRE DEL GRÀFIC (Només en mode range)
   void setManualRange(int start, int end) {
     _prevWpIndex = start;
     _lastWpIndex = end;
-    _darrerWpClicat =
-        null; // Desvinculem el passat del mapa per evitar desplaçaments
+    _darrerWpClicat = null;
 
     state = ElevationSelectionState(
       mode: SelectionMode.range,
@@ -84,21 +83,19 @@ class ElevationSelectionNotifier extends Notifier<ElevationSelectionState> {
     );
   }
 
-  /// 🟠 ACCIÓ DE SELECCIÓ DE PUNT ÚNIC (Tap ordinari al mapa o gràfic)
   void setSinglePoint(int index) {
     _prevWpIndex = null;
     _lastWpIndex = null;
     _darrerWpClicat = null;
 
     state = ElevationSelectionState(
-      mode: SelectionMode.single, // Activem el cercle taronja
+      mode: SelectionMode.single,
       singlePointIndex: index,
       startTrackIndex: null,
       endTrackIndex: null,
     );
   }
 
-  /// 🧹 NETEJA TOTAL
   void clearSelection() {
     _prevWpIndex = null;
     _lastWpIndex = null;
@@ -106,16 +103,12 @@ class ElevationSelectionNotifier extends Notifier<ElevationSelectionState> {
     state = ElevationSelectionState.initial();
   }
 
-  /// 📍 ACCIÓ DEL MAPA: Clic net a un Waypoint
   void toggleWaypoint(int idx, Set<int> allWpIndexes) {
-    // 📐 REGLA 1: Si no s'ha fet long press previ, ESTÀ PROHIBIT crear un tram.
-    // El tap al waypoint es comporta com un punt únic ordinar i mou el cercle taronja.
     if (state.mode != SelectionMode.range) {
       setSinglePoint(idx);
       return;
     }
 
-    // 📐 REGLA 2: Som en mode RANGE (S'havia fet long press). Gestionem la selecció del tram.
     final start = state.startTrackIndex;
     final end = state.endTrackIndex;
 
@@ -126,7 +119,6 @@ class ElevationSelectionNotifier extends Notifier<ElevationSelectionState> {
     int? nouPrev;
     int? nouLast;
 
-    // CAS 3: Les dues barres ja estan sobre Waypoints -> Dos últims clics cronològics
     if (startIsOnWaypoint && endIsOnWaypoint) {
       if (_darrerWpClicat == start) {
         nouPrev = start;
@@ -140,9 +132,7 @@ class ElevationSelectionNotifier extends Notifier<ElevationSelectionState> {
         nouPrev = (distToStart > distToEnd) ? start : end;
         nouLast = idx;
       }
-    }
-    // CAS 2: Només una de les dues barres coincideix amb un Waypoint
-    else if (startIsOnWaypoint || endIsOnWaypoint) {
+    } else if (startIsOnWaypoint || endIsOnWaypoint) {
       if (startIsOnWaypoint) {
         nouPrev = start;
         nouLast = idx;
@@ -150,9 +140,7 @@ class ElevationSelectionNotifier extends Notifier<ElevationSelectionState> {
         nouPrev = end;
         nouLast = idx;
       }
-    }
-    // CAS 1: Cap barreja amb Waypoint (Venim d'un Drag manual)
-    else {
+    } else {
       if (start != null && end != null) {
         final int distToStart = (start - idx).abs();
         final int distToEnd = (end - idx).abs();
@@ -174,7 +162,6 @@ class ElevationSelectionNotifier extends Notifier<ElevationSelectionState> {
     _lastWpIndex = nouLast;
     _darrerWpClicat = idx;
 
-    // AVALUEM EL SWAP I L'ORDENACIÓ DELS EXTREMS DEL TRAM
     if (_prevWpIndex != null && _lastWpIndex != null) {
       final int menor = _prevWpIndex! <= _lastWpIndex!
           ? _prevWpIndex!
@@ -189,6 +176,74 @@ class ElevationSelectionNotifier extends Notifier<ElevationSelectionState> {
         endTrackIndex: major,
         singlePointIndex: null,
       );
+    }
+  }
+
+  // 🟢 IMPLEMENTACIÓ ADAPTADA DE L'EINA DE SELECCIÓ (BUCLE INFINIT)
+  void setPointFromMapSelectionTool(int indexMesProper) {
+    // CAS A: Ja som en mode RANGE (Dues agulles pintades o el tram sencer en pantalla)
+    if (state.mode == SelectionMode.range) {
+      final int? inici = state.startTrackIndex;
+      final int? finalTram = state.endTrackIndex;
+
+      // 🔄 REGLA DEL TERCER PUNT: Si el tram ja té inici i final posats
+      if (inici != null && finalTram != null) {
+        _prevWpIndex = null;
+        _lastWpIndex = null;
+        _darrerWpClicat = null;
+
+        // El tercer clic esborra el tram i passa el gràfic a mode SINGLE (una sola agulla)
+        state = state.copyWith(
+          mode: SelectionMode.single,
+          singlePointIndex: indexMesProper,
+          clearStartTrack: true,
+          clearEndTrack: true,
+        );
+      }
+      // Segon Clic ordinari: Teníem l'inici guardat i ara fixem el final (Tanca el tram)
+      else if (inici != null && finalTram == null) {
+        final int menor = indexMesProper <= inici ? indexMesProper : inici;
+        final int major = indexMesProper > inici ? indexMesProper : inici;
+
+        _prevWpIndex = menor;
+        _lastWpIndex = major;
+
+        state = state.copyWith(
+          mode: SelectionMode.range,
+          startTrackIndex: menor,
+          endTrackIndex: major,
+          clearSinglePoint: true, // Apaguem l'agulla taronja
+        );
+      } else {
+        // Seguretat per si els camps fossin nuls estant en mode range
+        setSinglePoint(indexMesProper);
+      }
+    }
+    // CAS B: Som en mode SINGLE (Una sola agulla activa des del primer clic)
+    else {
+      final int? puntUnic = state.singlePointIndex;
+
+      if (puntUnic != null) {
+        // L'agulla única es converteix en el Punt d'Inici i el nou clic és el Punt Final
+        final int menor = indexMesProper <= puntUnic
+            ? indexMesProper
+            : puntUnic;
+        final int major = indexMesProper > puntUnic ? indexMesProper : puntUnic;
+
+        _prevWpIndex = menor;
+        _lastWpIndex = major;
+
+        state = state.copyWith(
+          mode: SelectionMode.range,
+          startTrackIndex: menor,
+          endTrackIndex: major,
+          clearSinglePoint:
+              true, // El taronja s'apaga i neixen el verd i vermell GeoJSON
+        );
+      } else {
+        // Si no hi hagués cap agulla d'origen, s'inicialitza la primera
+        setSinglePoint(indexMesProper);
+      }
     }
   }
 }

@@ -12,7 +12,6 @@ import 'map_bottom_controls/elevation_panel.dart';
 import 'map_bottom_controls/menu_bar.dart';
 import 'map_bottom_controls/recording_submenu.dart';
 import 'map_bottom_controls/navigation_submenu.dart';
-import 'package:senda/widgets/recording_status_bar.dart'; // Per al TrackDurationTimer
 import 'package:senda/l10n/app_localizations.dart'; // 🟢 Import indispensable per a les traduccions nates
 
 class MapBottomControls extends ConsumerStatefulWidget {
