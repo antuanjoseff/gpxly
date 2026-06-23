@@ -49,8 +49,8 @@ class MapGeometryHelper {
     bool instant = false,
     double left = 40,
     double right = 40,
-    double top = 0,
-    double bottom = 0,
+    // double top = 0,
+    // double bottom = 0,
   }) {
     if (coords.isEmpty || mapController == null) return;
 
@@ -72,8 +72,8 @@ class MapGeometryHelper {
       bounds,
       left: left,
       right: right,
-      top: top,
-      bottom: bottom,
+      // top: top,
+      // bottom: bottom,
     );
 
     instant

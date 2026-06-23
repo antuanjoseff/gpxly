@@ -252,15 +252,15 @@ class _MapScreenState extends ConsumerState<MapScreen>
         mapController: mapController,
         hasImportedTrack: hasTrack,
         fitToBounds: (coords, {instant = false}) {
-          final padding = _computeMapPadding(context, hasTrack);
+          // final padding = _computeMapPadding(context, hasTrack);
 
           MapGeometryHelper(ref: ref, mapController: mapController).fitToBounds(
             coords,
             instant: instant,
             left: 40,
             right: 40,
-            top: padding.top,
-            bottom: padding.bottom,
+            // top: padding.top,
+            // bottom: padding.bottom,
           );
         },
       );
@@ -527,15 +527,15 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
       if (isRecoveringTrack) {
         hasDoneRecoveryFit = true;
-        final padding = _computeMapPadding(context, true);
+        // final padding = _computeMapPadding(context, true);
 
         MapGeometryHelper(ref: ref, mapController: mapController).fitToBounds(
           next.coordinates,
           instant: true,
           left: 40,
           right: 40,
-          top: padding.top,
-          bottom: padding.bottom,
+          // top: padding.top,
+          // bottom: padding.bottom,
         );
       }
     });
@@ -601,14 +601,14 @@ class _MapScreenState extends ConsumerState<MapScreen>
       );
 
       if (isImportingGpx && next.coordinates.isNotEmpty) {
-        final padding = _computeMapPadding(context, true);
+        // final padding = _computeMapPadding(context, true);
 
         MapGeometryHelper(ref: ref, mapController: mapController).fitToBounds(
           next.coordinates,
           left: 40,
           right: 40,
-          top: padding.top,
-          bottom: padding.bottom,
+          // top: padding.top,
+          // bottom: padding.bottom,
         );
       }
     });
@@ -743,155 +743,168 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 isRunning: isRunning,
                 isPaused: isPaused,
               ),
-        body: Stack(
+        body: Column(
           children: [
-            // 🗺️ CAPA 1: MAPA
-            MapBaseLayer(
-              initialCameraTarget: _initialCameraTarget!,
-              initialZoom: _initialZoom,
-              smartCenterEnabled: smartCenterEnabled,
-              isProgrammaticMove: isProgrammaticMove,
-              isFullScreen: _fullScreen,
-              onSmartCenterChanged: (val) =>
-                  setState(() => smartCenterEnabled = val),
-              onFullScreenChanged: (val) => setState(() => _fullScreen = val),
-              onCameraMove: (CameraPosition position) {
-                ref.read(mapBearingProvider.notifier).update(position.bearing);
-                ref.read(mapZoomProvider.notifier).update(position.zoom);
-                ref
-                    .read(mapCenterLatProvider.notifier)
-                    .update(position.target.latitude);
-              },
-              onMapCreated: (controller) {
-                mapController = controller;
-                mapAnimator = MapAnimator(controller);
-                controller.onFeatureTapped.add(_onFeatureTapped);
-              },
-              onStyleLoaded: () async {
-                final trackSettings = ref.read(trackSettingsProvider);
-                final importedSettings = ref.read(
-                  importedTrackSettingsProvider,
-                );
-
-                await setupUserLocationLayer(mapController!);
-                await setupWaypointLayers(mapController!);
-
-                setState(() {
-                  waypointLayersReady = true;
-                  styleInitialized = true;
-                });
-
-                // TRACK PRINCIPAL
-                mapController!.setLayerProperties(
-                  "track_line_layer",
-                  LineLayerProperties(
-                    lineColor: trackSettings.color.toMapLibreColor(),
-                    lineWidth: trackSettings.width,
-                    lineCap: "round",
-                    lineJoin: "round",
-                  ),
-                );
-                mapController!.setLayerProperties(
-                  "waypoints_recorded_layer",
-                  CircleLayerProperties(
-                    circleColor: trackSettings.color.toMapLibreColor(),
-                  ),
-                );
-
-                // TRACK IMPORTAT
-                mapController!.setLayerProperties(
-                  "imported_track_layer",
-                  LineLayerProperties(
-                    lineColor: importedSettings.color.toMapLibreColor(),
-                    lineWidth: importedSettings.width,
-                    lineCap: "round",
-                    lineJoin: "round",
-                  ),
-                );
-                mapController!.setLayerProperties(
-                  "waypoints_imported_layer",
-                  CircleLayerProperties(
-                    circleColor: importedSettings.color.toMapLibreColor(),
-                  ),
-                );
-              },
-            ),
-
-            // 🎯 RETICLE CENTRAL
-            const MapSelectionReticle(),
-
-            // 🔘 BOTÓ SUPERIOR DE SELECCIÓ
-            MapSelectionTopButton(mapController: mapController),
-
-            // 🎛️ HUD SUPERIOR
-            if (!_fullScreen)
-              MapTopControls(
-                mapController: mapController,
-                smartCenterEnabled: smartCenterEnabled,
-                onCenterOnUser: _centerOnUser,
-                onAddWaypoint: () => _onAddWaypoint(context, ref),
-              ),
-
-            // 🔥 **OPCIÓ A — PANELL D’ELEVACIONS ENGANXAT AL FONS**
-            if (!_isChartCollapsed)
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 72 + MediaQuery.of(context).padding.bottom,
-                child: ElevationPanel(
-                  isCollapsed: _isChartCollapsed,
-                  onCollapseChanged: (collapsed) {
-                    setState(() => _isChartCollapsed = collapsed);
-                    _updateMapPaddingValue();
-                  },
-                ),
-              ),
-
-            // 🔘 BOTÓ DE L’EINA DE SELECCIÓ (es mou amb el panell)
-            if (!_isChartCollapsed)
-              Positioned(
-                right: 16,
-                bottom: _currentMapPadding + 16,
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  decoration: BoxDecoration(
-                    color: ref.watch(mapSelectionToolProvider)
-                        ? const Color(0xFF4CAF50)
-                        : AppColors.iconBackgroundColor,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.white10),
-                    boxShadow: ref.watch(mapSelectionToolProvider)
-                        ? [
-                            BoxShadow(
-                              color: const Color(0xFF4CAF50).withAlpha(100),
-                              blurRadius: 12,
-                              spreadRadius: 2,
-                            ),
-                          ]
-                        : [],
-                  ),
-                  child: GestureDetector(
-                    onTap: () {
-                      ref.read(mapSelectionToolProvider.notifier).toggle();
+            Expanded(
+              child: Stack(
+                children: [
+                  // 🗺️ CAPA 1: MAPA
+                  MapBaseLayer(
+                    initialCameraTarget: _initialCameraTarget!,
+                    initialZoom: _initialZoom,
+                    smartCenterEnabled: smartCenterEnabled,
+                    isProgrammaticMove: isProgrammaticMove,
+                    isFullScreen: _fullScreen,
+                    onSmartCenterChanged: (val) =>
+                        setState(() => smartCenterEnabled = val),
+                    onFullScreenChanged: (val) =>
+                        setState(() => _fullScreen = val),
+                    onCameraMove: (CameraPosition position) {
+                      ref
+                          .read(mapBearingProvider.notifier)
+                          .update(position.bearing);
+                      ref.read(mapZoomProvider.notifier).update(position.zoom);
+                      ref
+                          .read(mapCenterLatProvider.notifier)
+                          .update(position.target.latitude);
                     },
-                    child: Container(
-                      width: 52,
-                      height: 52,
-                      alignment: Alignment.center,
-                      child: Icon(
-                        ref.watch(mapSelectionToolProvider)
-                            ? Icons.gps_fixed
-                            : Icons.gps_not_fixed,
-                        color: ref.watch(mapSelectionToolProvider)
-                            ? Colors.white
-                            : AppColors.iconForegroundColor,
-                        size: 26,
+                    onMapCreated: (controller) {
+                      mapController = controller;
+                      mapAnimator = MapAnimator(controller);
+                      controller.onFeatureTapped.add(_onFeatureTapped);
+                    },
+                    onStyleLoaded: () async {
+                      await Future.delayed(const Duration(milliseconds: 100));
+
+                      if (!mounted || mapController == null) return;
+
+                      final trackSettings = ref.read(trackSettingsProvider);
+                      final importedSettings = ref.read(
+                        importedTrackSettingsProvider,
+                      );
+
+                      // 1. Inicializamos las fuentes y capas base de forma segura
+                      await setupUserLocationLayer(mapController!);
+                      await setupWaypointLayers(mapController!);
+
+                      setState(() {
+                        waypointLayersReady = true;
+                        styleInitialized = true;
+                      });
+
+                      // 2. CONFIGURACIÓN CORRECTA DEL TRACK PRINCIPAL (LÍNEAS VECTORIALES)
+                      mapController!.setLayerProperties(
+                        "track_line_layer",
+                        LineLayerProperties(
+                          lineColor:
+                              trackSettings.color.toMapLibreColor().isNotEmpty
+                              ? trackSettings.color.toMapLibreColor()
+                              : "#FF0000", // Fallback de seguridad si viene vacío
+                          lineWidth: trackSettings.width,
+                          lineCap: "round",
+                          lineJoin: "round",
+                        ),
+                      );
+
+                      // 3. CONFIGURACIÓN CORRECTA DEL TRACK IMPORTADO (LÍNEAS VECTORIALES)
+                      mapController!.setLayerProperties(
+                        "imported_track_layer",
+                        LineLayerProperties(
+                          lineColor:
+                              importedSettings.color
+                                  .toMapLibreColor()
+                                  .isNotEmpty
+                              ? importedSettings.color.toMapLibreColor()
+                              : "#00A8E8", // Fallback de seguridad si viene vacío
+                          lineWidth: importedSettings.width,
+                          lineCap: "round",
+                          lineJoin: "round",
+                        ),
+                      );
+                    },
+                  ),
+
+                  // 🎯 RETICLE CENTRAL
+                  const MapSelectionReticle(),
+
+                  // 🔘 BOTÓ SUPERIOR DE SELECCIÓ
+                  MapSelectionTopButton(mapController: mapController),
+
+                  // 🎛️ HUD SUPERIOR
+                  if (!_fullScreen)
+                    MapTopControls(
+                      mapController: mapController,
+                      smartCenterEnabled: smartCenterEnabled,
+                      onCenterOnUser: _centerOnUser,
+                      onAddWaypoint: () => _onAddWaypoint(context, ref),
+                    ),
+
+                  // 🔥 **OPCIÓ A — PANELL D’ELEVACIONS ENGANXAT AL FONS**
+                  if (!_isChartCollapsed)
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      child: ElevationPanel(
+                        isCollapsed: _isChartCollapsed,
+                        onCollapseChanged: (collapsed) {
+                          setState(() => _isChartCollapsed = collapsed);
+                          _updateMapPaddingValue();
+                        },
                       ),
                     ),
-                  ),
-                ),
-              ),
 
+                  // 🔘 BOTÓ DE L’EINA DE SELECCIÓ (es mou amb el panell)
+                  if (!_isChartCollapsed)
+                    Positioned(
+                      right: 16,
+                      bottom: _currentMapPadding + 16,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        decoration: BoxDecoration(
+                          color: ref.watch(mapSelectionToolProvider)
+                              ? const Color(0xFF4CAF50)
+                              : AppColors.iconBackgroundColor,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.white10),
+                          boxShadow: ref.watch(mapSelectionToolProvider)
+                              ? [
+                                  BoxShadow(
+                                    color: const Color(
+                                      0xFF4CAF50,
+                                    ).withAlpha(100),
+                                    blurRadius: 12,
+                                    spreadRadius: 2,
+                                  ),
+                                ]
+                              : [],
+                        ),
+                        child: GestureDetector(
+                          onTap: () {
+                            ref
+                                .read(mapSelectionToolProvider.notifier)
+                                .toggle();
+                          },
+                          child: Container(
+                            width: 52,
+                            height: 52,
+                            alignment: Alignment.center,
+                            child: Icon(
+                              ref.watch(mapSelectionToolProvider)
+                                  ? Icons.gps_fixed
+                                  : Icons.gps_not_fixed,
+                              color: ref.watch(mapSelectionToolProvider)
+                                  ? Colors.white
+                                  : AppColors.iconForegroundColor,
+                              size: 26,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
             // 🎛️ BARRA INFERIOR (sense panell d’elevacions)
             if (!_fullScreen)
               MapBottomControls(
@@ -991,34 +1004,34 @@ class _MapScreenState extends ConsumerState<MapScreen>
     });
   }
 
-  MapPadding _computeMapPadding(BuildContext context, bool hasTrack) {
-    final media = MediaQuery.of(context);
+  // MapPadding _computeMapPadding(BuildContext context, bool hasTrack) {
+  //   final media = MediaQuery.of(context);
 
-    final layout = LayoutUtils.fromContext(
-      context,
-      isChartCollapsed: _isChartCollapsed,
-    );
+  //   final layout = LayoutUtils.fromContext(
+  //     context,
+  //     isChartCollapsed: _isChartCollapsed,
+  //   );
 
-    final bool showChartData = !_isChartCollapsed && hasTrack;
+  //   final bool showChartData = !_isChartCollapsed && hasTrack;
 
-    final double chartHeight = showChartData ? layout.chartHeight : 0;
+  //   final double chartHeight = showChartData ? layout.chartHeight : 0;
 
-    final double bottomPadding =
-        media.padding.bottom +
-        AppDimensions.menuBarHeight +
-        chartHeight +
-        64 +
-        110;
+  //   final double bottomPadding =
+  //       media.padding.bottom +
+  //       AppDimensions.menuBarHeight +
+  //       chartHeight +
+  //       64 +
+  //       110;
 
-    const double topPadding = 10;
+  //   const double topPadding = 10;
 
-    return MapPadding(top: topPadding, bottom: bottomPadding);
-  }
+  //   return MapPadding(top: topPadding, bottom: bottomPadding);
+  // }
 }
 
-class MapPadding {
-  final double top;
-  final double bottom;
+// class MapPadding {
+//   final double top;
+//   final double bottom;
 
-  const MapPadding({required this.top, required this.bottom});
-}
+//   const MapPadding({required this.top, required this.bottom});
+// }

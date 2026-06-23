@@ -13,7 +13,6 @@ class MapSelectionTopButton extends ConsumerWidget {
   const MapSelectionTopButton({super.key, required this.mapController});
 
   @override
-  @override
   Widget build(BuildContext context, WidgetRef ref) {
     final bool isToolActive = ref.watch(mapSelectionToolProvider);
     if (!isToolActive) return const SizedBox.shrink();

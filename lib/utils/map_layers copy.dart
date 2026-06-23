@@ -1,7 +1,6 @@
-// lib/screens/main_map/utils/map_layers.dart
-
 import 'dart:async';
 import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
@@ -24,54 +23,50 @@ void stopWaypointPulse(MapLibreMapController controller) {
   _waypointPulseTimer?.cancel();
   _waypointPulseTimer = null;
 
-  try {
-    controller.setLayerProperties(
-      "waypoints_recorded_layer",
-      CircleLayerProperties(circleRadius: 8.0),
-    );
+  controller.setLayerProperties(
+    "waypoints_recorded_layer",
+    const CircleLayerProperties(circleRadius: 8.0),
+  );
 
-    controller.setLayerProperties(
-      "waypoints_imported_layer",
-      CircleLayerProperties(circleRadius: 8.0),
-    );
-  } catch (e) {
-    debugPrint("⚠️ No s'ha pogut restaurar el radi base al aturar el pols: $e");
-  }
+  controller.setLayerProperties(
+    "waypoints_imported_layer",
+    const CircleLayerProperties(circleRadius: 8.0),
+  );
 
   _pulseValue = 0.0;
   _pulseIncreasing = true;
 }
 
 void _updateWaypointPulse(MapLibreMapController controller) {
-  try {
-    const double baseRadius = 8.0;
-    final double radius = baseRadius + _pulseValue;
+  const double baseRadius = 8.0;
+  final double radius = baseRadius + _pulseValue;
 
-    controller.setLayerProperties(
-      "waypoints_recorded_layer",
-      CircleLayerProperties(circleRadius: radius),
-    );
+  controller.setLayerProperties(
+    "waypoints_recorded_layer",
+    CircleLayerProperties(circleRadius: radius),
+  );
 
-    controller.setLayerProperties(
-      "waypoints_imported_layer",
-      CircleLayerProperties(circleRadius: radius),
-    );
+  controller.setLayerProperties(
+    "waypoints_imported_layer",
+    CircleLayerProperties(circleRadius: radius),
+  );
 
-    if (_pulseIncreasing) {
-      _pulseValue += 0.25;
-      if (_pulseValue >= 2.0) _pulseIncreasing = false;
-    } else {
-      _pulseValue -= 0.25;
-      if (_pulseValue <= 0.0) _pulseIncreasing = true;
-    }
-  } catch (e) {
-    _waypointPulseTimer?.cancel();
-    _waypointPulseTimer = null;
-    debugPrint("⚠️ Temporitzador de pols cancel·lat per seguretat: $e");
+  if (_pulseIncreasing) {
+    _pulseValue += 0.25;
+    if (_pulseValue >= 2.0) _pulseIncreasing = false;
+  } else {
+    _pulseValue -= 0.25;
+    if (_pulseValue <= 0.0) _pulseIncreasing = true;
   }
 }
 
+/// Configura les capes del mapa:
+/// - track_line (línia vermella)
+/// - user_location (punt blau)
 Future<void> setupUserLocationLayer(MapLibreMapController controller) async {
+  // -------------------------
+  // SOURCE: imported_track
+  // -------------------------
   await controller.addSource(
     "imported_track",
     const GeojsonSourceProperties(
@@ -83,13 +78,16 @@ Future<void> setupUserLocationLayer(MapLibreMapController controller) async {
     "imported_track",
     "imported_track_layer",
     const LineLayerProperties(
-      lineColor: "#00A8E8",
+      lineColor: "#00A8E8", // blau clar
       lineWidth: 4.0,
       lineJoin: "round",
       lineCap: "round",
     ),
   );
 
+  // -------------------------
+  // SOURCE: track_line (La línia "fixa" consolidada)
+  // -------------------------
   await controller.addSource(
     "track_line",
     const GeojsonSourceProperties(
@@ -108,6 +106,9 @@ Future<void> setupUserLocationLayer(MapLibreMapController controller) async {
     ),
   );
 
+  // -------------------------
+  // NUEVO - SOURCE: track_animating_segment (El tram que s'estira)
+  // -------------------------
   await controller.addSource(
     "track_animating_segment",
     const GeojsonSourceProperties(
@@ -119,16 +120,22 @@ Future<void> setupUserLocationLayer(MapLibreMapController controller) async {
     "track_animating_segment",
     "track_animating_layer",
     const LineLayerProperties(
-      lineColor: "#FF0000",
+      lineColor: "#FF0000", // Mateix vermell
       lineWidth: 4.0,
       lineJoin: "round",
       lineCap: "round",
     ),
   );
 
+  // -------------------------
+  // ICONA PUNT BLAU
+  // -------------------------
   final Uint8List blueDot = await _createBlueDot();
   await controller.addImage("user_icon", blueDot);
 
+  // -------------------------
+  // SOURCE: user_location
+  // -------------------------
   await controller.addSource(
     "user_location",
     const GeojsonSourceProperties(
@@ -136,6 +143,9 @@ Future<void> setupUserLocationLayer(MapLibreMapController controller) async {
     ),
   );
 
+  // -------------------------
+  // LAYER: user_location_layer (Sempre l'última perquè quedi a dalt)
+  // -------------------------
   await controller.addLayer(
     "user_location",
     "user_location_layer",
@@ -148,6 +158,7 @@ Future<void> setupUserLocationLayer(MapLibreMapController controller) async {
   );
 }
 
+/// Actualitza la posició del punt blau
 void updateMapPosition(
   MapLibreMapController controller,
   double lat,
@@ -156,33 +167,26 @@ void updateMapPosition(
   void Function(bool) onAnimate, {
   bool centerCamera = true,
 }) {
-  try {
-    controller.setGeoJsonSource("user_location", {
-      "type": "FeatureCollection",
-      "features": [
-        {
-          "type": "Feature",
-          "geometry": {
-            "type": "Point",
-            "coordinates": [lon, lat],
-          },
+  controller.setGeoJsonSource("user_location", {
+    "type": "FeatureCollection",
+    "features": [
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [lon, lat],
         },
-      ],
-    });
+      },
+    ],
+  });
 
-    if (!userMovedMap && centerCamera) {
-      onAnimate(true);
-      controller
-          .animateCamera(CameraUpdate.newLatLng(LatLng(lat, lon)))
-          .then((_) {
-            onAnimate(false);
-          })
-          .catchError((e) {
-            onAnimate(false);
-          });
-    }
-  } catch (e) {
-    debugPrint("⚠️ Error en actualitzar la posició del mapa: $e");
+  if (!userMovedMap && centerCamera) {
+    onAnimate(true);
+    controller.animateCamera(CameraUpdate.newLatLng(LatLng(lat, lon))).then((
+      _,
+    ) {
+      onAnimate(false);
+    });
   }
 }
 
@@ -191,27 +195,27 @@ void updateWaypointSource(
   String sourceId,
   List<Waypoint> waypoints,
 ) {
-  try {
-    final features = waypoints.map((wp) {
-      return {
-        "type": "Feature",
-        "geometry": {
-          "type": "Point",
-          "coordinates": [wp.lon, wp.lat],
-        },
-        "properties": {"name": wp.name, "waypoint_id": wp.id},
-      };
-    }).toList();
+  final features = waypoints.map((wp) {
+    return {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [wp.lon, wp.lat],
+      },
+      "properties": {
+        "name": wp.name,
+        "waypoint_id": wp.id, // 👈 AQUESTA LÍNIA ÉS CRÍTICA
+      },
+    };
+  }).toList();
 
-    controller.setGeoJsonSource(sourceId, {
-      "type": "FeatureCollection",
-      "features": features,
-    });
-  } catch (e) {
-    debugPrint("⚠️ No s'ha pogut injectar el geojson a la font $sourceId: $e");
-  }
+  controller.setGeoJsonSource(sourceId, {
+    "type": "FeatureCollection",
+    "features": features,
+  });
 }
 
+//  WAYPOINTS LAYERS
 Future<void> animateWaypointAppearance(
   MapLibreMapController controller,
   String layerId,
@@ -221,20 +225,19 @@ Future<void> animateWaypointAppearance(
 
   for (int i = 0; i <= steps; i++) {
     final double t = i / steps;
-    try {
-      await controller.setLayerProperties(
-        layerId,
-        CircleLayerProperties(circleOpacity: t, circleStrokeOpacity: t),
-      );
-    } catch (e) {
-      debugPrint("⚠️ L'animació s'ha interromput: $e");
-      break;
-    }
+
+    // 🟢 ACTUALITZAT: Apliquem l'animació sobre les opacitats del cercle vectorial natiu
+    await controller.setLayerProperties(
+      layerId,
+      CircleLayerProperties(circleOpacity: t, circleStrokeOpacity: t),
+    );
+
     await Future.delayed(stepDuration);
   }
 }
 
 Future<void> setupWaypointLayers(MapLibreMapController controller) async {
+  // 1. SOURCE: recorded (Font de dades per a fites gravades)
   await controller.addSource(
     'waypoints_recorded_source',
     const GeojsonSourceProperties(
@@ -242,6 +245,7 @@ Future<void> setupWaypointLayers(MapLibreMapController controller) async {
     ),
   );
 
+  // 2. SOURCE: imported (Font de dades per a fites importades)
   await controller.addSource(
     'waypoints_imported_source',
     const GeojsonSourceProperties(
@@ -249,51 +253,62 @@ Future<void> setupWaypointLayers(MapLibreMapController controller) async {
     ),
   );
 
+  // 3. recorded (Fites gravades actives a la ruta)
   await controller.addLayer(
     'waypoints_recorded_source',
     'waypoints_recorded_layer',
-    CircleLayerProperties(
-      circleRadius: 8.0,
-      circleColor: "#4CAF50",
-      circleStrokeWidth: 2.0,
-      circleStrokeColor: "#FFFFFF",
-      circleOpacity: 0.0,
+    const CircleLayerProperties(
+      circleRadius: 8.0, // Mida de l'esfera interior sòlida [INDEX]
+      circleColor: "#4CAF50", // El teu verd corporatiu de Senda [INDEX]
+      circleStrokeWidth: 2.0, // Vora exterior de contrast [INDEX]
+      circleStrokeColor:
+          "#FFFFFF", // Blanca pura obligatòria per a fons foscos [INDEX]
+      circleOpacity:
+          0.0, // Comença invisible per coordinar-se amb l'animació [INDEX]
       circleStrokeOpacity: 0.0,
     ),
   );
 
+  // LAYER: imported (Fites importades del fitxer GPX de referència)
   await controller.addLayer(
     'waypoints_imported_source',
     'waypoints_imported_layer',
-    CircleLayerProperties(
-      circleRadius: 8.0,
-      circleColor: "#00A8E8",
-      circleStrokeWidth: 2.0,
+    const CircleLayerProperties(
+      circleRadius: 8.0, // Mida simètrica [INDEX]
+      circleColor: "#00A8E8", // Blau clàssic de guia de Senda [INDEX]
+      circleStrokeWidth: 2.0, // Vora exterior de contrast [INDEX]
       circleStrokeColor: "#FFFFFF",
-      circleOpacity: 0.0,
+      circleOpacity:
+          0.0, // Comença invisible per coordinar-se amb l'animació [INDEX]
       circleStrokeOpacity: 0.0,
     ),
   );
 }
 
+/// Crea un cercle blau com a icona del punt de l’usuari
 Future<Uint8List> _createBlueDot() async {
-  const int size = 120;
+  const int size = 120; // Espai suficient per l'ombra
   const double center = size / 2;
 
   final pictureRecorder = PictureRecorder();
   final canvas = Canvas(pictureRecorder);
 
+  // 1. L'OMBRA (Indispensable perquè el punt no es perdi en zones fosques del mapa)
   final shadowPaint = Paint()
     ..color = AppColors.dark.withAlpha(50)
     ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
   canvas.drawCircle(const Offset(center, center + 3), 32, shadowPaint);
 
+  // 2. EL CERCLE DE REREFONS (Aura de precisió - Opcional)
+  // És aquest cercle blau molt clar que sol envoltar el punt
   final auraPaint = Paint()..color = AppColors.skyBlue.withAlpha(40);
   canvas.drawCircle(const Offset(center, center), 55, auraPaint);
 
+  // 3. LA VORA BLANCA (Dona molta claredat visual)
   final borderPaint = Paint()..color = Colors.white;
   canvas.drawCircle(const Offset(center, center), 34, borderPaint);
 
+  // 4. EL PUNT PRINCIPAL (Color sòlid)
   final dotPaint = Paint()
     ..color = AppColors.skyBlue
     ..style = PaintingStyle.fill;
@@ -305,80 +320,70 @@ Future<Uint8List> _createBlueDot() async {
   return byteData!.buffer.asUint8List();
 }
 
+// AFEGEIX A map_layers.dart
+
 void setTrackLineGeometry(
   MapLibreMapController controller,
   List<List<double>> coordinates,
 ) {
-  try {
-    controller.setGeoJsonSource("track_line", {
-      "type": "FeatureCollection",
-      "features": coordinates.isEmpty
-          ? []
-          : [
-              {
-                "type": "Feature",
-                "geometry": {"type": "LineString", "coordinates": coordinates},
-              },
-            ],
-    });
-  } catch (e) {
-    debugPrint("⚠️ Error al setTrackLineGeometry: $e");
-  }
+  controller.setGeoJsonSource("track_line", {
+    "type": "FeatureCollection",
+    "features": coordinates.isEmpty
+        ? []
+        : [
+            {
+              "type": "Feature",
+              "geometry": {"type": "LineString", "coordinates": coordinates},
+            },
+          ],
+  });
 }
 
 void setDemBoundsGeometry(
   MapLibreMapController controller,
   List<DemBounds> cells,
 ) {
-  try {
-    final List<Map<String, dynamic>> features = [];
+  final List<Map<String, dynamic>> features = [];
 
-    for (final cell in cells) {
-      features.add({
-        "type": "Feature",
-        "geometry": {
-          "type": "Polygon",
-          "coordinates": [
-            [
-              [cell.minLon, cell.minLat],
-              [cell.maxLon, cell.minLat],
-              [cell.maxLon, cell.maxLat],
-              [cell.minLon, cell.maxLat],
-              [cell.minLon, cell.minLat],
-            ],
+  for (final cell in cells) {
+    features.add({
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [cell.minLon, cell.minLat], // 1. Abajo-Izquierda
+            [cell.maxLon, cell.minLat], // 2. Abajo-Derecha
+            [cell.maxLon, cell.maxLat], // 3. Arriba-Derecha
+            [cell.minLon, cell.maxLat], // 4. Arriba-Izquierda
+            [cell.minLon, cell.minLat], // 5. Cierre geométrico
           ],
-        },
-      });
-    }
-
-    controller.setGeoJsonSource("dem_bounds_source", {
-      "type": "FeatureCollection",
-      "features": features,
+        ],
+      },
     });
-  } catch (e) {
-    debugPrint("⚠️ Error al setDemBoundsGeometry: $e");
   }
+
+  controller.setGeoJsonSource("dem_bounds_source", {
+    "type": "FeatureCollection",
+    "features": features,
+  });
 }
 
 void setAnimatingSegmentGeometry(
   MapLibreMapController controller,
   List<List<double>> coordinates,
 ) {
-  try {
-    controller.setGeoJsonSource("track_animating_segment", {
-      "type": "FeatureCollection",
-      "features": coordinates.isEmpty
-          ? []
-          : [
-              {
-                "type": "Feature",
-                "geometry": {"type": "LineString", "coordinates": coordinates},
-              },
-            ],
-    });
-  } catch (e) {
-    debugPrint("⚠️ Error al setAnimatingSegmentGeometry: $e");
-  }
+  controller.setGeoJsonSource("track_animating_segment", {
+    "type": "FeatureCollection",
+    "features": coordinates.isEmpty
+        ? []
+        : [
+            {
+              "type": "Feature",
+              "geometry": {"type": "LineString", "coordinates": coordinates},
+            },
+          ],
+  });
 }
 
 void setUserLocationGeometry(
@@ -386,24 +391,21 @@ void setUserLocationGeometry(
   double lat,
   double lon,
 ) {
-  try {
-    controller.setGeoJsonSource("user_location", {
-      "type": "FeatureCollection",
-      "features": [
-        {
-          "type": "Feature",
-          "geometry": {
-            "type": "Point",
-            "coordinates": [lon, lat],
-          },
+  controller.setGeoJsonSource("user_location", {
+    "type": "FeatureCollection",
+    "features": [
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [lon, lat],
         },
-      ],
-    });
-  } catch (e) {
-    debugPrint("⚠️ Error al setUserLocationGeometry: $e");
-  }
+      },
+    ],
+  });
 }
 
+/// Actualitza les fites geomètriques de la interacció del gràfic sobre el mapa
 Future<void> setChartInteractionGeometry(
   MapLibreMapController controller, {
   List<double>? hoverCoords,
@@ -412,97 +414,104 @@ Future<void> setChartInteractionGeometry(
 }) async {
   final List<Map<String, dynamic>> features = [];
 
+  // 1. Mira de Drag Simple (Punt taronja en moviment)
   if (hoverCoords != null && hoverCoords.length == 2) {
     features.add({
       "type": "Feature",
       "properties": {"type": "hover"},
-      "geometry": {"type": "Point", "coordinates": hoverCoords},
+      "geometry": {
+        "type": "Point",
+        "coordinates": hoverCoords, // Llista [lon, lat] plana corregida
+      },
     });
   }
 
+  // 2. Extrem d'Inici del Tram o Punt d'Inici del Drag (Punt verd fix)
   if (rangeStartCoords != null && rangeStartCoords.length == 2) {
     features.add({
       "type": "Feature",
       "properties": {"type": "range_start"},
-      "geometry": {"type": "Point", "coordinates": rangeStartCoords},
+      "geometry": {
+        "type": "Point",
+        "coordinates": rangeStartCoords, // Llista [lon, lat] plana corregida
+      },
     });
   }
 
+  // 3. Extrem de Final del Tram (Punt vermell fix)
   if (rangeEndCoords != null && rangeEndCoords.length == 2) {
     features.add({
       "type": "Feature",
       "properties": {"type": "range_end"},
-      "geometry": {"type": "Point", "coordinates": rangeEndCoords},
+      "geometry": {
+        "type": "Point",
+        "coordinates": rangeEndCoords, // Llista [lon, lat] plana corregida
+      },
     });
   }
 
   final geojson = {"type": "FeatureCollection", "features": features};
 
   try {
+    // Intentem injectar les dades de manera normal si la font ja existeix
     await controller.setGeoJsonSource("chart_interaction_source", geojson);
   } catch (e) {
+    // 🛡️ RECOVERY EN CAS QUE L'ESTIL EN MEMÒRIA S'HAGI REINICIAT O CARREGAT DE NOU
     try {
       await controller.addSource(
         "chart_interaction_source",
         GeojsonSourceProperties(data: geojson),
       );
 
-      // A. CAPA NARANJA (Hover)
+      // A. CREEM L'INDICADOR TARONJA (Mira en moviment)
       await controller.addLayer(
         "chart_interaction_source",
         "chart_hover_layer",
-        CircleLayerProperties(
+        const CircleLayerProperties(
           circleRadius: 7.0,
           circleColor: "#FF9800",
           circleStrokeWidth: 2.0,
           circleStrokeColor: "#FFFFFF",
         ),
       );
-      // 🎯 EXPRESIÓN CORREGIDA: Usamos ["get", "propiedad"] obligatoriamente en MapLibre
-      await controller.setFilter("chart_hover_layer", [
-        "==",
-        ["get", "type"],
-        "hover",
-      ]);
+      await controller.setFilter("chart_hover_layer", ["==", "type", "hover"]);
 
-      // B. CAPA VERDE (Inicio)
+      // B. CREEM L'INDICADOR VERD (Inici del tram) -> CORREGIT: 'CircleLayerProperties'
       await controller.addLayer(
         "chart_interaction_source",
         "chart_start_layer",
-        CircleLayerProperties(
+        const CircleLayerProperties(
           circleRadius: 8.0,
-          circleColor: "#4CAF50",
+          circleColor: "#4CAF50", // El color Verd de fàbrica de Senda
           circleStrokeWidth: 2.5,
           circleStrokeColor: "#FFFFFF",
         ),
       );
-      // 🎯 EXPRESIÓN CORREGIDA: Usamos ["get", "propiedad"] obligatoriamente en MapLibre
       await controller.setFilter("chart_start_layer", [
         "==",
-        ["get", "type"],
+        "type",
         "range_start",
       ]);
 
-      // C. CAPA ROJA (Fin)
+      // C. CREEM L'INDICADOR VERMELL (Final del tram) -> CORREGIT: 'CircleLayerProperties'
       await controller.addLayer(
         "chart_interaction_source",
         "chart_end_layer",
-        CircleLayerProperties(
+        const CircleLayerProperties(
           circleRadius: 8.0,
-          circleColor: "#F44336",
+          circleColor: "#F44336", // El color Vermell de fàbrica de Senda
           circleStrokeWidth: 2.5,
           circleStrokeColor: "#FFFFFF",
         ),
       );
-      // 🎯 EXPRESIÓN CORREGIDA: Usamos ["get", "propiedad"] obligatoriamente en MapLibre
       await controller.setFilter("chart_end_layer", [
         "==",
-        ["get", "type"],
+        "type",
         "range_end",
       ]);
     } catch (innerError) {
       debugPrint(
-        "⚠️ Errada interna en assegurar les capes de la GPU: $innerError",
+        "⚠️ Errada interna en assegurar les capes de la GPU: \$innerError",
       );
     }
   }

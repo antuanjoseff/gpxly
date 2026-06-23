@@ -1,5 +1,6 @@
 // lib/screens/main_map/helpers/map_selection_helper.dart
 
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:senda/models/track.dart';
@@ -39,6 +40,47 @@ class MapSelectionHelper {
       trackActiu,
     );
 
+    // 🧪 ------------------------------------------------------------------
+    // 🧪 BLOC DE PROVA PER SORTIR DE DUBTES (MAPA VS GRÀFIC)
+    // ------------------------------------------------------------------
+    debugPrint("--------------------------------------------------");
+    debugPrint("🧪 [SNAP-SINCRO] ÍNDEX BUSCAT PEL MAPA: $indexMesProper");
+
+    // A. El punt que ha trobat el mapa físicament sota la retícula
+    final UserPosition puntMapa = trackActiu.points[indexMesProper];
+    debugPrint(
+      "🗺️ COORDENADA MAPA:  Lat: ${puntMapa.position.latitude}, Lon: ${puntMapa.position.longitude}",
+    );
+
+    try {
+      // B. El punt que el teu gràfic pintarà utilitzant eixe mateix número d'índex.
+      // ⚠️ ATENCIÓ: Si el teu panell d'elevacions llegeix una altra llista reduïda o un altre provider,
+      // substitueix 'trackActiu.points' per eixa llista o provider exactament.
+      final List<UserPosition> puntsDelGrafic = trackActiu.points;
+      final UserPosition puntGrafic = puntsDelGrafic[indexMesProper];
+
+      debugPrint(
+        "📊 COORDENADA GRÀFIC: Lat: ${puntGrafic.position.latitude}, Lon: ${puntGrafic.position.longitude}",
+      );
+
+      if (puntMapa.position.latitude == puntGrafic.position.latitude &&
+          puntMapa.position.longitude == puntGrafic.position.longitude) {
+        debugPrint(
+          "✅ RESULTAT: Els índexos COINCIDEIXEN! El problema és de GeoJSON [Lon, Lat] invertit o de paddings.",
+        );
+      } else {
+        debugPrint(
+          "❌ RESULTAT: DESALINEACIÓ DETECTADA! Les dues llistes tenen coordenades diferents per a l'índex $indexMesProper.",
+        );
+      }
+    } catch (e) {
+      debugPrint(
+        "🚨 RESULTAT: L'índex $indexMesProper no existeix a la llista del gràfic! (Fora de rang, llista més curta)",
+      );
+    }
+    debugPrint("--------------------------------------------------");
+    // ------------------------------------------------------------------
+
     // 4. Extraiem la UserPosition d'eixe índex segons el teu model d'estructures
     final UserPosition puntSnap = trackActiu.points[indexMesProper];
     final LatLng coordsSnap = LatLng(
@@ -46,10 +88,10 @@ class MapSelectionHelper {
       puntSnap.position.longitude,
     );
 
-    // 5. 🎯 EFECTE SNAP: Desplacem el mapa de forma suau per clavar la ruta sota la mira
+    // 5. EFECTE SNAP: Desplacem el mapa de forma suau per clavar la ruta sota la mira
     mapController!.animateCamera(CameraUpdate.newLatLng(coordsSnap));
 
-    // 6. Sincronitzem l'estat a Riverpod llançant la teva funció cíclica continuada
+    // 6. Sincronitzem l'estat a Riverpod llançant la teva funció
     ref
         .read(elevationSelectionProvider.notifier)
         .setPointFromMapSelectionTool(indexMesProper);
@@ -63,11 +105,9 @@ class MapSelectionHelper {
     for (int i = 0; i < track.points.length; i++) {
       final UserPosition p = track.points[i];
 
-      // Accedim correctament a l'estructura geogràfica real tipada del teu model
       final double latRuta = p.position.latitude;
       final double lonRuta = p.position.longitude;
 
-      // Càlcul de distància quadràtica simplificada ultra ràpida ideal per a milers de punts a la GPU
       final double dLat = latRuta - puntCamera.latitude;
       final double dLon = lonRuta - puntCamera.longitude;
       final double dist = (dLat * dLat) + (dLon * dLon);

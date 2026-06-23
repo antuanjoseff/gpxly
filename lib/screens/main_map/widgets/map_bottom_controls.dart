@@ -71,105 +71,98 @@ class _MapBottomControlsState extends ConsumerState<MapBottomControls> {
         ? Colors.red.shade700
         : Colors.green.shade700;
 
-    return Positioned(
-      bottom: 0,
-      left: 0,
-      right: 0,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // 🧭 SUBMENÚ DE NAVEGACIÓ
-          if (_showNavigationSubMenu && hasTrack)
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppDimensions.subMenuHorizontalPadding,
-              ),
-              child: Container(
-                margin: const EdgeInsets.only(
-                  bottom: AppDimensions.verticalSpacing,
-                ),
-                child: Center(
-                  child: NavigationSubMenu(
-                    navState: navState,
-                    hasTrack: hasTrack,
-                    onAction: (bool val) {
-                      setState(() => _showNavigationSubMenu = false);
-
-                      if (!navState.isFollowing) {
-                        widget.onHandleNavigationAction(
-                          val ? "follow" : "clear_imported",
-                        );
-                      } else {
-                        widget.onHandleNavigationAction(
-                          val ? "toggle_pause" : "stop_follow",
-                        );
-                      }
-                    },
-                    onClose: () =>
-                        setState(() => _showNavigationSubMenu = false),
-                  ),
-                ),
-              ),
-            ),
-
-          // ⏱️ SUBMENÚ DE GRAVACIÓ
-          if (_showRecordingSubMenu)
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppDimensions.subMenuHorizontalPadding,
-              ),
-              child: Container(
-                margin: const EdgeInsets.only(
-                  bottom: AppDimensions.verticalSpacing,
-                ),
-                child: Center(
-                  child: RecordingSubMenu(
-                    state: recordingState,
-                    onAction: (String action) {
-                      setState(() => _showRecordingSubMenu = false);
-                      widget.onOpenRecordingControl(action);
-                    },
-                    onClose: () =>
-                        setState(() => _showRecordingSubMenu = false),
-                  ),
-                ),
-              ),
-            ),
-
-          // 🎛️ BARRA INFERIOR PRINCIPAL
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // 🧭 SUBMENÚ DE NAVEGACIÓ
+        if (_showNavigationSubMenu && hasTrack)
           Padding(
-            padding: EdgeInsets.only(bottom: widget.systemBottomPadding),
-            child: MenuBar(
-              isChartCollapsed: widget.isChartCollapsed,
-              recordingState: recordingState,
-              navState: navState,
-              hasTrack: hasTrack,
-              onRecordingTap: () {
-                setState(() {
-                  _showRecordingSubMenu = !_showRecordingSubMenu;
-                  _showNavigationSubMenu = false;
-                });
-              },
-              onNavigationTap: () {
-                if (!hasTrack) {
-                  setState(() {
-                    _showNavigationSubMenu = false;
-                    _showRecordingSubMenu = false;
-                  });
-                  widget.onOpenNavigationControl(false);
-                } else {
-                  setState(() {
-                    _showNavigationSubMenu = !_showNavigationSubMenu;
-                    _showRecordingSubMenu = false;
-                  });
-                }
-              },
-              onToggleChart: widget.onToggleChart,
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppDimensions.subMenuHorizontalPadding,
+            ),
+            child: Container(
+              margin: const EdgeInsets.only(
+                bottom: AppDimensions.verticalSpacing,
+              ),
+              child: Center(
+                child: NavigationSubMenu(
+                  navState: navState,
+                  hasTrack: hasTrack,
+                  onAction: (bool val) {
+                    setState(() => _showNavigationSubMenu = false);
+
+                    if (!navState.isFollowing) {
+                      widget.onHandleNavigationAction(
+                        val ? "follow" : "clear_imported",
+                      );
+                    } else {
+                      widget.onHandleNavigationAction(
+                        val ? "toggle_pause" : "stop_follow",
+                      );
+                    }
+                  },
+                  onClose: () => setState(() => _showNavigationSubMenu = false),
+                ),
+              ),
             ),
           ),
-        ],
-      ),
+
+        // ⏱️ SUBMENÚ DE GRAVACIÓ
+        if (_showRecordingSubMenu)
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppDimensions.subMenuHorizontalPadding,
+            ),
+            child: Container(
+              margin: const EdgeInsets.only(
+                bottom: AppDimensions.verticalSpacing,
+              ),
+              child: Center(
+                child: RecordingSubMenu(
+                  state: recordingState,
+                  onAction: (String action) {
+                    setState(() => _showRecordingSubMenu = false);
+                    widget.onOpenRecordingControl(action);
+                  },
+                  onClose: () => setState(() => _showRecordingSubMenu = false),
+                ),
+              ),
+            ),
+          ),
+
+        // 🎛️ BARRA INFERIOR PRINCIPAL
+        Padding(
+          padding: EdgeInsets.only(bottom: widget.systemBottomPadding),
+          child: MenuBar(
+            isChartCollapsed: widget.isChartCollapsed,
+            recordingState: recordingState,
+            navState: navState,
+            hasTrack: hasTrack,
+            onRecordingTap: () {
+              setState(() {
+                _showRecordingSubMenu = !_showRecordingSubMenu;
+                _showNavigationSubMenu = false;
+              });
+            },
+            onNavigationTap: () {
+              if (!hasTrack) {
+                setState(() {
+                  _showNavigationSubMenu = false;
+                  _showRecordingSubMenu = false;
+                });
+                widget.onOpenNavigationControl(false);
+              } else {
+                setState(() {
+                  _showNavigationSubMenu = !_showNavigationSubMenu;
+                  _showRecordingSubMenu = false;
+                });
+              }
+            },
+            onToggleChart: widget.onToggleChart,
+          ),
+        ),
+      ],
     );
   }
 }
