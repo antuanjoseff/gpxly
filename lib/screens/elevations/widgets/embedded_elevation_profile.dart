@@ -49,8 +49,6 @@ class _EmbeddedElevationProfileState
 
   @override
   Widget build(BuildContext context) {
-    final double systemBottomPadding = MediaQuery.of(context).padding.bottom;
-
     final real = ref.watch(trackRecordingProvider);
     final imported = ref.watch(importedTrackProvider);
     final remaining = ref.watch(remainingTrackProvider);
@@ -119,6 +117,9 @@ class _EmbeddedElevationProfileState
     String timeElapsedStr = "--:--";
     String avgSpeedStr = "--.- km/h";
 
+    // 🔥 1) Primer intentem calcular TRAM seleccionat
+    bool hasRange = false;
+
     if (isRangeActive &&
         selectionState.startTrackIndex != null &&
         selectionState.endTrackIndex != null) {
@@ -126,6 +127,8 @@ class _EmbeddedElevationProfileState
       final int end = selectionState.endTrackIndex!;
 
       if (start < globalDists.length && end < globalDists.length) {
+        hasRange = true;
+
         rangeDistance = (globalDists[end] - globalDists[start]).abs();
 
         final int startIdx = start < end ? start : end;
@@ -142,6 +145,47 @@ class _EmbeddedElevationProfileState
           final duration = globalTimes[endIdx]
               .difference(globalTimes[startIdx])
               .abs();
+
+          final int totalHours = duration.inHours;
+          final int totalMinutes = duration.inMinutes.remainder(60);
+          final int totalSeconds = duration.inSeconds.remainder(60);
+
+          if (totalHours > 0) {
+            timeElapsedStr =
+                "${totalHours}h ${totalMinutes.toString().padLeft(2, '0')}m";
+          } else {
+            timeElapsedStr =
+                "$totalMinutes:${totalSeconds.toString().padLeft(2, '0')}";
+          }
+
+          if (duration.inSeconds > 0 && rangeDistance > 0) {
+            final double speedMps = rangeDistance / duration.inSeconds;
+            final double speedKmh = speedMps * 3.6;
+            avgSpeedStr = "${speedKmh.toStringAsFixed(1)} km/h";
+          }
+        }
+      }
+    }
+
+    // 🔥 2) Si NO hi ha tram → calculem TOT EL TRACK
+    if (!hasRange) {
+      final int start = 0;
+      final int end = globalDists.length - 1;
+
+      if (end > start) {
+        rangeDistance = (globalDists[end] - globalDists[start]).abs();
+
+        for (int i = start + 1; i <= end; i++) {
+          final diff = globalAlts[i] - globalAlts[i - 1];
+          if (diff > 0) rangeAscent += diff;
+          if (diff < 0) rangeDescent += diff.abs();
+        }
+
+        if (start < globalTimes.length && end < globalTimes.length) {
+          final duration = globalTimes[end]
+              .difference(globalTimes[start])
+              .abs();
+
           final int totalHours = duration.inHours;
           final int totalMinutes = duration.inMinutes.remainder(60);
           final int totalSeconds = duration.inSeconds.remainder(60);
@@ -201,196 +245,165 @@ class _EmbeddedElevationProfileState
             .roundToDouble();
     const double handleHeight = 36.0;
 
-    // 🟢 LA MATEMÀTICA ASIMÈTRICA:
-    // Si està plegat, fa 0px (el mapa és 100% lliure).
-    // Si està desplegat, fa exactament la nansa (36px) per a les estadístiques del tram + el 15% del gràfic.
-    const double collapsedHeight = 0.0;
-    final double expandedHeight = handleHeight + chartHeight;
-
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      curve: Curves.easeInOut,
-      height: widget.isCollapsed ? collapsedHeight : expandedHeight,
-      padding: EdgeInsets.zero,
-      clipBehavior: Clip.none,
-      decoration: BoxDecoration(
-        color: widget.isCollapsed
-            ? Colors.transparent
-            : AppColors.skyBlueDark.withAlpha(214),
-        borderRadius: BorderRadius.circular(0),
-        border: widget.isCollapsed
-            ? null
-            : Border(
-                top: BorderSide(color: Colors.white.withAlpha(25), width: 1),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Àrea del gràfic
+        if (!widget.isCollapsed)
+          Expanded(
+            child: SizedBox(
+              height: chartHeight,
+              child: AnimatedBuilder(
+                animation: Listenable.merge([
+                  _localHoverIndex,
+                  _localRangeStart,
+                  _localRangeEnd,
+                ]),
+                builder: (context, _) {
+                  return ElevationChartWidget(
+                    key: const ValueKey("elevation_chart_embedded_pure"),
+                    pastAlts: realAlts,
+                    pastDists: realDists,
+                    futureAlts: futureAlts,
+                    futureDistsGlobal: futureDistsGlobal,
+                    recordedWaypointGlobalDists: recordedWaypointGlobalDists,
+                    importedWaypointGlobalDists: importedWaypointGlobalDists,
+                    realColor: trackColor,
+                    importedColor: importedTrackColor,
+                    graphNeedleColor: AppColors.primary,
+                    sliderStartNeedleColor: Colors.green,
+                    sliderEndNeedleColor: Colors.red,
+                  );
+                },
               ),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // 🚪 BARRA D'ESTADÍSTIQUES DEL TRAM
-          // 🟢 CONTROL DINÀMIC: Només es renderitza si el gràfic està desplegat.
-          // Així, quan està plegat, no ocupa espai ni llança overflows residuals.
-          if (widget.isCollapsed == false)
-            SizedBox(
-              height: handleHeight,
-              child: GestureDetector(
-                onTap: widget.onToggle,
-                behavior: HitTestBehavior.opaque,
-                child: Container(
-                  width: double.infinity,
-                  height: handleHeight,
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                  color: Colors.transparent,
-                  // 🟢 MANTENIMENT DE DADES: Es mantenen intactes tots els teus indicadors de tram actiu
-                  child: isRangeActive
-                      ? Row(
+            ),
+          ),
+        // Barra d’estadístiques del tram
+        if (!widget.isCollapsed)
+          SizedBox(
+            height: handleHeight,
+            child: GestureDetector(
+              onTap: widget.onToggle,
+              behavior: HitTestBehavior.opaque,
+              child: Container(
+                width: double.infinity,
+                height: handleHeight,
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                color: AppColors.dark.withAlpha(150),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.only(right: 14),
+                        child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Expanded(
-                              child: Padding(
-                                padding: const EdgeInsets.only(right: 14),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        const Icon(
-                                          Icons.straighten,
-                                          size: 12,
-                                          color: Colors.white70,
-                                        ),
-                                        const SizedBox(width: 3),
-                                        Text(
-                                          "${(rangeDistance / 1000).toStringAsFixed(2)}km",
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        const Icon(
-                                          Icons.access_time_rounded,
-                                          size: 12,
-                                          color: Colors.amberAccent,
-                                        ),
-                                        const SizedBox(width: 3),
-                                        Text(
-                                          timeElapsedStr,
-                                          style: const TextStyle(
-                                            color: Colors.amberAccent,
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        const Icon(
-                                          Icons.speed_rounded,
-                                          size: 12,
-                                          color: Colors.cyanAccent,
-                                        ),
-                                        const SizedBox(width: 3),
-                                        Text(
-                                          safeSpeedStr,
-                                          style: const TextStyle(
-                                            color: Colors.cyanAccent,
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        const Icon(
-                                          Icons.arrow_upward,
-                                          size: 12,
-                                          color: Colors.greenAccent,
-                                        ),
-                                        const SizedBox(width: 2),
-                                        Text(
-                                          "+${rangeAscent.toStringAsFixed(0)}m",
-                                          style: const TextStyle(
-                                            color: Colors.greenAccent,
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        const Icon(
-                                          Icons.arrow_downward,
-                                          size: 12,
-                                          color: Colors.redAccent,
-                                        ),
-                                        const SizedBox(width: 2),
-                                        Text(
-                                          "-${rangeDescent.toStringAsFixed(0)}m",
-                                          style: const TextStyle(
-                                            color: Colors.redAccent,
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.straighten,
+                                  size: 12,
+                                  color: Colors.white70,
                                 ),
-                              ),
+                                const SizedBox(width: 3),
+                                Text(
+                                  "${(rangeDistance / 1000).toStringAsFixed(2)}km",
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.access_time_rounded,
+                                  size: 12,
+                                  color: Colors.amberAccent,
+                                ),
+                                const SizedBox(width: 3),
+                                Text(
+                                  timeElapsedStr,
+                                  style: const TextStyle(
+                                    color: Colors.amberAccent,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.speed_rounded,
+                                  size: 12,
+                                  color: Colors.cyanAccent,
+                                ),
+                                const SizedBox(width: 3),
+                                Text(
+                                  safeSpeedStr,
+                                  style: const TextStyle(
+                                    color: Colors.cyanAccent,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.arrow_upward,
+                                  size: 12,
+                                  color: Colors.greenAccent,
+                                ),
+                                const SizedBox(width: 2),
+                                Text(
+                                  "+${rangeAscent.toStringAsFixed(0)}m",
+                                  style: const TextStyle(
+                                    color: Colors.greenAccent,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.arrow_downward,
+                                  size: 12,
+                                  color: Colors.redAccent,
+                                ),
+                                const SizedBox(width: 2),
+                                Text(
+                                  "-${rangeDescent.toStringAsFixed(0)}m",
+                                  style: const TextStyle(
+                                    color: Colors.redAccent,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
-                        )
-                      : const SizedBox.shrink(), // 🟢 Si el perfil està desplegat però no hi ha selecció activa, la barra es queda completament buida i neta de peanyes grises
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
-
-          // 📊 ÁREA DEL GRÀFIC
-          if (widget.isCollapsed == false)
-            Expanded(
-              child: SizedBox(
-                height: chartHeight,
-                child: AnimatedBuilder(
-                  animation: Listenable.merge([
-                    _localHoverIndex,
-                    _localRangeStart,
-                    _localRangeEnd,
-                  ]),
-                  builder: (context, _) {
-                    return ElevationChartWidget(
-                      key: const ValueKey("elevation_chart_embedded_pure"),
-                      pastAlts: realAlts,
-                      pastDists: realDists,
-                      futureAlts: futureAlts,
-                      futureDistsGlobal: futureDistsGlobal,
-                      recordedWaypointGlobalDists: recordedWaypointGlobalDists,
-                      importedWaypointGlobalDists: importedWaypointGlobalDists,
-                      realColor: trackColor,
-                      importedColor: importedTrackColor,
-                      graphNeedleColor: AppColors.primary,
-                      sliderStartNeedleColor: Colors.green,
-                      sliderEndNeedleColor: Colors.red,
-                    );
-                  },
-                ),
-              ),
-            ),
-        ],
-      ),
+          ),
+      ],
     );
   }
 }

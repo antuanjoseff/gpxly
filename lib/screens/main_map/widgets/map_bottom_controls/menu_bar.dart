@@ -12,7 +12,6 @@ import 'menu_tab.dart';
 
 class MenuBar extends ConsumerWidget {
   final bool isChartCollapsed;
-  final bool isPanelActive;
   final RecordingState recordingState;
   final NavigationState navState;
   final bool hasTrack;
@@ -24,7 +23,6 @@ class MenuBar extends ConsumerWidget {
   const MenuBar({
     super.key,
     required this.isChartCollapsed,
-    required this.isPanelActive,
     required this.recordingState,
     required this.navState,
     required this.hasTrack,
@@ -41,9 +39,11 @@ class MenuBar extends ConsumerWidget {
     final recordingPoints = ref.watch(
       trackRecordingProvider.select((t) => t.points),
     );
+
     final bool isRecording =
         recordingState == RecordingState.recording ||
         recordingState == RecordingState.paused;
+
     final bool hasRecordingData = isRecording && recordingPoints.isNotEmpty;
 
     final bool isProfileAvailable = hasTrack || hasRecordingData;
@@ -51,6 +51,7 @@ class MenuBar extends ConsumerWidget {
     final isRunning = ref.watch(locationProvider.notifier).isSimulationRunning;
     final isPaused = ref.watch(locationProvider.notifier).isSimulationPaused;
 
+    // --- Recording widget ---
     Widget recordingWidget = MenuTab(
       icon: Icons.fiber_manual_record,
       label: t.record,
@@ -58,8 +59,7 @@ class MenuBar extends ConsumerWidget {
       onTap: onRecordingTap,
     );
 
-    if (recordingState == RecordingState.recording ||
-        recordingState == RecordingState.paused) {
+    if (isRecording) {
       final bool isRecordingActive = recordingState == RecordingState.recording;
       final Color accentColor = isRecordingActive
           ? Colors.red.shade700
@@ -74,7 +74,7 @@ class MenuBar extends ConsumerWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
             decoration: BoxDecoration(
-              color: Colors.white, // 🟢 Càpsula blanca que aïlla del blau
+              color: Colors.white,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Column(
@@ -97,6 +97,7 @@ class MenuBar extends ConsumerWidget {
       );
     }
 
+    // --- Navigation widget ---
     String navigationLabel = t.navigationLoadTrack;
     IconData navigationIcon = Icons.file_upload_outlined;
 
@@ -112,7 +113,61 @@ class MenuBar extends ConsumerWidget {
           : Icons.explore;
     }
 
-    // 🎯 NETEJA DE VARIABLES SENSE ÚS: Esborrem "profileIconColor" vella que no s'usava
+    // --- Profile button (toggle chart) ---
+    final bool isOpen = !isChartCollapsed;
+
+    Widget profileButton = AbsorbPointer(
+      absorbing: !isProfileAvailable,
+      child: InkWell(
+        onTap: isProfileAvailable ? onToggleChart : null,
+        child: Center(
+          child: Container(
+            width: 72,
+            height: 52,
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  isOpen ? Icons.landscape_rounded : Icons.landscape_outlined,
+                  size: 22,
+                  color: isProfileAvailable
+                      ? Colors.white
+                      : Colors.white.withAlpha(60),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  t.menuProfile,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: isProfileAvailable
+                        ? Colors.white
+                        : Colors.white.withAlpha(60),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    // --- Settings widget ---
+    Widget settingsWidget = MenuTab(
+      icon: Icons.settings_outlined,
+      label: t.menuSettings,
+      iconColor: Colors.white,
+      onTap: () {
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => const SettingsScreen()));
+      },
+    );
 
     return Container(
       color: AppColors.primary,
@@ -138,76 +193,10 @@ class MenuBar extends ConsumerWidget {
             ),
             const VerticalDivider(color: Colors.white12),
 
-            Expanded(
-              child: AbsorbPointer(
-                absorbing: !isProfileAvailable,
-                child: InkWell(
-                  onTap: isProfileAvailable ? onToggleChart : null,
-                  child: Center(
-                    child: Container(
-                      width: 72,
-                      height: 52,
-                      padding: const EdgeInsets.symmetric(vertical: 4),
-                      decoration: BoxDecoration(
-                        // 🟢 CORREGIT: El fons serà blanc ÚNICAMENT si el panell està obert visualment (isPanelActive es true)
-                        color: (isProfileAvailable && isPanelActive)
-                            ? Colors.white
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            // 🟢 CORREGIT: Icona plena si el panell està visible de veritat, perfilada si està tancat
-                            isPanelActive
-                                ? Icons.landscape_rounded
-                                : Icons.landscape_outlined,
-                            size: 22,
-                            // 🟢 CORREGIT: Color adaptatiu dependent en exclusiva de "isPanelActive"
-                            color: isProfileAvailable
-                                ? (isPanelActive
-                                      ? AppColors.primary
-                                      : Colors.white)
-                                : Colors.white.withAlpha(60),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            t.menuProfile,
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              // 🟢 CORREGIT: Text adaptatiu dependent en exclusiva de "isPanelActive"
-                              color: isProfileAvailable
-                                  ? (isPanelActive
-                                        ? AppColors.primary
-                                        : Colors.white)
-                                  : Colors.white.withAlpha(60),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-
+            Expanded(child: profileButton),
             const VerticalDivider(color: Colors.white12),
 
-            Expanded(
-              child: MenuTab(
-                icon: Icons.settings_outlined,
-                label: t.menuSettings,
-                iconColor: Colors.white,
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const SettingsScreen()),
-                  );
-                },
-              ),
-            ),
+            Expanded(child: settingsWidget),
           ],
         ),
       ),

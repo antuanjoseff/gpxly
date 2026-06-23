@@ -217,7 +217,7 @@ class _ElevationProfileScreenState
         backgroundColor: AppColors.primary,
         elevation: 0,
       ),
-      body: ListView(
+      body: Column(
         children: [
           const SizedBox(height: 12),
           HeaderLegendWidget(
@@ -272,7 +272,7 @@ class _ElevationProfileScreenState
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Colors.yellow,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(

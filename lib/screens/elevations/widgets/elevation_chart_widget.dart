@@ -298,6 +298,16 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
           // Totes les 3 capes comparteixen exactament el mateix Positioned.fill horitzontal.
           child: Stack(
             children: [
+              // 🔥 Capa blanca sota les etiquetes de l’eix X
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                height:
+                    globalBottomReserved, // el mateix reservedSize que uses a bottomTitles
+                child: Container(color: Colors.white),
+              ),
+
               // Capa 1: El gràfic de línies de fons de FL Chart
               Positioned.fill(
                 child: LineChart(
@@ -460,69 +470,62 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
               final unitPart = parts.length > 1 ? parts[1] : '';
 
               const textStyle = TextStyle(
-                color: Colors.white,
+                color: Colors.black,
                 fontSize: 11,
                 fontWeight: FontWeight.bold,
                 fontFamily: 'monospace',
               );
 
-              final String fullTextString = unitPart.isNotEmpty
-                  ? "$numberPart $unitPart"
-                  : numberPart;
-              final tp = TextPainter(
-                text: TextSpan(text: fullTextString, style: textStyle),
-                textDirection: TextDirection.ltr,
-              )..layout();
+              Widget label = Container(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.white, // 🔥 FONS BLANC
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: RichText(
+                  textAlign: TextAlign.center,
+                  text: TextSpan(
+                    children: [
+                      TextSpan(text: numberPart, style: textStyle),
+                      if (unitPart.isNotEmpty)
+                        TextSpan(
+                          text: " $unitPart",
+                          style: textStyle.copyWith(
+                            fontSize: 9,
+                            fontWeight: FontWeight.normal,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              );
 
-              double dx = isFirst
-                  ? (tp.width / 2) + 4.0
-                  : (isLast ? -(tp.width / 2) - 4.0 : -(tp.width / 2));
+              // 🔥 Primer i últim també amb fons blanc
+              if (isFirst || isLast) {
+                final tp = TextPainter(
+                  text: TextSpan(
+                    text: "$numberPart $unitPart",
+                    style: textStyle,
+                  ),
+                  textDirection: TextDirection.ltr,
+                )..layout();
 
-              if (!isFirst && !isLast) {
+                double dx = isFirst
+                    ? (tp.width / 2) + 4.0
+                    : -(tp.width / 2) - 4.0;
+
                 return SideTitleWidget(
                   meta: meta,
                   space: 2,
-                  child: RichText(
-                    textAlign: TextAlign.center,
-                    text: TextSpan(
-                      children: [
-                        TextSpan(text: numberPart, style: textStyle),
-                        if (unitPart.isNotEmpty)
-                          TextSpan(
-                            text: " $unitPart",
-                            style: textStyle.copyWith(
-                              fontSize: 9,
-                              fontWeight: FontWeight.normal,
-                            ),
-                          ),
-                      ],
-                    ),
+                  child: Transform.translate(
+                    offset: Offset(dx, 0),
+                    child: label, // 🔥 Ara també amb fons blanc
                   ),
                 );
               }
 
-              return SideTitleWidget(
-                meta: meta,
-                space: 2,
-                child: Transform.translate(
-                  offset: Offset(dx, 0),
-                  child: RichText(
-                    text: TextSpan(
-                      children: [
-                        TextSpan(text: numberPart, style: textStyle),
-                        if (unitPart.isNotEmpty)
-                          TextSpan(
-                            text: " $unitPart",
-                            style: textStyle.copyWith(
-                              fontSize: 9,
-                              fontWeight: FontWeight.normal,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
+              // 🔥 Etiquetes normals (ja tenien fons blanc)
+              return SideTitleWidget(meta: meta, space: 2, child: label);
             },
           ),
         ),

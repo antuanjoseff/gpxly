@@ -1,4 +1,4 @@
-// lib/screens/map/map_screen.dart (BLOC 1 DE 2)
+// lib/screens/map/map_screen.dart
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
@@ -27,22 +27,23 @@ import 'package:senda/notifiers/waypoints_imported_notifier.dart';
 import 'package:senda/notifiers/waypoints_recorded_notifier.dart';
 import 'package:senda/providers/barometer_provider.dart';
 
-// Widgets independents que hem separat
+// Widgets independents
 import 'package:senda/screens/main_map/widgets/map_app_bar.dart';
 import 'package:senda/screens/main_map/widgets/map_base_layer.dart';
 import 'package:senda/screens/main_map/widgets/map_bottom_controls.dart';
+import 'package:senda/screens/main_map/widgets/map_bottom_controls/elevation_panel.dart';
 import 'package:senda/screens/main_map/widgets/map_bottom_controls/layout_utils.dart';
 import 'package:senda/screens/main_map/widgets/map_selection_reticle.dart';
 import 'package:senda/screens/main_map/widgets/map_selection_top_button.dart';
 import 'package:senda/screens/main_map/widgets/map_top_controls.dart';
 import 'package:senda/theme/app_colors.dart';
 
-// Els 3 HELPERS d'extracció de codi massiu
+// HELPERS
 import 'package:senda/screens/main_map/helpers/map_geometry_helper.dart';
 import 'package:senda/screens/main_map/helpers/navigation_flow_handler.dart';
 import 'package:senda/screens/main_map/helpers/recording_flow_handler.dart';
 
-// Serveis i Utilitats
+// Serveis i utilitats
 import 'package:senda/services/hgt_service.dart';
 import 'package:senda/services/native_barometer_channel.dart';
 import 'package:senda/services/permissions_service.dart';
@@ -80,17 +81,20 @@ class _MapScreenState extends ConsumerState<MapScreen>
   DateTime _lastPrefsSave = DateTime.now();
   LatLng? _lastCameraCenter;
 
-  // Índexs de la interacció del perfil d'elevacions
+  // Índexs del gràfic
   int? selectedIndexStart;
   int? selectedIndexEnd;
   int? selectedIndexGraph;
   int? _prevWpIndex;
   int? _lastWpIndex;
+
   bool _isChartCollapsed = false;
   DateTime _lastMapUpdateTime = DateTime.fromMillisecondsSinceEpoch(0);
   static const int _mapThrottleMs = 32;
+
   late MapAnimator mapAnimator;
   double _currentMapPadding = 0;
+
   Timer? _waypointPulseTimer;
   double _pulseValue = 0.0;
   bool _pulseIncreasing = true;
@@ -116,6 +120,11 @@ class _MapScreenState extends ConsumerState<MapScreen>
         }
       }
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
   }
 
   @override
@@ -185,10 +194,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final userGps = ref.read(locationProvider);
     if (userGps == null || mapController == null) return;
 
-    // 🛡️ OBLIGATORI: Reactivar el Smart Center des del botó
     setState(() {
-      _lastCameraCenter = null; // Força el recàlcul de distància des de zero
-      smartCenterEnabled = true; // Torna a activar el mode automàtic
+      _lastCameraCenter = null;
+      smartCenterEnabled = true;
     });
 
     safeAnimateCamera(CameraUpdate.newLatLng(userGps.position));
@@ -205,7 +213,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
     await notifier.startFollowing(context, mapController);
   }
 
-  // 🚀 PUENT DE SEGURETAT DE GRAVACIÓ DIRECTE AMB EL PROPI FLOW_HANDLER
   void _openRecordingControl(
     BuildContext context,
     WidgetRef ref, [
@@ -215,8 +222,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
       mapController: mapController,
       onToggleSmartCenter: (val) => setState(() => smartCenterEnabled = val),
       onUpdateLastCamera: (pos) => _lastCameraCenter = pos,
-      // 🛡️ REGLA D'OR SENDA: Forcem que el gràfic d'elevacions arrenqui minimitzat (true)
-      // i acompanyi l'efecte ascensor del botó de forma neta des de l'inici.
       onToggleProgrammaticMove: (val) {
         setState(() {
           isProgrammaticMove = val;
@@ -228,7 +233,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
     );
   }
 
-  // 🧭 PONT DE NAVEGACIÓ CRÍTIC AMB COMPROVACIÓ PROACTIVA DE PERMISOS
   void _openNavigationControl(
     BuildContext context,
     WidgetRef ref,
@@ -236,20 +240,13 @@ class _MapScreenState extends ConsumerState<MapScreen>
   ) async {
     final navigationState = ref.read(navigationProvider);
 
-    // 🛡️ REGLA D'OR SENDA: Si hi ha un track a la pantalla però encara NO l'estem seguint,
-    // interceptem el clic per assegurar síncronament els permisos de segon pla amb el diàleg.
     if (hasTrack && !navigationState.isFollowing) {
       final bool permisosConcedidos =
           await PermissionsService.ensureBackgroundLocationWithDialog(context);
 
-      // Si l'usuari denega els permisos de localització al diàleg, frenem el flux a l'acte
-      if (!permisosConcedidos) {
-        return;
-      }
+      if (!permisosConcedidos) return;
     }
 
-    // Si els permisos ja estaven atorgats d'origen (o l'usuari els acaba d'acceptar),
-    // o si el botó actua en mode "importar fitxer GPX" (hasTrack == false), deleguem al Handler.
     if (mounted) {
       NavigationFlowHandler(ref: ref, context: context).openNavigationControl(
         mapController: mapController,
@@ -270,7 +267,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
     }
   }
 
-  // Estil unificat obligatori dels teus botons visuals de l'Stack
   Widget _buildSquareButton({
     required IconData icon,
     required VoidCallback onTap,
@@ -290,16 +286,13 @@ class _MapScreenState extends ConsumerState<MapScreen>
     );
   }
 
-  // Creador autònom de Fites Senda
   void _onAddWaypoint(BuildContext context, WidgetRef ref) async {
-    // 1) Posició actual del cercle blau (GPS)
     final pos = ref.read(locationProvider);
     if (pos == null) {
       AppMessages.showErrorSnackBar(
         context,
         AppLocalizations.of(context)!.waypointNoGps,
       );
-
       return;
     }
 
@@ -307,14 +300,12 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final lastLon = pos.position.longitude;
     final lastAlt = pos.altitude;
 
-    // 2) Corregim altitud amb HGT
     final (correctedAlt, _) = await HgtService().getCorrectedElevation(
       lastLat,
       lastLon,
       lastAlt,
     );
 
-    // 3) Nom suggerit
     final waypoints = ref.read(waypointsProvider);
     final name = await AppMessages.showAddWaypointDialog(
       context,
@@ -323,7 +314,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
     if (name == null || name.isEmpty) return;
 
-    // 4) Creem waypoint amb la coordenada del cercle blau
     final wp = Waypoint(
       id: "rec_${DateTime.now().millisecondsSinceEpoch}",
       name: name,
@@ -362,47 +352,37 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
     final int wpTrackIndex = waypoint.trackIndex;
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // 🟢 COGNICIÓ DE SELECCIÓ (Gràfic visible i obert):
-    // ─────────────────────────────────────────────────────────────────────────
     if (!_isChartCollapsed) {
       final currentSelection = ref.read(elevationSelectionProvider);
 
-      // 📐 REGLA A: EL TRAM JA HA ESTAT INICIAT (Mode Range per Long Press previ)
       if (currentSelection.mode == SelectionMode.range) {
         final Set<int> allWpIndexes = [
           ...recorded,
           ...imported,
         ].map((w) => w.trackIndex).toSet();
 
-        // Modifiquem el tram utilitzant la màquina d'estats del Notifier
         ref
             .read(elevationSelectionProvider.notifier)
             .toggleWaypoint(wpTrackIndex, allWpIndexes);
 
-        return; // 🛑 Sortim: Modificació de tram feta, no mostrem diàleg.
-      }
-      // 📐 REGLA B: NO HI HA CAP TRAM INICIAT (Mode Single / Pintem punt verd d'inspecció)
-      else {
-        // Cridem el mètode de Riverpod. L'oient superior s'encarregarà de pintar el punt verd automàticament.
+        return;
+      } else {
         ref
             .read(elevationSelectionProvider.notifier)
             .setSinglePoint(wpTrackIndex);
-
-        return; // 🛑 Sortim: Punt col·locat amb èxit, evitem diàleg informatiu.
+        return;
       }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // ℹ️ DIÀLEG ORDINARI (Només si el gràfic està tancat / minimitzat)
-    // ─────────────────────────────────────────────────────────────────────────
     Duration? elapsed;
     final track = wpId.startsWith('rec_')
         ? ref.read(trackRecordingProvider)
         : ref.read(importedTrackProvider);
+
     if (track != null && track.timestamps.isNotEmpty && waypoint.time != null) {
       elapsed = waypoint.time!.difference(track.timestamps.first);
     }
+
     if (mounted) {
       AppMessages.showWaypointDetails(context, ref, waypoint, elapsed);
     }
@@ -412,12 +392,10 @@ class _MapScreenState extends ConsumerState<MapScreen>
   Widget build(BuildContext context) {
     final double systemBottomPadding = MediaQuery.of(context).padding.bottom;
 
-    // 📊 LECTURA D'ESTATS REACTIUS DE LA INTERFÍCIE (HUD / APPBAR)
     final pressure = ref.watch(barometerProvider).value;
     final isRunning = ref.watch(locationProvider.notifier).isSimulationRunning;
     final isPaused = ref.watch(locationProvider.notifier).isSimulationPaused;
     final trackSettings = ref.watch(trackSettingsProvider);
-
     // ─────────────────────────────────────────────────────────────
     // 🛡️ RECEPTORS I OIENTS DE SEGUIDAMENT ASÍNCRON
     ref.listen(elevationSelectionProvider, (previous, next) {
@@ -434,28 +412,22 @@ class _MapScreenState extends ConsumerState<MapScreen>
       if (!_isChartCollapsed) {
         final geom = MapGeometryHelper(ref: ref, mapController: mapController);
 
-        // Determinem quin és l'índex d'inici real: el de tram o el del punt únic
         final int? indexIniciUnificat =
             next.startTrackIndex ?? next.singlePointIndex;
 
         setChartInteractionGeometry(
           mapController!,
-          // 🟢 ARA EL PUNT VERD s'il·lumina tant per a punts únics com per a inici de trams
           rangeStartCoords: geom.getCoordsFromGlobalIndex(indexIniciUnificat),
           rangeEndCoords: geom.getCoordsFromGlobalIndex(next.endTrackIndex),
-          // 🚫 El taronja (hoverCoords) es passa a null de manera permanent perquè quedi desactivat
           hoverCoords: null,
         );
       }
     });
 
-    // 🛰️ OIENT 1: POSICIÓ DE L'USUARI (Unificat amb la teva regla d'exclusivitat)
+    // 🛰️ OIENT 1: POSICIÓ DE L’USUARI
     ref.listen<UserPosition?>(locationProvider, (prev, next) async {
       if (!styleInitialized || mapController == null || next == null) return;
 
-      // 🟢 LA TEVA REGLA D'EXCLUSIVITAT:
-      // Si estem gravant de forma activa, demana-li al motor del track que mogui el cercle.
-      // Si està en pausa, en idle o prové de la caché, l'oient del GPS lliure mou la icona síncronament.
       final recState = ref.read(trackRecordingProvider).recordingState;
       if (recState != RecordingState.recording) {
         mapController?.setGeoJsonSource("user_location", {
@@ -487,9 +459,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
       if (isImportingGpx) return;
 
-      // 🟢 DETECTOR DE SINAL REAL (ANTI-BLOQUEIG DE MEMÒRIA CAU):
-      // Si és un senyal vàlid del satèl·lit (accuracy < 100) i encara no hem fet el primer zoom de la sessió,
-      // la càmera llisca de forma fluida i automàtica des de la posició de caché cap a la posició real.
       final bool isRealSignal = next.accuracy < 100.0;
 
       if (!hasDoneFirstFixZoom && isRealSignal) {
@@ -503,21 +472,18 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
         Future.delayed(const Duration(milliseconds: 300), () {
           if (mounted) {
-            setState(() {
-              isProgrammaticMove = false;
-            });
+            setState(() => isProgrammaticMove = false);
           }
         });
         return;
       }
 
-      // 3. SmartCenter (Seguiment actiu en ruta lliure)
-      // Afegim '&& recState != RecordingState.paused' per congelar la càmera durant els descansos.
       if (smartCenterEnabled &&
           !isProgrammaticMove &&
           isRealSignal &&
           recState != RecordingState.paused) {
         double distanceSinceLastMove = 999.0;
+
         if (_lastCameraCenter != null) {
           distanceSinceLastMove = calculateDistanceManual(
             _lastCameraCenter!.latitude,
@@ -537,20 +503,17 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
           Future.delayed(const Duration(milliseconds: 600), () {
             if (mounted) {
-              setState(() {
-                isProgrammaticMove = false;
-              });
+              setState(() => isProgrammaticMove = false);
             }
           });
         }
       }
     });
 
-    // 📊 OIENT 2: GRAVACIÓ FÍSICA (LÍNIA I TRAMS ANIMATS UNIFICATS)
+    // 📊 OIENT 2: GRAVACIÓ FÍSICA
     ref.listen<Track>(trackRecordingProvider, (prev, next) {
       if (!styleInitialized || mapController == null) return;
 
-      // 🟢 AFECTAT PER LA REGLA SIMÈTRICA: El track només mou geometries si està gravant actiu
       if (next.recordingState == RecordingState.recording) {
         mapAnimator.updateFromTrack(next, !smartCenterEnabled);
       }
@@ -576,9 +539,15 @@ class _MapScreenState extends ConsumerState<MapScreen>
         );
       }
     });
-    // OIENT 3: SET DE CAPES DEL TRACK IMPORTAT (GPX PROGRESSIU)
+
+    // OIENT 3: TRACK IMPORTAT
     ref.listen<Track?>(importedTrackProvider, (prev, next) {
       if (!styleInitialized || mapController == null) return;
+      // 🔥 MOSTRAR AUTOMÀTICAMENT EL PANELL D’ELEVACIONS
+      if (next != null && next.coordinates.isNotEmpty) {
+        setState(() => _isChartCollapsed = false);
+        _updateMapPaddingValue();
+      }
 
       if (next == null) {
         setState(() {
@@ -586,15 +555,15 @@ class _MapScreenState extends ConsumerState<MapScreen>
           selectedIndexStart = null;
           selectedIndexEnd = null;
         });
+
         try {
           mapController!.setGeoJsonSource("imported_track", {
             "type": "FeatureCollection",
             "features": [],
           });
           setChartInteractionGeometry(mapController!);
-        } catch (e) {
-          debugPrint("⚠️ Error al netejar geometries en eliminar track: $e");
-        }
+        } catch (_) {}
+
         return;
       }
 
@@ -644,10 +613,11 @@ class _MapScreenState extends ConsumerState<MapScreen>
       }
     });
 
-    // OIENT 4: RECEPTORS DE REFRESC DE LES CAPES DE WAYPOINTS
+    // OIENT 4: WAYPOINTS
     ref.listen(waypointsProvider, (prev, next) async {
       if (!styleInitialized || !waypointLayersReady || mapController == null)
         return;
+
       updateWaypointSource(mapController!, 'waypoints_recorded_source', next);
       await animateWaypointAppearance(
         mapController!,
@@ -658,6 +628,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
     ref.listen(importedWaypointsProvider, (prev, next) async {
       if (!styleInitialized || !waypointLayersReady || mapController == null)
         return;
+
       updateWaypointSource(mapController!, 'waypoints_imported_source', next);
       await animateWaypointAppearance(
         mapController!,
@@ -665,11 +636,10 @@ class _MapScreenState extends ConsumerState<MapScreen>
       );
     });
 
-    // OIENT 5: ESTILS VISUALS DE CAPA
+    // OIENT 5: ESTILS VISUALS
     ref.listen(trackSettingsProvider, (previous, next) {
       if (mapController == null || !styleInitialized) return;
 
-      // A) Actualitza la línia (Ja ho feies)
       mapController!.setLayerProperties(
         "track_line_layer",
         LineLayerProperties(
@@ -680,7 +650,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
         ),
       );
 
-      // Sincronitza el fons de les fites rodones amb el nou color del track
       mapController!.setLayerProperties(
         "waypoints_recorded_layer",
         CircleLayerProperties(circleColor: next.color.toMapLibreColor()),
@@ -690,7 +659,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
     ref.listen(importedTrackSettingsProvider, (previous, next) {
       if (!styleInitialized || mapController == null) return;
 
-      // A) Actualitza la línia (Ja ho feies)
       mapController!.setLayerProperties(
         "imported_track_layer",
         LineLayerProperties(
@@ -701,14 +669,12 @@ class _MapScreenState extends ConsumerState<MapScreen>
         ),
       );
 
-      // Sincronitza el fons de les fites importades amb el nou color
       mapController!.setLayerProperties(
         "waypoints_imported_layer",
         CircleLayerProperties(circleColor: next.color.toMapLibreColor()),
       );
     });
-
-    // OIENT 6: GESTIÓ D'ALERTES I DIÀLEGS EN PANTALLA
+    // OIENT 6: ALERTES I DIÀLEGS
     ref.listen<NavigationState>(navigationProvider, (prev, next) {
       if (next.showBackOnTrackSnackbar == true) {
         AppMessages.showBackOnTrackPersistentSnackbar(context, ref);
@@ -717,11 +683,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
     });
 
     ref.listen<NavigationState>(navigationProvider, (prev, next) async {
-      // Reverse track dialog
       if (next.showReverseTrackDialog && !_isShowingReverseDialog) {
         _isShowingReverseDialog = true;
 
-        // 🔊 So 100% garantit (després del frame)
         WidgetsBinding.instance.addPostFrameCallback((_) {
           ref.read(navigationProvider.notifier).sounds.playReversedTrackSound();
         });
@@ -752,10 +716,11 @@ class _MapScreenState extends ConsumerState<MapScreen>
       }
     });
 
-    // 📐 CONTROL DE CÀRREGA DE SEGURETAT DE LA CÀMERA
+    // CONTROL DE CÀRREGA DE LA CÀMERA
     if (_initialCameraTarget == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
@@ -780,7 +745,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
               ),
         body: Stack(
           children: [
-            // 🗺️ CAPA 1: Visor del mapa MapLibre (Aïllat)
+            // 🗺️ CAPA 1: MAPA
             MapBaseLayer(
               initialCameraTarget: _initialCameraTarget!,
               initialZoom: _initialZoom,
@@ -803,15 +768,12 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 controller.onFeatureTapped.add(_onFeatureTapped);
               },
               onStyleLoaded: () async {
-                // 1. Llegim l'estat actual en fred de les SharedPreferences des de Riverpod
                 final trackSettings = ref.read(trackSettingsProvider);
                 final importedSettings = ref.read(
                   importedTrackSettingsProvider,
                 );
 
                 await setupUserLocationLayer(mapController!);
-
-                // Engeguem les capes dels Waypoints (Que ara neixen vectorials gràcies al teu canvi)
                 await setupWaypointLayers(mapController!);
 
                 setState(() {
@@ -819,7 +781,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   styleInitialized = true;
                 });
 
-                // Sincronitzem síncronament la línia I ELS CERCLES en néixer l'estil al mapa.
+                // TRACK PRINCIPAL
                 mapController!.setLayerProperties(
                   "track_line_layer",
                   LineLayerProperties(
@@ -836,7 +798,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   ),
                 );
 
-                // B) Track Importat i les seves fites
+                // TRACK IMPORTAT
                 mapController!.setLayerProperties(
                   "imported_track_layer",
                   LineLayerProperties(
@@ -854,13 +816,15 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 );
               },
             ),
-            // 🎯 NOU Pas 3: El reticle o mirilla central fixa de només lectura
+
+            // 🎯 RETICLE CENTRAL
             const MapSelectionReticle(),
 
-            // 🟢 NOU Pas 4: La pastilla superior esquerra que fa snap i gestiona l'inici/fi
+            // 🔘 BOTÓ SUPERIOR DE SELECCIÓ
             MapSelectionTopButton(mapController: mapController),
-            // 🎛️ CAPA 2: INTERFÍCIE FLOTANT HUD
-            if (!_fullScreen) ...[
+
+            // 🎛️ HUD SUPERIOR
+            if (!_fullScreen)
               MapTopControls(
                 mapController: mapController,
                 smartCenterEnabled: smartCenterEnabled,
@@ -868,6 +832,68 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 onAddWaypoint: () => _onAddWaypoint(context, ref),
               ),
 
+            // 🔥 **OPCIÓ A — PANELL D’ELEVACIONS ENGANXAT AL FONS**
+            if (!_isChartCollapsed)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 72 + MediaQuery.of(context).padding.bottom,
+                child: ElevationPanel(
+                  isCollapsed: _isChartCollapsed,
+                  onCollapseChanged: (collapsed) {
+                    setState(() => _isChartCollapsed = collapsed);
+                    _updateMapPaddingValue();
+                  },
+                ),
+              ),
+
+            // 🔘 BOTÓ DE L’EINA DE SELECCIÓ (es mou amb el panell)
+            if (!_isChartCollapsed)
+              Positioned(
+                right: 16,
+                bottom: _currentMapPadding + 16,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  decoration: BoxDecoration(
+                    color: ref.watch(mapSelectionToolProvider)
+                        ? const Color(0xFF4CAF50)
+                        : AppColors.iconBackgroundColor,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white10),
+                    boxShadow: ref.watch(mapSelectionToolProvider)
+                        ? [
+                            BoxShadow(
+                              color: const Color(0xFF4CAF50).withAlpha(100),
+                              blurRadius: 12,
+                              spreadRadius: 2,
+                            ),
+                          ]
+                        : [],
+                  ),
+                  child: GestureDetector(
+                    onTap: () {
+                      ref.read(mapSelectionToolProvider.notifier).toggle();
+                    },
+                    child: Container(
+                      width: 52,
+                      height: 52,
+                      alignment: Alignment.center,
+                      child: Icon(
+                        ref.watch(mapSelectionToolProvider)
+                            ? Icons.gps_fixed
+                            : Icons.gps_not_fixed,
+                        color: ref.watch(mapSelectionToolProvider)
+                            ? Colors.white
+                            : AppColors.iconForegroundColor,
+                        size: 26,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+            // 🎛️ BARRA INFERIOR (sense panell d’elevacions)
+            if (!_fullScreen)
               MapBottomControls(
                 isChartCollapsed: _isChartCollapsed,
                 systemBottomPadding: systemBottomPadding,
@@ -878,18 +904,14 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     _openNavigationControl(context, ref, hasTrack),
                 onHandleNavigationAction: _handleSendaNavigationAction,
                 onToggleChart: () {
-                  setState(() {
-                    _isChartCollapsed = !_isChartCollapsed;
-                  });
+                  setState(() => _isChartCollapsed = !_isChartCollapsed);
 
                   if (_isChartCollapsed) {
-                    // Neteja estat de selecció
                     ref
                         .read(elevationSelectionProvider.notifier)
                         .clearSelection();
-
                     ref.read(mapSelectionToolProvider.notifier).deactivate();
-                    // Atura pulsació de waypoints si el mapa ja està llest
+
                     if (styleInitialized && mapController != null) {
                       stopWaypointPulse(mapController!);
                     }
@@ -898,54 +920,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   _updateMapPaddingValue();
                 },
               ),
-              if (!_isChartCollapsed)
-                Positioned(
-                  right: 16,
-                  // Es desplaça cap amunt acompanyant automàticament l'alçada dinàmica del gràfic
-                  bottom: _currentMapPadding + 16,
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    decoration: BoxDecoration(
-                      // Si l'eina està encesa brilla en Verd Senda, si no manté el fons fosc ordinari
-                      color: ref.watch(mapSelectionToolProvider)
-                          ? const Color(0xFF4CAF50)
-                          : AppColors.iconBackgroundColor,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.white10),
-                      boxShadow: ref.watch(mapSelectionToolProvider)
-                          ? [
-                              BoxShadow(
-                                color: const Color(0xFF4CAF50).withAlpha(100),
-                                blurRadius: 12,
-                                spreadRadius: 2,
-                              ),
-                            ]
-                          : [],
-                    ),
-                    child: GestureDetector(
-                      onTap: () {
-                        // Commuta l'estat booleà a Riverpod de l'eina (on/off)
-                        ref.read(mapSelectionToolProvider.notifier).toggle();
-                      },
-                      child: Container(
-                        width: 52,
-                        height: 52,
-                        alignment: Alignment.center,
-                        child: Icon(
-                          // Canvia la icona per indicar si la visualització de la mira està activa
-                          ref.watch(mapSelectionToolProvider)
-                              ? Icons.gps_fixed
-                              : Icons.gps_not_fixed,
-                          color: ref.watch(mapSelectionToolProvider)
-                              ? Colors.white
-                              : AppColors.iconForegroundColor,
-                          size: 26,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-            ],
           ],
         ),
       ),
@@ -1020,28 +994,23 @@ class _MapScreenState extends ConsumerState<MapScreen>
   MapPadding _computeMapPadding(BuildContext context, bool hasTrack) {
     final media = MediaQuery.of(context);
 
-    // 1. Layout del panell inferior
     final layout = LayoutUtils.fromContext(
       context,
       isChartCollapsed: _isChartCollapsed,
     );
 
-    // 2. El gràfic és visible quan NO està col·lapsat i hi ha track
     final bool showChartData = !_isChartCollapsed && hasTrack;
 
-    // 3. Alçada real del gràfic (20% pantalla) o 0 si no és visible
     final double chartHeight = showChartData ? layout.chartHeight : 0;
 
-    // 4. Padding inferior real
     final double bottomPadding =
-        media.padding.bottom + // SafeArea bottom
-        AppDimensions.menuBarHeight + // MenuBar (72 px)
-        chartHeight + // Gràfic (si visible)
+        media.padding.bottom +
+        AppDimensions.menuBarHeight +
+        chartHeight +
         64 +
-        110; // Marges estructurals del panell
+        110;
 
-    // 5. Padding superior (igual que ja feies)
-    final double topPadding = 10;
+    const double topPadding = 10;
 
     return MapPadding(top: topPadding, bottom: bottomPadding);
   }
