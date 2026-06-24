@@ -8,7 +8,7 @@ class AppDimensions {
 
   // 📊 Panell d'Elevacions (Chart)
   /// Proporció d'alçada que ocupa el gràfic respecte a la pantalla total (20%).
-  static const double elevationChartHeightRatio = 0.20;
+  static const double elevationChartHeightRatio = 0.15;
 
   // 🛡️ Marges i Resguards
   /// Espai de seguretat visual extra per separar elements flotants sobre el mapa.

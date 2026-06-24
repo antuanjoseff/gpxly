@@ -20,8 +20,11 @@ import 'package:senda/notifiers/location_notifier.dart';
 import 'package:senda/notifiers/map_bearing_provider.dart';
 import 'package:senda/notifiers/map_selection_tool_notifier.dart';
 import 'package:senda/notifiers/navigation_notifier.dart';
+import 'package:senda/notifiers/nearest_track_point_notifier.dart';
 import 'package:senda/notifiers/permissions_notifier.dart';
 import 'package:senda/notifiers/recording_notifier.dart';
+import 'package:senda/notifiers/remaining_track_notifier.dart';
+import 'package:senda/notifiers/segment_stats_notifier.dart';
 import 'package:senda/notifiers/track_settings_notifier.dart';
 import 'package:senda/notifiers/waypoints_imported_notifier.dart';
 import 'package:senda/notifiers/waypoints_recorded_notifier.dart';
@@ -36,7 +39,6 @@ import 'package:senda/screens/main_map/widgets/map_bottom_controls/layout_utils.
 import 'package:senda/screens/main_map/widgets/map_bottom_controls/navigation_submenu.dart';
 import 'package:senda/screens/main_map/widgets/map_bottom_controls/recording_submenu.dart';
 import 'package:senda/screens/main_map/widgets/map_selection_reticle.dart';
-import 'package:senda/screens/main_map/widgets/map_selection_top_button.dart';
 import 'package:senda/screens/main_map/widgets/map_top_controls.dart';
 import 'package:senda/theme/app_colors.dart';
 
@@ -400,6 +402,16 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final isRunning = ref.watch(locationProvider.notifier).isSimulationRunning;
     final isPaused = ref.watch(locationProvider.notifier).isSimulationPaused;
     final trackSettings = ref.watch(trackSettingsProvider);
+    final stats = ref.watch(segmentStatsProvider);
+    final real = ref.watch(trackRecordingProvider);
+    final imported = ref.watch(importedTrackProvider);
+    final remaining = ref.watch(remainingTrackProvider);
+
+    final hasAnyTrack =
+        real.points.isNotEmpty ||
+        (imported?.points.isNotEmpty ?? false) ||
+        (remaining?.distances.isNotEmpty ?? false);
+
     // ─────────────────────────────────────────────────────────────
     // 🛡️ RECEPTORS I OIENTS DE SEGUIDAMENT ASÍNCRON
     ref.listen(elevationSelectionProvider, (previous, next) {
@@ -413,19 +425,17 @@ class _MapScreenState extends ConsumerState<MapScreen>
         stopWaypointPulse(mapController!);
       }
 
-      if (!_isChartCollapsed) {
-        final geom = MapGeometryHelper(ref: ref, mapController: mapController);
+      final geom = MapGeometryHelper(ref: ref, mapController: mapController);
 
-        final int? indexIniciUnificat =
-            next.startTrackIndex ?? next.singlePointIndex;
+      final int? indexIniciUnificat =
+          next.startTrackIndex ?? next.singlePointIndex;
 
-        setChartInteractionGeometry(
-          mapController!,
-          rangeStartCoords: geom.getCoordsFromGlobalIndex(indexIniciUnificat),
-          rangeEndCoords: geom.getCoordsFromGlobalIndex(next.endTrackIndex),
-          hoverCoords: null,
-        );
-      }
+      setChartInteractionGeometry(
+        mapController!,
+        rangeStartCoords: geom.getCoordsFromGlobalIndex(indexIniciUnificat),
+        rangeEndCoords: geom.getCoordsFromGlobalIndex(next.endTrackIndex),
+        hoverCoords: null,
+      );
     });
 
     // 🛰️ OIENT 1: POSICIÓ DE L’USUARI
@@ -550,7 +560,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
       // 🔥 MOSTRAR AUTOMÀTICAMENT EL PANELL D’ELEVACIONS
       if (next != null && next.coordinates.isNotEmpty) {
         setState(() => _isChartCollapsed = false);
-        _updateMapPaddingValue();
       }
 
       if (next == null) {
@@ -594,6 +603,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
       });
 
       final importedSettings = ref.read(importedTrackSettingsProvider);
+
       mapController!.setLayerProperties(
         "imported_track_layer",
         LineLayerProperties(
@@ -771,7 +781,11 @@ class _MapScreenState extends ConsumerState<MapScreen>
                       ref
                           .read(mapCenterLatProvider.notifier)
                           .update(position.target.latitude);
+                      ref
+                          .read(mapCenterLonProvider.notifier)
+                          .update(position.target.longitude);
                     },
+
                     onMapCreated: (controller) {
                       mapController = controller;
                       mapAnimator = MapAnimator(controller);
@@ -787,7 +801,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
                         importedTrackSettingsProvider,
                       );
 
-                      // 1. Inicializamos las fuentes y capas base de forma segura
                       await setupUserLocationLayer(mapController!);
                       await setupWaypointLayers(mapController!);
 
@@ -796,21 +809,19 @@ class _MapScreenState extends ConsumerState<MapScreen>
                         styleInitialized = true;
                       });
 
-                      // 2. CONFIGURACIÓN CORRECTA DEL TRACK PRINCIPAL (LÍNEAS VECTORIALES)
                       mapController!.setLayerProperties(
                         "track_line_layer",
                         LineLayerProperties(
                           lineColor:
                               trackSettings.color.toMapLibreColor().isNotEmpty
                               ? trackSettings.color.toMapLibreColor()
-                              : "#FF0000", // Fallback de seguridad si viene vacío
+                              : "#FF0000",
                           lineWidth: trackSettings.width,
                           lineCap: "round",
                           lineJoin: "round",
                         ),
                       );
 
-                      // 3. CONFIGURACIÓN CORRECTA DEL TRACK IMPORTADO (LÍNEAS VECTORIALES)
                       mapController!.setLayerProperties(
                         "imported_track_layer",
                         LineLayerProperties(
@@ -819,7 +830,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                                   .toMapLibreColor()
                                   .isNotEmpty
                               ? importedSettings.color.toMapLibreColor()
-                              : "#00A8E8", // Fallback de seguridad si viene vacío
+                              : "#00A8E8",
                           lineWidth: importedSettings.width,
                           lineCap: "round",
                           lineJoin: "round",
@@ -828,13 +839,28 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     },
                   ),
 
-                  // 🎯 RETICLE CENTRAL
-                  const MapSelectionReticle(),
+                  // 🎯 RETICLE CONTROLAT PEL PROVIDER
+                  Consumer(
+                    builder: (context, ref, _) {
+                      final sel = ref.watch(elevationSelectionProvider);
 
-                  // 🔘 BOTÓ SUPERIOR DE SELECCIÓ
-                  MapSelectionTopButton(mapController: mapController),
+                      if (sel.mapToolState ==
+                              MapSelectionToolState.selectingStart ||
+                          sel.mapToolState ==
+                              MapSelectionToolState.selectingEnd) {
+                        return const Positioned.fill(
+                          child: IgnorePointer(
+                            ignoring: true,
+                            child: Center(child: MapSelectionReticle()),
+                          ),
+                        );
+                      }
 
-                  // 🎛️ HUD SUPERIOR
+                      return const SizedBox.shrink();
+                    },
+                  ),
+
+                  // 🎛️ HUD SUPERIOR (es manté igual)
                   if (!_fullScreen)
                     MapTopControls(
                       mapController: mapController,
@@ -843,7 +869,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                       onAddWaypoint: () => _onAddWaypoint(context, ref),
                     ),
 
-                  // 🔥 **OPCIÓ A — PANELL D’ELEVACIONS ENGANXAT AL FONS**
+                  // 🔥 PANELL D’ELEVACIONS
                   if (!_isChartCollapsed)
                     Positioned(
                       left: 0,
@@ -853,59 +879,148 @@ class _MapScreenState extends ConsumerState<MapScreen>
                         isCollapsed: _isChartCollapsed,
                         onCollapseChanged: (collapsed) {
                           setState(() => _isChartCollapsed = collapsed);
-                          _updateMapPaddingValue();
+
+                          if (collapsed) {
+                            ref
+                                .read(elevationSelectionProvider.notifier)
+                                .userCollapsedChart();
+                          } else {
+                            ref
+                                .read(elevationSelectionProvider.notifier)
+                                .userOpenedChart();
+                          }
                         },
+
+                        // 🔥 Ara sí: dades reals del notifier
+                        distanceMeters: stats.distanceMeters,
+                        timeElapsedStr: stats.timeElapsedStr,
+                        avgSpeedStr: stats.avgSpeedStr,
+                        ascentMeters: stats.ascentMeters,
+                        descentMeters: stats.descentMeters,
                       ),
                     ),
 
-                  // 🔘 BOTÓ DE L’EINA DE SELECCIÓ (es mou amb el panell)
-                  if (!_isChartCollapsed)
-                    Positioned(
-                      right: 16,
-                      bottom: _currentMapPadding + 16,
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        decoration: BoxDecoration(
-                          color: ref.watch(mapSelectionToolProvider)
-                              ? const Color(0xFF4CAF50)
-                              : AppColors.iconBackgroundColor,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.white10),
-                          boxShadow: ref.watch(mapSelectionToolProvider)
-                              ? [
-                                  BoxShadow(
-                                    color: const Color(
-                                      0xFF4CAF50,
-                                    ).withAlpha(100),
-                                    blurRadius: 12,
-                                    spreadRadius: 2,
-                                  ),
-                                ]
-                              : [],
-                        ),
-                        child: GestureDetector(
-                          onTap: () {
-                            ref
-                                .read(mapSelectionToolProvider.notifier)
-                                .toggle();
-                          },
-                          child: Container(
-                            width: 52,
-                            height: 52,
-                            alignment: Alignment.center,
-                            child: Icon(
-                              ref.watch(mapSelectionToolProvider)
-                                  ? Icons.gps_fixed
-                                  : Icons.gps_not_fixed,
-                              color: ref.watch(mapSelectionToolProvider)
-                                  ? Colors.white
-                                  : AppColors.iconForegroundColor,
-                              size: 26,
-                            ),
+                  // 🎯 Dins de l'Stack principal de la teva pantalla:
+                  // 🎯 Dins de l'Stack principal de la pantalla del teu mapa:
+                  Consumer(
+                    builder: (context, ref, _) {
+                      final sel = ref.watch(elevationSelectionProvider);
+
+                      // 1. Llegim l'alçada de la barra de menú des de les teves constants (72.0)
+                      const double menuHeight = AppDimensions.menuBarHeight;
+
+                      // 2. Calculem l'alçada exacta del gràfic usant la proporció oficial (0.15 -> 15% de la pantalla)
+                      final double screenHeight = MediaQuery.sizeOf(
+                        context,
+                      ).height;
+                      final double chartHeight =
+                          screenHeight *
+                          AppDimensions.elevationChartHeightRatio;
+
+                      // 3. Calculem l'offset vertical exacte lligat a les constants corporatives
+                      final double bottomOffset = _isChartCollapsed
+                          ? menuHeight + AppDimensions.mapSafetyPadding
+                          : menuHeight +
+                                chartHeight +
+                                AppDimensions.mapSafetyPadding;
+
+                      // A. Si l'eina està en OFF: Mostrem només les Tisores
+                      if (sel.mapToolState == MapSelectionToolState.off) {
+                        return AnimatedPositioned(
+                          duration: const Duration(milliseconds: 250),
+                          right: 16,
+                          bottom: bottomOffset,
+                          child: FloatingActionButton(
+                            heroTag: "btn_tisores",
+                            backgroundColor: Colors.white,
+                            foregroundColor: Theme.of(context).primaryColor,
+                            child: const Icon(Icons.content_cut),
+                            onPressed: () {
+                              ref
+                                  .read(elevationSelectionProvider.notifier)
+                                  .activateMapSelectionTool();
+                            },
                           ),
+                        );
+                      }
+
+                      // B. Si l'eina està en ON: Textos i icones d'edició
+                      String label;
+                      IconData icon;
+                      switch (sel.mapToolState) {
+                        case MapSelectionToolState.selectingStart:
+                          label = "Fixar inici";
+                          icon = Icons.my_location;
+                          break;
+                        case MapSelectionToolState.selectingEnd:
+                          label = "Fixar final";
+                          icon = Icons.flag;
+                          break;
+                        case MapSelectionToolState.selected:
+                          label = "Reiniciar";
+                          icon = Icons.restart_alt;
+                          break;
+                        default:
+                          label = "";
+                          icon = Icons.help_outline;
+                      }
+
+                      // Retornem el Row horitzontal simètric
+                      return AnimatedPositioned(
+                        duration: const Duration(milliseconds: 250),
+                        right: 16,
+                        bottom: bottomOffset,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            FloatingActionButton(
+                              heroTag: "btn_cancel_tool",
+                              mini: true,
+                              backgroundColor: Colors.white,
+                              foregroundColor: Colors.redAccent,
+                              child: const Icon(Icons.close),
+                              onPressed: () {
+                                ref
+                                    .read(elevationSelectionProvider.notifier)
+                                    .deactivateMapSelectionTool();
+                              },
+                            ),
+                            const SizedBox(
+                              width: AppDimensions.verticalSpacing,
+                            ), // 12px de separació corporativa
+                            FloatingActionButton.extended(
+                              heroTag: "btn_action_tool",
+                              backgroundColor: Theme.of(context).primaryColor,
+                              foregroundColor: Colors.white,
+                              icon: Icon(icon),
+                              label: Text(label),
+                              onPressed: () {
+                                final notifier = ref.read(
+                                  elevationSelectionProvider.notifier,
+                                );
+                                final nearest = ref.read(
+                                  nearestTrackPointProvider,
+                                );
+                                switch (sel.mapToolState) {
+                                  case MapSelectionToolState.selectingStart:
+                                    notifier.fixStartFromMap(nearest);
+                                    break;
+                                  case MapSelectionToolState.selectingEnd:
+                                    notifier.fixEndFromMap(nearest);
+                                    break;
+                                  case MapSelectionToolState.selected:
+                                    notifier.resetMapSelection();
+                                    break;
+                                  default:
+                                    break;
+                                }
+                              },
+                            ),
+                          ],
                         ),
-                      ),
-                    ),
+                      );
+                    },
+                  ),
 
                   // RECORDING SUB MENU
                   AnimatedPositioned(
@@ -926,6 +1041,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                       ),
                     ),
                   ),
+
                   // NAVIGATION SUB MENU
                   AnimatedPositioned(
                     duration: const Duration(milliseconds: 220),
@@ -987,7 +1103,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
                       stopWaypointPulse(mapController!);
                     }
                   }
-                  _updateMapPaddingValue();
                 },
 
                 // 🔥 NOU
@@ -1055,34 +1170,5 @@ class _MapScreenState extends ConsumerState<MapScreen>
         ref.read(mapSelectionToolProvider.notifier).deactivate();
         break;
     }
-  }
-
-  void _updateMapPaddingValue() {
-    if (!mounted) return;
-
-    final importedTrack = ref.read(importedTrackProvider);
-    final bool hasTrack =
-        importedTrack != null && importedTrack.coordinates.isNotEmpty;
-
-    final layout = LayoutUtils.fromContext(
-      context,
-      isChartCollapsed: _isChartCollapsed,
-    );
-
-    setState(() {
-      if (hasTrack && layout.isPanelActive) {
-        final double screenHeight = MediaQuery.of(context).size.height;
-        final double calculatedChartHeight =
-            screenHeight * AppDimensions.elevationChartHeightRatio;
-
-        _currentMapPadding =
-            calculatedChartHeight +
-            AppDimensions.menuBarHeight +
-            AppDimensions.mapSafetyPadding;
-      } else {
-        _currentMapPadding =
-            AppDimensions.menuBarHeight + MediaQuery.of(context).padding.bottom;
-      }
-    });
   }
 }

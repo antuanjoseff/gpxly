@@ -20,3 +20,7 @@ final mapZoomProvider = NotifierProvider<GpsSpeedNotifier, double>(
 final mapCenterLatProvider = NotifierProvider<GpsSpeedNotifier, double>(
   GpsSpeedNotifier.new,
 );
+
+final mapCenterLonProvider = NotifierProvider<GpsSpeedNotifier, double>(
+  GpsSpeedNotifier.new,
+);

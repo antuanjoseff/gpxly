@@ -1,27 +1,27 @@
-// lib/screens/main_map/widgets/map_selection_reticle.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:senda/notifiers/map_selection_tool_notifier.dart';
+import 'package:senda/notifiers/elevation_selection_provider.dart';
 
 class MapSelectionReticle extends ConsumerWidget {
   const MapSelectionReticle({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Escuitem si l'eina està activada de forma explícita per l'usuari
-    final bool isToolActive = ref.watch(mapSelectionToolProvider);
+    final sel = ref.watch(elevationSelectionProvider);
 
-    // Si està apagada, el giny esdevé totalment invisible i no ocupa espai
-    if (!isToolActive) return const SizedBox.shrink();
+    // Només mostrem el reticle quan l’eina està activa
+    if (sel.mapToolState != MapSelectionToolState.selectingStart &&
+        sel.mapToolState != MapSelectionToolState.selectingEnd) {
+      return const SizedBox.shrink();
+    }
 
     return const IgnorePointer(
-      // Evita interceptar els gestos del dit perquè el mapa de sota es pugui moure
+      ignoring: true,
       child: Center(
         child: Icon(
-          Icons.center_focus_strong, // Reticle de precisió clàssic estil Senda
+          Icons.center_focus_strong,
           size: 44,
-          color: Color(0xFF4CAF50), // El teu verd corporatiu sòlid
+          color: Color(0xFF4CAF50),
         ),
       ),
     );

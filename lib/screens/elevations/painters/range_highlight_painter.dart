@@ -71,24 +71,15 @@ class RangeAreaPainter extends CustomPainter {
     final chartHeight = size.height - bottomReserved - topReserved;
     final xAxisY = topReserved + chartHeight;
 
-    // 2) Lògica d'escalat vertical de cotes (La teva fórmula exacta de Senda)
+    // 2) 🎯 SINCRO COMPLETA: Copiem exactament la fórmula compacta de Senda unificada
     final double minAlt = altitudes.reduce((a, b) => a < b ? a : b);
     final double maxAlt = altitudes.reduce((a, b) => a > b ? a : b);
     final double diff = (maxAlt - minAlt).abs();
 
-    double exaggeration = 1.0;
-    if (diff < 30) {
-      exaggeration = 1.8;
-    } else if (diff < 60) {
-      exaggeration = 1.4;
-    } else if (diff < 100) {
-      exaggeration = 1.2;
-    }
-
-    final effectiveRange = diff < 50 ? 50 : diff;
-    final minY = minAlt - (effectiveRange * 0.3 * exaggeration);
-
-    final maxY = minY + (effectiveRange * 1.62 * exaggeration);
+    // Marge idèntic del 10% a baix i 15% a dalt
+    final double paddingRange = diff < 10 ? 10 : diff;
+    final minY = minAlt - (paddingRange * 0.10);
+    final maxY = maxAlt + (paddingRange * 0.15);
     final yRange = maxY - minY;
 
     final usableWidth = size.width;

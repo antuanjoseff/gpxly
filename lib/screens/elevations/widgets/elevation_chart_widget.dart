@@ -1,7 +1,8 @@
+// lib/screens/elevations/widgets/elevation_chart_widget.dart (BLOC 1 DE 3)
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:senda/screens/elevations/painters/range_highlight_painter.dart';
+import 'dart:math' as math;
 import 'package:senda/screens/elevations/painters/selection_painter.dart';
 import 'package:senda/screens/elevations/utils/chart_utils.dart';
 import 'package:senda/theme/app_colors.dart';
@@ -97,21 +98,13 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
     final maxAlt = globalAlts.reduce((a, b) => a > b ? a : b);
     final diff = (maxAlt - minAlt).abs();
 
-    double exaggeration = 1.0;
-    if (diff < 30) {
-      exaggeration = 1.8;
-    } else if (diff < 60) {
-      exaggeration = 1.4;
-    } else if (diff < 100) {
-      exaggeration = 1.2;
-    }
+    final double paddingRange = diff < 10 ? 10 : diff;
 
-    final effectiveRange = diff < 50 ? 50 : diff;
-    final forcedMinY = minAlt - (effectiveRange * 0.3 * exaggeration);
-    final forcedMaxY = forcedMinY + (effectiveRange * 1.62 * exaggeration);
+    // 🚀 COIXÍ DE SEGURETAT SUPERIOR: Deixem un 35% lliure al sostre per als tooltips fixos
+    final forcedMinY = minAlt - (paddingRange * 0.10);
+    final forcedMaxY = maxAlt + (paddingRange * 0.35);
 
-    // 🚀 UNIFICACIÓ TOTAL DE LA GRAELLA: Marges únics compartits per a les 3 capes
-    const double globalTopReserved = 8.0;
+    const double globalTopReserved = 28.0;
     const double globalBottomReserved = 16.0;
 
     final maxDist = globalDists.last > 0 ? globalDists.last : 1.0;
@@ -119,8 +112,6 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        // 🟢 AFACCIÓ CRÍTICA: Llegim l'alçada real del contenidor calculat al 20%
-        final height = constraints.maxHeight;
 
         double mapX(double dist) {
           if (maxDist == 0) return 0;
@@ -141,7 +132,7 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
         final endX = endIdx >= 0 ? mapX(globalDists[endIdx]) : null;
 
         final currentMode = ref.watch(elevationSelectionProvider).mode;
-
+        // lib/screens/elevations/widgets/elevation_chart_widget.dart (BLOC 2 DE 3)
         return GestureDetector(
           behavior: HitTestBehavior.translucent,
           onLongPressStart: (_) {
@@ -155,7 +146,6 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
               totalPoints - 1,
             );
 
-            // 🔧 AIXÒ ÉS L’ÚNIC QUE CAL CANVIAR
             ref
                 .read(elevationSelectionProvider.notifier)
                 .setManualRange(sIdx, eIdx);
@@ -168,7 +158,6 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
               _draggingNeedle = -1;
             });
           },
-
           onTapUp: (details) {
             final x = details.localPosition.dx;
             final touchedStart = startX != null && (x - startX).abs() < 30;
@@ -223,15 +212,13 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
             final x = details.localPosition.dx;
             final idx = ChartLogic.calculateIndexFromX(x, width, globalDists);
 
-            // 1. ACTUALITZACIÓ LOCALS DE LES AGULLES (Sempre a màxima taxa de refresc)
             if (_draggingNeedle == 1) {
               final actualEnd = endIdx >= 0 ? endIdx : idx;
               setState(() {
                 if (idx > actualEnd) {
                   _localStartIdx = actualEnd;
                   _localEndIdx = idx;
-                  _draggingNeedle =
-                      2; // Commuta a l'agulla de la dreta (anti-swap)
+                  _draggingNeedle = 2;
                 } else {
                   _localStartIdx = idx;
                   _localEndIdx = actualEnd;
@@ -243,8 +230,7 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
                 if (idx < actualStart) {
                   _localStartIdx = idx;
                   _localEndIdx = actualStart;
-                  _draggingNeedle =
-                      1; // Commuta a l'agulla de l'esquerra (anti-swap)
+                  _draggingNeedle = 1;
                 } else {
                   _localStartIdx = actualStart;
                   _localEndIdx = idx;
@@ -256,8 +242,6 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
               });
             }
 
-            // 2. FILTRE THROTTLE: Notificació controlada a Riverpod cada 32ms
-            // Així les agulles van fines com la seda i evitem col·lapsar la CPU amb els desnivells
             final now = DateTime.now();
             if (now.difference(_lastThrottleTime).inMilliseconds >=
                 _throttleDurationMs) {
@@ -276,7 +260,6 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
               }
             }
           },
-
           onPanEnd: (_) {
             if (_localStartIdx != null &&
                 _localEndIdx != null &&
@@ -293,22 +276,16 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
             setState(() => _draggingNeedle = -1);
           },
           onPanCancel: () => setState(() => _draggingNeedle = -1),
-
-          // 📐 EL NUCLI SÍNCRON: Eliminem el Padding exterior d'un sol component.
-          // Totes les 3 capes comparteixen exactament el mateix Positioned.fill horitzontal.
           child: Stack(
             children: [
-              // 🔥 Capa blanca sota les etiquetes de l’eix X
               Positioned(
                 left: 0,
                 right: 0,
                 bottom: 0,
-                height:
-                    globalBottomReserved, // el mateix reservedSize que uses a bottomTitles
+                height: globalBottomReserved,
                 child: Container(color: Colors.white),
               ),
-
-              // Capa 1: El gràfic de línies de fons de FL Chart
+              // Capa 1: El gràfic de línies de fons de FL Chart (Amb fons gris)
               Positioned.fill(
                 child: LineChart(
                   _buildChartData(
@@ -319,7 +296,6 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
                     futureDists: safeFutureDists,
                     trackColor: widget.realColor,
                     importedTrackColor: widget.importedColor,
-                    // 🚀 UNITAT TOTAL: Enviem forcedMinY i forcedMaxY calculats amb exageració
                     forcedMinY: forcedMinY,
                     forcedMaxY: forcedMaxY,
                     maxDist: maxDist,
@@ -328,28 +304,7 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
                   ),
                 ),
               ),
-
-              // Capa 2: El polígon de ressaltat degradat (Sincronia perfecta a sobre de la línia)
-              if (startIdx >= 0 &&
-                  endIdx >= 0 &&
-                  currentMode == SelectionMode.range)
-                Positioned.fill(
-                  child: CustomPaint(
-                    painter: RangeAreaPainter(
-                      startIndex: startIdx,
-                      endIndex: endIdx,
-                      distances: globalDists,
-                      altitudes: globalAlts,
-                      realPointsCount: safePastDists.length,
-                      trackColor: widget.realColor,
-                      topReserved: globalTopReserved, // 👈 Mateixos píxels
-                      bottomReserved:
-                          globalBottomReserved, // 👈 Mateixos píxels
-                    ),
-                  ),
-                ),
-
-              // Capa 3: Les agulles verticals, nodes geomètrics i bafarades (Sincronia perfecta)
+              // Capa 2: Les agulles verticals i bafarades simètriques fixes/mòbils del SelectionPainter
               Positioned.fill(
                 child: CustomPaint(
                   painter: SelectionPainter(
@@ -370,8 +325,8 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
                         widget.importedWaypointGlobalDists,
                     recordedWaypointColor: AppColors.recordingTrackColor,
                     importedWaypointColor: AppColors.routeTrackColor,
-                    topReserved: globalTopReserved, // 👈 Mateixos píxels
-                    bottomReserved: globalBottomReserved, // 👈 Mateixos píxels
+                    topReserved: globalTopReserved,
+                    bottomReserved: globalBottomReserved,
                   ),
                 ),
               ),
@@ -382,6 +337,7 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
     );
   }
 
+  // lib/screens/elevations/widgets/elevation_chart_widget.dart (BLOC 3 DE 3)
   LineChartData _buildChartData({
     required BuildContext context,
     required List<double> pastAlts,
@@ -395,9 +351,7 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
     required double maxDist,
     required double topReservedSize,
     required double bottomReservedSize,
-    // 🟢 ELIMINADOS: Ya no necesitas pasar 'safePastLength' ni 'safeFutureLength' desde fuera
   }) {
-    // 📊 Determinamos las longitudes seguras emparejando distancias y altitudes
     final int safePastCount = (pastDists.length == pastAlts.length)
         ? pastDists.length
         : 0;
@@ -413,6 +367,28 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
         FlSpot(futureDists[i], futureAlts[i]),
     ];
 
+    final List<FlSpot> allSpots = [...pastSpots, ...futureSpots];
+    final currentSelection = ref.read(elevationSelectionProvider);
+    final int? sIdx = currentSelection.startTrackIndex;
+    final int? eIdx = currentSelection.endTrackIndex;
+    final bool showRangeArea =
+        currentSelection.mode == SelectionMode.range &&
+        sIdx != null &&
+        eIdx != null;
+
+    final List<FlSpot> rangeSelectedSpots = [];
+    if (showRangeArea && allSpots.isNotEmpty) {
+      final startClamp = sIdx!.clamp(0, allSpots.length - 1);
+      final endClamp = eIdx!.clamp(0, allSpots.length - 1);
+      final int actualStart = startClamp < endClamp ? startClamp : endClamp;
+      final int actualEnd = startClamp > endClamp ? startClamp : endClamp;
+
+      for (int i = actualStart; i <= actualEnd; i++) {
+        rangeSelectedSpots.add(allSpots[i]);
+      }
+    }
+
+    // 🚀 LÍNIES FINES NETES: Cap d'elles pintarà un degradat individual propi
     LineChartBarData buildBar(List<FlSpot> spots, Color color) {
       return LineChartBarData(
         spots: spots,
@@ -423,12 +399,7 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
         barWidth: 3,
         dotData: const FlDotData(show: false),
         color: color,
-        belowBarData: BarAreaData(
-          show: true,
-          color: color.withAlpha(28),
-          cutOffY: forcedMinY,
-          applyCutOffY: true,
-        ),
+        belowBarData: BarAreaData(show: false),
       );
     }
 
@@ -436,6 +407,9 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
       minY: forcedMinY,
       maxY: forcedMaxY,
       minX: 0,
+      backgroundColor: Colors.grey.shade100.withAlpha(
+        130,
+      ), // Fons translúcid elegant de control
       maxX: maxDist,
       gridData: const FlGridData(show: false),
       borderData: FlBorderData(show: false),
@@ -460,7 +434,6 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
             interval: maxDist > 0 ? maxDist / 2 : 1.0,
             getTitlesWidget: (value, meta) {
               if (value > maxDist + 0.1) return const SizedBox();
-
               final isFirst = value == 0;
               final isLast = (maxDist - value).abs() < 0.001;
 
@@ -479,7 +452,7 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
               Widget label = Container(
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.white, // 🔥 FONS BLANC
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: RichText(
@@ -500,7 +473,6 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
                 ),
               );
 
-              // 🔥 Primer i últim també amb fons blanc
               if (isFirst || isLast) {
                 final tp = TextPainter(
                   text: TextSpan(
@@ -509,22 +481,18 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
                   ),
                   textDirection: TextDirection.ltr,
                 )..layout();
-
                 double dx = isFirst
                     ? (tp.width / 2) + 4.0
                     : -(tp.width / 2) - 4.0;
-
                 return SideTitleWidget(
                   meta: meta,
                   space: 2,
                   child: Transform.translate(
                     offset: Offset(dx, 0),
-                    child: label, // 🔥 Ara també amb fons blanc
+                    child: label,
                   ),
                 );
               }
-
-              // 🔥 Etiquetes normals (ja tenien fons blanc)
               return SideTitleWidget(meta: meta, space: 2, child: label);
             },
           ),
@@ -532,6 +500,43 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
       ),
       lineTouchData: const LineTouchData(enabled: false),
       lineBarsData: [
+        // 🚀 CAPA DE FONS 1: DEGRADAT ÚNIC GENERAL (Es desactiva automàticament en seleccionar)
+        if (!showRangeArea && allSpots.isNotEmpty)
+          LineChartBarData(
+            spots: allSpots,
+            isCurved: true,
+            curveSmoothness: 0.3,
+            preventCurveOverShooting: true,
+            barWidth: 0,
+            dotData: const FlDotData(show: false),
+            belowBarData: BarAreaData(
+              show: true,
+              color: trackColor.withAlpha(28),
+              cutOffY: forcedMinY,
+              applyCutOffY: true,
+            ),
+          ),
+        // 🚀 CAPA DE FONS 2: DEGRADAT ÚNIC DEL RANG SELECCIONAT (S'encén de forma paral·lela)
+        if (showRangeArea && rangeSelectedSpots.isNotEmpty)
+          LineChartBarData(
+            spots: rangeSelectedSpots,
+            isCurved: true,
+            curveSmoothness: 0.3,
+            preventCurveOverShooting: true,
+            barWidth: 0,
+            dotData: const FlDotData(show: false),
+            belowBarData: BarAreaData(
+              show: true,
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [trackColor.withAlpha(191), trackColor.withAlpha(38)],
+              ),
+              cutOffY: forcedMinY,
+              applyCutOffY: true,
+            ),
+          ),
+        // 🚀 CAPA SUPERIOR: LES LÍNIES FINES DE COLOR
         if (pastSpots.isNotEmpty) buildBar(pastSpots, trackColor),
         if (futureSpots.isNotEmpty) buildBar(futureSpots, importedTrackColor),
       ],

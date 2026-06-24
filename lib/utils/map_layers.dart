@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:senda/models/waypoint.dart';
 import 'package:senda/notifiers/dem_bounds_notifier.dart';
+import 'package:senda/notifiers/elevation_selection_provider.dart';
 import 'package:senda/theme/app_colors.dart';
 
 Timer? _waypointPulseTimer;
@@ -505,5 +506,27 @@ Future<void> setChartInteractionGeometry(
         "⚠️ Errada interna en assegurar les capes de la GPU: $innerError",
       );
     }
+  }
+
+  Future<void> updateSelectionCircles(
+    MapLibreMapController controller,
+    ElevationSelectionState sel,
+    List<List<double>> trackCoords,
+  ) async {
+    List<double>? startCoords;
+    List<double>? endCoords;
+
+    if (sel.mode == SelectionMode.range &&
+        sel.startTrackIndex != null &&
+        sel.endTrackIndex != null) {
+      startCoords = trackCoords[sel.startTrackIndex!];
+      endCoords = trackCoords[sel.endTrackIndex!];
+    }
+
+    await setChartInteractionGeometry(
+      controller,
+      rangeStartCoords: startCoords,
+      rangeEndCoords: endCoords,
+    );
   }
 }

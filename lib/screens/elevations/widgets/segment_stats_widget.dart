@@ -1,75 +1,97 @@
 import 'package:flutter/material.dart';
-import 'package:senda/utils/distance_utils.dart';
+import 'package:senda/theme/app_colors.dart';
 
 class SegmentStatsWidget extends StatelessWidget {
-  final double? distanceMeters;
-  final Duration? duration;
-  final double? ascentMeters;
-  final double? avgSpeedKmh;
-  final Color backgroundColor;
+  final double distanceMeters;
+  final String timeElapsedStr;
+  final String avgSpeedStr;
+  final double ascentMeters;
+  final double descentMeters;
+  final VoidCallback? onTap;
 
   const SegmentStatsWidget({
     super.key,
     required this.distanceMeters,
-    required this.duration,
+    required this.timeElapsedStr,
+    required this.avgSpeedStr,
     required this.ascentMeters,
-    required this.avgSpeedKmh,
-    required this.backgroundColor,
+    required this.descentMeters,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    if (distanceMeters == null ||
-        duration == null ||
-        ascentMeters == null ||
-        avgSpeedKmh == null) {
-      return const SizedBox.shrink();
-    }
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.white10),
-      ),
-      child: Row(
-        children: [
-          _tile(Icons.straighten, formatDistance(distanceMeters!)),
-          _tile(Icons.timer, _format(duration!)),
-          _tile(Icons.speed, "${avgSpeedKmh!.toStringAsFixed(1)} km/h"),
-          _tile(Icons.terrain, "+${ascentMeters!.toStringAsFixed(0)} m"),
-        ],
-      ),
-    );
-  }
-
-  Widget _tile(IconData icon, String value) {
-    return Expanded(
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: Colors.white70, size: 14),
-          const SizedBox(width: 4),
-          Text(
-            value,
-            style: const TextStyle(
-              fontFamily: 'monospace',
-              fontWeight: FontWeight.w600,
-              fontSize: 11,
-              color: Colors.white,
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        height: 36,
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        color: AppColors.dark.withAlpha(150),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(right: 14),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _stat(
+                      icon: Icons.straighten,
+                      color: Colors.white70,
+                      text: "${(distanceMeters / 1000).toStringAsFixed(2)}km",
+                    ),
+                    _stat(
+                      icon: Icons.access_time_rounded,
+                      color: Colors.amberAccent,
+                      text: timeElapsedStr,
+                    ),
+                    _stat(
+                      icon: Icons.speed_rounded,
+                      color: Colors.cyanAccent,
+                      text: avgSpeedStr,
+                    ),
+                    _stat(
+                      icon: Icons.arrow_upward,
+                      color: Colors.greenAccent,
+                      text: "+${ascentMeters.toStringAsFixed(0)}m",
+                    ),
+                    _stat(
+                      icon: Icons.arrow_downward,
+                      color: Colors.redAccent,
+                      text: "-${descentMeters.toStringAsFixed(0)}m",
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  String _format(Duration d) {
-    final h = d.inHours.toString().padLeft(2, '0');
-    final m = (d.inMinutes % 60).toString().padLeft(2, '0');
-    final s = (d.inSeconds % 60).toString().padLeft(2, '0');
-    return "$h:$m:$s";
+  Widget _stat({
+    required IconData icon,
+    required Color color,
+    required String text,
+  }) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 12, color: color),
+        const SizedBox(width: 3),
+        Text(
+          text,
+          style: TextStyle(
+            color: color,
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    );
   }
 }
