@@ -33,6 +33,8 @@ import 'package:senda/screens/main_map/widgets/map_base_layer.dart';
 import 'package:senda/screens/main_map/widgets/map_bottom_controls.dart';
 import 'package:senda/screens/main_map/widgets/map_bottom_controls/elevation_panel.dart';
 import 'package:senda/screens/main_map/widgets/map_bottom_controls/layout_utils.dart';
+import 'package:senda/screens/main_map/widgets/map_bottom_controls/navigation_submenu.dart';
+import 'package:senda/screens/main_map/widgets/map_bottom_controls/recording_submenu.dart';
 import 'package:senda/screens/main_map/widgets/map_selection_reticle.dart';
 import 'package:senda/screens/main_map/widgets/map_selection_top_button.dart';
 import 'package:senda/screens/main_map/widgets/map_top_controls.dart';
@@ -87,6 +89,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
   int? selectedIndexGraph;
   int? _prevWpIndex;
   int? _lastWpIndex;
+  bool _showRecordingSubMenu = false;
+  bool _showNavigationSubMenu = false;
 
   bool _isChartCollapsed = false;
   DateTime _lastMapUpdateTime = DateTime.fromMillisecondsSinceEpoch(0);
@@ -902,6 +906,62 @@ class _MapScreenState extends ConsumerState<MapScreen>
                         ),
                       ),
                     ),
+
+                  // RECORDING SUB MENU
+                  AnimatedPositioned(
+                    duration: const Duration(milliseconds: 220),
+                    curve: Curves.easeOut,
+                    left: 0,
+                    right: 0,
+                    bottom: _showRecordingSubMenu ? 20 : -200,
+                    child: Center(
+                      child: RecordingSubMenu(
+                        state: ref.watch(trackRecordingProvider).recordingState,
+                        onAction: (action) {
+                          setState(() => _showRecordingSubMenu = false);
+                          _openRecordingControl(context, ref, action);
+                        },
+                        onClose: () =>
+                            setState(() => _showRecordingSubMenu = false),
+                      ),
+                    ),
+                  ),
+                  // NAVIGATION SUB MENU
+                  AnimatedPositioned(
+                    duration: const Duration(milliseconds: 220),
+                    curve: Curves.easeOut,
+                    left: 0,
+                    right: 0,
+                    bottom: _showNavigationSubMenu ? 20 : -200,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppDimensions.subMenuHorizontalPadding,
+                      ),
+                      child: NavigationSubMenu(
+                        navState: ref.watch(navigationProvider),
+                        hasTrack:
+                            ref
+                                .watch(importedTrackProvider)
+                                ?.coordinates
+                                .isNotEmpty ??
+                            false,
+                        onAction: (bool val) {
+                          setState(() => _showNavigationSubMenu = false);
+                          _handleSendaNavigationAction(
+                            val
+                                ? (ref.read(navigationProvider).isFollowing
+                                      ? "toggle_pause"
+                                      : "follow")
+                                : (ref.read(navigationProvider).isFollowing
+                                      ? "stop_follow"
+                                      : "clear_imported"),
+                          );
+                        },
+                        onClose: () =>
+                            setState(() => _showNavigationSubMenu = false),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -918,19 +978,41 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 onHandleNavigationAction: _handleSendaNavigationAction,
                 onToggleChart: () {
                   setState(() => _isChartCollapsed = !_isChartCollapsed);
-
                   if (_isChartCollapsed) {
                     ref
                         .read(elevationSelectionProvider.notifier)
                         .clearSelection();
                     ref.read(mapSelectionToolProvider.notifier).deactivate();
-
                     if (styleInitialized && mapController != null) {
                       stopWaypointPulse(mapController!);
                     }
                   }
-
                   _updateMapPaddingValue();
+                },
+
+                // 🔥 NOU
+                onToggleRecordingSubmenu: () {
+                  setState(() {
+                    _showRecordingSubMenu = !_showRecordingSubMenu;
+                    _showNavigationSubMenu = false;
+                  });
+                },
+
+                // 🔥 NOU
+                onToggleNavigationSubmenu: () {
+                  final hasTrack =
+                      ref.read(importedTrackProvider)?.coordinates.isNotEmpty ??
+                      false;
+
+                  if (!hasTrack) {
+                    _openNavigationControl(context, ref, false);
+                    return;
+                  }
+
+                  setState(() {
+                    _showNavigationSubMenu = !_showNavigationSubMenu;
+                    _showRecordingSubMenu = false;
+                  });
                 },
               ),
           ],
@@ -1003,35 +1085,4 @@ class _MapScreenState extends ConsumerState<MapScreen>
       }
     });
   }
-
-  // MapPadding _computeMapPadding(BuildContext context, bool hasTrack) {
-  //   final media = MediaQuery.of(context);
-
-  //   final layout = LayoutUtils.fromContext(
-  //     context,
-  //     isChartCollapsed: _isChartCollapsed,
-  //   );
-
-  //   final bool showChartData = !_isChartCollapsed && hasTrack;
-
-  //   final double chartHeight = showChartData ? layout.chartHeight : 0;
-
-  //   final double bottomPadding =
-  //       media.padding.bottom +
-  //       AppDimensions.menuBarHeight +
-  //       chartHeight +
-  //       64 +
-  //       110;
-
-  //   const double topPadding = 10;
-
-  //   return MapPadding(top: topPadding, bottom: bottomPadding);
-  // }
 }
-
-// class MapPadding {
-//   final double top;
-//   final double bottom;
-
-//   const MapPadding({required this.top, required this.bottom});
-// }

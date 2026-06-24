@@ -9,17 +9,17 @@ import 'package:senda/theme/app_dimensions.dart';
 import 'package:senda/l10n/app_localizations.dart';
 
 import 'map_bottom_controls/menu_bar.dart';
-import 'map_bottom_controls/recording_submenu.dart';
-import 'map_bottom_controls/navigation_submenu.dart';
 
 class MapBottomControls extends ConsumerStatefulWidget {
-  final bool isChartCollapsed; // ja no s’utilitza per mostrar res aquí
+  final bool isChartCollapsed;
   final double systemBottomPadding;
   final VoidCallback onAddWaypoint;
   final void Function(String?) onOpenRecordingControl;
   final void Function(bool) onOpenNavigationControl;
   final void Function(String?) onHandleNavigationAction;
-  final VoidCallback onToggleChart; // només es passa cap amunt
+  final VoidCallback onToggleRecordingSubmenu;
+  final VoidCallback onToggleNavigationSubmenu;
+  final VoidCallback onToggleChart;
 
   const MapBottomControls({
     super.key,
@@ -30,6 +30,8 @@ class MapBottomControls extends ConsumerStatefulWidget {
     required this.onOpenNavigationControl,
     required this.onHandleNavigationAction,
     required this.onToggleChart,
+    required this.onToggleRecordingSubmenu,
+    required this.onToggleNavigationSubmenu,
   });
 
   @override
@@ -37,9 +39,6 @@ class MapBottomControls extends ConsumerStatefulWidget {
 }
 
 class _MapBottomControlsState extends ConsumerState<MapBottomControls> {
-  bool _showRecordingSubMenu = false;
-  bool _showNavigationSubMenu = false;
-
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context)!;
@@ -61,8 +60,6 @@ class _MapBottomControlsState extends ConsumerState<MapBottomControls> {
     final bool hasRecordingData =
         recordingState != RecordingState.idle && recordingPoints.isNotEmpty;
 
-    final bool isSubMenuOpen = _showRecordingSubMenu || _showNavigationSubMenu;
-
     final bool isRecordingActive = recordingState == RecordingState.recording;
     final IconData statusIcon = isRecordingActive
         ? Icons.fiber_manual_record
@@ -75,63 +72,6 @@ class _MapBottomControlsState extends ConsumerState<MapBottomControls> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // 🧭 SUBMENÚ DE NAVEGACIÓ
-        if (_showNavigationSubMenu && hasTrack)
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppDimensions.subMenuHorizontalPadding,
-            ),
-            child: Container(
-              margin: const EdgeInsets.only(
-                bottom: AppDimensions.verticalSpacing,
-              ),
-              child: Center(
-                child: NavigationSubMenu(
-                  navState: navState,
-                  hasTrack: hasTrack,
-                  onAction: (bool val) {
-                    setState(() => _showNavigationSubMenu = false);
-
-                    if (!navState.isFollowing) {
-                      widget.onHandleNavigationAction(
-                        val ? "follow" : "clear_imported",
-                      );
-                    } else {
-                      widget.onHandleNavigationAction(
-                        val ? "toggle_pause" : "stop_follow",
-                      );
-                    }
-                  },
-                  onClose: () => setState(() => _showNavigationSubMenu = false),
-                ),
-              ),
-            ),
-          ),
-
-        // ⏱️ SUBMENÚ DE GRAVACIÓ
-        if (_showRecordingSubMenu)
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppDimensions.subMenuHorizontalPadding,
-            ),
-            child: Container(
-              margin: const EdgeInsets.only(
-                bottom: AppDimensions.verticalSpacing,
-              ),
-              child: Center(
-                child: RecordingSubMenu(
-                  state: recordingState,
-                  onAction: (String action) {
-                    setState(() => _showRecordingSubMenu = false);
-                    widget.onOpenRecordingControl(action);
-                  },
-                  onClose: () => setState(() => _showRecordingSubMenu = false),
-                ),
-              ),
-            ),
-          ),
-
-        // 🎛️ BARRA INFERIOR PRINCIPAL
         Padding(
           padding: EdgeInsets.only(bottom: widget.systemBottomPadding),
           child: MenuBar(
@@ -139,26 +79,8 @@ class _MapBottomControlsState extends ConsumerState<MapBottomControls> {
             recordingState: recordingState,
             navState: navState,
             hasTrack: hasTrack,
-            onRecordingTap: () {
-              setState(() {
-                _showRecordingSubMenu = !_showRecordingSubMenu;
-                _showNavigationSubMenu = false;
-              });
-            },
-            onNavigationTap: () {
-              if (!hasTrack) {
-                setState(() {
-                  _showNavigationSubMenu = false;
-                  _showRecordingSubMenu = false;
-                });
-                widget.onOpenNavigationControl(false);
-              } else {
-                setState(() {
-                  _showNavigationSubMenu = !_showNavigationSubMenu;
-                  _showRecordingSubMenu = false;
-                });
-              }
-            },
+            onRecordingTap: widget.onToggleRecordingSubmenu,
+            onNavigationTap: widget.onToggleNavigationSubmenu,
             onToggleChart: widget.onToggleChart,
           ),
         ),
