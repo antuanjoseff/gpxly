@@ -1,5 +1,3 @@
-// lib/screens/main_map/widgets/map_bottom_controls/menu_bar.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/models/navigation_state.dart';
@@ -129,6 +127,7 @@ class MenuBar extends ConsumerWidget {
 
     // 3. --- Pestaña del Perfil (Toggle chart) ---
     final bool isOpen = !isChartCollapsed;
+
     final Widget profileWidget = AbsorbPointer(
       absorbing: !isProfileAvailable,
       child: Material(
@@ -136,8 +135,15 @@ class MenuBar extends ConsumerWidget {
         child: InkWell(
           onTap: isProfileAvailable ? onToggleChart : null,
           borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4.0),
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+            decoration: BoxDecoration(
+              color: isProfileAvailable
+                  ? (isOpen ? Colors.white : AppColors.primary)
+                  : AppColors.primary,
+              borderRadius: BorderRadius.circular(12),
+            ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -145,7 +151,7 @@ class MenuBar extends ConsumerWidget {
                   isOpen ? Icons.landscape_rounded : Icons.landscape_outlined,
                   size: 24,
                   color: isProfileAvailable
-                      ? Colors.white
+                      ? (isOpen ? AppColors.primary : Colors.white)
                       : Colors.white.withAlpha(60),
                 ),
                 const SizedBox(height: 4),
@@ -156,7 +162,7 @@ class MenuBar extends ConsumerWidget {
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: isProfileAvailable
-                          ? Colors.white
+                          ? (isOpen ? AppColors.primary : Colors.white)
                           : Colors.white.withAlpha(60),
                     ),
                   ),
@@ -191,8 +197,7 @@ class MenuBar extends ConsumerWidget {
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          crossAxisAlignment:
-              CrossAxisAlignment.stretch, // Forzamos estiramiento simétrico
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Expanded(child: recordingWidget),
             const VerticalDivider(color: Colors.white12, width: 1),
