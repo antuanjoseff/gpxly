@@ -809,31 +809,35 @@ class _MapScreenState extends ConsumerState<MapScreen>
                         styleInitialized = true;
                       });
 
-                      mapController!.setLayerProperties(
+                      // 🚀 CORRECCIÓ DEFINITIVA 1 (Ruta gravada):
+                      // Creem un objecte LineLayerProperties real tal com demana MapLibre.
+                      // Forcem que el color sigui una String vàlida i el gruix un double de Dart.
+                      final String trackColorHex =
+                          trackSettings.color.toMapLibreColor().isNotEmpty
+                          ? trackSettings.color.toMapLibreColor()
+                          : "#FF0000";
+
+                      await mapController!.setLayerProperties(
                         "track_line_layer",
                         LineLayerProperties(
-                          lineColor:
-                              trackSettings.color.toMapLibreColor().isNotEmpty
-                              ? trackSettings.color.toMapLibreColor()
-                              : "#FF0000",
-                          lineWidth: trackSettings.width,
-                          lineCap: "round",
-                          lineJoin: "round",
+                          lineColor: trackColorHex,
+                          lineWidth: trackSettings.width
+                              .toDouble(), // 🎯 Forcem double pur!
                         ),
                       );
 
-                      mapController!.setLayerProperties(
+                      // 🚀 CORRECCIÓ DEFINITIVA 2 (Ruta importada):
+                      final String importedColorHex =
+                          importedSettings.color.toMapLibreColor().isNotEmpty
+                          ? importedSettings.color.toMapLibreColor()
+                          : "#00A8E8";
+
+                      await mapController!.setLayerProperties(
                         "imported_track_layer",
                         LineLayerProperties(
-                          lineColor:
-                              importedSettings.color
-                                  .toMapLibreColor()
-                                  .isNotEmpty
-                              ? importedSettings.color.toMapLibreColor()
-                              : "#00A8E8",
-                          lineWidth: importedSettings.width,
-                          lineCap: "round",
-                          lineJoin: "round",
+                          lineColor: importedColorHex,
+                          lineWidth: importedSettings.width
+                              .toDouble(), // 🎯 Forcem double pur!
                         ),
                       );
                     },

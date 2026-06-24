@@ -43,8 +43,6 @@ class MapSelectionHelper {
     // 🧪 ------------------------------------------------------------------
     // 🧪 BLOC DE PROVA PER SORTIR DE DUBTES (MAPA VS GRÀFIC)
     // ------------------------------------------------------------------
-    debugPrint("--------------------------------------------------");
-    debugPrint("🧪 [SNAP-SINCRO] ÍNDEX BUSCAT PEL MAPA: $indexMesProper");
 
     // A. El punt que ha trobat el mapa físicament sota la retícula
     final UserPosition puntMapa = trackActiu.points[indexMesProper];
@@ -59,15 +57,8 @@ class MapSelectionHelper {
       final List<UserPosition> puntsDelGrafic = trackActiu.points;
       final UserPosition puntGrafic = puntsDelGrafic[indexMesProper];
 
-      debugPrint(
-        "📊 COORDENADA GRÀFIC: Lat: ${puntGrafic.position.latitude}, Lon: ${puntGrafic.position.longitude}",
-      );
-
       if (puntMapa.position.latitude == puntGrafic.position.latitude &&
           puntMapa.position.longitude == puntGrafic.position.longitude) {
-        debugPrint(
-          "✅ RESULTAT: Els índexos COINCIDEIXEN! El problema és de GeoJSON [Lon, Lat] invertit o de paddings.",
-        );
       } else {
         debugPrint(
           "❌ RESULTAT: DESALINEACIÓ DETECTADA! Les dues llistes tenen coordenades diferents per a l'índex $indexMesProper.",
@@ -78,7 +69,6 @@ class MapSelectionHelper {
         "🚨 RESULTAT: L'índex $indexMesProper no existeix a la llista del gràfic! (Fora de rang, llista més curta)",
       );
     }
-    debugPrint("--------------------------------------------------");
     // ------------------------------------------------------------------
 
     // 4. Extraiem la UserPosition d'eixe índex segons el teu model d'estructures

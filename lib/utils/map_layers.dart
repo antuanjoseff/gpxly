@@ -250,29 +250,33 @@ Future<void> setupWaypointLayers(MapLibreMapController controller) async {
     ),
   );
 
+  // 🚀 BLINDATGE DE LA GPU DE MAPLIBRE:
+  // Forcem tots els valors numèrics de gruix i opacitat a doubles estrictes
   await controller.addLayer(
     'waypoints_recorded_source',
     'waypoints_recorded_layer',
-    CircleLayerProperties(
+    const CircleLayerProperties(
       circleRadius: 8.0,
       circleColor: "#4CAF50",
       circleStrokeWidth: 2.0,
       circleStrokeColor: "#FFFFFF",
       circleOpacity: 0.0,
       circleStrokeOpacity: 0.0,
+      circleBlur: 0.0,
     ),
   );
 
   await controller.addLayer(
     'waypoints_imported_source',
     'waypoints_imported_layer',
-    CircleLayerProperties(
+    const CircleLayerProperties(
       circleRadius: 8.0,
       circleColor: "#00A8E8",
       circleStrokeWidth: 2.0,
       circleStrokeColor: "#FFFFFF",
       circleOpacity: 0.0,
       circleStrokeOpacity: 0.0,
+      circleBlur: 0.0,
     ),
   );
 }
@@ -405,6 +409,8 @@ void setUserLocationGeometry(
   }
 }
 
+// lib/screens/main_map/utils/map_layers.dart (CORREGIT DEFINITIU)
+
 Future<void> setChartInteractionGeometry(
   MapLibreMapController controller, {
   List<double>? hoverCoords,
@@ -448,54 +454,60 @@ Future<void> setChartInteractionGeometry(
         GeojsonSourceProperties(data: geojson),
       );
 
-      // A. CAPA NARANJA (Hover)
+      // A. CAPA TARANJA (Hover) - Blindada amb tots els tipus explícits
       await controller.addLayer(
         "chart_interaction_source",
         "chart_hover_layer",
-        CircleLayerProperties(
+        const CircleLayerProperties(
           circleRadius: 7.0,
           circleColor: "#FF9800",
           circleStrokeWidth: 2.0,
           circleStrokeColor: "#FFFFFF",
+          circleOpacity: 1.0, // 🚀 Forcem double, mai text
+          circleStrokeOpacity: 1.0, // 🚀 Forcem double, mai text
+          circleBlur: 0.0,
         ),
       );
-      // 🎯 EXPRESIÓN CORREGIDA: Usamos ["get", "propiedad"] obligatoriamente en MapLibre
       await controller.setFilter("chart_hover_layer", [
         "==",
         ["get", "type"],
         "hover",
       ]);
 
-      // B. CAPA VERDE (Inicio)
+      // B. CAPA VERDA (Inicio) - Blindada amb tots els tipus explícits
       await controller.addLayer(
         "chart_interaction_source",
         "chart_start_layer",
-        CircleLayerProperties(
+        const CircleLayerProperties(
           circleRadius: 8.0,
           circleColor: "#4CAF50",
           circleStrokeWidth: 2.5,
           circleStrokeColor: "#FFFFFF",
+          circleOpacity: 1.0,
+          circleStrokeOpacity: 1.0,
+          circleBlur: 0.0,
         ),
       );
-      // 🎯 EXPRESIÓN CORREGIDA: Usamos ["get", "propiedad"] obligatoriamente en MapLibre
       await controller.setFilter("chart_start_layer", [
         "==",
         ["get", "type"],
         "range_start",
       ]);
 
-      // C. CAPA ROJA (Fin)
+      // C. CAPA ROJA (Fin) - Blindada amb tots els tipus explícits
       await controller.addLayer(
         "chart_interaction_source",
         "chart_end_layer",
-        CircleLayerProperties(
+        const CircleLayerProperties(
           circleRadius: 8.0,
           circleColor: "#F44336",
           circleStrokeWidth: 2.5,
           circleStrokeColor: "#FFFFFF",
+          circleOpacity: 1.0,
+          circleStrokeOpacity: 1.0,
+          circleBlur: 0.0,
         ),
       );
-      // 🎯 EXPRESIÓN CORREGIDA: Usamos ["get", "propiedad"] obligatoriamente en MapLibre
       await controller.setFilter("chart_end_layer", [
         "==",
         ["get", "type"],
@@ -507,26 +519,33 @@ Future<void> setChartInteractionGeometry(
       );
     }
   }
+}
 
-  Future<void> updateSelectionCircles(
-    MapLibreMapController controller,
-    ElevationSelectionState sel,
-    List<List<double>> trackCoords,
-  ) async {
-    List<double>? startCoords;
-    List<double>? endCoords;
+// 🎯 MOVEM LA FUNCIÓ FORA (Estava niada de forma incorrecta dins de l'altre Future!)
+Future<void> updateSelectionCircles(
+  MapLibreMapController controller,
+  ElevationSelectionState sel,
+  List<List<double>> trackCoords,
+) async {
+  if (trackCoords.isEmpty) return;
 
-    if (sel.mode == SelectionMode.range &&
-        sel.startTrackIndex != null &&
-        sel.endTrackIndex != null) {
-      startCoords = trackCoords[sel.startTrackIndex!];
-      endCoords = trackCoords[sel.endTrackIndex!];
-    }
+  List<double>? startCoords;
+  List<double>? endCoords;
 
-    await setChartInteractionGeometry(
-      controller,
-      rangeStartCoords: startCoords,
-      rangeEndCoords: endCoords,
-    );
+  // 🚀 CONTROL EXTRA DE PROTECCIÓ:
+  // Validem que els indexs de Riverpod no estiguin fora dels límits de la llista real del mapa
+  if (sel.startTrackIndex != null &&
+      sel.startTrackIndex! < trackCoords.length) {
+    startCoords = trackCoords[sel.startTrackIndex!];
   }
+
+  if (sel.endTrackIndex != null && sel.endTrackIndex! < trackCoords.length) {
+    endCoords = trackCoords[sel.endTrackIndex!];
+  }
+
+  await setChartInteractionGeometry(
+    controller,
+    rangeStartCoords: startCoords,
+    rangeEndCoords: endCoords,
+  );
 }

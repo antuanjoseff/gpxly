@@ -134,6 +134,7 @@ class MapAnimator {
     isAnimating = true;
 
     // Arrenquem un ÚNIC rellotge controlat per a coordinar totes les geometries
+    // Arrenquem un ÚNIC rellotge controlat per a coordinar totes les geometries
     _activeTimer = Timer.periodic(const Duration(milliseconds: 30), (timer) {
       currentStep++;
       final double t = currentStep / totalSteps;
@@ -160,12 +161,17 @@ class MapAnimator {
         [animatedLon, animatedLat],
       ]);
 
+      // 🚀 UNITAT I BLINDATGE DE LA GPU:
+      // Declarem de forma fixa les constants del traç d'animació per tancar els forats buits de la línia.
       controller.setLayerProperties(
         "track_animating_layer",
         LineLayerProperties(
           lineOpacity: opacity,
           lineColor: "#FF0000",
           lineWidth: 4.0,
+          lineBlur: 0.0, // 🎯 Forcem double, mai text buit
+          lineOffset: 0.0, // 🎯 Forcem double, mai text buit
+          lineGapWidth: 0.0, // 🎯 Forcem double, mai text buit
         ),
       );
 

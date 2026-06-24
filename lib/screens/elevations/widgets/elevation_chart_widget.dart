@@ -212,6 +212,7 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
             final x = details.localPosition.dx;
             final idx = ChartLogic.calculateIndexFromX(x, width, globalDists);
 
+            // 1. ACTUALITZACIÓ LOCAL VISUAL (Sempre a màxima velocitat a la pantalla)
             if (_draggingNeedle == 1) {
               final actualEnd = endIdx >= 0 ? endIdx : idx;
               setState(() {
@@ -242,6 +243,8 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
               });
             }
 
+            // 2. FILTRE THROTTLE: Enviem la informació a la barra negra de dades de forma controlada cada 32ms
+            // D'aquesta manera evitem asfixiar el fil d'execució de dades geomètriques de Senda
             final now = DateTime.now();
             if (now.difference(_lastThrottleTime).inMilliseconds >=
                 _throttleDurationMs) {
@@ -260,6 +263,7 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
               }
             }
           },
+
           onPanEnd: (_) {
             if (_localStartIdx != null &&
                 _localEndIdx != null &&

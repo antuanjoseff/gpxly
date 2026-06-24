@@ -1,6 +1,10 @@
-import 'package:flutter/scheduler.dart';
+// lib/notifiers/segment_stats_notifier.dart (CORREGIT DEFINITIU SENSE BUCLES)
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/notifiers/elevation_selection_provider.dart';
+// 🚀 1. Importem els teus sub-providers de rutes reals de Senda
+import 'package:senda/notifiers/recording_notifier.dart';
+import 'package:senda/notifiers/imported_track_notifier.dart';
+import 'package:senda/notifiers/remaining_track_notifier.dart';
 
 class SegmentStats {
   final double distanceMeters;
@@ -29,36 +33,37 @@ class SegmentStats {
 class SegmentStatsNotifier extends Notifier<SegmentStats> {
   @override
   SegmentStats build() {
-    return SegmentStats.empty;
-  }
+    // 🚀 2. REACTIVITAT AUTOMÀTICA DE SENDA:
+    // Escoltem els 3 providers de traçats de forma nativa. Si es carrega un track,
+    // el build es torna a executar de manera síncrona i transparent sense penjar l'app.
+    final real = ref.watch(trackRecordingProvider);
+    final imported = ref.watch(importedTrackProvider);
+    final remaining = ref.watch(remainingTrackProvider);
 
-  /// 🔥 Funció principal: rep les dades globals i calcula les estadístiques
-  void updateStats({
-    required List<double> globalDists,
-    required List<double> globalAlts,
-    required List<DateTime> globalTimes,
-  }) {
-    // 🔥 Evita modificar providers durant un build
-    if (SchedulerBinding.instance.schedulerPhase != SchedulerPhase.idle) {
-      SchedulerBinding.instance.addPostFrameCallback((_) {
-        updateStats(
-          globalDists: globalDists,
-          globalAlts: globalAlts,
-          globalTimes: globalTimes,
-        );
-      });
-      return;
-    }
-
-    final selection = ref.read(elevationSelectionProvider);
+    final globalDists = <double>[
+      ...real.distances,
+      ...?imported?.distances,
+      ...?remaining?.distances,
+    ];
+    final globalAlts = <double>[
+      ...real.altitudes,
+      ...?imported?.altitudes,
+      ...?remaining?.altitudes,
+    ];
+    final globalTimes = <DateTime>[
+      ...real.timestamps,
+      ...?imported?.timestamps,
+      ...?remaining?.timestamps,
+    ];
 
     if (globalDists.length < 2 ||
         globalAlts.length < 2 ||
         globalTimes.length < 2) {
-      state = SegmentStats.empty;
-      return;
+      return SegmentStats.empty;
     }
 
+    // 🚀 3. CALCULEM EL RANG CORRECTE DIRECTAMENT DES DEL BUILD
+    final selection = ref.watch(elevationSelectionProvider);
     int start = 0;
     int end = globalDists.length - 1;
 
@@ -74,8 +79,8 @@ class SegmentStatsNotifier extends Notifier<SegmentStats> {
       }
     }
 
+    // Executem exactament les teves mateixes fórmules matemàtiques de Senda
     final distance = (globalDists[end] - globalDists[start]).abs();
-
     double ascent = 0;
     double descent = 0;
 
@@ -90,7 +95,6 @@ class SegmentStatsNotifier extends Notifier<SegmentStats> {
 
     if (start < globalTimes.length && end < globalTimes.length) {
       final duration = globalTimes[end].difference(globalTimes[start]).abs();
-
       final h = duration.inHours;
       final m = duration.inMinutes.remainder(60);
       final s = duration.inSeconds.remainder(60);
@@ -108,7 +112,7 @@ class SegmentStatsNotifier extends Notifier<SegmentStats> {
       }
     }
 
-    state = SegmentStats(
+    return SegmentStats(
       distanceMeters: distance,
       timeElapsedStr: timeStr,
       avgSpeedStr: speedStr,
@@ -116,9 +120,15 @@ class SegmentStatsNotifier extends Notifier<SegmentStats> {
       descentMeters: descent,
     );
   }
+
+  /// Es manté el mètode vell buit de cortesia per no trencar cap crida residual de la teva app
+  void updateStats({
+    required List<double> globalDists,
+    required List<double> globalAlts,
+    required List<DateTime> globalTimes,
+  }) {}
 }
 
-/// Provider del notifier (Riverpod 2.0)
 final segmentStatsProvider =
     NotifierProvider<SegmentStatsNotifier, SegmentStats>(
       SegmentStatsNotifier.new,
