@@ -20,7 +20,6 @@ import 'package:senda/notifiers/location_notifier.dart';
 import 'package:senda/notifiers/map_bearing_provider.dart';
 import 'package:senda/notifiers/map_selection_tool_notifier.dart';
 import 'package:senda/notifiers/navigation_notifier.dart';
-import 'package:senda/notifiers/nearest_track_point_notifier.dart';
 import 'package:senda/notifiers/permissions_notifier.dart';
 import 'package:senda/notifiers/recording_notifier.dart';
 import 'package:senda/notifiers/remaining_track_notifier.dart';
@@ -34,11 +33,10 @@ import 'package:senda/providers/barometer_provider.dart';
 import 'package:senda/screens/main_map/widgets/map_app_bar.dart';
 import 'package:senda/screens/main_map/widgets/map_base_layer.dart';
 import 'package:senda/screens/main_map/widgets/map_bottom_controls.dart';
-import 'package:senda/screens/main_map/widgets/map_bottom_controls/elevation_panel.dart';
-import 'package:senda/screens/main_map/widgets/map_bottom_controls/layout_utils.dart';
 import 'package:senda/screens/main_map/widgets/map_bottom_controls/navigation_submenu.dart';
 import 'package:senda/screens/main_map/widgets/map_bottom_controls/recording_submenu.dart';
 import 'package:senda/screens/main_map/widgets/map_selection_reticle.dart';
+import 'package:senda/screens/main_map/widgets/map_stack_widgets.dart';
 import 'package:senda/screens/main_map/widgets/map_top_controls.dart';
 import 'package:senda/theme/app_colors.dart';
 
@@ -844,6 +842,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   ),
 
                   // 🎯 RETICLE CONTROLAT PEL PROVIDER
+                  // 🎯 CAPA 2: RETICLE CENTRAL AUTOMÀTIC (Actualitzat i dinàmic)
                   Consumer(
                     builder: (context, ref, _) {
                       final sel = ref.watch(elevationSelectionProvider);
@@ -852,10 +851,22 @@ class _MapScreenState extends ConsumerState<MapScreen>
                               MapSelectionToolState.selectingStart ||
                           sel.mapToolState ==
                               MapSelectionToolState.selectingEnd) {
-                        return const Positioned.fill(
+                        // 🚀 CÀLCUL DEL COLOR SEGONS L'ESTAT:
+                        // - Si estem fixant l'inici, el reticle serà verd (#4CAF50).
+                        // - Si passem a fixar el final, mutarà automàticament a vermell (#F44336).
+                        final Color reticleColor =
+                            sel.mapToolState ==
+                                MapSelectionToolState.selectingStart
+                            ? const Color(0xFF4CAF50) // 🟢 Verd
+                            : const Color(0xFFF44336); // 🔴 Vermell
+
+                        return Positioned.fill(
                           child: IgnorePointer(
                             ignoring: true,
-                            child: Center(child: MapSelectionReticle()),
+                            child: Center(
+                              // 🚀 PASSEM EL COLOR DINÀMIC AL NOU RETICLE GROS DE 3.5PX DE TRACER
+                              child: MapSelectionReticle(color: reticleColor),
+                            ),
                           ),
                         );
                       }
@@ -874,158 +885,19 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     ),
 
                   // 🔥 PANELL D’ELEVACIONS
-                  if (!_isChartCollapsed)
-                    Positioned(
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      child: ElevationPanel(
-                        isCollapsed: _isChartCollapsed,
-                        onCollapseChanged: (collapsed) {
-                          setState(() => _isChartCollapsed = collapsed);
-
-                          if (collapsed) {
-                            ref
-                                .read(elevationSelectionProvider.notifier)
-                                .userCollapsedChart();
-                          } else {
-                            ref
-                                .read(elevationSelectionProvider.notifier)
-                                .userOpenedChart();
-                          }
-                        },
-
-                        // 🔥 Ara sí: dades reals del notifier
-                        distanceMeters: stats.distanceMeters,
-                        timeElapsedStr: stats.timeElapsedStr,
-                        avgSpeedStr: stats.avgSpeedStr,
-                        ascentMeters: stats.ascentMeters,
-                        descentMeters: stats.descentMeters,
-                      ),
-                    ),
-
-                  // 🎯 Dins de l'Stack principal de la teva pantalla:
-                  // 🎯 Dins de l'Stack principal de la pantalla del teu mapa:
-                  Consumer(
-                    builder: (context, ref, _) {
-                      final sel = ref.watch(elevationSelectionProvider);
-
-                      // 1. Llegim l'alçada de la barra de menú des de les teves constants (72.0)
-                      const double menuHeight = AppDimensions.menuBarHeight;
-
-                      // 2. Calculem l'alçada exacta del gràfic usant la proporció oficial (0.15 -> 15% de la pantalla)
-                      final double screenHeight = MediaQuery.sizeOf(
-                        context,
-                      ).height;
-                      final double chartHeight =
-                          screenHeight *
-                          AppDimensions.elevationChartHeightRatio;
-
-                      // 3. Calculem l'offset vertical exacte lligat a les constants corporatives
-                      final double bottomOffset = _isChartCollapsed
-                          ? menuHeight + AppDimensions.mapSafetyPadding
-                          : menuHeight +
-                                chartHeight +
-                                AppDimensions.mapSafetyPadding;
-
-                      // A. Si l'eina està en OFF: Mostrem només les Tisores
-                      if (sel.mapToolState == MapSelectionToolState.off) {
-                        return AnimatedPositioned(
-                          duration: const Duration(milliseconds: 250),
-                          right: 16,
-                          bottom: bottomOffset,
-                          child: FloatingActionButton(
-                            heroTag: "btn_tisores",
-                            backgroundColor: Colors.white,
-                            foregroundColor: Theme.of(context).primaryColor,
-                            child: const Icon(Icons.content_cut),
-                            onPressed: () {
-                              ref
-                                  .read(elevationSelectionProvider.notifier)
-                                  .activateMapSelectionTool();
-                            },
-                          ),
-                        );
-                      }
-
-                      // B. Si l'eina està en ON: Textos i icones d'edició
-                      String label;
-                      IconData icon;
-                      switch (sel.mapToolState) {
-                        case MapSelectionToolState.selectingStart:
-                          label = "Fixar inici";
-                          icon = Icons.my_location;
-                          break;
-                        case MapSelectionToolState.selectingEnd:
-                          label = "Fixar final";
-                          icon = Icons.flag;
-                          break;
-                        case MapSelectionToolState.selected:
-                          label = "Reiniciar";
-                          icon = Icons.restart_alt;
-                          break;
-                        default:
-                          label = "";
-                          icon = Icons.help_outline;
-                      }
-
-                      // Retornem el Row horitzontal simètric
-                      return AnimatedPositioned(
-                        duration: const Duration(milliseconds: 250),
-                        right: 16,
-                        bottom: bottomOffset,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            FloatingActionButton(
-                              heroTag: "btn_cancel_tool",
-                              mini: true,
-                              backgroundColor: Colors.white,
-                              foregroundColor: Colors.redAccent,
-                              child: const Icon(Icons.close),
-                              onPressed: () {
-                                ref
-                                    .read(elevationSelectionProvider.notifier)
-                                    .deactivateMapSelectionTool();
-                              },
-                            ),
-                            const SizedBox(
-                              width: AppDimensions.verticalSpacing,
-                            ), // 12px de separació corporativa
-                            FloatingActionButton.extended(
-                              heroTag: "btn_action_tool",
-                              backgroundColor: Theme.of(context).primaryColor,
-                              foregroundColor: Colors.white,
-                              icon: Icon(icon),
-                              label: Text(label),
-                              onPressed: () {
-                                final notifier = ref.read(
-                                  elevationSelectionProvider.notifier,
-                                );
-                                final nearest = ref.read(
-                                  nearestTrackPointProvider,
-                                );
-                                switch (sel.mapToolState) {
-                                  case MapSelectionToolState.selectingStart:
-                                    notifier.fixStartFromMap(nearest);
-                                    break;
-                                  case MapSelectionToolState.selectingEnd:
-                                    notifier.fixEndFromMap(nearest);
-                                    break;
-                                  case MapSelectionToolState.selected:
-                                    notifier.resetMapSelection();
-                                    break;
-                                  default:
-                                    break;
-                                }
-                              },
-                            ),
-                          ],
-                        ),
-                      );
+                  // 🚀 CAPA 4: EL MODUL DE GRAFICS I ESTADÍSTIQUES FIXES
+                  MapElevationHud(
+                    isChartCollapsed: _isChartCollapsed,
+                    onCollapseChanged: (collapsed) {
+                      setState(() => _isChartCollapsed = collapsed);
                     },
                   ),
 
+                  // 🚀 CAPA 5: ELS BOTONS FLOTANTS DE LES TISORES
+                  MapScissorsButtons(
+                    isChartCollapsed: _isChartCollapsed,
+                    mapController: mapController,
+                  ),
                   // RECORDING SUB MENU
                   AnimatedPositioned(
                     duration: const Duration(milliseconds: 220),

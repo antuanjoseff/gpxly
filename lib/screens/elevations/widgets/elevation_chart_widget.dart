@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'dart:math' as math;
 import 'package:senda/screens/elevations/painters/selection_painter.dart';
 import 'package:senda/screens/elevations/utils/chart_utils.dart';
 import 'package:senda/theme/app_colors.dart';

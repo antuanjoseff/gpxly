@@ -279,7 +279,7 @@ class ElevationSelectionNotifier extends Notifier<ElevationSelectionState> {
 
     state = state.copyWith(
       mode: SelectionMode.single,
-      singlePointIndex: nearest,
+      singlePointIndex: null,
       startTrackIndex: null,
       endTrackIndex: null,
       mapToolState: MapSelectionToolState.selectingStart,
@@ -289,11 +289,7 @@ class ElevationSelectionNotifier extends Notifier<ElevationSelectionState> {
   }
 
   void deactivateMapSelectionTool() {
-    state = state.copyWith(
-      mapToolState: MapSelectionToolState.off,
-      forceHideChart: false,
-      source: SelectionSource.none,
-    );
+    state = ElevationSelectionState.initial();
   }
 
   void fixStartFromMap(int index) {
@@ -324,10 +320,14 @@ class ElevationSelectionNotifier extends Notifier<ElevationSelectionState> {
 
   void resetMapSelection() {
     state = state.copyWith(
-      mapToolState: MapSelectionToolState.selectingStart,
+      mapToolState: MapSelectionToolState.selectingStart, // Reticle visible
+      mode: SelectionMode.none,
       startTrackIndex: null,
       endTrackIndex: null,
-      mode: SelectionMode.none,
+      singlePointIndex: null,
+      clearSinglePoint: true,
+      clearStartTrack: true,
+      clearEndTrack: true,
       source: SelectionSource.map,
     );
   }

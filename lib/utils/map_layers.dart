@@ -529,10 +529,17 @@ Future<void> updateSelectionCircles(
 ) async {
   if (trackCoords.isEmpty) return;
 
+  if (sel.startTrackIndex == null && sel.endTrackIndex == null) {
+    await controller.setGeoJsonSource("chart_interaction_source", {
+      "type": "FeatureCollection",
+      "features": [],
+    });
+    return; // 🎯 Tallem l'execució aquí
+  }
+
   List<double>? startCoords;
   List<double>? endCoords;
 
-  // 🚀 CONTROL EXTRA DE PROTECCIÓ:
   // Validem que els indexs de Riverpod no estiguin fora dels límits de la llista real del mapa
   if (sel.startTrackIndex != null &&
       sel.startTrackIndex! < trackCoords.length) {

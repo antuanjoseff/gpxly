@@ -1,5 +1,5 @@
+// lib/screens/main_map/widgets/compass_scale_panel.dart (AMPLADA CORPORATIVA 56PX)
 import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/notifiers/gps_bearing_notifier.dart';
@@ -24,8 +24,6 @@ class CompassScalePanel extends ConsumerWidget {
     final deviceHeading = ref.watch(gpsBearingProvider);
     final mapBearing = ref.watch(mapBearingProvider);
 
-    // Ja no ens cal la variable compassRotation aquí perquè ho dividim en dues animacions netes
-
     final zoom = ref.watch(mapZoomProvider);
     final latitude = ref.watch(mapCenterLatProvider);
 
@@ -33,7 +31,9 @@ class CompassScalePanel extends ConsumerWidget {
     final metersPerPixel =
         156543.03392 * math.cos(latitude * math.pi / 180) / math.pow(2, zoom);
 
-    const maxWidthPx = 40.0;
+    // 🚀 OPTIMITZACIÓ GEOMÈTRICA:
+    // Pugem l'amplada màxima de la línia d'escala a 44px perquè s'adapti perfectament al nou fons de 56px
+    const maxWidthPx = 44.0;
     final niceScales = <double>[
       10,
       20,
@@ -66,37 +66,39 @@ class CompassScalePanel extends ConsumerWidget {
     }
 
     return Container(
-      width: 52,
+      width:
+          56.0, // 🎯 ACCORD CORPORATIU: Clavem exactament l'amplada a 56px igual que els botons quadrats i de les tisores!
       padding: const EdgeInsets.symmetric(vertical: 10),
       decoration: BoxDecoration(
         color: AppColors.tertiary,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(
+          16,
+        ), // Manté el mateix radi visual d'estil de la graella
         border: Border.all(color: Colors.white12),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // 🧭 BRÚIXOLA PETITA (32px)
+          // 🧭 BRÚIXOLA REPROPORCIONADA (Pugem a 36px perquè llueixi simètrica amb els 56px de fons)
           GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTap: onTapCompass,
             child: SizedBox(
-              width: 32,
-              height: 32,
+              width: 36,
+              height: 36,
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  // Cercle blanc de fons (Estàtic, no cal que giri de fons)
                   Container(
-                    width: 32,
-                    height: 32,
+                    width: 36,
+                    height: 36,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: Colors.white.withOpacity(0.9),
                     ),
                   ),
 
-                  // 🔥 CAPA 1: NOMÉS LES LLETRES GIREN AMB EL MAPA
+                  // 🔥 CAPA 1: LES LLETRES GIREN AMB EL MAPA
                   AnimatedRotation(
                     turns: -mapBearing / 360,
                     duration: const Duration(milliseconds: 250),
@@ -104,25 +106,25 @@ class CompassScalePanel extends ConsumerWidget {
                     child: Stack(
                       children: [
                         Positioned(
-                          top: 1,
+                          top: 2,
                           left: 0,
                           right: 0,
                           child: Center(child: _label("N")),
                         ),
                         Positioned(
-                          bottom: 1,
+                          bottom: 2,
                           left: 0,
                           right: 0,
                           child: Center(child: _label("S")),
                         ),
                         Positioned(
-                          left: 1,
+                          left: 2,
                           top: 0,
                           bottom: 0,
                           child: Center(child: _label("W")),
                         ),
                         Positioned(
-                          right: 1,
+                          right: 2,
                           top: 0,
                           bottom: 0,
                           child: Center(child: _label("E")),
@@ -131,24 +133,23 @@ class CompassScalePanel extends ConsumerWidget {
                     ),
                   ),
 
-                  // 🔥 CAPA 2: LA FLETXA VA INDEPENDENT (Apunta al Nord GPS real sense heretar el gir de les lletres)
+                  // 🔥 CAPA 2: LA FLETXA VA INDEPENDENT
                   AnimatedRotation(
                     turns: deviceHeading / 360,
                     duration: const Duration(milliseconds: 250),
                     curve: Curves.easeOut,
                     child: CustomPaint(
                       size: const Size(
-                        10,
                         12,
-                      ), // He donat 2px més d'alçada perquè llueixi més estilitzada
+                        14,
+                      ), // Un pèl més gran perquè acompanyi el nou diàmetre de 36px
                       painter: _CompassArrowPainter(),
                     ),
                   ),
 
-                  // Punt central decoratiu superior
                   Container(
-                    width: 2,
-                    height: 2,
+                    width: 2.5,
+                    height: 2.5,
                     decoration: const BoxDecoration(
                       shape: BoxShape.circle,
                       color: Colors.black,
@@ -193,13 +194,14 @@ class CompassScalePanel extends ConsumerWidget {
     return Text(
       text,
       style: const TextStyle(
-        fontSize: 7,
+        fontSize:
+            8, // Pugem un puntet per millorar la lectura amb el diàmetre de 36px
         fontWeight: FontWeight.bold,
         color: Colors.black87,
       ),
     );
   }
-} // 👈 CORRECCIÓ: Tancament de la classe principal CompassScalePanel afegit de forma neta
+}
 
 class _CompassArrowPainter extends CustomPainter {
   @override

@@ -1,7 +1,7 @@
-// lib/notifiers/segment_stats_notifier.dart (CORREGIT DEFINITIU SENSE BUCLES)
+// lib/notifiers/segment_stats_notifier.dart (SOLUCIÓ FINAL DEFINITIVA)
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/notifiers/elevation_selection_provider.dart';
-// 🚀 1. Importem els teus sub-providers de rutes reals de Senda
 import 'package:senda/notifiers/recording_notifier.dart';
 import 'package:senda/notifiers/imported_track_notifier.dart';
 import 'package:senda/notifiers/remaining_track_notifier.dart';
@@ -33,9 +33,7 @@ class SegmentStats {
 class SegmentStatsNotifier extends Notifier<SegmentStats> {
   @override
   SegmentStats build() {
-    // 🚀 2. REACTIVITAT AUTOMÀTICA DE SENDA:
-    // Escoltem els 3 providers de traçats de forma nativa. Si es carrega un track,
-    // el build es torna a executar de manera síncrona i transparent sense penjar l'app.
+    // 🚀 1. ESCOLTEM LES RUTES REALS DE SENDA
     final real = ref.watch(trackRecordingProvider);
     final imported = ref.watch(importedTrackProvider);
     final remaining = ref.watch(remainingTrackProvider);
@@ -62,12 +60,21 @@ class SegmentStatsNotifier extends Notifier<SegmentStats> {
       return SegmentStats.empty;
     }
 
-    // 🚀 3. CALCULEM EL RANG CORRECTE DIRECTAMENT DES DEL BUILD
+    // 🚀 2. ESCOLTEM LA SELECCIÓ (MAPA + GRÀFIC)
+    // Cada cop que l'usuari toqui el mapa o el gràfic, aquest build es tornarà a executar
+    // de forma automàtica, síncrona i transparent, tinguis o no el perfil obert!
     final selection = ref.watch(elevationSelectionProvider);
+
     int start = 0;
     int end = globalDists.length - 1;
 
-    if (selection.mode == SelectionMode.range &&
+    // 🚀 3. LA CONDICIÓ UNIFICADA BLINDADA:
+    // Retallem el tram si estem en mode range, o si l'eina del mapa ha completat la selecció (selected)
+    final bool hiHaTram =
+        (selection.mode == SelectionMode.range) ||
+        (selection.mapToolState == MapSelectionToolState.selected);
+
+    if (hiHaTram &&
         selection.startTrackIndex != null &&
         selection.endTrackIndex != null) {
       start = selection.startTrackIndex!.clamp(0, globalDists.length - 1);
@@ -79,7 +86,7 @@ class SegmentStatsNotifier extends Notifier<SegmentStats> {
       }
     }
 
-    // Executem exactament les teves mateixes fórmules matemàtiques de Senda
+    // 📐 4. CÀLCULS DE SENDA (Idèntics a les teves fórmules)
     final distance = (globalDists[end] - globalDists[start]).abs();
     double ascent = 0;
     double descent = 0;
@@ -121,7 +128,6 @@ class SegmentStatsNotifier extends Notifier<SegmentStats> {
     );
   }
 
-  /// Es manté el mètode vell buit de cortesia per no trencar cap crida residual de la teva app
   void updateStats({
     required List<double> globalDists,
     required List<double> globalAlts,

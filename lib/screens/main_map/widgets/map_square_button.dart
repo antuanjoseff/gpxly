@@ -1,4 +1,4 @@
-// lib/widgets/map_square_button.dart
+// lib/widgets/map_square_button.dart (MIDA FIXA CORPORATIVA DE 56PX)
 import 'package:flutter/material.dart';
 import 'package:senda/theme/app_colors.dart';
 
@@ -26,15 +26,22 @@ class MapSquareButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool isAction = style == MapButtonStyle.action;
 
+    // 🚀 RECTIFICACIÓ SÍNCRONA DE GRANELL:
+    // - Passem de 48px a 56px de diàmetre horitzontal i vertical.
+    // - D'aquesta manera queden exactament igual d'amples i alts que el botó de les tisores.
+    // - Deixem el border-radius en 16.0 perquè conservi la forma quadrada arrodonida.
+    final double buttonSize = 56.0;
+    final double currentRadius = isAction
+        ? 18.0
+        : 16.0; // 🎯 Pugem una mica el radi proporcionalment
+
     return Container(
-      width: 48,
-      height: 48,
+      width: buttonSize, // 🎯 56px d'ample
+      height: buttonSize, // 🎯 56px d'alt
       decoration: BoxDecoration(
         // 🟢 TOTS ELS BOTONS DEL MAPA COMPARTEIXEN ARA EL MATEIX FONS SÒLID CORPORATIU
         color: AppColors.primary,
-        borderRadius: BorderRadius.circular(
-          isAction ? 16 : 12,
-        ), // Un pèl més arrodonit l'inferior d'acció
+        borderRadius: BorderRadius.circular(currentRadius),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withAlpha(isAction ? 35 : 25),
@@ -44,7 +51,7 @@ class MapSquareButton extends StatelessWidget {
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(isAction ? 16 : 12),
+        borderRadius: BorderRadius.circular(currentRadius),
         child: Material(
           color: Colors.transparent,
           child: InkWell(
@@ -57,7 +64,9 @@ class MapSquareButton extends StatelessWidget {
                           icon,
                           // 🟢 Superiors: Icona blanca | 🔴 Inferiors: Vermell elèctric d'acció/gravació
                           color: isAction ? AppColors.redAlert : Colors.white,
-                          size: isAction ? 24 : 22,
+                          size: isAction
+                              ? 26
+                              : 24, // 🎯 Pugem una mica la icona (de 22 a 24) perquè acompanyi la nova mida
                         )
                       : const SizedBox.shrink()),
             ),
