@@ -11,8 +11,8 @@ class MapSelectionReticle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 🚀 DISSENY DE RETICLE CREUAT D'ALT RENDIMENT VISUAL:
-    // Creem un punt de mira gros de 44x44px combinant un punt central i una creu de vector.
+    // 🚀 RETICLE DUPLEX D'ALTA VISIBILITAT:
+    // Utilitzem una mida fixa quadrada on es dibuixarà la circumferència exterior i la creu.
     return CustomPaint(
       size: const Size(44, 44),
       painter: _ReticlePainter(color: color),
@@ -29,44 +29,112 @@ class _ReticlePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final double cx = size.width / 2;
     final double cy = size.height / 2;
+    final double radius = size.width / 2;
 
-    // 🎯 1. CONFIGURACIÓ DEL PINZELL DE LA GPU
-    final paint = Paint()
+    // 🎯 1. CONFIGURACIÓ DE PINZELLS (Anell, línies gruixudes i línies fines)
+    final ringPaint = Paint()
       ..color = color
       ..strokeWidth =
-          3.5 // 🚀 MÉS GROIXUT: Pugem el traç de 2px a 3.5px per a una visibilitat brutal
-      ..strokeCap = StrokeCap.round
+          2.0 // Gruix de la circumferència exterior
       ..style = PaintingStyle.stroke;
 
-    // 🎯 2. DIBUIX DE LES LÍNIES DE LA CREU (Deixem un buit central de 6px net)
-    final path = Path()
-      // Línia Superior
-      ..moveTo(cx, cy - 22)
-      ..lineTo(cx, cy - 6)
-      // Línia Inferior
-      ..moveTo(cx, cy + 6)
-      ..lineTo(cx, cy + 22)
-      // Línia Esquerra
-      ..moveTo(cx - 22, cy)
-      ..lineTo(cx - 6, cy)
-      // Línia Dreta
-      ..moveTo(cx + 6, cy)
-      ..lineTo(cx + 22, cy);
+    final thickPaint = Paint()
+      ..color = color
+      ..strokeWidth =
+          3.5 // Línies exteriors gruixudes de la retícula
+      ..strokeCap = StrokeCap.square
+      ..style = PaintingStyle.stroke;
 
-    canvas.drawPath(path, paint);
+    final thinPaint = Paint()
+      ..color = color
+      ..strokeWidth =
+          1.0 // Línies interiors fines de màxima precisió
+      ..strokeCap = StrokeCap.square
+      ..style = PaintingStyle.stroke;
 
-    // 🎯 3. PUNTA CENTRAL DE PRECISIÓ ABSOLUTA
-    final centerDotPaint = Paint()
+    // 🎯 2. DIBUIX DE L'ANELL EXTERIOR
+    canvas.drawCircle(
+      Offset(cx, cy),
+      radius - (ringPaint.strokeWidth / 2),
+      ringPaint,
+    );
+
+    // 🎯 3. DEFINICIÓ DE LES DISTÀNCIES (Proporcions basades en la imatge)
+    // - El traç gruixut comença a la vora del cercle i s'apropa al centre.
+    // - Després es tanca en punta/triangle cap a la línia fina.
+    // - Les línies fines s'apropen al centre deixant un petit espai buit a la intersecció.
+
+    final double thickStart =
+        radius - ringPaint.strokeWidth; // Toca la vora interna del cercle
+    final double thickEnd = radius * 0.45; // On acaba el bloc gruixut
+    final double thinStart =
+        radius * 0.35; // On comença la línia fina (després de la punta)
+    final double centerGap =
+        2.0; // El petit buit lliure al centre exacte (sense punt)
+
+    // 🎯 4. DIBUIX DE LES LÍNIES GROIXUDES (Amb la punta bisellada/estrenyida cap al centre)
+    final thickPath = Path()
+      // Superior
+      ..moveTo(cx, cy - thickStart)
+      ..lineTo(cx, cy - thickEnd)
+      // Inferior
+      ..moveTo(cx, cy + thickStart)
+      ..lineTo(cx, cy + thickEnd)
+      // Esquerra
+      ..moveTo(cx - thickStart, cy)
+      ..lineTo(cx - thickEnd, cy)
+      // Dreta
+      ..moveTo(cx + thickStart, cy)
+      ..lineTo(cx + thickEnd, cy);
+    canvas.drawPath(thickPath, thickPaint);
+
+    // Dibuix de les puntes de transició (Triangles de transició de gruixut a fi)
+    final transitionsPath = Path()
+      // Superior
+      ..moveTo(cx - 1.75, cy - thickEnd)
+      ..lineTo(cx + 1.75, cy - thickEnd)
+      ..lineTo(cx, cy - thinStart)
+      ..close()
+      // Inferior
+      ..moveTo(cx - 1.75, cy + thickEnd)
+      ..lineTo(cx + 1.75, cy + thickEnd)
+      ..lineTo(cx, cy + thinStart)
+      ..close()
+      // Esquerra
+      ..moveTo(cx - thickEnd, cy - 1.75)
+      ..lineTo(cx - thickEnd, cy + 1.75)
+      ..lineTo(cx - thinStart, cy)
+      ..close()
+      // Dreta
+      ..moveTo(cx + thickEnd, cy - 1.75)
+      ..lineTo(cx + thickEnd, cy + 1.75)
+      ..lineTo(cx + thinStart, cy)
+      ..close();
+
+    final transitionPaint = Paint()
       ..color = color
       ..style = PaintingStyle.fill;
+    canvas.drawPath(transitionsPath, transitionPaint);
 
-    // Dibuixem un cercle massís de 3px de ràdi al centre exacte
-    canvas.drawCircle(Offset(cx, cy), 3.0, centerDotPaint);
+    // 🎯 5. DIBUIX DE LES LÍNIES FINES DE PRECISIÓ
+    final thinPath = Path()
+      // Superior interna
+      ..moveTo(cx, cy - thinStart)
+      ..lineTo(cx, cy - centerGap)
+      // Inferior interna
+      ..moveTo(cx, cy + thinStart)
+      ..lineTo(cx, cy + centerGap)
+      // Esquerra interna
+      ..moveTo(cx - thinStart, cy)
+      ..lineTo(cx - centerGap, cy)
+      // Dreta interna
+      ..moveTo(cx + thinStart, cy)
+      ..lineTo(cx + centerGap, cy);
+    canvas.drawPath(thinPath, thinPaint);
   }
 
   @override
   bool shouldRepaint(covariant _ReticlePainter oldDelegate) {
-    // Es torna a pintar només si canviem del punt verd al vermell
     return oldDelegate.color != color;
   }
 }
