@@ -20,6 +20,7 @@ import 'package:senda/notifiers/location_notifier.dart';
 import 'package:senda/notifiers/map_bearing_provider.dart';
 import 'package:senda/notifiers/map_selection_tool_notifier.dart';
 import 'package:senda/notifiers/navigation_notifier.dart';
+import 'package:senda/notifiers/nearest_track_point_notifier.dart';
 import 'package:senda/notifiers/permissions_notifier.dart';
 import 'package:senda/notifiers/recording_notifier.dart';
 import 'package:senda/notifiers/remaining_track_notifier.dart';
@@ -428,6 +429,11 @@ class _MapScreenState extends ConsumerState<MapScreen>
       final int? indexIniciUnificat =
           next.startTrackIndex ?? next.singlePointIndex;
 
+      final List<List<double>> coordsVisibles = ref
+          .read(importedTrackProvider.notifier)
+          .visibleCoordinates;
+      updateSelectedSegmentGeometry(mapController!, next, coordsVisibles);
+
       setChartInteractionGeometry(
         mapController!,
         rangeStartCoords: geom.getCoordsFromGlobalIndex(indexIniciUnificat),
@@ -782,6 +788,68 @@ class _MapScreenState extends ConsumerState<MapScreen>
                       ref
                           .read(mapCenterLonProvider.notifier)
                           .update(position.target.longitude);
+
+                      // 🚀 EL THROTTLE INTEGRAL REALMENTE DINÁMICO
+                      final ara = DateTime.now();
+                      if (ara.difference(_lastMapUpdateTime).inMilliseconds >
+                          _mapThrottleMs) {
+                        _lastMapUpdateTime = ara;
+
+                        final sel = ref.read(elevationSelectionProvider);
+
+                        // Si estamos buscando el segundo punto del tramo...
+                        if (sel.mapToolState ==
+                                MapSelectionToolState.selectingEnd &&
+                            sel.startTrackIndex != null) {
+                          // 1. Obtenemos las coordenadas visibles de la ruta actual
+                          final List<List<double>> coordsVisibles = ref
+                              .read(importedTrackProvider.notifier)
+                              .visibleCoordinates;
+
+                          if (coordsVisibles.isNotEmpty) {
+                            // 2. 🎯 CALCULAMOS EL PUNTO MÁS CERCANO AL CENTRO REAL ACTUAL DE LA CÁMERA "AL VUELO"
+                            int nearestIndex = 0;
+                            double minDistance = double.maxFinite;
+
+                            final double centerLat = position.target.latitude;
+                            final double centerLon = position.target.longitude;
+
+                            // Bucle de alto rendimiento para encontrar el punto más cercano en la GPU/CPU
+                            for (int i = 0; i < coordsVisibles.length; i++) {
+                              final double ptLon = coordsVisibles[i][0];
+                              final double ptLat = coordsVisibles[i][1];
+
+                              // Aproximación pitagórica rápida (suficiente y ultra rápida para distancias cortas en pantalla)
+                              final double dLat = ptLat - centerLat;
+                              final double dLon = ptLon - centerLon;
+                              final double distSq =
+                                  (dLat * dLat) + (dLon * dLon);
+
+                              if (distSq < minDistance) {
+                                minDistance = distSq;
+                                nearestIndex = i;
+                              }
+                            }
+
+                            // 3. Creamos el estado temporal con el índice efímero que acabamos de cazar
+                            final temporalState = sel.copyWith(
+                              provisionalEndIndex: nearestIndex,
+                            );
+
+                            // 4. ¡PINTAMOS EN LA GPU AL INSTANTE!
+                            updateSelectedSegmentGeometry(
+                              mapController!,
+                              temporalState,
+                              coordsVisibles,
+                            );
+
+                            // 5. Guardamos en el provider para que el resto de componentes mantengan la sincronía
+                            ref
+                                .read(elevationSelectionProvider.notifier)
+                                .updateProvisionalEnd(nearestIndex);
+                          }
+                        }
+                      }
                     },
 
                     onMapCreated: (controller) {

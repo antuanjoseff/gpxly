@@ -91,6 +91,41 @@ Future<void> setupUserLocationLayer(MapLibreMapController controller) async {
     ),
   );
 
+  // 🚀 1. FUENTE UNIFICADA PARA EL TRAMO SELECCIONADO
+  await controller.addSource(
+    "selected_segment_source",
+    const GeojsonSourceProperties(
+      data: {"type": "FeatureCollection", "features": []},
+    ),
+  );
+
+  // 🚀 2. CAPA INFERIOR (CONTORNO BLANCO): Crea contraste absoluto sobre cualquier color de track
+  await controller.addLayer(
+    "selected_segment_source",
+    "selected_segment_casing_layer",
+    const LineLayerProperties(
+      lineColor: "#FFFFFF", // ⚪ Blanco puro de fondo
+      lineWidth:
+          9.0, // 🎯 Gruesa para que sobresalga por los bordes de la naranja
+      lineJoin: "round",
+      lineCap: "round",
+    ),
+  );
+
+  // 🚀 3. CAPA SUPERIOR (NARANJA EFÍMERO DISCONTINUO): Destaca la selección temporal
+  await controller.addLayer(
+    "selected_segment_source",
+    "selected_segment_layer",
+    const LineLayerProperties(
+      lineColor: "#FF9800", // 🍊 Color naranja Senda
+      lineWidth: 5.0, // 🎯 Más fina para centrarse sobre el fondo blanco
+      lineJoin: "round",
+      lineCap: "round",
+      // 💡 PATRÓN DISCONTINUO: [longitud del guion, espacio en blanco] en múltiplos de grosor
+      lineDasharray: [2.0, 2.0],
+    ),
+  );
+
   await controller.addSource(
     "track_line",
     const GeojsonSourceProperties(
@@ -555,4 +590,59 @@ Future<void> updateSelectionCircles(
     rangeStartCoords: startCoords,
     rangeEndCoords: endCoords,
   );
+}
+
+/// Dibuja la línea naranja del tramo (sea definitivo o elástico/provisional)
+void updateSelectedSegmentGeometry(
+  MapLibreMapController controller,
+  ElevationSelectionState sel,
+  List<List<double>> trackCoords,
+) {
+  try {
+    // Si no hay un inicio seleccionado o la ruta está vacía, borramos la línea naranja
+    if (trackCoords.isEmpty || sel.startTrackIndex == null) {
+      controller.setGeoJsonSource("selected_segment_source", {
+        "type": "FeatureCollection",
+        "features": [],
+      });
+      return;
+    }
+
+    // 💡 CLAVE: Si ya hay un fin real lo usamos; si no, usamos el provisional del retículo
+    final int inicio = sel.startTrackIndex!;
+    final int? fin = sel.endTrackIndex ?? sel.provisionalEndIndex;
+
+    if (fin == null ||
+        inicio >= trackCoords.length ||
+        fin >= trackCoords.length) {
+      controller.setGeoJsonSource("selected_segment_source", {
+        "type": "FeatureCollection",
+        "features": [],
+      });
+      return;
+    }
+
+    // Ordenamos por si el usuario se mueve hacia atrás en la ruta
+    final int menor = inicio < fin ? inicio : fin;
+    final int major = inicio > fin ? inicio : fin;
+
+    // Cortamos la ruta original para quedarnos solo con el tramo seleccionado
+    final List<List<double>> segmentCoords = trackCoords.sublist(
+      menor,
+      major + 1,
+    );
+
+    // Lo enviamos a la capa de MapLibre
+    controller.setGeoJsonSource("selected_segment_source", {
+      "type": "FeatureCollection",
+      "features": [
+        {
+          "type": "Feature",
+          "geometry": {"type": "LineString", "coordinates": segmentCoords},
+        },
+      ],
+    });
+  } catch (e) {
+    debugPrint("⚠️ Error en updateSelectedSegmentGeometry: $e");
+  }
 }

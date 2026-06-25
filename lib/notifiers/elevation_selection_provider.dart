@@ -15,9 +15,10 @@ enum SelectionSource { none, chart, map }
 
 class ElevationSelectionState {
   final SelectionMode mode;
-  final int? singlePointIndex; // Cercle taronja (Mode single)
-  final int? startTrackIndex; // Cercle verd (Mode range)
-  final int? endTrackIndex; // Cercle vermell (Mode range)
+  final int? singlePointIndex;
+  final int? startTrackIndex;
+  final int? endTrackIndex;
+  final int? provisionalEndIndex; // 🚀 AÑADIR AQUÍ
   final MapSelectionToolState mapToolState;
   final SelectionSource source;
   final bool forceHideChart;
@@ -27,6 +28,7 @@ class ElevationSelectionState {
     this.singlePointIndex,
     this.startTrackIndex,
     this.endTrackIndex,
+    this.provisionalEndIndex, // 🚀 AÑADIR AQUÍ
     this.mapToolState = MapSelectionToolState.off,
     this.source = SelectionSource.none,
     this.forceHideChart = false,
@@ -46,6 +48,7 @@ class ElevationSelectionState {
     int? singlePointIndex,
     int? startTrackIndex,
     int? endTrackIndex,
+    int? provisionalEndIndex, // 🚀 AÑADIR AQUÍ
     MapSelectionToolState? mapToolState,
     SelectionSource? source,
     bool? forceHideChart,
@@ -64,6 +67,8 @@ class ElevationSelectionState {
       endTrackIndex: clearEndTrack
           ? null
           : (endTrackIndex ?? this.endTrackIndex),
+      provisionalEndIndex:
+          provisionalEndIndex ?? this.provisionalEndIndex, // 🚀 AÑADIR AQUÍ
       mapToolState: mapToolState ?? this.mapToolState,
       source: source ?? this.source,
       forceHideChart: forceHideChart ?? this.forceHideChart,
@@ -339,6 +344,12 @@ class ElevationSelectionNotifier extends Notifier<ElevationSelectionState> {
   void userCollapsedChart() {
     if (state.mapToolState != MapSelectionToolState.off) {
       state = state.copyWith(forceHideChart: true);
+    }
+  }
+
+  void updateProvisionalEnd(int index) {
+    if (state.mapToolState == MapSelectionToolState.selectingEnd) {
+      state = state.copyWith(provisionalEndIndex: index);
     }
   }
 }
