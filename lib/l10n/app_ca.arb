@@ -292,6 +292,9 @@
 "gpsDisabledAppBar": "SENSE GPS",
 "recoverTrackDialogBody": "S'han detectat dades d'una ruta anterior no guardada. Vols recuperar-la o prefereixes començar-ne una de nova des de zero?",
 "waypointNoGps": "Esperant senyal GPS...",
-"gpsSearching": "Buscant..."
+"gpsSearching": "Buscant...",
+
+"fixStart": "Punt d'inici",
+"fixEnd": "Punt final"
 }
 

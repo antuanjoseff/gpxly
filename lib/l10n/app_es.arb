@@ -291,6 +291,9 @@
 "gpsDisabledAppBar": "SIN GPS",
 "recoverTrackDialogBody": "Se han detectado datos de una ruta anterior no guardada. ¿Quieres recuperarla o prefieres empezar una nueva desde cero?",
 "waypointNoGps": "Esperando señal GPS...",
-"gpsSearching": "Buscando..."
+"gpsSearching": "Buscando...",
+
+"fixStart": "Punto de inicio",
+"fixEnd": "Punto final"
 }
 

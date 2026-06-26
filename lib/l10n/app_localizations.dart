@@ -1482,6 +1482,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Searching...'**
   String get gpsSearching;
+
+  /// No description provided for @fixStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start point'**
+  String get fixStart;
+
+  /// No description provided for @fixEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'End point'**
+  String get fixEnd;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -704,4 +704,10 @@ class AppLocalizationsCa extends AppLocalizations {
 
   @override
   String get gpsSearching => 'Buscant...';
+
+  @override
+  String get fixStart => 'Punt d\'inici';
+
+  @override
+  String get fixEnd => 'Punt final';
 }

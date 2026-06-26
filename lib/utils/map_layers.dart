@@ -450,7 +450,7 @@ void setUserLocationGeometry(
   }
 }
 
-// lib/screens/main_map/utils/map_layers.dart (CORREGIT DEFINITIU)
+bool _isChartGeometryProcessing = false;
 
 Future<void> setChartInteractionGeometry(
   MapLibreMapController controller, {
@@ -458,44 +458,65 @@ Future<void> setChartInteractionGeometry(
   List<double>? rangeStartCoords,
   List<double>? rangeEndCoords,
 }) async {
-  final List<Map<String, dynamic>> features = [];
-
-  if (hoverCoords != null && hoverCoords.length == 2) {
-    features.add({
-      "type": "Feature",
-      "properties": {"type": "hover"},
-      "geometry": {"type": "Point", "coordinates": hoverCoords},
-    });
-  }
-
-  if (rangeStartCoords != null && rangeStartCoords.length == 2) {
-    features.add({
-      "type": "Feature",
-      "properties": {"type": "range_start"},
-      "geometry": {"type": "Point", "coordinates": rangeStartCoords},
-    });
-  }
-
-  if (rangeEndCoords != null && rangeEndCoords.length == 2) {
-    features.add({
-      "type": "Feature",
-      "properties": {"type": "range_end"},
-      "geometry": {"type": "Point", "coordinates": rangeEndCoords},
-    });
-  }
-
-  final geojson = {"type": "FeatureCollection", "features": features};
+  if (_isChartGeometryProcessing) return;
+  _isChartGeometryProcessing = true;
 
   try {
-    await controller.setGeoJsonSource("chart_interaction_source", geojson);
-  } catch (e) {
+    final List<Map<String, dynamic>> features = [];
+
+    if (hoverCoords != null && hoverCoords.length == 2) {
+      features.add({
+        "type": "Feature",
+        "properties": {"type": "hover"},
+        "geometry": {"type": "Point", "coordinates": hoverCoords},
+      });
+    }
+
+    if (rangeStartCoords != null && rangeStartCoords.length == 2) {
+      features.add({
+        "type": "Feature",
+        "properties": {"type": "range_start"},
+        "geometry": {"type": "Point", "coordinates": rangeStartCoords},
+      });
+    }
+
+    if (rangeEndCoords != null && rangeEndCoords.length == 2) {
+      features.add({
+        "type": "Feature",
+        "properties": {"type": "range_end"},
+        "geometry": {"type": "Point", "coordinates": rangeEndCoords},
+      });
+    }
+
+    final geojson = {"type": "FeatureCollection", "features": features};
+
     try {
+      // ⚡ ESTRATEGIA ULTRA RÁPIDA (Para cuando mueves el mapa):
+      // Intentamos solo actualizar los datos. Al no destruir la fuente, el círculo NO parpadea.
+      await controller.setGeoJsonSource("chart_interaction_source", geojson);
+    } catch (e) {
+      // 💥 PLAN DE CONTINGENCIA (Solo se ejecuta al "Cargar track" si la fuente no existía o fallaba):
+      // Si falla la actualización simple, significa que hay que recrear el entorno de la GPU de forma segura.
+      try {
+        await controller.removeLayer("chart_hover_layer");
+      } catch (_) {}
+      try {
+        await controller.removeLayer("chart_start_layer");
+      } catch (_) {}
+      try {
+        await controller.removeLayer("chart_end_layer");
+      } catch (_) {}
+      try {
+        await controller.removeSource("chart_interaction_source");
+      } catch (_) {}
+
+      // Creamos la fuente limpia
       await controller.addSource(
         "chart_interaction_source",
         GeojsonSourceProperties(data: geojson),
       );
 
-      // A. CAPA TARANJA (Hover) - Blindada amb tots els tipus explícits
+      // Capa Hover (Naranja)
       await controller.addLayer(
         "chart_interaction_source",
         "chart_hover_layer",
@@ -504,9 +525,8 @@ Future<void> setChartInteractionGeometry(
           circleColor: "#FF9800",
           circleStrokeWidth: 2.0,
           circleStrokeColor: "#FFFFFF",
-          circleOpacity: 1.0, // 🚀 Forcem double, mai text
-          circleStrokeOpacity: 1.0, // 🚀 Forcem double, mai text
-          circleBlur: 0.0,
+          circleOpacity: 1.0,
+          circleStrokeOpacity: 1.0,
         ),
       );
       await controller.setFilter("chart_hover_layer", [
@@ -515,7 +535,7 @@ Future<void> setChartInteractionGeometry(
         "hover",
       ]);
 
-      // B. CAPA VERDA (Inicio) - Blindada amb tots els tipus explícits
+      // Capa Inicio (Verde)
       await controller.addLayer(
         "chart_interaction_source",
         "chart_start_layer",
@@ -526,7 +546,6 @@ Future<void> setChartInteractionGeometry(
           circleStrokeColor: "#FFFFFF",
           circleOpacity: 1.0,
           circleStrokeOpacity: 1.0,
-          circleBlur: 0.0,
         ),
       );
       await controller.setFilter("chart_start_layer", [
@@ -535,7 +554,7 @@ Future<void> setChartInteractionGeometry(
         "range_start",
       ]);
 
-      // C. CAPA ROJA (Fin) - Blindada amb tots els tipus explícits
+      // Capa Fin (Roja)
       await controller.addLayer(
         "chart_interaction_source",
         "chart_end_layer",
@@ -546,7 +565,6 @@ Future<void> setChartInteractionGeometry(
           circleStrokeColor: "#FFFFFF",
           circleOpacity: 1.0,
           circleStrokeOpacity: 1.0,
-          circleBlur: 0.0,
         ),
       );
       await controller.setFilter("chart_end_layer", [
@@ -554,11 +572,13 @@ Future<void> setChartInteractionGeometry(
         ["get", "type"],
         "range_end",
       ]);
-    } catch (innerError) {
-      debugPrint(
-        "⚠️ Errada interna en assegurar les capes de la GPU: $innerError",
-      );
     }
+  } catch (globalError) {
+    debugPrint(
+      "⚠️ Errada crítica en assegurar les capes de la GPU: $globalError",
+    );
+  } finally {
+    _isChartGeometryProcessing = false;
   }
 }
 
@@ -618,71 +638,74 @@ Future<void> updateSelectionCircles(
 }
 
 /// Dibuja la línea naranja del tramo (sea definitivo o elástico/provisional)
-void updateSelectedSegmentGeometry(
+Future<void> updateSelectedSegmentGeometry(
   MapLibreMapController controller,
   ElevationSelectionState sel,
   List<List<double>> trackCoords,
-) {
+) async {
   try {
-    // Si no hay un inicio seleccionado o la ruta está vacía, borramos la línea naranja
-    if (trackCoords.isEmpty || sel.startTrackIndex == null) {
-      // 🚀 BLINDADO: Evitamos crasheos si la fuente aún no existe en la GPU
-      try {
-        controller.setGeoJsonSource("selected_segment_source", {
-          "type": "FeatureCollection",
-          "features": [],
-        });
-      } catch (_) {}
-      return;
+    // 1. Preparar las coordenadas del segmento (si cumple las condiciones)
+    List<List<double>> segmentCoords = [];
+
+    if (trackCoords.isNotEmpty && sel.startTrackIndex != null) {
+      final int inicio = sel.startTrackIndex!;
+      final int? fin = sel.endTrackIndex ?? sel.provisionalEndIndex;
+
+      if (fin != null &&
+          inicio < trackCoords.length &&
+          fin < trackCoords.length) {
+        final int menor = inicio < fin ? inicio : fin;
+        final int major = inicio > fin ? inicio : fin;
+        segmentCoords = trackCoords.sublist(menor, major + 1);
+      }
     }
 
-    // 💡 CLAVE: Si ya hay un fin real lo usamos; si no, usamos el provisional del retículo
-    final int inicio = sel.startTrackIndex!;
-    final int? fin = sel.endTrackIndex ?? sel.provisionalEndIndex;
+    // 2. Construir el GeoJSON correspondiente
+    final geojson = {
+      "type": "FeatureCollection",
+      "features": segmentCoords.isEmpty
+          ? []
+          : [
+              {
+                "type": "Feature",
+                "geometry": {
+                  "type": "LineString",
+                  "coordinates": segmentCoords,
+                },
+              },
+            ],
+    };
 
-    if (fin == null ||
-        inicio >= trackCoords.length ||
-        fin >= trackCoords.length) {
-      // 🚀 BLINDADO: Evitamos crasheos si la fuente aún no existe en la GPU
-      try {
-        controller.setGeoJsonSource("selected_segment_source", {
-          "type": "FeatureCollection",
-          "features": [],
-        });
-      } catch (_) {}
-      return;
-    }
-
-    // Ordenamos por si el usuario se mueve hacia atrás en la ruta
-    final int menor = inicio < fin ? inicio : fin;
-    final int major = inicio > fin ? inicio : fin;
-
-    // Cortamos la ruta original para quedarnos solo con el tramo seleccionado
-    final List<List<double>> segmentCoords = trackCoords.sublist(
-      menor,
-      major + 1,
+    // 3. Comprobar la existencia real de la fuente en la GPU nativa
+    final List<String> existingSources = await controller.getSourceIds();
+    final bool sourceExists = existingSources.contains(
+      "selected_segment_source",
     );
 
-    // Lo enviamos a la capa de MapLibre
-    // 🚀 BLINDADO: Envolvemos la inyección pesada en la GPU
-    try {
-      controller.setGeoJsonSource("selected_segment_source", {
-        "type": "FeatureCollection",
-        "features": [
-          {
-            "type": "Feature",
-            "geometry": {"type": "LineString", "coordinates": segmentCoords},
-          },
-        ],
-      });
-    } catch (platformError) {
-      // Capturamos el NullPointerException nativo de MapLibre de forma silenciosa
-      // mientras la GPU termina de inicializar las capas en el arranque de la app.
-      debugPrint(
-        "⏳ Esperando que 'selected_segment_source' esté listo en el mapa...",
+    if (sourceExists) {
+      // 🚀 Si ya existe, actualizamos los datos de manera ultra veloz
+      await controller.setGeoJsonSource("selected_segment_source", geojson);
+    } else {
+      // 🚀 Si NO existe (primer arranque/carga del track), la creamos de cero con su capa
+      await controller.addSource(
+        "selected_segment_source",
+        GeojsonSourceProperties(data: geojson),
+      );
+
+      // Añadimos la capa visual asociada a esta nueva fuente (Línea naranja del tramo)
+      await controller.addLayer(
+        "selected_segment_source",
+        "selected_segment_layer",
+        const LineLayerProperties(
+          lineColor: "#FF9800", // Color naranja de selección
+          lineWidth: 5.0, // Grosor destacado para que se vea bien
+          lineOpacity: 0.85,
+          lineJoin: "round",
+          lineCap: "round",
+        ),
       );
     }
   } catch (e) {
-    debugPrint("⚠️ Error en updateSelectedSegmentGeometry: $e");
+    debugPrint("⚠️ Error crítico en updateSelectedSegmentGeometry: $e");
   }
 }

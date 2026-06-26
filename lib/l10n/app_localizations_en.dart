@@ -704,4 +704,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get gpsSearching => 'Searching...';
+
+  @override
+  String get fixStart => 'Start point';
+
+  @override
+  String get fixEnd => 'End point';
 }

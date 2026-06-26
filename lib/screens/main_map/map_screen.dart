@@ -12,6 +12,7 @@ import 'package:senda/models/user_position.dart';
 import 'package:senda/models/waypoint.dart';
 import 'package:senda/notifiers/elevation_selection_provider.dart';
 import 'package:senda/notifiers/gps_speed_notifier.dart';
+import 'package:senda/notifiers/helpers/elevation_magnet_helper.dart';
 
 // Notifiers natius de Senda
 import 'package:senda/notifiers/imported_track_notifier.dart';
@@ -20,7 +21,6 @@ import 'package:senda/notifiers/location_notifier.dart';
 import 'package:senda/notifiers/map_bearing_provider.dart';
 import 'package:senda/notifiers/map_selection_tool_notifier.dart';
 import 'package:senda/notifiers/navigation_notifier.dart';
-import 'package:senda/notifiers/nearest_track_point_notifier.dart';
 import 'package:senda/notifiers/permissions_notifier.dart';
 import 'package:senda/notifiers/recording_notifier.dart';
 import 'package:senda/notifiers/remaining_track_notifier.dart';
@@ -989,6 +989,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                             .handleMapMovementOnSelected();
                       }
 
+                      // 3. Actualitzem els proveïdors de posició del mapa
                       ref
                           .read(mapBearingProvider.notifier)
                           .update(position.bearing);
@@ -1000,6 +1001,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                           .read(mapCenterLonProvider.notifier)
                           .update(position.target.longitude);
 
+                      // 4. Control de rendiment per no saturar la CPU (Throttle)
                       final ara = DateTime.now();
                       if (ara.difference(_lastMapUpdateTime).inMilliseconds >
                           _mapThrottleMs) {
@@ -1007,91 +1009,16 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
                         final sel = ref.read(elevationSelectionProvider);
 
-                        // SI L'EINA ESTÀ ACTIVA (SIGUI PER BUSCAR L'INICI O EL FINAL)...
+                        // 🚀 L'IMANT GEOMÈTRIC EN UNA SOLA LÍNIA REUSABLE:
+                        // Només s'executa si l'eina està activa buscant inici o final
                         if (sel.mapToolState ==
                                 MapSelectionToolState.selectingStart ||
                             sel.mapToolState ==
                                 MapSelectionToolState.selectingEnd) {
-                          final bool isRecording =
-                              ref.read(trackRecordingProvider).recordingState ==
-                              RecordingState.recording;
-
-                          final List<List<double>> coordsAEvaluar = isRecording
-                              ? ref.read(trackRecordingProvider).coordinates
-                              : ref
-                                    .read(importedTrackProvider.notifier)
-                                    .visibleCoordinates;
-
-                          if (coordsAEvaluar.isNotEmpty) {
-                            int nearestIndex = 0;
-                            double minDistance = double.maxFinite;
-                            final double centerLat = position.target.latitude;
-                            final double centerLon = position.target.longitude;
-
-                            // 🎯 EL COMPÀS IMANT DE MÀXIMA PRECISIÓ GEOMÈTRICA TRACER:
-                            for (int i = 0; i < coordsAEvaluar.length; i++) {
-                              final double ptLon =
-                                  coordsAEvaluar[i][0]; // Longitud
-                              final double ptLat =
-                                  coordsAEvaluar[i][1]; // Latitud
-
-                              final double dLat = ptLat - centerLat;
-                              final double dLon = ptLon - centerLon;
-                              final double distSq =
-                                  (dLat * dLat) + (dLon * dLon);
-
-                              if (distSq < minDistance) {
-                                minDistance = distSq;
-                                nearestIndex = i;
-                              }
-                            }
-
-                            // 🛡️ PROTECCIÓ SÍNCRONA CONTRA ENTRA-I-SORTS
-                            final currentState = ref
-                                .read(elevationSelectionProvider)
-                                .mapToolState;
-                            if (currentState ==
-                                    MapSelectionToolState.selectingStart ||
-                                currentState ==
-                                    MapSelectionToolState.selectingEnd) {
-                              // A. Enviem l'índex calculat de forma instantània al Notifier
-                              ref
-                                  .read(elevationSelectionProvider.notifier)
-                                  .updateProvisionalEnd(nearestIndex);
-
-                              final liveState = ref.read(
-                                elevationSelectionProvider,
-                              );
-                              ref
-                                  .read(elevationSelectionProvider.notifier)
-                                  .updateTemporaryRange(
-                                    startIndex: liveState.startTrackIndex,
-                                    endIndex: nearestIndex,
-                                  );
-
-                              final geometryState = liveState.copyWith(
-                                startTrackIndex: liveState.startTrackIndex,
-                                endTrackIndex:
-                                    liveState.mapToolState ==
-                                        MapSelectionToolState.selectingEnd
-                                    ? nearestIndex
-                                    : null,
-                                provisionalEndIndex: nearestIndex,
-                                mode:
-                                    liveState.mapToolState ==
-                                        MapSelectionToolState.selectingEnd
-                                    ? SelectionMode.range
-                                    : SelectionMode.single,
-                              );
-
-                              // C. Pintem immediatament a la GPU del mapa
-                              updateSelectedSegmentGeometry(
-                                mapController!,
-                                geometryState,
-                                coordsAEvaluar,
-                              );
-                            }
-                          }
+                          ElevationMagnetHelper.recalcularIActualitzar(
+                            ref: ref,
+                            mapController: mapController!,
+                          );
                         }
                       }
                     },
@@ -1316,8 +1243,12 @@ class _MapScreenState extends ConsumerState<MapScreen>
                                                 sel.mapToolState ==
                                                         MapSelectionToolState
                                                             .selectingStart
-                                                    ? "Fixar Inici"
-                                                    : "Fixar Final",
+                                                    ? AppLocalizations.of(
+                                                        context,
+                                                      )!.fixStart
+                                                    : AppLocalizations.of(
+                                                        context,
+                                                      )!.fixEnd,
                                                 style: const TextStyle(
                                                   color: Colors.white,
                                                   fontWeight: FontWeight.bold,

@@ -2,13 +2,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
+import 'package:senda/models/track.dart';
 import 'package:senda/notifiers/elevation_selection_provider.dart';
+import 'package:senda/notifiers/gps_speed_notifier.dart';
+import 'package:senda/notifiers/helpers/elevation_magnet_helper.dart';
+import 'package:senda/notifiers/imported_track_notifier.dart';
+import 'package:senda/notifiers/recording_notifier.dart';
 import 'package:senda/notifiers/segment_stats_notifier.dart';
-import 'package:senda/notifiers/nearest_track_point_notifier.dart';
 import 'package:senda/screens/elevations/widgets/segment_stats_widget.dart';
 import 'package:senda/screens/main_map/widgets/map_bottom_controls/elevation_panel.dart';
 import 'package:senda/theme/app_colors.dart';
 import 'package:senda/theme/app_dimensions.dart';
+import 'package:senda/utils/map_layers.dart';
 
 /// 🚀 WIDGET MODULAR 1: EL CONTROL DE GRÀFICS I ESTADÍSTIQUES FIXES
 class MapElevationHud extends ConsumerWidget {
@@ -25,16 +30,15 @@ class MapElevationHud extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final stats = ref.watch(segmentStatsProvider);
 
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        // 📊 CAPA A: EL GRÀFIC D'ELEVACIONS (Persiana que llisca cap amunt)
-        // 📊 CAPA A: EL GRÀFIC D'ELEVACIONS (Persiana que llisca cap amunt)
-        Positioned(
-          left: 0,
-          right: 0,
-          bottom: 60.0, // Recolzat a dalt dels 60px de la barra negra
-          child: ElevationPanel(
+    return Positioned(
+      left: 0,
+      right: 0,
+      bottom: 0.0, // Clavat al fons de la pantalla
+      child: Column(
+        mainAxisSize: MainAxisSize.min, // Ocupa només l'espai necessari
+        children: [
+          // 📊 EL GRÀFIC D'ELEVACIONS
+          ElevationPanel(
             isCollapsed: isChartCollapsed,
             onCollapseChanged: (collapsed) {
               final newValue = !isChartCollapsed;
@@ -42,16 +46,9 @@ class MapElevationHud extends ConsumerWidget {
               _notifySelectionCollapse(ref, newValue);
             },
           ),
-        ),
 
-        // 🟩 CAPA B: LA BARRA NEGRA D'ESTADÍSTIQUES (Sempre visible i fixa!)
-        Positioned(
-          left: 0,
-          right: 0,
-          // 🚀 RECTIFICACIÓ ABSOLUTA: Forcem bottom 0.0 perquè quedi 100% clavada
-          // a sota de tot de la pantalla del mòbil, sense flotar.
-          bottom: 0.0,
-          child: SegmentStatsWidget(
+          // 🟩 LA BARRA NEGRA D'ESTADÍSTIQUES (A sota, tocant-se directament)
+          SegmentStatsWidget(
             distanceMeters: stats.distanceMeters,
             timeElapsedStr: stats.timeElapsedStr,
             avgSpeedStr: stats.avgSpeedStr,
@@ -63,8 +60,8 @@ class MapElevationHud extends ConsumerWidget {
               _notifySelectionCollapse(ref, newValue);
             },
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -77,7 +74,6 @@ class MapElevationHud extends ConsumerWidget {
   }
 }
 
-/// 🚀 WIDGET MODULAR 2: ELS BOTONS FLOTANTS DE LES TISORES
 /// 🚀 WIDGET MODULAR 2: EL BOTÓN MAESTRO DE LAS TIJERAS (ESTILO TOGGLE)
 class MapScissorsButtons extends ConsumerWidget {
   final bool isChartCollapsed;
@@ -93,18 +89,19 @@ class MapScissorsButtons extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final sel = ref.watch(elevationSelectionProvider);
 
-    // Calculamos la altura para no pisar el gráfico de elevación (igual que antes)
+    // Calculamos la altura para no pisar el grafico de elevacion
     final double screenHeight = MediaQuery.sizeOf(context).height;
     final double chartHeight =
         screenHeight * AppDimensions.elevationChartHeightRatio;
 
-    final double bottomOffset = isChartCollapsed
-        ? 40.0 + AppDimensions.mapSafetyPadding
-        : 60.0 + chartHeight + AppDimensions.mapSafetyPadding;
+    // 🚀 BLINDATGE VISUAL: Si no hi ha track importat, el gràfic no existeix a la pantalla
+    final bool hasImportedTrack = ref.watch(importedTrackProvider) != null;
 
-    // 💡 DETERMINAMOS EL ESTADO DEL BOTÓN MAESTRO:
-    // Si está apagado, muestra el diseño de "Tijeras".
-    // Si está encendido en cualquier fase, se convierte en un botón de "Cancelar" (X).
+    // El botó només pujarà si el gràfic NO està col·lapsat I realment hi ha un track que el mostri
+    final bool isChartVisibleReal = !isChartCollapsed && hasImportedTrack;
+
+    final double bottomOffset = isChartVisibleReal ? 60.0 + chartHeight : 60.0;
+
     final bool isToolActive = sel.mapToolState != MapSelectionToolState.off;
 
     return AnimatedPositioned(
@@ -178,8 +175,15 @@ class MapScissorsButtons extends ConsumerWidget {
   }
 
   void _handleInitialActivation(WidgetRef ref) {
-    // No recalculis res aquí.
-    // El nearest real el calcularà onCameraMove immediatament.
+    // 1️⃣ Encenem l'eina al proveïdor d'estat
     ref.read(elevationSelectionProvider.notifier).activateMapSelectionTool();
+
+    // 2️⃣ Executem l'imant estàtic des del helper en una sola línia neta
+    if (mapController != null) {
+      ElevationMagnetHelper.recalcularIActualitzar(
+        ref: ref,
+        mapController: mapController!,
+      );
+    }
   }
 }

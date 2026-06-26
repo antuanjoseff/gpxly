@@ -1,5 +1,4 @@
-// lib/notifiers/segment_stats_notifier.dart (SOLUCIÓ FINAL DEFINITIVA)
-import 'package:flutter/scheduler.dart';
+// lib/notifiers/segment_stats_notifier.dart (RESTAVRAT SENSE TRENCAMENTS)
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/notifiers/elevation_selection_provider.dart';
 import 'package:senda/notifiers/recording_notifier.dart';
@@ -61,15 +60,12 @@ class SegmentStatsNotifier extends Notifier<SegmentStats> {
     }
 
     // 🚀 2. ESCOLTEM LA SELECCIÓ (MAPA + GRÀFIC)
-    // Cada cop que l'usuari toqui el mapa o el gràfic, aquest build es tornarà a executar
-    // de forma automàtica, síncrona i transparent, tinguis o no el perfil obert!
     final selection = ref.watch(elevationSelectionProvider);
 
     int start = 0;
     int end = globalDists.length - 1;
 
-    // 🚀 3. LA CONDICIÓ UNIFICADA BLINDADA:
-    // Retallem el tram si estem en mode range, o si l'eina del mapa ha completat la selecció (selected)
+    // 🚀 3. LA CONDICIÓ UNIFICADA BLINDADA
     final bool hiHaTram =
         (selection.mode == SelectionMode.range) ||
         (selection.mapToolState == MapSelectionToolState.selected);
@@ -86,7 +82,7 @@ class SegmentStatsNotifier extends Notifier<SegmentStats> {
       }
     }
 
-    // 📐 4. CÀLCULS DE SENDA (Idèntics a les teves fórmules)
+    // 📐 4. CÀLCULS DE SENDA
     final distance = (globalDists[end] - globalDists[start]).abs();
     double ascent = 0;
     double descent = 0;
@@ -128,6 +124,7 @@ class SegmentStatsNotifier extends Notifier<SegmentStats> {
     );
   }
 
+  // 🛡️ RESTAURAT: Es manté per retrocompatibilitat amb altres crides externes de Senda
   void updateStats({
     required List<double> globalDists,
     required List<double> globalAlts,
