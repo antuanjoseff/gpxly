@@ -2,18 +2,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
-import 'package:senda/models/track.dart';
 import 'package:senda/notifiers/elevation_selection_provider.dart';
-import 'package:senda/notifiers/gps_speed_notifier.dart';
 import 'package:senda/notifiers/helpers/elevation_magnet_helper.dart';
 import 'package:senda/notifiers/imported_track_notifier.dart';
-import 'package:senda/notifiers/recording_notifier.dart';
 import 'package:senda/notifiers/segment_stats_notifier.dart';
 import 'package:senda/screens/elevations/widgets/segment_stats_widget.dart';
 import 'package:senda/screens/main_map/widgets/map_bottom_controls/elevation_panel.dart';
 import 'package:senda/theme/app_colors.dart';
 import 'package:senda/theme/app_dimensions.dart';
-import 'package:senda/utils/map_layers.dart';
 
 /// 🚀 WIDGET MODULAR 1: EL CONTROL DE GRÀFICS I ESTADÍSTIQUES FIXES
 class MapElevationHud extends ConsumerWidget {

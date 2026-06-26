@@ -5,7 +5,6 @@ import 'package:senda/notifiers/imported_track_notifier.dart';
 import 'package:senda/notifiers/navigation_notifier.dart';
 import 'package:senda/notifiers/recording_notifier.dart';
 import 'package:senda/notifiers/timer_notifier.dart';
-import 'package:senda/theme/app_dimensions.dart';
 import 'package:senda/l10n/app_localizations.dart';
 
 import 'map_bottom_controls/menu_bar.dart';

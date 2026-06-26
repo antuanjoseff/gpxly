@@ -470,6 +470,25 @@ class _MapScreenState extends ConsumerState<MapScreen>
         );
       } catch (_) {}
     });
+    // 🚀 2️⃣ SEGOND OIENT EXCLUSIU PER AL CONTROL DEL DESPLEGABLE INFERIOR
+    // 🚀 2️⃣ SEGONS OIENT EXCLUSIU PER OBRIR EL GRÀFIC AL FINAL DE LA SELECCIÓ
+    ref.listen<ElevationSelectionState>(elevationSelectionProvider, (
+      previous,
+      next,
+    ) {
+      if (!mounted) return;
+
+      // SI L'USUARI FIXA EL SEGON PUNT (Passem de buscar el fi a tram permanent fixat)
+      if (previous?.mapToolState == MapSelectionToolState.selectingEnd &&
+          next.mapToolState == MapSelectionToolState.selected) {
+        // Si el gràfic estava amagat (_isChartCollapsed és true), l'obrim a l'instant!
+        if (_isChartCollapsed) {
+          setState(() {
+            _isChartCollapsed = false;
+          });
+        }
+      }
+    });
 
     // 🛰️ OIENT 1: POSICIÓ DE L’USUARI (BLINDAT)
     ref.listen<UserPosition?>(locationProvider, (prev, next) async {
