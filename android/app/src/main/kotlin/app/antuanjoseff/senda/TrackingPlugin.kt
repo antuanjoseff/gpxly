@@ -30,14 +30,24 @@ class TrackingPlugin :
     private var applicationContext: Context? = null
 
     companion object {
+        // Volatile garanteix que els canvis d'estat es propaguin immediatament entre fils (Servei <-> Plugin)
+        @Volatile
         private var eventSink: EventChannel.EventSink? = null
 
         fun sendEvent(data: Map<String, Any>) {
-            eventSink?.success(data)
+            // 🛡️ COMPROVACIÓ MAESTRA: Guardem referència en local i comprovem si el canal segueix obert
+            val currentSink = eventSink
+            if (currentSink != null) {
+                try {
+                    currentSink.success(data)
+                } catch (e: Exception) {
+                    // Si el motor ja no hi és i falla, invalidem el sink immediatament
+                    eventSink = null
+                }
+            }
         }
     }
 
-    // 🔥 Comprovar permís REAL d’Android
     private fun hasBackgroundPermission(context: Context): Boolean {
         val fine = ContextCompat.checkSelfPermission(
             context,
@@ -53,7 +63,6 @@ class TrackingPlugin :
                bg == PackageManager.PERMISSION_GRANTED
     }
 
-    // 🔥 Demanar explícitament BACKGROUND LOCATION (Samsung ho exigeix)
     private fun requestBackgroundPermission(result: MethodChannel.Result) {
         val act = activity
         if (act == null) {
@@ -80,7 +89,6 @@ class TrackingPlugin :
             Log.d("SENDA", "Method call: ${call.method}")
 
             when (call.method) {
-
                 "start" -> {
                     val useTime = call.argument<Boolean>("useTime") ?: true
                     val seconds = call.argument<Int>("seconds") ?: 5
@@ -98,7 +106,6 @@ class TrackingPlugin :
                     result.success(null)
                 }
 
-
                 "stop" -> {
                     val intent = Intent(applicationContext, TrackingService::class.java)
                     applicationContext?.stopService(intent)
@@ -114,13 +121,11 @@ class TrackingPlugin :
                     result.success(true)
                 }
 
-                // 🔥 Comprovar permís ALWAYS real
                 "hasBackgroundPermission" -> {
                     val granted = hasBackgroundPermission(applicationContext!!)
                     result.success(granted)
                 }
 
-                // 🔥 Demanar BACKGROUND LOCATION explícitament
                 "requestBackgroundPermission" -> {
                     requestBackgroundPermission(result)
                 }
@@ -133,6 +138,10 @@ class TrackingPlugin :
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
+        // 🛡️ NETEJA CRUCIAL: El motor de Flutter marxa, desconnectem canals per evitar fugues
+        methodChannel.setMethodCallHandler(null)
+        eventChannel.setStreamHandler(null)
+        eventSink = null
         applicationContext = null
     }
 

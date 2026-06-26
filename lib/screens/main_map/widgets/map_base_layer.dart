@@ -12,6 +12,7 @@ class MapBaseLayer extends StatelessWidget {
   final void Function(MapLibreMapController) onMapCreated;
   final VoidCallback onStyleLoaded;
   final void Function(CameraPosition)? onCameraMove;
+  final VoidCallback? onCameraIdle; // 🚀 1. NUEVO CALLBACK EXPUESTO
 
   const MapBaseLayer({
     super.key,
@@ -25,20 +26,16 @@ class MapBaseLayer extends StatelessWidget {
     required this.onMapCreated,
     required this.onStyleLoaded,
     this.onCameraMove,
+    this.onCameraIdle, // 🚀 2. AÑADIDO AL CONSTRUCTOR
   });
 
   @override
   Widget build(BuildContext context) {
     return RepaintBoundary(
-      // 🔄 RESTAURACIÓ DEL LISTENER ORIGINAL DE SENDA
       child: Listener(
         behavior: HitTestBehavior.translucent,
         onPointerDown: (PointerDownEvent event) {
-          // Si el moviment de la càmera l'està provocant el codi del GPS,
-          // ignorem el toc per evitar falsos positius.
           if (isProgrammaticMove) return;
-
-          // Si el Smart Center està actiu i detectem un toc real, l'apaguem.
           if (smartCenterEnabled) {
             onSmartCenterChanged(false);
           }
@@ -55,9 +52,8 @@ class MapBaseLayer extends StatelessWidget {
           onMapLongClick: (point, latlng) => onFullScreenChanged(true),
           onMapClick: (point, latlng) => onFullScreenChanged(false),
           onCameraMove: onCameraMove,
-          onCameraIdle: () {
-            // Nota: La lògica asíncrona de desar SharedPreferences es delega al controller del pare
-          },
+          // 🚀 3. CONECTAMOS EL MAPA NATIVO CON TU NUEVA PROPIEDAD
+          onCameraIdle: onCameraIdle,
           onMapCreated: onMapCreated,
           onStyleLoadedCallback: onStyleLoaded,
         ),

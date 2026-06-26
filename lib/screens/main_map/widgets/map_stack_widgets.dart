@@ -78,6 +78,7 @@ class MapElevationHud extends ConsumerWidget {
 }
 
 /// 🚀 WIDGET MODULAR 2: ELS BOTONS FLOTANTS DE LES TISORES
+/// 🚀 WIDGET MODULAR 2: EL BOTÓN MAESTRO DE LAS TIJERAS (ESTILO TOGGLE)
 class MapScissorsButtons extends ConsumerWidget {
   final bool isChartCollapsed;
   final MapLibreMapController? mapController;
@@ -92,7 +93,7 @@ class MapScissorsButtons extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final sel = ref.watch(elevationSelectionProvider);
 
-    // 1. Obtenemos la altura proporcional exacta del gráfico cuando está abierto
+    // Calculamos la altura para no pisar el gráfico de elevación (igual que antes)
     final double screenHeight = MediaQuery.sizeOf(context).height;
     final double chartHeight =
         screenHeight * AppDimensions.elevationChartHeightRatio;
@@ -101,168 +102,84 @@ class MapScissorsButtons extends ConsumerWidget {
         ? 40.0 + AppDimensions.mapSafetyPadding
         : 60.0 + chartHeight + AppDimensions.mapSafetyPadding;
 
-    // A. Si l'eina està en OFF: Mostrem només les Tisores
-    if (sel.mapToolState == MapSelectionToolState.off) {
-      return AnimatedPositioned(
-        duration: const Duration(milliseconds: 250),
-        right: 16,
-        bottom: bottomOffset,
-        child: FloatingActionButton(
-          heroTag: "btn_tisores_modular",
-          backgroundColor: AppColors.primary, // Fons blanco limpio
-          onPressed: () => _handleAction(ref, MapSelectionToolState.off),
-          child: SizedBox(
-            width: 36, // Ampliamos ligeramente el contenedor interno
-            height: 36,
-            child: Stack(
-              children: [
-                // 🛤️ 1. LA LÍNEA DEL CAMINO (Bajada a la base de los marcadores)
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom:
-                      5, // Situada justo en la base donde terminan las puntas de los pins
-                  child: Container(
-                    height: 3.5, // Un poco más gruesa para que tenga presencia
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-
-                // 🟢 2. MARCADOR DE INICIO (Pin verde más grande a la izquierda, apoyado sobre la línea)
-                const Positioned(
-                  left: -1, // Pegado al borde izquierdo (menos padding)
-                  bottom:
-                      7, // Elevado justo lo necesario para quedar por encima del trazo
-                  child: Icon(
-                    Icons.location_on,
-                    size: 21, // Más grande (antes 16)
-                    color: Colors.white,
-                  ),
-                ),
-
-                // 🔴 3. MARCADOR DE FIN (Pin rojo más grande a la derecha, apoyado sobre la línea)
-                const Positioned(
-                  right: -1, // Pegado al borde derecho (menos padding)
-                  bottom:
-                      7, // Alineado exactamente a la misma altura que el verde
-                  child: Icon(
-                    Icons.location_on,
-                    size: 21, // Más grande (antes 16)
-                    color: Colors.white,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
-    // 🎛️ CAS B: L'eina està encesa (Muntem la barra d'accions combinades)
-    // 🎛️ CAS B: L'eina està encesa (Muntem la barra d'accions combinades simètrica)
-    String label;
-    IconData icon;
-    Color buttonBgColor; // 🚀 NOVA VARIABLE PER AL COLOR DINÀMIC
-
-    switch (sel.mapToolState) {
-      case MapSelectionToolState.selectingStart:
-        label = "Fixar inici";
-        icon = Icons.my_location;
-        buttonBgColor = const Color(0xFF4CAF50);
-        break;
-      case MapSelectionToolState.selectingEnd:
-        label = "Fixar final";
-        icon = Icons.flag;
-        buttonBgColor = const Color(0xFFF44336);
-        break;
-      case MapSelectionToolState.selected:
-        label = "Reiniciar";
-        icon = Icons.restart_alt;
-        buttonBgColor = Theme.of(
-          context,
-        ).primaryColor; // Blau corporatiu normal per reiniciar
-        break;
-      default:
-        label = "";
-        icon = Icons.help_outline;
-        buttonBgColor = Theme.of(context).primaryColor;
-    }
+    // 💡 DETERMINAMOS EL ESTADO DEL BOTÓN MAESTRO:
+    // Si está apagado, muestra el diseño de "Tijeras".
+    // Si está encendido en cualquier fase, se convierte en un botón de "Cancelar" (X).
+    final bool isToolActive = sel.mapToolState != MapSelectionToolState.off;
 
     return AnimatedPositioned(
       duration: const Duration(milliseconds: 250),
       right: 16,
       bottom: bottomOffset,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // 🔴 1. BOTÓ DE CANCEL·LAR (Ara amb fons vermell accentuat i icona blanca)
-          SizedBox(
-            width: 56, // Diàmetre simètric idèntic al botó d'acció gran
-            height: 56,
-            child: FloatingActionButton(
-              heroTag: "btn_cancel_scissors_modular",
-              // 🚀 CANVI DE COLORS CORPORATIUS:
-              backgroundColor:
-                  Colors.redAccent, // 🔴 Fons vermell per a l'acció de tancar
-              foregroundColor: Colors.white, // ⬜ Icona de la "X" en blanc pur
-              elevation: 6,
-              onPressed: () {
-                ref
-                    .read(elevationSelectionProvider.notifier)
-                    .deactivateMapSelectionTool();
-              },
-              child: const Icon(
+      child: FloatingActionButton(
+        heroTag: "btn_tisores_toggle_maestro",
+        // 🎨 Si está activo se vuelve gris oscuro/rojo suave para indicar "Cerrar"
+        backgroundColor: isToolActive
+            ? Colors.grey.shade800
+            : AppColors.primary,
+        foregroundColor: Colors.white,
+        onPressed: () {
+          if (isToolActive) {
+            // ❌ REGLA NUEVA: Si está activa, un clic aquí cancela y apaga todo
+            ref
+                .read(elevationSelectionProvider.notifier)
+                .deactivateMapSelectionTool();
+          } else {
+            // 🟢 Si está apagada, enciende la herramienta en el mapa
+            _handleInitialActivation(ref);
+          }
+        },
+        child: isToolActive
+            ? const Icon(
                 Icons.close,
-                size: 24,
-              ), // Icona ben visible de 24px
-            ),
-          ),
-
-          const SizedBox(width: AppDimensions.verticalSpacing),
-          FloatingActionButton.extended(
-            heroTag: "btn_action_scissors_modular",
-            // 🚀 APLICQUEM EL COLOR DINÀMIC AL FONS DEL BOTÓ:
-            backgroundColor: buttonBgColor,
-            foregroundColor: Colors.white,
-            icon: Icon(icon),
-            label: Text(label),
-            onPressed: () => _handleAction(ref, sel.mapToolState),
-          ),
-        ],
+                size: 26,
+              ) // ❌ Icono de cancelar si está encendido
+            : SizedBox(
+                width: 36,
+                height: 36,
+                child: Stack(
+                  children: [
+                    // Tu trazado blanco del botón de las tijeras original...
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 5,
+                      child: Container(
+                        height: 3.5,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    const Positioned(
+                      left: -1,
+                      bottom: 7,
+                      child: Icon(
+                        Icons.location_on,
+                        size: 21,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const Positioned(
+                      right: -1,
+                      bottom: 7,
+                      child: Icon(
+                        Icons.location_on,
+                        size: 21,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
       ),
     );
   }
 
-  void _handleAction(WidgetRef ref, MapSelectionToolState currentState) {
-    final notifier = ref.read(elevationSelectionProvider.notifier);
-
-    // Filtre de precisió geogràfica sota demanda (0ms)
-    final double currentZoom = mapController?.cameraPosition?.zoom ?? 14.0;
-    ref
-        .read(nearestTrackPointProvider.notifier)
-        .refreshNearestPoint(currentZoom: currentZoom);
-
-    final int nearest = ref.read(nearestTrackPointProvider);
-
-    switch (currentState) {
-      case MapSelectionToolState.off:
-        notifier.activateMapSelectionTool();
-        break;
-      case MapSelectionToolState.selectingStart:
-        notifier.fixStartFromMap(nearest);
-        break;
-      case MapSelectionToolState.selectingEnd:
-        notifier.fixEndFromMap(nearest);
-        break;
-      case MapSelectionToolState.selected:
-        // 🚀 REINICI NET: Posem els índexs a null per forçar l'esborrat dels cercles al mapa
-        notifier.resetMapSelection();
-        break;
-      default:
-        break;
-    }
+  void _handleInitialActivation(WidgetRef ref) {
+    // No recalculis res aquí.
+    // El nearest real el calcularà onCameraMove immediatament.
+    ref.read(elevationSelectionProvider.notifier).activateMapSelectionTool();
   }
 }

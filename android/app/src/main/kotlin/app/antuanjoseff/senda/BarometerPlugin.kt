@@ -19,7 +19,6 @@ class BarometerPlugin :
     private var events: EventChannel.EventSink? = null
     private lateinit var methodChannel: MethodChannel
 
-    // 1. CAL DECLARAR LA VARIABLE (per defecte SENSOR_DELAY_NORMAL)
     private var currentSamplingPeriod: Int = SensorManager.SENSOR_DELAY_NORMAL
     private var isRunning: Boolean = false
 
@@ -59,7 +58,6 @@ class BarometerPlugin :
         }
     }
 
-    // 2. MÈTODES DE CONTROL ENCAPSULATS
     private fun startTracking() {
         if (!isRunning) {
             pressureSensor?.also {
@@ -92,13 +90,27 @@ class BarometerPlugin :
     }
 
     override fun onSensorChanged(event: SensorEvent) {
-        val pressure = event.values[0]
-        events?.success(pressure)
+        // 🛡️ COMPROVACIÓ DE SEGURETAT: Si la variable 'events' s'ha posat a null des d'un altre fil 
+        // o si el sensor ja s'està aturant, guardem la referència en una variable local abans d'emetre.
+        val currentSink = events
+        if (currentSink != null && isRunning) {
+            val pressure = event.values[0]
+            try {
+                currentSink.success(pressure)
+            } catch (e: Exception) {
+                // Captura qualsevol intent d'escriptura en un canal tancat per si de cas
+                events = null
+            }
+        }
     }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
+        // 🛡️ NETEJA COMPLETA: Aturem el sensor i forcem immediatament que el canal sigui nul.
+        // D'aquesta manera cap esdeveniment residual d'onSensorChanged podrà intentar parlar amb Flutter.
         stopTracking()
+        events = null
+        methodChannel.setMethodCallHandler(null)
     }
 }

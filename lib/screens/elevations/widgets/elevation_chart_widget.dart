@@ -2,6 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:senda/models/track.dart';
+import 'package:senda/notifiers/recording_notifier.dart';
 import 'package:senda/screens/elevations/painters/selection_painter.dart';
 import 'package:senda/screens/elevations/utils/chart_utils.dart';
 import 'package:senda/theme/app_colors.dart';
@@ -49,6 +51,8 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
 
   DateTime _lastThrottleTime = DateTime.fromMillisecondsSinceEpoch(0);
   static const int _throttleDurationMs = 32;
+  DateTime _lastStatsThrottleTime = DateTime.fromMillisecondsSinceEpoch(0);
+  static const int _statsThrottleDurationMs = 200;
 
   @override
   void didUpdateWidget(covariant ElevationChartWidget oldWidget) {
@@ -209,45 +213,61 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
           onPanUpdate: (details) {
             if (_draggingNeedle == -1 || _draggingNeedle == 0) return;
             final x = details.localPosition.dx;
-            final idx = ChartLogic.calculateIndexFromX(x, width, globalDists);
+            int idx = ChartLogic.calculateIndexFromX(x, width, globalDists);
 
-            // 1. ACTUALITZACIÓ LOCAL VISUAL (Sempre a màxima velocitat a la pantalla)
-            if (_draggingNeedle == 1) {
-              final actualEnd = endIdx >= 0 ? endIdx : idx;
-              setState(() {
-                if (idx > actualEnd) {
-                  _localStartIdx = actualEnd;
-                  _localEndIdx = idx;
-                  _draggingNeedle = 2;
-                } else {
-                  _localStartIdx = idx;
-                  _localEndIdx = actualEnd;
-                }
-              });
-            } else if (_draggingNeedle == 2) {
-              final actualStart = startIdx >= 0 ? startIdx : idx;
-              setState(() {
-                if (idx < actualStart) {
-                  _localStartIdx = idx;
-                  _localEndIdx = actualStart;
-                  _draggingNeedle = 1;
-                } else {
-                  _localStartIdx = actualStart;
-                  _localEndIdx = idx;
-                }
-              });
-            } else if (_draggingNeedle == 3) {
-              setState(() {
-                _localGraphIdx = idx;
-              });
+            // 🛡️ REGLA DE BLOQUEO DE SENDA (FUTURO INFRANQUEABLE)
+            final bool isRecording =
+                ref.read(trackRecordingProvider).recordingState ==
+                RecordingState.recording;
+            if (isRecording) {
+              final int limitePasado = safePastDists.isNotEmpty
+                  ? safePastDists.length - 1
+                  : 0;
+              idx = idx.clamp(0, limitePasado);
             }
 
-            // 2. FILTRE THROTTLE: Enviem la informació a la barra negra de dades de forma controlada cada 32ms
-            // D'aquesta manera evitem asfixiar el fil d'execució de dades geomètriques de Senda
+            // 1. ACTUALITZACIÓ LOCAL VISUAL (Máxima velocidad a 32ms para el ojo humano)
             final now = DateTime.now();
             if (now.difference(_lastThrottleTime).inMilliseconds >=
                 _throttleDurationMs) {
               _lastThrottleTime = now;
+
+              if (_draggingNeedle == 1) {
+                final actualEnd = endIdx >= 0 ? endIdx : idx;
+                setState(() {
+                  if (idx > actualEnd) {
+                    _localStartIdx = actualEnd;
+                    _localEndIdx = idx;
+                    _draggingNeedle = 2;
+                  } else {
+                    _localStartIdx = idx;
+                    _localEndIdx = actualEnd;
+                  }
+                });
+              } else if (_draggingNeedle == 2) {
+                final actualStart = startIdx >= 0 ? startIdx : idx;
+                setState(() {
+                  if (idx < actualStart) {
+                    _localStartIdx = idx;
+                    _localEndIdx = actualStart;
+                    _draggingNeedle = 1;
+                  } else {
+                    _localStartIdx = actualStart;
+                    _localEndIdx = idx;
+                  }
+                });
+              } else if (_draggingNeedle == 3) {
+                setState(() {
+                  _localGraphIdx = idx;
+                });
+              }
+            }
+
+            // 🚀 2. FILTRE THROTTLE DE ESTADÍSTICAS: Frenamos el cálculo pesado a 200ms
+            // De esta forma la CPU no se satura calculando desniveles punto por punto
+            if (now.difference(_lastStatsThrottleTime).inMilliseconds >=
+                _statsThrottleDurationMs) {
+              _lastStatsThrottleTime = now;
 
               if (_localStartIdx != null &&
                   _localEndIdx != null &&
@@ -264,6 +284,7 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
           },
 
           onPanEnd: (_) {
+            // Forzamos la actualización inmediata al soltar para sincronizar el último píxel
             if (_localStartIdx != null &&
                 _localEndIdx != null &&
                 _draggingNeedle != 3 &&

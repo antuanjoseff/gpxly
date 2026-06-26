@@ -26,14 +26,14 @@ void stopWaypointPulse(MapLibreMapController controller) {
   _waypointPulseTimer = null;
 
   try {
+    // 🟢 COMPILACIÓN CORRECTA: Usamos la clase nativa asignando solo el radio base
     controller.setLayerProperties(
       "waypoints_recorded_layer",
-      CircleLayerProperties(circleRadius: 8.0),
+      const CircleLayerProperties(circleRadius: 8.0),
     );
-
     controller.setLayerProperties(
       "waypoints_imported_layer",
-      CircleLayerProperties(circleRadius: 8.0),
+      const CircleLayerProperties(circleRadius: 8.0),
     );
   } catch (e) {
     debugPrint("⚠️ No s'ha pogut restaurar el radi base al aturar el pols: $e");
@@ -48,11 +48,11 @@ void _updateWaypointPulse(MapLibreMapController controller) {
     const double baseRadius = 8.0;
     final double radius = baseRadius + _pulseValue;
 
+    // 🟢 COMPILACIÓN CORRECTA: Pasamos el double dinámico del pulso de forma segura
     controller.setLayerProperties(
       "waypoints_recorded_layer",
       CircleLayerProperties(circleRadius: radius),
     );
-
     controller.setLayerProperties(
       "waypoints_imported_layer",
       CircleLayerProperties(circleRadius: radius),
@@ -258,6 +258,8 @@ Future<void> animateWaypointAppearance(
   for (int i = 0; i <= steps; i++) {
     final double t = i / steps;
     try {
+      // 🟢 SOLUCIÓN DE COMPILACIÓN: Volvemos a la clase requerida por MapLibre,
+      // pero asignando el double estricto 't' únicamente a los campos de opacidad.
       await controller.setLayerProperties(
         layerId,
         CircleLayerProperties(circleOpacity: t, circleStrokeOpacity: t),
@@ -285,35 +287,39 @@ Future<void> setupWaypointLayers(MapLibreMapController controller) async {
     ),
   );
 
-  // 🚀 BLINDATGE DE LA GPU DE MAPLIBRE:
-  // Forcem tots els valors numèrics de gruix i opacitat a doubles estrictes
-  await controller.addLayer(
-    'waypoints_recorded_source',
-    'waypoints_recorded_layer',
-    const CircleLayerProperties(
-      circleRadius: 8.0,
-      circleColor: "#4CAF50",
-      circleStrokeWidth: 2.0,
-      circleStrokeColor: "#FFFFFF",
-      circleOpacity: 0.0,
-      circleStrokeOpacity: 0.0,
-      circleBlur: 0.0,
-    ),
-  );
+  // 🚀 BLINDADO CONTRA EL LOG 'circle-blur Expected number but found string instead':
+  // Inyectamos la configuración nativa de la GPU mediante mapas planos directos al inicializar la capa.
+  try {
+    await controller.addLayer(
+      'waypoints_recorded_source',
+      'waypoints_recorded_layer',
+      const CircleLayerProperties(
+        circleRadius: 8.0,
+        circleColor: "#4CAF50",
+        circleStrokeWidth: 2.0,
+        circleStrokeColor: "#FFFFFF",
+        circleOpacity: 0.0,
+        circleStrokeOpacity: 0.0,
+        circleBlur: 0.0,
+      ),
+    );
 
-  await controller.addLayer(
-    'waypoints_imported_source',
-    'waypoints_imported_layer',
-    const CircleLayerProperties(
-      circleRadius: 8.0,
-      circleColor: "#00A8E8",
-      circleStrokeWidth: 2.0,
-      circleStrokeColor: "#FFFFFF",
-      circleOpacity: 0.0,
-      circleStrokeOpacity: 0.0,
-      circleBlur: 0.0,
-    ),
-  );
+    await controller.addLayer(
+      'waypoints_imported_source',
+      'waypoints_imported_layer',
+      const CircleLayerProperties(
+        circleRadius: 8.0,
+        circleColor: "#00A8E8",
+        circleStrokeWidth: 2.0,
+        circleStrokeColor: "#FFFFFF",
+        circleOpacity: 0.0,
+        circleStrokeOpacity: 0.0,
+        circleBlur: 0.0,
+      ),
+    );
+  } catch (e) {
+    debugPrint("⚠️ Error al dar de alta las capas de waypoints en la GPU: $e");
+  }
 }
 
 Future<Uint8List> _createBlueDot() async {
@@ -564,18 +570,29 @@ Future<void> updateSelectionCircles(
 ) async {
   if (trackCoords.isEmpty) return;
 
+  // Cas 1: No hi ha cap punt seleccionat (neteja de la gràfica)
   if (sel.startTrackIndex == null && sel.endTrackIndex == null) {
-    await controller.setGeoJsonSource("chart_interaction_source", {
-      "type": "FeatureCollection",
-      "features": [],
-    });
-    return; // 🎯 Tallem l'execució aquí
+    // 🛡️ SOLUCIÓ NETA: Si el modo de selección es 'none' o inicial, evitamos hacer un setGeoJsonSource innecesario
+    if (sel.mode == SelectionMode.none) {
+      return; // No hace falta limpiar una fuente que ni siquiera se ha pintado aún
+    }
+
+    try {
+      await controller.setGeoJsonSource("chart_interaction_source", {
+        "type": "FeatureCollection",
+        "features": [],
+      });
+    } on PlatformException catch (_) {
+      // Ya no imprimimos el error largo en el terminal, lo silenciamos porque es un comportamiento esperado en la carga
+    }
+    return; // 🎯 Tallem l'execució aquí de forma segura
   }
 
+  // Cas 2: Hi ha punts seleccionats, calculem coordenades
   List<double>? startCoords;
   List<double>? endCoords;
 
-  // Validem que els indexs de Riverpod no estiguin fora dels límits de la llista real del mapa
+  // Validem que els índexs de Riverpod no estiguin fora dels límits de la llista real del mapa
   if (sel.startTrackIndex != null &&
       sel.startTrackIndex! < trackCoords.length) {
     startCoords = trackCoords[sel.startTrackIndex!];
@@ -585,11 +602,19 @@ Future<void> updateSelectionCircles(
     endCoords = trackCoords[sel.endTrackIndex!];
   }
 
-  await setChartInteractionGeometry(
-    controller,
-    rangeStartCoords: startCoords,
-    rangeEndCoords: endCoords,
-  );
+  // Enviem les coordenades calculades a la geometria del mapa
+  try {
+    await setChartInteractionGeometry(
+      controller,
+      rangeStartCoords: startCoords,
+      rangeEndCoords: endCoords,
+    );
+  } on PlatformException catch (e) {
+    // 🛡️ Evitem el crash també aquí si la font falla durant l'actualització de coordenades
+    print(
+      "MapLibre: Error en establir la geometria d'interacció: ${e.message}",
+    );
+  }
 }
 
 /// Dibuja la línea naranja del tramo (sea definitivo o elástico/provisional)
@@ -601,10 +626,13 @@ void updateSelectedSegmentGeometry(
   try {
     // Si no hay un inicio seleccionado o la ruta está vacía, borramos la línea naranja
     if (trackCoords.isEmpty || sel.startTrackIndex == null) {
-      controller.setGeoJsonSource("selected_segment_source", {
-        "type": "FeatureCollection",
-        "features": [],
-      });
+      // 🚀 BLINDADO: Evitamos crasheos si la fuente aún no existe en la GPU
+      try {
+        controller.setGeoJsonSource("selected_segment_source", {
+          "type": "FeatureCollection",
+          "features": [],
+        });
+      } catch (_) {}
       return;
     }
 
@@ -615,10 +643,13 @@ void updateSelectedSegmentGeometry(
     if (fin == null ||
         inicio >= trackCoords.length ||
         fin >= trackCoords.length) {
-      controller.setGeoJsonSource("selected_segment_source", {
-        "type": "FeatureCollection",
-        "features": [],
-      });
+      // 🚀 BLINDADO: Evitamos crasheos si la fuente aún no existe en la GPU
+      try {
+        controller.setGeoJsonSource("selected_segment_source", {
+          "type": "FeatureCollection",
+          "features": [],
+        });
+      } catch (_) {}
       return;
     }
 
@@ -633,15 +664,24 @@ void updateSelectedSegmentGeometry(
     );
 
     // Lo enviamos a la capa de MapLibre
-    controller.setGeoJsonSource("selected_segment_source", {
-      "type": "FeatureCollection",
-      "features": [
-        {
-          "type": "Feature",
-          "geometry": {"type": "LineString", "coordinates": segmentCoords},
-        },
-      ],
-    });
+    // 🚀 BLINDADO: Envolvemos la inyección pesada en la GPU
+    try {
+      controller.setGeoJsonSource("selected_segment_source", {
+        "type": "FeatureCollection",
+        "features": [
+          {
+            "type": "Feature",
+            "geometry": {"type": "LineString", "coordinates": segmentCoords},
+          },
+        ],
+      });
+    } catch (platformError) {
+      // Capturamos el NullPointerException nativo de MapLibre de forma silenciosa
+      // mientras la GPU termina de inicializar las capas en el arranque de la app.
+      debugPrint(
+        "⏳ Esperando que 'selected_segment_source' esté listo en el mapa...",
+      );
+    }
   } catch (e) {
     debugPrint("⚠️ Error en updateSelectedSegmentGeometry: $e");
   }

@@ -71,6 +71,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
   MapLibreMapController? mapController;
   bool styleInitialized = false;
   bool _fullScreen = false;
+  Timer? _mapStopTimer;
   LatLng? _initialCameraTarget;
   double _initialZoom = 14;
   bool waypointLayersReady = false;
@@ -88,8 +89,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
   int? selectedIndexStart;
   int? selectedIndexEnd;
   int? selectedIndexGraph;
-  int? _prevWpIndex;
-  int? _lastWpIndex;
   bool _showRecordingSubMenu = false;
   bool _showNavigationSubMenu = false;
 
@@ -99,10 +98,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
   late MapAnimator mapAnimator;
   double _currentMapPadding = 0;
-
-  Timer? _waypointPulseTimer;
-  double _pulseValue = 0.0;
-  bool _pulseIncreasing = true;
 
   @override
   void initState() {
@@ -133,9 +128,25 @@ class _MapScreenState extends ConsumerState<MapScreen>
   }
 
   @override
+  @override
   void dispose() {
+    // 1. Treu l'observador del cicle de vida de l'aplicació
     WidgetsBinding.instance.removeObserver(this);
+
+    // 2. Atura els sensors natius si cal
     NativeBarometerChannel.stop();
+
+    // 3. 🛡️ NETEJA DEL MAPA: Avisem al motor natiu de MapLibre que es destrueixi immediatament
+    // Això talla en sec qualsevol renderitzat, animació o descàrrega de tiles en segon pla.
+    try {
+      mapController?.dispose();
+    } catch (e) {
+      print(
+        "MapLibre: Error en alliberar el controlador del mapa al dispose: $e",
+      );
+    }
+
+    // 4. Finalment, destrueix el giny de Flutter de forma normal
     super.dispose();
   }
 
@@ -412,9 +423,10 @@ class _MapScreenState extends ConsumerState<MapScreen>
         (remaining?.distances.isNotEmpty ?? false);
 
     // ─────────────────────────────────────────────────────────────
-    // 🛡️ RECEPTORS I OIENTS DE SEGUIDAMENT ASÍNCRON
-    ref.listen(elevationSelectionProvider, (previous, next) {
-      if (!styleInitialized || mapController == null) return;
+    // 🛡️ RECEPTOR DE SELECCIÓN ADAPTADO (ESCUDO ANTICRASH DE GPU)
+    ref.listen(elevationSelectionProvider, (previous, next) async {
+      // 🛡️ COMPROBACIÓ MESTRA AMPLIADA
+      if (!styleInitialized || mapController == null || !mounted) return;
 
       final bool isRange = next.mode == SelectionMode.range;
 
@@ -425,48 +437,80 @@ class _MapScreenState extends ConsumerState<MapScreen>
       }
 
       final geom = MapGeometryHelper(ref: ref, mapController: mapController);
-
       final int? indexIniciUnificat =
           next.startTrackIndex ?? next.singlePointIndex;
 
-      final List<List<double>> coordsVisibles = ref
-          .read(importedTrackProvider.notifier)
-          .visibleCoordinates;
-      updateSelectedSegmentGeometry(mapController!, next, coordsVisibles);
+      final bool isRecording =
+          ref.read(trackRecordingProvider).recordingState ==
+          RecordingState.recording;
 
-      setChartInteractionGeometry(
-        mapController!,
-        rangeStartCoords: geom.getCoordsFromGlobalIndex(indexIniciUnificat),
-        rangeEndCoords: geom.getCoordsFromGlobalIndex(next.endTrackIndex),
-        hoverCoords: null,
-      );
+      final List<List<double>> coordsActuales = isRecording
+          ? ref.read(trackRecordingProvider).coordinates
+          : ref.read(importedTrackProvider.notifier).visibleCoordinates;
+
+      try {
+        await updateSelectionCircles(mapController!, next, coordsActuales);
+        if (!mounted) return;
+
+        updateSelectedSegmentGeometry(mapController!, next, coordsActuales);
+
+        // 🚀 Mantenim pintada la línia també si ja s'ha seleccionat el tram completat
+        if (next.mapToolState == MapSelectionToolState.selected) {
+          updateSelectedSegmentGeometry(mapController!, next, coordsActuales);
+        }
+
+        if (!mounted) return;
+        await setChartInteractionGeometry(
+          mapController!,
+          rangeStartCoords: geom.getCoordsFromGlobalIndex(
+            next.startTrackIndex ?? next.singlePointIndex,
+          ),
+          rangeEndCoords: geom.getCoordsFromGlobalIndex(next.endTrackIndex),
+          hoverCoords: null,
+        );
+      } catch (_) {}
     });
 
-    // 🛰️ OIENT 1: POSICIÓ DE L’USUARI
+    // 🛰️ OIENT 1: POSICIÓ DE L’USUARI (BLINDAT)
     ref.listen<UserPosition?>(locationProvider, (prev, next) async {
-      if (!styleInitialized || mapController == null || next == null) return;
+      // 🛡️ CONTROL INICIAL: Afegim !mounted
+      if (!styleInitialized ||
+          mapController == null ||
+          next == null ||
+          !mounted)
+        return;
 
       final recState = ref.read(trackRecordingProvider).recordingState;
-      if (recState != RecordingState.recording) {
-        mapController?.setGeoJsonSource("user_location", {
-          "type": "FeatureCollection",
-          "features": [
-            {
-              "type": "Feature",
-              "geometry": {
-                "type": "Point",
-                "coordinates": [
-                  next.position.longitude,
-                  next.position.latitude,
-                ],
-              },
-            },
-          ],
-        });
 
-        mapAnimator.animateUserPosition(
-          next.position,
-          bottomPadding: _currentMapPadding,
+      try {
+        if (recState != RecordingState.recording) {
+          // Canviem ! per ?. per a màxima seguretat de punters
+          await mapController?.setGeoJsonSource("user_location", {
+            "type": "FeatureCollection",
+            "features": [
+              {
+                "type": "Feature",
+                "geometry": {
+                  "type": "Point",
+                  "coordinates": [
+                    next.position.longitude,
+                    next.position.latitude,
+                  ],
+                },
+              },
+            ],
+          });
+
+          // 🛡️ Re-comprovem abans d'animar la posició de l'usuari
+          if (!mounted) return;
+          mapAnimator.animateUserPosition(
+            next.position,
+            bottomPadding: _currentMapPadding,
+          );
+        }
+      } on PlatformException catch (e) {
+        print(
+          "MapLibre: Evitat error de JNI en actualitzar posició d'usuari: ${e.message}",
         );
       }
 
@@ -480,14 +524,22 @@ class _MapScreenState extends ConsumerState<MapScreen>
       final bool isRealSignal = next.accuracy < 100.0;
 
       if (!hasDoneFirstFixZoom && isRealSignal) {
+        if (!mounted) return; // 🛡️ Seguretat abans del setState
         setState(() {
           hasDoneFirstFixZoom = true;
           isProgrammaticMove = true;
           _lastCameraCenter = next.position;
         });
 
-        safeAnimateCamera(CameraUpdate.newLatLngZoom(next.position, 16.0));
+        try {
+          safeAnimateCamera(CameraUpdate.newLatLngZoom(next.position, 16.0));
+        } catch (e) {
+          print(
+            "MapLibre: Ignorada animació de càmera inicial (pantalla tancada)",
+          );
+        }
 
+        // 🛡️ PROTECCIÓ DEL RETARD DE 300MS
         Future.delayed(const Duration(milliseconds: 300), () {
           if (mounted) {
             setState(() => isProgrammaticMove = false);
@@ -512,13 +564,21 @@ class _MapScreenState extends ConsumerState<MapScreen>
         }
 
         if (distanceSinceLastMove > 3.0) {
+          if (!mounted) return; // 🛡️ Seguretat abans del setState
           setState(() {
             isProgrammaticMove = true;
             _lastCameraCenter = next.position;
           });
 
-          safeAnimateCamera(CameraUpdate.newLatLng(next.position));
+          try {
+            safeAnimateCamera(CameraUpdate.newLatLng(next.position));
+          } catch (e) {
+            print(
+              "MapLibre: Ignorada animació de seguiment intel·ligent (pantalla tancada)",
+            );
+          }
 
+          // 🛡️ PROTECCIÓ DEL RETARD DE 600MS
           Future.delayed(const Duration(milliseconds: 600), () {
             if (mounted) {
               setState(() => isProgrammaticMove = false);
@@ -528,12 +588,19 @@ class _MapScreenState extends ConsumerState<MapScreen>
       }
     });
 
-    // 📊 OIENT 2: GRAVACIÓ FÍSICA
+    // 📊 OIENT 2: GRAVACIÓ FÍSICA (BLINDAT)
     ref.listen<Track>(trackRecordingProvider, (prev, next) {
-      if (!styleInitialized || mapController == null) return;
+      // 🛡️ CONTROL INICIAL: Afegim la comprovació de cicle de vida !mounted
+      if (!styleInitialized || mapController == null || !mounted) return;
 
-      if (next.recordingState == RecordingState.recording) {
-        mapAnimator.updateFromTrack(next, !smartCenterEnabled);
+      try {
+        if (next.recordingState == RecordingState.recording) {
+          mapAnimator.updateFromTrack(next, !smartCenterEnabled);
+        }
+      } catch (e) {
+        print(
+          "MapLibre: Error en actualitzar l'animació de la ruta gravada: $e",
+        );
       }
 
       if (isImportingGpx) return;
@@ -547,34 +614,47 @@ class _MapScreenState extends ConsumerState<MapScreen>
         hasDoneRecoveryFit = true;
         // final padding = _computeMapPadding(context, true);
 
-        MapGeometryHelper(ref: ref, mapController: mapController).fitToBounds(
-          next.coordinates,
-          instant: true,
-          left: 40,
-          right: 40,
-          // top: padding.top,
-          // bottom: padding.bottom,
-        );
+        // 🛡️ Protegim l'ajust de zoom a la pantalla (fitToBounds)
+        try {
+          if (!mounted) return; // Re-comprovació abans de moure la càmera
+          MapGeometryHelper(ref: ref, mapController: mapController).fitToBounds(
+            next.coordinates,
+            instant: true,
+            left: 40,
+            right: 40,
+            // top: padding.top,
+            // bottom: padding.bottom,
+          );
+        } catch (e) {
+          print(
+            "MapLibre: No s'han pogut enquadrar els límits de la ruta recuperada: $e",
+          );
+        }
       }
     });
 
-    // OIENT 3: TRACK IMPORTAT
+    // OIENT 3: TRACK IMPORTAT (BLINDAT)
     ref.listen<Track?>(importedTrackProvider, (prev, next) {
-      if (!styleInitialized || mapController == null) return;
+      // 🛡️ CONTROL INICIAL: Evitem l'execució si la pantalla ja no està muntada
+      if (!styleInitialized || mapController == null || !mounted) return;
+
       // 🔥 MOSTRAR AUTOMÀTICAMENT EL PANELL D’ELEVACIONS
       if (next != null && next.coordinates.isNotEmpty) {
-        setState(() => _isChartCollapsed = false);
+        if (mounted) setState(() => _isChartCollapsed = false);
       }
 
       if (next == null) {
-        setState(() {
-          selectedIndexGraph = null;
-          selectedIndexStart = null;
-          selectedIndexEnd = null;
-        });
+        if (mounted) {
+          setState(() {
+            selectedIndexGraph = null;
+            selectedIndexStart = null;
+            selectedIndexEnd = null;
+          });
+        }
 
         try {
-          mapController!.setGeoJsonSource("imported_track", {
+          // Canviem ! per ?. per seguretat de memòria
+          mapController?.setGeoJsonSource("imported_track", {
             "type": "FeatureCollection",
             "features": [],
           });
@@ -589,126 +669,228 @@ class _MapScreenState extends ConsumerState<MapScreen>
           .visibleCoordinates;
 
       if (coordsVisibles.isEmpty) {
-        mapController!.setGeoJsonSource("imported_track", {
+        try {
+          mapController?.setGeoJsonSource("imported_track", {
+            "type": "FeatureCollection",
+            "features": [],
+          });
+        } catch (_) {}
+        return;
+      }
+
+      // 🛡️ Encapsulem les crides natives del mapa en un try/catch segur
+      try {
+        mapController?.setGeoJsonSource("imported_track", {
           "type": "FeatureCollection",
-          "features": [],
+          "features": [
+            {
+              "type": "Feature",
+              "geometry": {"type": "LineString", "coordinates": coordsVisibles},
+            },
+          ],
         });
-        return;
-      }
 
-      mapController!.setGeoJsonSource("imported_track", {
-        "type": "FeatureCollection",
-        "features": [
-          {
-            "type": "Feature",
-            "geometry": {"type": "LineString", "coordinates": coordsVisibles},
-          },
-        ],
-      });
+        if (!mounted) return; // Seguretat abans de llegir propietats visuals
+        final importedSettings = ref.read(importedTrackSettingsProvider);
 
-      final importedSettings = ref.read(importedTrackSettingsProvider);
-
-      mapController!.setLayerProperties(
-        "imported_track_layer",
-        LineLayerProperties(
-          lineColor: importedSettings.color.toMapLibreColor(),
-          lineWidth: importedSettings.width,
-          lineCap: "round",
-          lineJoin: "round",
-        ),
-      );
-
-      if (isImportingGpx && next.coordinates.isNotEmpty) {
-        // final padding = _computeMapPadding(context, true);
-
-        MapGeometryHelper(ref: ref, mapController: mapController).fitToBounds(
-          next.coordinates,
-          left: 40,
-          right: 40,
-          // top: padding.top,
-          // bottom: padding.bottom,
+        mapController?.setLayerProperties(
+          "imported_track_layer",
+          LineLayerProperties(
+            lineColor: importedSettings.color.toMapLibreColor(),
+            lineWidth: importedSettings.width,
+            lineCap: "round",
+            lineJoin: "round",
+          ),
         );
+
+        if (isImportingGpx && next.coordinates.isNotEmpty) {
+          if (!mounted) return;
+          MapGeometryHelper(
+            ref: ref,
+            mapController: mapController,
+          ).fitToBounds(next.coordinates, left: 40, right: 40);
+        }
+      } on PlatformException catch (e) {
+        print(
+          "MapLibre: Evitat error de renderitzat del track importat: ${e.message}",
+        );
+      } catch (e) {
+        print("Error inesperat en processar el track importat: $e");
       }
     });
 
-    // OIENT 4: WAYPOINTS
+    // OIENT 4: WAYPOINTS GRAVATS (BLINDAT)
     ref.listen(waypointsProvider, (prev, next) async {
-      if (!styleInitialized || !waypointLayersReady || mapController == null)
+      // 🛡️ CONTROL INICIAL: Evitem l'execució si el giny ja s'està destruint
+      if (!styleInitialized ||
+          !waypointLayersReady ||
+          mapController == null ||
+          !mounted)
         return;
 
-      updateWaypointSource(mapController!, 'waypoints_recorded_source', next);
-      await animateWaypointAppearance(
-        mapController!,
-        'waypoints_recorded_layer',
-      );
+      try {
+        // Actualitzem la font de dades fent servir el controlador de forma segura
+        updateWaypointSource(mapController!, 'waypoints_recorded_source', next);
+
+        // 🛡️ Re-comprovació de cicle de vida abans d'iniciar l'animació asíncrona
+        if (!mounted) return;
+
+        await animateWaypointAppearance(
+          mapController!,
+          'waypoints_recorded_layer',
+        );
+
+        // 🛡️ RE-COMPROVACIÓ CRÍTICA: Després de l'await, comprovem si seguim vius a la pantalla
+        if (!mounted) return;
+      } on PlatformException catch (e) {
+        print(
+          "MapLibre: Evitat crash asíncron a l'animació de waypoints gravats: ${e.message}",
+        );
+      } catch (e) {
+        print("Error en el flux d'animació de waypoints gravats: $e");
+      }
     });
 
+    // OIENT 5: WAYPOINTS IMPORTATS (BLINDAT)
     ref.listen(importedWaypointsProvider, (prev, next) async {
-      if (!styleInitialized || !waypointLayersReady || mapController == null)
+      // 🛡️ CONTROL INICIAL: Evitem l'execució si el giny ja s'està destruint o tancant
+      if (!styleInitialized ||
+          !waypointLayersReady ||
+          mapController == null ||
+          !mounted)
         return;
 
-      updateWaypointSource(mapController!, 'waypoints_imported_source', next);
-      await animateWaypointAppearance(
-        mapController!,
-        'waypoints_imported_layer',
-      );
+      try {
+        // Actualitzem la font de dades dels punts de pas importats de manera segura
+        updateWaypointSource(mapController!, 'waypoints_imported_source', next);
+
+        // 🛡️ Re-comprovació de cicle de vida abans d'iniciar l'animació asíncrona
+        if (!mounted) return;
+
+        await animateWaypointAppearance(
+          mapController!,
+          'waypoints_imported_layer',
+        );
+
+        // 🛡️ RE-COMPROVACIÓ CRÍTICA: Després de l'await, comprovem si seguim vius a la pantalla
+        if (!mounted) return;
+      } on PlatformException catch (e) {
+        print(
+          "MapLibre: Evitat crash asíncron a l'animació de waypoints importats: ${e.message}",
+        );
+      } catch (e) {
+        print("Error en el flux d'animació de waypoints importats: $e");
+      }
     });
 
-    // OIENT 5: ESTILS VISUALS
+    // OIENT 6
     ref.listen(trackSettingsProvider, (previous, next) {
-      if (mapController == null || !styleInitialized) return;
+      // 🛡️ CONTROL INICIAL: Evitem l'execució si la pantalla s'està destruint
+      if (mapController == null || !styleInitialized || !mounted) return;
 
-      mapController!.setLayerProperties(
-        "track_line_layer",
-        LineLayerProperties(
-          lineColor: next.color.toMapLibreColor(),
-          lineWidth: next.width,
-          lineCap: "round",
-          lineJoin: "round",
-        ),
-      );
+      // 🛡️ Encapsulem els canvis de propietats natius en un try/catch segur
+      try {
+        mapController?.setLayerProperties(
+          "track_line_layer",
+          LineLayerProperties(
+            lineColor: next.color.toMapLibreColor(),
+            lineWidth: next.width,
+            lineCap: "round",
+            lineJoin: "round",
+          ),
+        );
 
-      mapController!.setLayerProperties(
-        "waypoints_recorded_layer",
-        CircleLayerProperties(circleColor: next.color.toMapLibreColor()),
-      );
+        if (!mounted) return; // Seguretat abans de la segona modificació
+
+        mapController?.setLayerProperties(
+          "waypoints_recorded_layer",
+          CircleLayerProperties(circleColor: next.color.toMapLibreColor()),
+        );
+      } on PlatformException catch (e) {
+        print(
+          "MapLibre: Evitat error al canviar els ajustos de capa (pantalla tancada): ${e.message}",
+        );
+      } catch (e) {
+        print("Error inesperat en aplicar els ajustos del track: $e");
+      }
     });
 
+    // OIENT 7
     ref.listen(importedTrackSettingsProvider, (previous, next) {
-      if (!styleInitialized || mapController == null) return;
+      // 🛡️ CONTROL INICIAL: Evitem l'execució si la pantalla ja no està muntada
+      if (!styleInitialized || mapController == null || !mounted) return;
 
-      mapController!.setLayerProperties(
-        "imported_track_layer",
-        LineLayerProperties(
-          lineColor: next.color.toMapLibreColor(),
-          lineWidth: next.width,
-          lineCap: "round",
-          lineJoin: "round",
-        ),
-      );
+      // 🛡️ Encapsulem les modificacions de capa en un try/catch de seguretat
+      try {
+        mapController?.setLayerProperties(
+          "imported_track_layer",
+          LineLayerProperties(
+            lineColor: next.color.toMapLibreColor(),
+            lineWidth: next.width,
+            lineCap: "round",
+            lineJoin: "round",
+          ),
+        );
 
-      mapController!.setLayerProperties(
-        "waypoints_imported_layer",
-        CircleLayerProperties(circleColor: next.color.toMapLibreColor()),
-      );
+        if (!mounted)
+          return; // Re-comprovació de seguretat abans de la segona capa
+
+        mapController?.setLayerProperties(
+          "waypoints_imported_layer",
+          CircleLayerProperties(circleColor: next.color.toMapLibreColor()),
+        );
+      } on PlatformException catch (e) {
+        print(
+          "MapLibre: Evitat error al canviar els ajustos de la capa importada: ${e.message}",
+        );
+      } catch (e) {
+        print("Error inesperat en aplicar els ajustos del track importat: $e");
+      }
     });
-    // OIENT 6: ALERTES I DIÀLEGS
+
+    // OIENT 8: ALERTES I DIÀLEGS
     ref.listen<NavigationState>(navigationProvider, (prev, next) {
+      // 🛡️ CONTROL INICIAL CRÍTIC: Si la pantalla s'ha tancat, no podem utilitzar el 'context'
+      if (!mounted) return;
+
       if (next.showBackOnTrackSnackbar == true) {
+        // 🛡️ Mostrem el snackbar de forma segura
         AppMessages.showBackOnTrackPersistentSnackbar(context, ref);
+
+        // 🛡️ Re-comprovem que seguim muntats abans de modificar un altre provider de fons
+        if (!mounted) return;
         ref.read(navigationProvider.notifier).dismissBackOnTrackAlert();
       }
     });
 
+    // OIENT 9
     ref.listen<NavigationState>(navigationProvider, (prev, next) async {
+      // 🛡️ CONTROL INICIAL CRÍTIC: Evitem utilitzar el context si la pantalla ja no existeix
+      if (!mounted) return;
+
       if (next.showReverseTrackDialog && !_isShowingReverseDialog) {
         _isShowingReverseDialog = true;
 
         WidgetsBinding.instance.addPostFrameCallback((_) {
+          // 🛡️ Re-comprovació dins del callback de fotograma per si de cas
+          if (!mounted) return;
           ref.read(navigationProvider.notifier).sounds.playReversedTrackSound();
         });
 
-        final accept = await AppMessages.showReverseTrackDialog(context);
+        // 🛡️ Guardem el resultat del diàleg envoltat de seguretat
+        bool? accept;
+        try {
+          accept = await AppMessages.showReverseTrackDialog(context);
+        } catch (e) {
+          print(
+            "Error al mostrar el diàleg de ruta inversa (pantalla tancada): $e",
+          );
+          _isShowingReverseDialog = false;
+          return;
+        }
+
+        // 🛡️ RE-COMPROVACIÓ POST-AWAIT: Crucial! L'usuari ha pogut tancar la pantalla mentre mirava el diàleg
+        if (!mounted) return;
 
         if (accept == true) {
           ref.read(navigationProvider.notifier).reverseImportedTrack();
@@ -720,16 +902,32 @@ class _MapScreenState extends ConsumerState<MapScreen>
       }
     });
 
+    // OIENT 10
     ref.listen<NavigationState>(navigationProvider, (prev, next) {
+      // 🛡️ CONTROL INICIAL CRÍTIC: Si la pantalla ja no existeix, evitem utilitzar el context
+      if (!mounted) return;
+
       if (next.showEndOfTrackSnackbar == true) {
+        // 🛡️ Mostrem el snackbar de forma segura
         AppMessages.showEndOfTrackSnackBar(context);
+
+        // 🛡️ Re-comprovem que seguim vius abans de demanar un canvi d'estat al provider
+        if (!mounted) return;
         ref.read(navigationProvider.notifier).dismissEndOfTrackAlert();
       }
     });
 
+    // OIENT 11
     ref.listen<NavigationState>(navigationProvider, (prev, next) {
+      // 🛡️ CONTROL INICIAL CRÍTIC: Si la pantalla ja no està muntada, avortem per protegir el context
+      if (!mounted) return;
+
       if (next.showOffTrackSnackbar == true) {
+        // 🛡️ Mostrem el snackbar persistent de manera segura
         AppMessages.showOffTrackPersistentSnackbar(context, ref);
+
+        // 🛡️ Re-comprovem que seguim vius a la pantalla abans de demanar el canvi d'estat
+        if (!mounted) return;
         ref.read(navigationProvider.notifier).clearOffTrackSnackbar();
       }
     });
@@ -778,6 +976,19 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     onFullScreenChanged: (val) =>
                         setState(() => _fullScreen = val),
                     onCameraMove: (CameraPosition position) {
+                      // 1. Amaguem el botó flotant central síncronament a l'instant de bellugar
+                      ref
+                          .read(elevationSelectionProvider.notifier)
+                          .hideSelectionButton();
+
+                      // 2. 🛡️ DETECTEM REINICI DE TRAM: Si es mouen estant en (.selected), iniciem cicle nou net
+                      if (ref.read(elevationSelectionProvider).mapToolState ==
+                          MapSelectionToolState.selected) {
+                        ref
+                            .read(elevationSelectionProvider.notifier)
+                            .handleMapMovementOnSelected();
+                      }
+
                       ref
                           .read(mapBearingProvider.notifier)
                           .update(position.bearing);
@@ -789,7 +1000,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
                           .read(mapCenterLonProvider.notifier)
                           .update(position.target.longitude);
 
-                      // 🚀 EL THROTTLE INTEGRAL REALMENTE DINÁMICO
                       final ara = DateTime.now();
                       if (ara.difference(_lastMapUpdateTime).inMilliseconds >
                           _mapThrottleMs) {
@@ -797,29 +1007,34 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
                         final sel = ref.read(elevationSelectionProvider);
 
-                        // Si estamos buscando el segundo punto del tramo...
+                        // SI L'EINA ESTÀ ACTIVA (SIGUI PER BUSCAR L'INICI O EL FINAL)...
                         if (sel.mapToolState ==
-                                MapSelectionToolState.selectingEnd &&
-                            sel.startTrackIndex != null) {
-                          // 1. Obtenemos las coordenadas visibles de la ruta actual
-                          final List<List<double>> coordsVisibles = ref
-                              .read(importedTrackProvider.notifier)
-                              .visibleCoordinates;
+                                MapSelectionToolState.selectingStart ||
+                            sel.mapToolState ==
+                                MapSelectionToolState.selectingEnd) {
+                          final bool isRecording =
+                              ref.read(trackRecordingProvider).recordingState ==
+                              RecordingState.recording;
 
-                          if (coordsVisibles.isNotEmpty) {
-                            // 2. 🎯 CALCULAMOS EL PUNTO MÁS CERCANO AL CENTRO REAL ACTUAL DE LA CÁMERA "AL VUELO"
+                          final List<List<double>> coordsAEvaluar = isRecording
+                              ? ref.read(trackRecordingProvider).coordinates
+                              : ref
+                                    .read(importedTrackProvider.notifier)
+                                    .visibleCoordinates;
+
+                          if (coordsAEvaluar.isNotEmpty) {
                             int nearestIndex = 0;
                             double minDistance = double.maxFinite;
-
                             final double centerLat = position.target.latitude;
                             final double centerLon = position.target.longitude;
 
-                            // Bucle de alto rendimiento para encontrar el punto más cercano en la GPU/CPU
-                            for (int i = 0; i < coordsVisibles.length; i++) {
-                              final double ptLon = coordsVisibles[i][0];
-                              final double ptLat = coordsVisibles[i][1];
+                            // 🎯 EL COMPÀS IMANT DE MÀXIMA PRECISIÓ GEOMÈTRICA TRACER:
+                            for (int i = 0; i < coordsAEvaluar.length; i++) {
+                              final double ptLon =
+                                  coordsAEvaluar[i][0]; // Longitud
+                              final double ptLat =
+                                  coordsAEvaluar[i][1]; // Latitud
 
-                              // Aproximación pitagórica rápida (suficiente y ultra rápida para distancias cortas en pantalla)
                               final double dLat = ptLat - centerLat;
                               final double dLon = ptLon - centerLon;
                               final double distSq =
@@ -831,27 +1046,69 @@ class _MapScreenState extends ConsumerState<MapScreen>
                               }
                             }
 
-                            // 3. Creamos el estado temporal con el índice efímero que acabamos de cazar
-                            final temporalState = sel.copyWith(
-                              provisionalEndIndex: nearestIndex,
-                            );
+                            // 🛡️ PROTECCIÓ SÍNCRONA CONTRA ENTRA-I-SORTS
+                            final currentState = ref
+                                .read(elevationSelectionProvider)
+                                .mapToolState;
+                            if (currentState ==
+                                    MapSelectionToolState.selectingStart ||
+                                currentState ==
+                                    MapSelectionToolState.selectingEnd) {
+                              // A. Enviem l'índex calculat de forma instantània al Notifier
+                              ref
+                                  .read(elevationSelectionProvider.notifier)
+                                  .updateProvisionalEnd(nearestIndex);
 
-                            // 4. ¡PINTAMOS EN LA GPU AL INSTANTE!
-                            updateSelectedSegmentGeometry(
-                              mapController!,
-                              temporalState,
-                              coordsVisibles,
-                            );
+                              final liveState = ref.read(
+                                elevationSelectionProvider,
+                              );
+                              ref
+                                  .read(elevationSelectionProvider.notifier)
+                                  .updateTemporaryRange(
+                                    startIndex: liveState.startTrackIndex,
+                                    endIndex: nearestIndex,
+                                  );
 
-                            // 5. Guardamos en el provider para que el resto de componentes mantengan la sincronía
-                            ref
-                                .read(elevationSelectionProvider.notifier)
-                                .updateProvisionalEnd(nearestIndex);
+                              final geometryState = liveState.copyWith(
+                                startTrackIndex: liveState.startTrackIndex,
+                                endTrackIndex:
+                                    liveState.mapToolState ==
+                                        MapSelectionToolState.selectingEnd
+                                    ? nearestIndex
+                                    : null,
+                                provisionalEndIndex: nearestIndex,
+                                mode:
+                                    liveState.mapToolState ==
+                                        MapSelectionToolState.selectingEnd
+                                    ? SelectionMode.range
+                                    : SelectionMode.single,
+                              );
+
+                              // C. Pintem immediatament a la GPU del mapa
+                              updateSelectedSegmentGeometry(
+                                mapController!,
+                                geometryState,
+                                coordsAEvaluar,
+                              );
+                            }
                           }
                         }
                       }
                     },
 
+                    onCameraIdle: () {
+                      _mapStopTimer?.cancel();
+                      _mapStopTimer = Timer(
+                        const Duration(milliseconds: 180),
+                        () {
+                          if (mounted) {
+                            ref
+                                .read(elevationSelectionProvider.notifier)
+                                .showSelectionButton();
+                          }
+                        },
+                      );
+                    },
                     onMapCreated: (controller) {
                       mapController = controller;
                       mapAnimator = MapAnimator(controller);
@@ -867,13 +1124,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
                         importedTrackSettingsProvider,
                       );
 
+                      // 1. Damos de alta todas las fuentes y capas base en la GPU nativa
                       await setupUserLocationLayer(mapController!);
                       await setupWaypointLayers(mapController!);
-
-                      setState(() {
-                        waypointLayersReady = true;
-                        styleInitialized = true;
-                      });
 
                       // 🚀 CORRECCIÓ DEFINITIVA 1 (Ruta gravada):
                       // Creem un objecte LineLayerProperties real tal com demana MapLibre.
@@ -906,35 +1159,179 @@ class _MapScreenState extends ConsumerState<MapScreen>
                               .toDouble(), // 🎯 Forcem double pur!
                         ),
                       );
+
+                      // 🚀 CLAVE DE SINCRONIZACIÓN:
+                      // Solo cuando la GPU ha terminado de procesar absolutamente todo el estilo,
+                      // abrimos las puertas de la interfaz para que el listener de Riverpod pueda operar de forma segura.
+                      setState(() {
+                        waypointLayersReady = true;
+                        styleInitialized = true;
+                      });
                     },
                   ),
 
-                  // 🎯 RETICLE CONTROLAT PEL PROVIDER
-                  // 🎯 CAPA 2: RETICLE CENTRAL AUTOMÀTIC (Actualitzat i dinàmic)
+                  // 🎯 CAPA 2: RETICLE CENTRAL AUTOMÀTIC I BOTÓ DE SELECCIÓ (INTEGRACIÓ INDESTRUCTIBLE)
                   Consumer(
                     builder: (context, ref, _) {
                       final sel = ref.watch(elevationSelectionProvider);
 
+                      // 🚀 Revisem si l'eina està activa en els estats de selecció de punts
                       if (sel.mapToolState ==
                               MapSelectionToolState.selectingStart ||
                           sel.mapToolState ==
                               MapSelectionToolState.selectingEnd) {
-                        // 🚀 CÀLCUL DEL COLOR SEGONS L'ESTAT:
-                        // - Si estem fixant l'inici, el reticle serà verd (#4CAF50).
-                        // - Si passem a fixar el final, mutarà automàticament a vermell (#F44336).
+                        // Color dinàmic segons l'estat del teu enum de l'eina:
                         final Color reticleColor =
                             sel.mapToolState ==
                                 MapSelectionToolState.selectingStart
-                            ? const Color(0xFF4CAF50) // 🟢 Verd
-                            : const Color(0xFFF44336); // 🔴 Vermell
+                            ? const Color(0xFF4CAF50) // 🟢 Verd per a l'Inici
+                            : const Color(
+                                0xFFF44336,
+                              ); // 🔴 Vermell per al Final
 
                         return Positioned.fill(
-                          child: IgnorePointer(
-                            ignoring: true,
-                            child: Center(
-                              // 🚀 PASSEM EL COLOR DINÀMIC AL NOU RETICLE GROS DE 3.5PX DE TRACER
-                              child: MapSelectionReticle(color: reticleColor),
-                            ),
+                          child: Stack(
+                            children: [
+                              // 1. EL VISOR CENTRAL PERSONALITZAT (CustomPaint sencer al centre)
+                              IgnorePointer(
+                                ignoring: true,
+                                child: Center(
+                                  child: MapSelectionReticle(
+                                    color: reticleColor,
+                                  ),
+                                ),
+                              ),
+
+                              // 2. EL BOTÓ FLOTANT DE SELECCIÓ (Surt a dalt de la retícula)
+                              if (sel.showCenterButton == true)
+                                Align(
+                                  alignment: Alignment.center,
+                                  child: Transform.translate(
+                                    offset: const Offset(
+                                      0,
+                                      -60,
+                                    ), // El col·loquem volant a sobre del visor de 44x44
+                                    child: Material(
+                                      elevation: 6,
+                                      shadowColor: Colors.black38,
+                                      borderRadius: BorderRadius.circular(20),
+                                      color: reticleColor,
+                                      child: InkWell(
+                                        borderRadius: BorderRadius.circular(20),
+                                        onTap: () {
+                                          // 1️⃣ Coordenada del centre del mapa (retícula)
+                                          final centerLat = ref.read(
+                                            mapCenterLatProvider,
+                                          );
+                                          final centerLon = ref.read(
+                                            mapCenterLonProvider,
+                                          );
+
+                                          // 2️⃣ Track visible (real o importat)
+                                          final imported = ref.read(
+                                            importedTrackProvider,
+                                          );
+                                          final real = ref.read(
+                                            trackRecordingProvider,
+                                          );
+
+                                          final coords =
+                                              (real.recordingState ==
+                                                  RecordingState.recording)
+                                              ? real.coordinates
+                                              : imported?.coordinates ?? [];
+
+                                          if (coords.isEmpty) return;
+
+                                          // 3️⃣ Càlcul immediat del nearest
+                                          int nearestIndex = 0;
+                                          double minDist = double.infinity;
+
+                                          for (
+                                            int i = 0;
+                                            i < coords.length;
+                                            i++
+                                          ) {
+                                            final dLat =
+                                                coords[i][1] - centerLat;
+                                            final dLon =
+                                                coords[i][0] - centerLon;
+                                            final dist =
+                                                dLat * dLat + dLon * dLon;
+
+                                            if (dist < minDist) {
+                                              minDist = dist;
+                                              nearestIndex = i;
+                                            }
+                                          }
+
+                                          // 4️⃣ Fixem el punt segons l'estat
+                                          if (sel.mapToolState ==
+                                              MapSelectionToolState
+                                                  .selectingStart) {
+                                            ref
+                                                .read(
+                                                  elevationSelectionProvider
+                                                      .notifier,
+                                                )
+                                                .fixStartFromMap(nearestIndex);
+                                          } else if (sel.mapToolState ==
+                                              MapSelectionToolState
+                                                  .selectingEnd) {
+                                            ref
+                                                .read(
+                                                  elevationSelectionProvider
+                                                      .notifier,
+                                                )
+                                                .fixEndFromMap(nearestIndex);
+                                          }
+
+                                          // 5️⃣ Amaguem el botó
+                                          ref
+                                              .read(
+                                                elevationSelectionProvider
+                                                    .notifier,
+                                              )
+                                              .hideSelectionButton();
+                                        },
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 14,
+                                            vertical: 8,
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(
+                                                sel.mapToolState ==
+                                                        MapSelectionToolState
+                                                            .selectingStart
+                                                    ? Icons.play_arrow
+                                                    : Icons.flag,
+                                                color: Colors.white,
+                                                size: 16,
+                                              ),
+                                              const SizedBox(width: 6),
+                                              Text(
+                                                sel.mapToolState ==
+                                                        MapSelectionToolState
+                                                            .selectingStart
+                                                    ? "Fixar Inici"
+                                                    : "Fixar Final",
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 13,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
                         );
                       }
