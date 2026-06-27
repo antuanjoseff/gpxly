@@ -19,4 +19,7 @@ class AppDimensions {
 
   /// Separació vertical reglamentària entre components apilats.
   static const double verticalSpacing = 12.0;
+
+  // 🎯 Mínim de coordenades necessàries per poder activar l'eina de tall (Tisores)
+  static const int minCoordinatesForSelection = 2;
 }

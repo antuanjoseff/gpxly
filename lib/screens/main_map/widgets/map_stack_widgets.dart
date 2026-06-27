@@ -5,6 +5,7 @@ import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:senda/notifiers/elevation_selection_provider.dart';
 import 'package:senda/notifiers/helpers/elevation_magnet_helper.dart';
 import 'package:senda/notifiers/imported_track_notifier.dart';
+import 'package:senda/notifiers/recording_notifier.dart';
 import 'package:senda/notifiers/segment_stats_notifier.dart';
 import 'package:senda/screens/elevations/widgets/segment_stats_widget.dart';
 import 'package:senda/screens/main_map/widgets/map_bottom_controls/elevation_panel.dart';
@@ -70,7 +71,7 @@ class MapElevationHud extends ConsumerWidget {
   }
 }
 
-/// 🚀 WIDGET MODULAR 2: EL BOTÓN MAESTRO DE LAS TIJERAS (ESTILO TOGGLE)
+/// 🚀 WIDGET MODULAR 2: EL BOTÓN MAESTRO DE LAS TIJERAS (CON FILTRO DE COORDENADAS)
 class MapScissorsButtons extends ConsumerWidget {
   final bool isChartCollapsed;
   final MapLibreMapController? mapController;
@@ -83,98 +84,121 @@ class MapScissorsButtons extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // 1️⃣ Obtenim l'estat dels tracks i la selecció de Riverpod
     final sel = ref.watch(elevationSelectionProvider);
+    final importedTrack = ref.watch(importedTrackProvider);
+    final recordingTrack = ref.watch(trackRecordingProvider);
 
-    // Calculamos la altura para no pisar el grafico de elevacion
+    // 2️⃣ Extraiem el nombre de coordenades de cada track de forma segura
+    final int importedCoordsCount = importedTrack?.coordinates.length ?? 0;
+    final int recordingCoordsCount = recordingTrack.coordinates.length ?? 0;
+
+    // 3️⃣ Validem si algun dels dos tracks té prou coordenades (Mínim N)
+    final bool hasEnoughImported =
+        importedCoordsCount >= AppDimensions.minCoordinatesForSelection;
+    final bool hasEnoughRecording =
+        recordingCoordsCount >= AppDimensions.minCoordinatesForSelection;
+
+    // 🛡️ REGLA DE NEGOCI: Si no hi ha cap ruta vàlida amb més de N punts, amaguem completament el botó
+    if (!hasEnoughImported && !hasEnoughRecording) {
+      return const SizedBox.shrink();
+    }
+
+    // A partir d'aquí la lògica de renderitzat i mides es manté idèntica
     final double screenHeight = MediaQuery.sizeOf(context).height;
     final double chartHeight =
         screenHeight * AppDimensions.elevationChartHeightRatio;
 
-    // 🚀 BLINDATGE VISUAL: Si no hi ha track importat, el gràfic no existeix a la pantalla
-    final bool hasImportedTrack = ref.watch(importedTrackProvider) != null;
-
-    // El botó només pujarà si el gràfic NO està col·lapsat I realment hi ha un track que el mostri
+    final bool hasImportedTrack = importedTrack != null;
     final bool isChartVisibleReal = !isChartCollapsed && hasImportedTrack;
 
     final double bottomOffset = isChartVisibleReal ? 60.0 + chartHeight : 60.0;
 
     final bool isToolActive = sel.mapToolState != MapSelectionToolState.off;
+    final bool isSelected = sel.mapToolState == MapSelectionToolState.selected;
 
-    return AnimatedPositioned(
-      duration: const Duration(milliseconds: 250),
-      right: 16,
-      bottom: bottomOffset,
-      child: FloatingActionButton(
-        heroTag: "btn_tisores_toggle_maestro",
-        // 🎨 Si está activo se vuelve gris oscuro/rojo suave para indicar "Cerrar"
-        backgroundColor: isToolActive
-            ? Colors.grey.shade800
-            : AppColors.primary,
-        foregroundColor: Colors.white,
-        onPressed: () {
-          if (isToolActive) {
-            // ❌ REGLA NUEVA: Si está activa, un clic aquí cancela y apaga todo
-            ref
-                .read(elevationSelectionProvider.notifier)
-                .deactivateMapSelectionTool();
-          } else {
-            // 🟢 Si está apagada, enciende la herramienta en el mapa
-            _handleInitialActivation(ref);
-          }
-        },
-        child: isToolActive
-            ? const Icon(
-                Icons.close,
-                size: 26,
-              ) // ❌ Icono de cancelar si está encendido
-            : SizedBox(
-                width: 36,
-                height: 36,
-                child: Stack(
-                  children: [
-                    // Tu trazado blanco del botón de las tijeras original...
-                    Positioned(
-                      left: 0,
-                      right: 0,
-                      bottom: 5,
-                      child: Container(
-                        height: 3.5,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ),
-                    const Positioned(
-                      left: -1,
-                      bottom: 7,
-                      child: Icon(
-                        Icons.location_on,
-                        size: 21,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const Positioned(
-                      right: -1,
-                      bottom: 7,
-                      child: Icon(
-                        Icons.location_on,
-                        size: 21,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ],
-                ),
+    final Widget iconTijerasPersonalizado = SizedBox(
+      width: 36,
+      height: 36,
+      child: Stack(
+        children: [
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 5,
+            child: Container(
+              height: 3.5,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(2),
               ),
+            ),
+          ),
+          const Positioned(
+            left: -1,
+            bottom: 7,
+            child: Icon(Icons.location_on, size: 21, color: Colors.white),
+          ),
+          const Positioned(
+            right: -1,
+            bottom: 7,
+            child: Icon(Icons.location_on, size: 21, color: Colors.white),
+          ),
+        ],
       ),
+    );
+
+    return Stack(
+      children: [
+        // 🔵 BOTÓ PRINCIPAL (TISORES / CANCEL·LAR)
+        AnimatedPositioned(
+          duration: const Duration(milliseconds: 250),
+          right: 16,
+          bottom: bottomOffset,
+          child: FloatingActionButton(
+            heroTag: "btn_tisores_toggle_maestro",
+            backgroundColor: isToolActive
+                ? AppColors.logoGreen
+                : AppColors.primary,
+            foregroundColor: Colors.white,
+            onPressed: () {
+              if (isToolActive) {
+                ref
+                    .read(elevationSelectionProvider.notifier)
+                    .deactivateMapSelectionTool();
+              } else {
+                _handleInitialActivation(ref);
+              }
+            },
+            child: iconTijerasPersonalizado,
+          ),
+        ),
+
+        // 🔄 BOTÓ RESET TRAM (Meteix tamany i enganxat al costat)
+        if (isSelected)
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 250),
+            right: 80,
+            bottom: bottomOffset,
+            child: FloatingActionButton(
+              heroTag: "btn_reset_tram",
+              backgroundColor: Colors.white,
+              foregroundColor: Colors.orange.shade700,
+              onPressed: () {
+                ref
+                    .read(elevationSelectionProvider.notifier)
+                    .resetMapSelection();
+              },
+              child: const Icon(Icons.refresh, size: 26),
+            ),
+          ),
+      ],
     );
   }
 
   void _handleInitialActivation(WidgetRef ref) {
-    // 1️⃣ Encenem l'eina al proveïdor d'estat
     ref.read(elevationSelectionProvider.notifier).activateMapSelectionTool();
 
-    // 2️⃣ Executem l'imant estàtic des del helper en una sola línia neta
     if (mapController != null) {
       ElevationMagnetHelper.recalcularIActualitzar(
         ref: ref,

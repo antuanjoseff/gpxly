@@ -1000,14 +1000,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
                           .read(elevationSelectionProvider.notifier)
                           .hideSelectionButton();
 
-                      // 2. 🛡️ DETECTEM REINICI DE TRAM: Si es mouen estant en (.selected), iniciem cicle nou net
-                      if (ref.read(elevationSelectionProvider).mapToolState ==
-                          MapSelectionToolState.selected) {
-                        ref
-                            .read(elevationSelectionProvider.notifier)
-                            .handleMapMovementOnSelected();
-                      }
-
                       // 3. Actualitzem els proveïdors de posició del mapa
                       ref
                           .read(mapBearingProvider.notifier)
@@ -1385,15 +1377,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 onHandleNavigationAction: _handleSendaNavigationAction,
                 onToggleChart: () {
                   setState(() => _isChartCollapsed = !_isChartCollapsed);
-                  if (_isChartCollapsed) {
-                    ref
-                        .read(elevationSelectionProvider.notifier)
-                        .clearSelection();
-                    ref.read(mapSelectionToolProvider.notifier).deactivate();
-                    if (styleInitialized && mapController != null) {
-                      stopWaypointPulse(mapController!);
-                    }
-                  }
                 },
 
                 // 🔥 NOU

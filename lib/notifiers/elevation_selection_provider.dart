@@ -338,26 +338,9 @@ class ElevationSelectionNotifier extends Notifier<ElevationSelectionState> {
   }
 
   void handleMapMovementOnSelected() {
+    // 🚫 NO fem res. El tram selected és persistent.
     if (state.mapToolState == MapSelectionToolState.selected) {
-      if (_isJustSelectedFromMap) {
-        _isJustSelectedFromMap = false;
-        return;
-      }
-
-      // 🔄 REINICI REALS DE NOU TRAM: Netegem l'anterior i demanem inici (Verd)
-      final int? currentNearest = ref.read(nearestTrackPointProvider);
-
-      state = state.copyWith(
-        mapToolState: MapSelectionToolState.selectingStart,
-        mode: SelectionMode.single,
-        clearStartTrack: true,
-        clearEndTrack: true,
-        clearSinglePoint: true,
-        provisionalEndIndex:
-            currentNearest, // El punt verd neix on estigui mirant ara
-        showCenterButton: false,
-        source: SelectionSource.map,
-      );
+      return;
     }
   }
 
@@ -391,6 +374,11 @@ class ElevationSelectionNotifier extends Notifier<ElevationSelectionState> {
 
   // 📈 ACTUALITZACIÓ DELS KM: Escriu el provisional pur sense trepitjar els punts reals
   void updateProvisionalEnd(int index) {
+    // 🚫 NOVETAT: En estat selected NO actualitzem el provisional
+    if (state.mapToolState == MapSelectionToolState.selected) {
+      return;
+    }
+
     if (state.mapToolState == MapSelectionToolState.selectingStart) {
       state = state.copyWith(provisionalEndIndex: index);
     } else if (state.mapToolState == MapSelectionToolState.selectingEnd) {
@@ -412,6 +400,11 @@ class ElevationSelectionNotifier extends Notifier<ElevationSelectionState> {
   }
 
   void updateTemporaryRange({int? startIndex, int? endIndex}) {
+    // 🚫 NOVETAT: En estat selected NO actualitzem el tram efímer
+    if (state.mapToolState == MapSelectionToolState.selected) {
+      return;
+    }
+
     state = state.copyWith(
       startTrackIndex: startIndex,
       endTrackIndex: endIndex,

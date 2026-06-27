@@ -592,9 +592,13 @@ Future<void> updateSelectionCircles(
 
   // Cas 1: No hi ha cap punt seleccionat (neteja de la gràfica)
   if (sel.startTrackIndex == null && sel.endTrackIndex == null) {
-    // 🛡️ SOLUCIÓ NETA: Si el modo de selección es 'none' o inicial, evitamos hacer un setGeoJsonSource innecesario
+    // 🚀 NOVETAT: En estat 'selected' NO netegem els cercles
+    if (sel.mapToolState == MapSelectionToolState.selected) {
+      return;
+    }
+
     if (sel.mode == SelectionMode.none) {
-      return; // No hace falta limpiar una fuente que ni siquiera se ha pintado aún
+      return;
     }
 
     try {
@@ -602,10 +606,9 @@ Future<void> updateSelectionCircles(
         "type": "FeatureCollection",
         "features": [],
       });
-    } on PlatformException catch (_) {
-      // Ya no imprimimos el error largo en el terminal, lo silenciamos porque es un comportamiento esperado en la carga
-    }
-    return; // 🎯 Tallem l'execució aquí de forma segura
+    } on PlatformException catch (_) {}
+
+    return;
   }
 
   // Cas 2: Hi ha punts seleccionats, calculem coordenades
@@ -649,7 +652,9 @@ Future<void> updateSelectedSegmentGeometry(
 
     if (trackCoords.isNotEmpty && sel.startTrackIndex != null) {
       final int inicio = sel.startTrackIndex!;
-      final int? fin = sel.endTrackIndex ?? sel.provisionalEndIndex;
+      final int? fin = sel.mapToolState == MapSelectionToolState.selected
+          ? sel.endTrackIndex
+          : (sel.endTrackIndex ?? sel.provisionalEndIndex);
 
       if (fin != null &&
           inicio < trackCoords.length &&
