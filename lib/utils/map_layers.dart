@@ -73,6 +73,7 @@ void _updateWaypointPulse(MapLibreMapController controller) {
 }
 
 Future<void> setupUserLocationLayer(MapLibreMapController controller) async {
+  // imported_track
   await controller.addSource(
     "imported_track",
     const GeojsonSourceProperties(
@@ -91,41 +92,7 @@ Future<void> setupUserLocationLayer(MapLibreMapController controller) async {
     ),
   );
 
-  // 🚀 1. FUENTE UNIFICADA PARA EL TRAMO SELECCIONADO
-  await controller.addSource(
-    "selected_segment_source",
-    const GeojsonSourceProperties(
-      data: {"type": "FeatureCollection", "features": []},
-    ),
-  );
-
-  // 🚀 2. CAPA INFERIOR (CONTORNO BLANCO): Crea contraste absoluto sobre cualquier color de track
-  await controller.addLayer(
-    "selected_segment_source",
-    "selected_segment_casing_layer",
-    const LineLayerProperties(
-      lineColor: "#FFFFFF", // ⚪ Blanco puro de fondo
-      lineWidth:
-          9.0, // 🎯 Gruesa para que sobresalga por los bordes de la naranja
-      lineJoin: "round",
-      lineCap: "round",
-    ),
-  );
-
-  // 🚀 3. CAPA SUPERIOR (NARANJA EFÍMERO DISCONTINUO): Destaca la selección temporal
-  await controller.addLayer(
-    "selected_segment_source",
-    "selected_segment_layer",
-    const LineLayerProperties(
-      lineColor: "#FF9800", // 🍊 Color naranja Senda
-      lineWidth: 5.0, // 🎯 Más fina para centrarse sobre el fondo blanco
-      lineJoin: "round",
-      lineCap: "round",
-      // 💡 PATRÓN DISCONTINUO: [longitud del guion, espacio en blanco] en múltiplos de grosor
-      lineDasharray: [2.0, 2.0],
-    ),
-  );
-
+  // track_line
   await controller.addSource(
     "track_line",
     const GeojsonSourceProperties(
@@ -144,6 +111,40 @@ Future<void> setupUserLocationLayer(MapLibreMapController controller) async {
     ),
   );
 
+  // selected_segment_source
+  await controller.addSource(
+    "selected_segment_source",
+    const GeojsonSourceProperties(
+      data: {"type": "FeatureCollection", "features": []},
+    ),
+  );
+
+  await controller.addLayer(
+    "selected_segment_source",
+    "selected_segment_casing_layer",
+    const LineLayerProperties(
+      lineColor: "#FFFFFF", // ⚪ Blanco puro de fondo
+      lineWidth:
+          9.0, // 🎯 Gruesa para que sobresalga por los bordes de la naranja
+      lineJoin: "round",
+      lineCap: "round",
+    ),
+  );
+
+  await controller.addLayer(
+    "selected_segment_source",
+    "selected_segment_layer",
+    const LineLayerProperties(
+      lineColor: "#FF9800", // 🍊 Color naranja Senda
+      lineWidth: 5.0, // 🎯 Más fina para centrarse sobre el fondo blanco
+      lineJoin: "round",
+      lineCap: "round",
+      // 💡 PATRÓN DISCONTINUO: [longitud del guion, espacio en blanco] en múltiplos de grosor
+      lineDasharray: [2.0, 2.0],
+    ),
+  );
+
+  // track_animating_segment
   await controller.addSource(
     "track_animating_segment",
     const GeojsonSourceProperties(
@@ -165,6 +166,7 @@ Future<void> setupUserLocationLayer(MapLibreMapController controller) async {
   final Uint8List blueDot = await _createBlueDot();
   await controller.addImage("user_icon", blueDot);
 
+  // user_location
   await controller.addSource(
     "user_location",
     const GeojsonSourceProperties(
@@ -641,13 +643,16 @@ Future<void> updateSelectionCircles(
 }
 
 /// Dibuja la línea naranja del tramo (sea definitivo o elástico/provisional)
+/// Dibuja la línea del tramo seleccionado de forma unificada:
+/// Sempre es mostrarà amb un fons blanc gruixut i una línia taronja discontínua a sobre,
+/// tant per a tracks gravats com per a importats.
 Future<void> updateSelectedSegmentGeometry(
   MapLibreMapController controller,
   ElevationSelectionState sel,
   List<List<double>> trackCoords,
 ) async {
   try {
-    // 1. Preparar las coordenadas del segmento (si cumple las condiciones)
+    // 1. Preparar les coordenades del segment de forma segura (Definitiu o elàstic)
     List<List<double>> segmentCoords = [];
 
     if (trackCoords.isNotEmpty && sel.startTrackIndex != null) {
@@ -665,7 +670,7 @@ Future<void> updateSelectedSegmentGeometry(
       }
     }
 
-    // 2. Construir el GeoJSON correspondiente
+    // 2. Construir el GeoJSON corresponent
     final geojson = {
       "type": "FeatureCollection",
       "features": segmentCoords.isEmpty
@@ -681,33 +686,74 @@ Future<void> updateSelectedSegmentGeometry(
             ],
     };
 
-    // 3. Comprobar la existencia real de la fuente en la GPU nativa
+    // 3. Comprovar l'existència real de la font a la GPU nativa
     final List<String> existingSources = await controller.getSourceIds();
     final bool sourceExists = existingSources.contains(
       "selected_segment_source",
     );
 
     if (sourceExists) {
-      // 🚀 Si ya existe, actualizamos los datos de manera ultra veloz
+      // 🚀 Si ja existeix (cas habitual), actualitzem les dades de manera ultra veloç
       await controller.setGeoJsonSource("selected_segment_source", geojson);
     } else {
-      // 🚀 Si NO existe (primer arranque/carga del track), la creamos de cero con su capa
+      // 🚀 Si NO existeix (contingència), la creem de zero amb les seves dues capes unificades
       await controller.addSource(
         "selected_segment_source",
         GeojsonSourceProperties(data: geojson),
       );
+    }
 
-      // Añadimos la capa visual asociada a esta nueva fuente (Línea naranja del tramo)
+    // 4. 🎯 ASSEGURAR LES DUES CAPES PER A L'EFECTE UNIFICAT (FONTS + GUIONS)
+    final List<String> existingLayers = (await controller.getLayerIds())
+        .cast<String>();
+
+    // Capa Inferior: El fons blanc gruixut (Contorn/Casing)
+    if (!existingLayers.contains("selected_segment_casing_layer")) {
+      await controller.addLayer(
+        "selected_segment_source",
+        "selected_segment_casing_layer",
+        const LineLayerProperties(
+          lineColor: "#FFFFFF", // ⚪ Blanco puro de fondo
+          lineWidth: 9.0, // 🎯 Gruesa para que sobresalga
+          lineJoin: "round",
+          lineCap: "round",
+        ),
+      );
+    }
+
+    // Capa Superior: La línia taronja discontínua a sobre
+    if (!existingLayers.contains("selected_segment_layer")) {
       await controller.addLayer(
         "selected_segment_source",
         "selected_segment_layer",
         const LineLayerProperties(
-          lineColor: "#FF9800", // Color naranja de selección
-          lineWidth: 5.0, // Grosor destacado para que se vea bien
-          lineOpacity: 0.85,
+          lineColor: "#FF9800", // 🍊 Color naranja Senda
+          lineWidth: 5.0, // 🎯 Más fina para centrarse sobre el fondo blanco
           lineJoin: "round",
           lineCap: "round",
+          lineDasharray: [2.0, 2.0], // 💡 PATRÓN DISCONTINUO UNIFICAT
         ),
+      );
+    }
+
+    // 5. Control de visibilitat segons si hi ha dades o està buit
+    if (segmentCoords.isEmpty) {
+      await controller.setLayerProperties(
+        "selected_segment_casing_layer",
+        const LineLayerProperties(visibility: "none"),
+      );
+      await controller.setLayerProperties(
+        "selected_segment_layer",
+        const LineLayerProperties(visibility: "none"),
+      );
+    } else {
+      await controller.setLayerProperties(
+        "selected_segment_casing_layer",
+        const LineLayerProperties(visibility: "visible"),
+      );
+      await controller.setLayerProperties(
+        "selected_segment_layer",
+        const LineLayerProperties(visibility: "visible"),
       );
     }
   } catch (e) {

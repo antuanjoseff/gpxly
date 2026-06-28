@@ -1113,24 +1113,31 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     builder: (context, ref, _) {
                       final sel = ref.watch(elevationSelectionProvider);
 
-                      // 🚀 Revisem si l'eina està activa en els estats de selecció de punts
-                      if (sel.mapToolState ==
+                      // 🚀 1. CONDICIÓN AMPLIADA: Incluimos 'selected' para que la retícula no desaparezca al fijar el tramo
+                      final bool isToolActive =
+                          sel.mapToolState ==
                               MapSelectionToolState.selectingStart ||
                           sel.mapToolState ==
-                              MapSelectionToolState.selectingEnd) {
-                        // Color dinàmic segons l'estat del teu enum de l'eina:
-                        final Color reticleColor =
+                              MapSelectionToolState.selectingEnd ||
+                          sel.mapToolState == MapSelectionToolState.selected;
+
+                      if (isToolActive) {
+                        // 🟢 Si está en modo 'selected', el comportamiento visual vuelve a ser el de un inicio (Verde)
+                        final bool isStartOrSelected =
                             sel.mapToolState ==
-                                MapSelectionToolState.selectingStart
-                            ? const Color(0xFF4CAF50) // 🟢 Verd per a l'Inici
-                            : const Color(
-                                0xFFF44336,
-                              ); // 🔴 Vermell per al Final
+                                MapSelectionToolState.selectingStart ||
+                            sel.mapToolState == MapSelectionToolState.selected;
+
+                        final Color reticleColor = isStartOrSelected
+                            ? const Color(
+                                0xFF4CAF50,
+                              ) // 🟢 Verde para el Inicio (o reinicio de tramo)
+                            : const Color(0xFFF44336); // 🔴 Rojo para el Final
 
                         return Positioned.fill(
                           child: Stack(
                             children: [
-                              // 1. EL VISOR CENTRAL PERSONALITZAT (CustomPaint sencer al centre)
+                              // 1. EL VISOR CENTRAL PERSONALITZAT
                               IgnorePointer(
                                 ignoring: true,
                                 child: Center(
@@ -1140,15 +1147,12 @@ class _MapScreenState extends ConsumerState<MapScreen>
                                 ),
                               ),
 
-                              // 2. EL BOTÓ FLOTANT DE SELECCIÓ (Surt a dalt de la retícula)
+                              // 2. EL BOTÓ FLOTANT DE SELECCIÓ
                               if (sel.showCenterButton == true)
                                 Align(
                                   alignment: Alignment.center,
                                   child: Transform.translate(
-                                    offset: const Offset(
-                                      0,
-                                      -60,
-                                    ), // El col·loquem volant a sobre del visor de 44x44
+                                    offset: const Offset(0, -60),
                                     child: Material(
                                       elevation: 6,
                                       shadowColor: Colors.black38,
@@ -1157,15 +1161,12 @@ class _MapScreenState extends ConsumerState<MapScreen>
                                       child: InkWell(
                                         borderRadius: BorderRadius.circular(20),
                                         onTap: () {
-                                          // 1️⃣ Coordenada del centre del mapa (retícula)
                                           final centerLat = ref.read(
                                             mapCenterLatProvider,
                                           );
                                           final centerLon = ref.read(
                                             mapCenterLonProvider,
                                           );
-
-                                          // 2️⃣ Track visible (real o importat)
                                           final imported = ref.read(
                                             importedTrackProvider,
                                           );
@@ -1181,10 +1182,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
                                           if (coords.isEmpty) return;
 
-                                          // 3️⃣ Càlcul immediat del nearest
                                           int nearestIndex = 0;
                                           double minDist = double.infinity;
-
                                           for (
                                             int i = 0;
                                             i < coords.length;
@@ -1196,41 +1195,41 @@ class _MapScreenState extends ConsumerState<MapScreen>
                                                 coords[i][0] - centerLon;
                                             final dist =
                                                 dLat * dLat + dLon * dLon;
-
                                             if (dist < minDist) {
                                               minDist = dist;
                                               nearestIndex = i;
                                             }
                                           }
 
-                                          // 4️⃣ Fixem el punt segons l'estat
+                                          // 🎯 2. ACCIONES DEL BOTÓN SEGÚN EL ESTADO
+                                          final notifier = ref.read(
+                                            elevationSelectionProvider.notifier,
+                                          );
+
                                           if (sel.mapToolState ==
+                                              MapSelectionToolState.selected) {
+                                            // ✂️ Si ya había un tramo persistiendo, presionar el botón verde "Fixar inici"
+                                            // borra el tramo viejo e inicia uno nuevo usando el centro actual del mapa
+                                            notifier
+                                                .iniciarNouTramDesDeSelected(
+                                                  nearestIndex,
+                                                );
+                                          } else if (sel.mapToolState ==
                                               MapSelectionToolState
                                                   .selectingStart) {
-                                            ref
-                                                .read(
-                                                  elevationSelectionProvider
-                                                      .notifier,
-                                                )
-                                                .fixStartFromMap(nearestIndex);
+                                            notifier.fixStartFromMap(
+                                              nearestIndex,
+                                            );
                                           } else if (sel.mapToolState ==
                                               MapSelectionToolState
                                                   .selectingEnd) {
-                                            ref
-                                                .read(
-                                                  elevationSelectionProvider
-                                                      .notifier,
-                                                )
-                                                .fixEndFromMap(nearestIndex);
+                                            notifier.fixEndFromMap(
+                                              nearestIndex,
+                                            );
                                           }
 
-                                          // 5️⃣ Amaguem el botó
-                                          ref
-                                              .read(
-                                                elevationSelectionProvider
-                                                    .notifier,
-                                              )
-                                              .hideSelectionButton();
+                                          // 5️⃣ Ocultamos el botón tras la pulsación
+                                          notifier.hideSelectionButton();
                                         },
                                         child: Padding(
                                           padding: const EdgeInsets.symmetric(
@@ -1241,25 +1240,23 @@ class _MapScreenState extends ConsumerState<MapScreen>
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
                                               Icon(
-                                                sel.mapToolState ==
-                                                        MapSelectionToolState
-                                                            .selectingStart
+                                                isStartOrSelected
                                                     ? Icons.play_arrow
                                                     : Icons.flag,
                                                 color: Colors.white,
                                                 size: 16,
                                               ),
                                               const SizedBox(width: 6),
+                                              // 🏷️ 3. TEXTOS LOCALIZADOS DINÁMICOS
                                               Text(
-                                                sel.mapToolState ==
-                                                        MapSelectionToolState
-                                                            .selectingStart
+                                                isStartOrSelected
                                                     ? AppLocalizations.of(
-                                                        context,
-                                                      )!.fixStart
+                                                            context,
+                                                          )!
+                                                          .fixStart // 🟢 "Fixar inici"
                                                     : AppLocalizations.of(
                                                         context,
-                                                      )!.fixEnd,
+                                                      )!.fixEnd, // 🔴 "Fixar fi"
                                                 style: const TextStyle(
                                                   color: Colors.white,
                                                   fontWeight: FontWeight.bold,

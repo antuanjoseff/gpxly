@@ -153,6 +153,10 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
                 .read(elevationSelectionProvider.notifier)
                 .setManualRange(sIdx, eIdx);
 
+            ref
+                .read(elevationSelectionProvider.notifier)
+                .activateMapSelectionTool();
+
             setState(() {
               _draggingNeedle = 0;
               _localStartIdx = sIdx;

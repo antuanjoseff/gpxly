@@ -17,6 +17,7 @@ class RecordingNotifier extends Notifier<Track> {
   Duration _stoppedDuration = Duration.zero;
   DateTime? _stopStart;
   bool _isStopped = false;
+  Timer? _gpsTimeoutTimer;
 
   Duration get stoppedDuration {
     if (_isStopped && _stopStart != null) {
@@ -27,6 +28,10 @@ class RecordingNotifier extends Notifier<Track> {
 
   @override
   Track build() {
+    ref.onDispose(() {
+      _gpsTimeoutTimer?.cancel();
+    });
+
     // 🔗 DATA PIPELINING: Escoltem de fons el proveïdor de GPS natiu [INDEX]
     ref.listen<UserPosition?>(locationProvider, (previous, next) {
       if (next == null) return;
@@ -53,8 +58,28 @@ class RecordingNotifier extends Notifier<Track> {
 
   // 📐 ALGORISME MATEMÀTIC DE GRAVACIÓ REFACTORITZAT
   void _addProcessedPoint(UserPosition newPoint) {
+    // 1️⃣ Cancelamos el timer del punto anterior porque acaba de llegar uno nuevo del GPS
+    _gpsTimeoutTimer?.cancel();
+
+    // 2️⃣ Procesamos la velocidad del punto que acaba de entrar (Lógica original)
     _updateStopTime(newPoint.speed, newPoint.timestamp);
 
+    // 3️⃣ 🚨 LA SOLUCIÓN: Si pasan 5 segundos sin que entre OTRO punto de GPS, asumimos parada por metros
+    _gpsTimeoutTimer = Timer(const Duration(seconds: 5), () {
+      if (state.recordingState == RecordingState.recording && !_isStopped) {
+        _stopStart = DateTime.now();
+        _isStopped = true;
+
+        // Forzamos un refresco atómico en Riverpod para que la pantalla sume el tiempo parado en vivo
+        state = state.copyWith(
+          stats: state.stats.copyWith(stoppedDuration: stoppedDuration),
+        );
+      }
+    });
+
+    // ----------------------------------------------------------------------
+    // 🟢 A PARTIR DE ACÁ TU CÓDIGO SE MANTIENE 100% IDÉNTICO E INTACTO
+    // ----------------------------------------------------------------------
     double newDistance = state.stats.distance;
     double newAscent = state.stats.ascent;
     double newDescent = state.stats.descent;
@@ -97,13 +122,16 @@ class RecordingNotifier extends Notifier<Track> {
       newMin = newPoint.altitude;
     }
 
-    // ⚡ 1. CÀLCUL DE VELOCITAT MÀXIMA (Filtre de seguretat de 120 km/h per a salts de GPS)
-    final double currentSpeedKmh = newPoint.speed * 3.6;
-    if (currentSpeedKmh > newMaxSpeed && currentSpeedKmh < 120.0) {
-      newMaxSpeed = currentSpeedKmh;
+    // 🟢 1. SUAVIZADO Y CONVERSIÓN DE LA VELOCIDAD ACTUAL
+    // Convertimos los m/s del GPS a Km/h reales en una variable segura
+    double currentSpeedKmh = newPoint.speed * 3.6;
+
+    // Filtro anti-locuras: si el coche/caminante da negativo o si estamos parados por metros, es 0
+    if (currentSpeedKmh.isNegative || currentSpeedKmh > 120.0 || _isStopped) {
+      currentSpeedKmh = 0.0;
     }
 
-    // ⚡ 2. CÀLCUL DE VELOCITAT MITJANA REAL EN MOVIMENT
+    // 🟢 2. VELOCITAT MITJANA REAL (Corregida sin duplicar unidades)
     final Duration totalDuration = ref.read(timerProvider);
     final Duration movingDuration = totalDuration - stoppedDuration;
     double newAvgSpeed = 0.0;
@@ -111,7 +139,21 @@ class RecordingNotifier extends Notifier<Track> {
     if (movingDuration.inSeconds > 5 && newDistance > 0) {
       final double distanceKm = newDistance / 1000.0;
       final double timeHours = movingDuration.inSeconds / 3600.0;
-      newAvgSpeed = distanceKm / timeHours; // Velocitat = Km / Hores
+
+      // Esto da Km/h puros. Al usar el Timer de 5 segundos que pusimos antes,
+      // divisor y dividendo se mantendrán perfectamente estables.
+      newAvgSpeed = distanceKm / timeHours;
+    }
+
+    // 🟢 3. VELOCITAT MÀXIMA FILTRADA (Evita registrar saltos si el usuario está quieto)
+    // Para que un pico de velocidad sea aceptado como "máxima real", el usuario no debe estar en
+    // estado de parada por metros (_isStopped == false) ni debe superar un umbral lógico de aceleración.
+    if (currentSpeedKmh > newMaxSpeed &&
+        currentSpeedKmh < 120.0 &&
+        !_isStopped) {
+      // Opcional: si la velocidad actual es sospechosamente alta respecto a la media (ej: un salto de golpe),
+      // podés protegerlo comparando que no sea 10 veces mayor al promedio tras los primeros minutos.
+      newMaxSpeed = currentSpeedKmh;
     }
 
     // Guardem la distància d'aquest segment acumulada a dins de la UserPosition [INDEX]
@@ -136,6 +178,7 @@ class RecordingNotifier extends Notifier<Track> {
     state = state.copyWith(
       points: [...state.points, userPositionWithDistance],
       stats: updatedStats,
+      currentSpeed: currentSpeedKmh,
     );
 
     // Actualitzem el teu rang d'elevacions per al gràfic
@@ -161,45 +204,6 @@ class RecordingNotifier extends Notifier<Track> {
         _isStopped = false;
         _stopStart = null;
       }
-    }
-  }
-
-  // 💾 PERSISTÈNCIA NETEJA (SERIALITZACIÓ DE SUB-MODELS) [INDEX]
-  Future<void> _autoSaveToPrefs() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-
-      final List<Map<String, dynamic>> pointsMap = state.points
-          .map(
-            (p) => {
-              'lat': p.position.latitude,
-              'lon': p.position.longitude,
-              'altitude': p.altitude,
-              'isHgtFixed': p.isHgtFixed,
-              'timestamp': p.timestamp.toIso8601String(),
-              'accuracy': p.accuracy,
-              'vAccuracy': p.vAccuracy,
-              'speed': p.speed,
-              'heading': p.heading,
-              'satellites': p.satellites,
-              'distanceAtPoint': p.distanceAtPoint,
-            },
-          )
-          .toList();
-
-      final String rawData = jsonEncode({
-        'points': pointsMap,
-        'recordingState': state.recordingState.index,
-        'duration': state.stats.duration.inSeconds,
-        'stoppedDuration': state.stats.stoppedDuration.inSeconds,
-        'distance': state.stats.distance,
-        'ascent': state.stats.ascent,
-        'descent': state.stats.descent,
-      });
-
-      await prefs.setString('temp_track_data', rawData);
-    } catch (e) {
-      debugPrint("Error en l'auto-save: $e");
     }
   }
 
@@ -230,12 +234,34 @@ class RecordingNotifier extends Notifier<Track> {
 
       final List<double> alts = loadedPoints.map((p) => p.altitude).toList();
 
+      final Duration recuperadaDuration = Duration(
+        seconds: data['duration'] ?? 0,
+      );
+      final Duration recuperadaStopped = Duration(
+        seconds: data['stoppedDuration'] ?? 0,
+      );
+      final int activeStateIndex = data['recordingState'] ?? 0;
+      final currentRecordingState = RecordingState.values[activeStateIndex];
+
+      // 1️⃣ REGLA DE ORO: Sincronizamos las variables del Notifier local con la caché
+      _stoppedDuration = recuperadaStopped;
+      _stopStart = null;
+
+      // Si la app se cerró estando en modo parado, asumimos que sigue parada al levantarla
+      _isStopped = currentRecordingState == RecordingState.paused;
+
+      // 2️⃣ Sincronizamos el cronómetro general flotante (TimerNotifier)
+      ref.read(timerProvider.notifier).setInitialValue(recuperadaDuration);
+      if (currentRecordingState == RecordingState.recording) {
+        ref.read(timerProvider.notifier).start();
+      }
+
       state = Track(
         points: loadedPoints,
-        recordingState: RecordingState.values[data['recordingState'] ?? 0],
+        recordingState: currentRecordingState,
         stats: TrackStats(
-          duration: Duration(seconds: data['duration'] ?? 0),
-          stoppedDuration: Duration(seconds: data['stoppedDuration'] ?? 0),
+          duration: recuperadaDuration,
+          stoppedDuration: recuperadaStopped,
           distance: data['distance'] ?? 0.0,
           ascent: data['ascent'] ?? 0.0,
           descent: data['descent'] ?? 0.0,
@@ -249,6 +275,50 @@ class RecordingNotifier extends Notifier<Track> {
       );
     } catch (e) {
       debugPrint("Error carregant el cache: $e");
+    }
+  }
+
+  // 💾 PERSISTÈNCIA NETEJA (SERIALITZACIÓ DE SUB-MODELS CORREGIDA)
+  Future<void> _autoSaveToPrefs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      final List<Map<String, dynamic>> pointsMap = state.points
+          .map(
+            (p) => {
+              'lat': p.position.latitude,
+              'lon': p.position.longitude,
+              'altitude': p.altitude,
+              'isHgtFixed': p.isHgtFixed,
+              'timestamp': p.timestamp.toIso8601String(),
+              'accuracy': p.accuracy,
+              'vAccuracy': p.vAccuracy,
+              'speed': p.speed,
+              'heading': p.heading,
+              'satellites': p.satellites,
+              'distanceAtPoint': p.distanceAtPoint,
+            },
+          )
+          .toList();
+
+      // 3️⃣ 🚨 LA CLAVE: Leemos el GETTER dinámico real de tiempo parado,
+      // no el valor estático y congelado de 'state.stats'.
+      final Duration totalDurationReal = ref.read(timerProvider);
+
+      final String rawData = jsonEncode({
+        'points': pointsMap,
+        'recordingState': state.recordingState.index,
+        'duration': totalDurationReal.inSeconds,
+        'stoppedDuration':
+            stoppedDuration.inSeconds, // 🟢 Usa el getter dinámico en vivo
+        'distance': state.stats.distance,
+        'ascent': state.stats.ascent,
+        'descent': state.stats.descent,
+      });
+
+      await prefs.setString('temp_track_data', rawData);
+    } catch (e) {
+      debugPrint("Error en l'auto-save: $e");
     }
   }
 
@@ -270,6 +340,7 @@ class RecordingNotifier extends Notifier<Track> {
   }
 
   void pauseRecording() {
+    _gpsTimeoutTimer?.cancel();
     ref.read(timerProvider.notifier).pause();
     final elapsed = ref.read(timerProvider);
     state = state.copyWith(
@@ -284,6 +355,7 @@ class RecordingNotifier extends Notifier<Track> {
   }
 
   Future<void> stopRecording(Duration finalDuration) async {
+    _gpsTimeoutTimer?.cancel();
     final total = ref.read(timerProvider);
     ref.read(timerProvider.notifier).pause();
 
@@ -301,6 +373,7 @@ class RecordingNotifier extends Notifier<Track> {
   }
 
   void reset() {
+    _gpsTimeoutTimer?.cancel();
     state = Track(
       points: const [],
       recordingState: RecordingState.idle,

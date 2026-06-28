@@ -91,7 +91,7 @@ class Track {
     return "$h:$m:$s";
   }
 
-  double get currentSpeedKmH => currentSpeed * 3.6;
+  double get currentSpeedKmH => currentSpeed;
   int get currentSatellites => points.isNotEmpty ? points.last.satellites : 0;
 
   String get formattedDuration {

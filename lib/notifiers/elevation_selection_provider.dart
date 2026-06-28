@@ -338,10 +338,28 @@ class ElevationSelectionNotifier extends Notifier<ElevationSelectionState> {
   }
 
   void handleMapMovementOnSelected() {
-    // 🚫 NO fem res. El tram selected és persistent.
+    // 🔄 REGLA NOVA: Si el mapa es mou estant en estat 'selected',
+    // activem la visualització del botó flotant central de la pantalla.
     if (state.mapToolState == MapSelectionToolState.selected) {
-      return;
+      state = state.copyWith(showCenterButton: true);
     }
+  }
+
+  void iniciarNouTramDesDeSelected(int indexNouInici) {
+    _isJustSelectedFromMap = false;
+
+    state = state.copyWith(
+      mode: SelectionMode.range,
+      startTrackIndex: indexNouInici,
+      provisionalEndIndex: indexNouInici,
+      // 🔴 Tornem a col·locar l'eina en mode d'esperar el punt final
+      mapToolState: MapSelectionToolState.selectingEnd,
+      clearEndTrack: true, // Esborrem el punt vermell final del tram anterior
+      clearSinglePoint: true,
+      source: SelectionSource.map,
+      showCenterButton:
+          false, // S'amaga el botó fins al següent moviment/parada
+    );
   }
 
   void resetMapSelection() {
@@ -388,7 +406,9 @@ class ElevationSelectionNotifier extends Notifier<ElevationSelectionState> {
 
   void showSelectionButton() {
     if (state.mapToolState == MapSelectionToolState.selectingStart ||
-        state.mapToolState == MapSelectionToolState.selectingEnd) {
+        state.mapToolState == MapSelectionToolState.selectingEnd ||
+        state.mapToolState == MapSelectionToolState.selected) {
+      // 🟢 Añadimos este estado
       state = state.copyWith(showCenterButton: true);
     }
   }

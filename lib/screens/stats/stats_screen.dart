@@ -160,7 +160,7 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
           track != null
               ? (track.currentSpeedKmH > 0
                     ? track.currentSpeedKmH
-                    : (track.stats.averageSpeed * 3.6))
+                    : (track.stats.averageSpeed))
               : null,
           "km/h",
           t.statSpeed,
@@ -170,7 +170,7 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
           Icons.trending_up,
           track != null
               ? (track.stats.averageSpeed > 0
-                    ? track.stats.averageSpeed * 3.6
+                    ? track.stats.averageSpeed
                     : track.averageSpeed)
               : null,
           "km/h",
@@ -181,7 +181,7 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
           Icons.bolt,
           track != null
               ? (track.stats.maxSpeed > 0
-                    ? track.stats.maxSpeed * 3.6
+                    ? track.stats.maxSpeed
                     : track.maxSpeed)
               : null,
           "km/h",
@@ -197,7 +197,7 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
             track != null
                 ? (track.currentSpeedKmH > 0
                       ? track.currentSpeedKmH
-                      : (track.stats.averageSpeed * 3.6))
+                      : (track.stats.averageSpeed))
                 : 0.0,
           ),
           unitBelow: true,
@@ -210,7 +210,7 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
           customValue: track != null
               ? (track.formattedAveragePace.isNotEmpty
                     ? track.formattedAveragePace.replaceAll(" min/km", "")
-                    : _formatCurrentPace(track.stats.averageSpeed * 3.6))
+                    : _formatCurrentPace(track.stats.averageSpeed))
               : "--:--",
           unitBelow: true,
         ),

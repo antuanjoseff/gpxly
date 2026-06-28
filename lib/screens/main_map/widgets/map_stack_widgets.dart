@@ -110,12 +110,16 @@ class MapScissorsButtons extends ConsumerWidget {
         screenHeight * AppDimensions.elevationChartHeightRatio;
 
     final bool hasImportedTrack = importedTrack != null;
-    final bool isChartVisibleReal = !isChartCollapsed && hasImportedTrack;
+    final bool hasRecordingTrack = recordingTrack
+        .coordinates
+        .isNotEmpty; // 🚀 Nova comprovació per al gravat
+
+    final bool isChartVisibleReal =
+        !isChartCollapsed && (hasImportedTrack || hasRecordingTrack);
 
     final double bottomOffset = isChartVisibleReal ? 60.0 + chartHeight : 60.0;
 
     final bool isToolActive = sel.mapToolState != MapSelectionToolState.off;
-    final bool isSelected = sel.mapToolState == MapSelectionToolState.selected;
 
     final Widget iconTijerasPersonalizado = SizedBox(
       width: 36,
@@ -173,25 +177,6 @@ class MapScissorsButtons extends ConsumerWidget {
             child: iconTijerasPersonalizado,
           ),
         ),
-
-        // 🔄 BOTÓ RESET TRAM (Meteix tamany i enganxat al costat)
-        if (isSelected)
-          AnimatedPositioned(
-            duration: const Duration(milliseconds: 250),
-            right: 80,
-            bottom: bottomOffset,
-            child: FloatingActionButton(
-              heroTag: "btn_reset_tram",
-              backgroundColor: Colors.white,
-              foregroundColor: Colors.orange.shade700,
-              onPressed: () {
-                ref
-                    .read(elevationSelectionProvider.notifier)
-                    .resetMapSelection();
-              },
-              child: const Icon(Icons.refresh, size: 26),
-            ),
-          ),
       ],
     );
   }
