@@ -117,6 +117,8 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
 
     final pressure = ref.watch(barometerProvider).value;
     final hasBarometer = ref.watch(barometerSettingsProvider).hasBarometer;
+    final double currentSpeed = track?.currentSpeedKmH ?? 0.0;
+    final double displaySpeed = currentSpeed < 0.4 ? 0.0 : currentSpeed;
 
     final Map<String, List<Widget>> cardPages = {
       'dist': [
@@ -155,53 +157,44 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
 
       // ... (resta de cardPages: dist i time es mantenen igual)
       'speed': [
+        // 🔥 VELOCITAT INSTANTÀNIA REAL (sense fallback)
         _StatPage(
           Icons.speed,
-          track != null
-              ? (track.currentSpeedKmH > 0
-                    ? track.currentSpeedKmH
-                    : (track.stats.averageSpeed))
-              : null,
+          displaySpeed,
           "km/h",
           t.statSpeed,
-          unitBelow: true, // Centratives verticals
+          unitBelow: true,
         ),
+
+        // 🔥 VELOCITAT MITJANA REAL (ja calculada al RecordingNotifier)
         _StatPage(
           Icons.trending_up,
-          track != null
-              ? (track.stats.averageSpeed > 0
-                    ? track.stats.averageSpeed
-                    : track.averageSpeed)
-              : null,
+          track?.stats.averageSpeed,
           "km/h",
           t.statSpeedAverage,
           unitBelow: true,
         ),
+
+        // 🔥 VELOCITAT MÀXIMA REAL
         _StatPage(
           Icons.bolt,
-          track != null
-              ? (track.stats.maxSpeed > 0
-                    ? track.stats.maxSpeed
-                    : track.maxSpeed)
-              : null,
+          track?.stats.maxSpeed,
           "km/h",
           t.statSpeedMax,
           unitBelow: true,
         ),
+
+        // 🔥 RITME ACTUAL (basat en velocitat instantània real)
         _StatPage(
           Icons.av_timer,
           null,
           "min/km",
           t.statPace,
-          customValue: _formatCurrentPace(
-            track != null
-                ? (track.currentSpeedKmH > 0
-                      ? track.currentSpeedKmH
-                      : (track.stats.averageSpeed))
-                : 0.0,
-          ),
+          customValue: _formatCurrentPace(displaySpeed),
           unitBelow: true,
         ),
+
+        // 🔥 RITME MITJÀ (basat en averageSpeed)
         _StatPage(
           Icons.directions_run,
           null,
