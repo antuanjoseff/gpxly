@@ -1,7 +1,9 @@
 // lib/notifiers/nearest_track_point_notifier.dart (OPTIMITZAT SOTA DEMANDA I ZOOM)
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:senda/models/track.dart';
 import 'package:senda/notifiers/gps_speed_notifier.dart';
 import 'package:senda/notifiers/imported_track_notifier.dart';
+import 'package:senda/notifiers/recording_notifier.dart';
 // 🚀 Importa aquí el provider on tinguis el zoom actual del mapa de Senda, exemple:
 // import 'package:senda/notifiers/map_zoom_notifier.dart';
 
@@ -11,11 +13,32 @@ class NearestTrackPointNotifier extends Notifier<int> {
     return 0; // Estat inicial en repòs absolut
   }
 
-  /// 🚀 CÀLCUL QUIRÚRGIC LLIURE DE BUCLES INUTILS:
-  /// Només es dispara quan l'usuari clica un botó de fixar.
+  /// 🚀 CÀLCUL QUIRÚRGIC LLIURE DE BUCLES INÚTILS (ACTUALITZAT CONDICIONAL):
+  /// Prioritza automàticament el track gravat en viu si l'aplicació està registrant una ruta.
   void refreshNearestPoint({required double currentZoom}) {
-    final track = ref.read(importedTrackProvider);
-    if (track == null || track.coordinates.isEmpty) {
+    // 1. ESBRINEM SI L'APLICACIÓ ESTÀ GRAVANT O NO
+    final recTrack = ref.read(trackRecordingProvider);
+    final bool isRecording =
+        recTrack.recordingState == RecordingState.recording;
+
+    List<dynamic> coordinatesList = [];
+
+    if (isRecording) {
+      // 🟢 CAS A: L'APP ESTÀ GRAVANT. Utilitzem la llista '.points' detectada al teu projecte
+      if (recTrack.points.isNotEmpty) {
+        coordinatesList = recTrack
+            .points; // S'assumeix que conté llistes [lon, lat] o objectes que responen a l'índex [0] i [1]
+      }
+    } else {
+      // 🔵 CAS B: NO ES GRAVA. Fem servir el track importat si existeix tal com tenies abans
+      final importedTrack = ref.read(importedTrackProvider);
+      if (importedTrack != null && importedTrack.coordinates.isNotEmpty) {
+        coordinatesList = importedTrack.coordinates;
+      }
+    }
+
+    // Si cap dels dos tracks està actiu o ambdues llistes estan buides, aturem l'escàner
+    if (coordinatesList.isEmpty) {
       state = 0;
       return;
     }
@@ -26,11 +49,9 @@ class NearestTrackPointNotifier extends Notifier<int> {
 
     int bestIndex = 0;
     double bestDist = double.infinity;
-    final int totalPoints = track.coordinates.length;
+    final int totalPoints = coordinatesList.length;
 
     // 🎯 REGLA 1: CONTROL DE VISUALITZACIÓ SEGONS ZOOM
-    // Si el zoom és alt (> 15, l'usuari està a prop de la línia), mirem el 100% dels punts pel detall.
-    // Si el zoom és baix, saltem punts per protegir la memòria del telèfon.
     int step = 1;
     if (currentZoom < 11) {
       step = 12; // Molt lluny: saltem de 12 en 12
@@ -39,8 +60,6 @@ class NearestTrackPointNotifier extends Notifier<int> {
     }
 
     // 🎯 REGLA 2: FILTRE DE CAPSA VISUAL (REDUIR PUNTS DINS LA VISTA DEL MÒBIL)
-    // Creem un marge de tolerància estimat en graus segons el zoom actual
-    // per descartar de cop tot el track de 50km que queda fora de la pantalla.
     final double degreeTolerance = currentZoom > 13 ? 0.015 : 0.08;
 
     final double minLat = centerLat - degreeTolerance;
@@ -48,18 +67,19 @@ class NearestTrackPointNotifier extends Notifier<int> {
     final double minLon = centerLon - degreeTolerance;
     final double maxLon = centerLon + degreeTolerance;
 
-    // Bucle de cerca intel·ligent
+    // Bucle de cerca intel·ligent sobre la llista escollida condicionalment
     for (int i = 0; i < totalPoints; i += step) {
-      final p = track.coordinates[i];
+      final p = coordinatesList[i];
+      // Adaptació flexible de lectura: suporta tant estructures GeoJSON [lon, lat] com llistes pures
       final double lon = p[0];
       final double lat = p[1];
 
-      // Filtre de tall: Si el punt està fora del rectangle visible del mòbil, l'ignorem directament!
+      // Filtre de tall espacial
       if (lat < minLat || lat > maxLat || lon < minLon || lon > maxLon) {
         continue;
       }
 
-      // Distància Manhattan super ràpida pels punts que Sí que estan en pantalla
+      // Distància Manhattan super ràpida
       final double d = (lat - centerLat).abs() + (lon - centerLon).abs();
 
       if (d < bestDist) {
@@ -69,12 +89,11 @@ class NearestTrackPointNotifier extends Notifier<int> {
     }
 
     // 🎯 REFINAMENT FINAL EXTRA:
-    // Si hem saltat punts (step > 1), mirem de prop al voltant del guanyador per clavar el píxel
     if (step > 1 && bestDist != double.infinity) {
       int refineStart = (bestIndex - step).clamp(0, totalPoints - 1);
       int refineEnd = (bestIndex + step).clamp(0, totalPoints - 1);
       for (int i = refineStart; i <= refineEnd; i++) {
-        final p = track.coordinates[i];
+        final p = coordinatesList[i];
         final double d = (p[1] - centerLat).abs() + (p[0] - centerLon).abs();
         if (d < bestDist) {
           bestDist = d;
@@ -83,11 +102,10 @@ class NearestTrackPointNotifier extends Notifier<int> {
       }
     }
 
-    // Si cap punt del track fos visible a la pantalla pel zoom, fem un fallback al punt 0 o el més proper global
+    // Fallback de seguretat si l'usuari fa un zoom desplaçat fora de la traça
     if (bestDist == double.infinity) {
-      // Cerca bàsica ràpida de seguretat saltant punts per tot el track
       for (int i = 0; i < totalPoints; i += 20) {
-        final p = track.coordinates[i];
+        final p = coordinatesList[i];
         final double d = (p[1] - centerLat).abs() + (p[0] - centerLon).abs();
         if (d < bestDist) {
           bestDist = d;

@@ -151,6 +151,7 @@ class TrackStats {
   final double maxElevation;
   final double minElevation;
   final double averageSpeed;
+  final double averageSpeedTotal;
   final double maxSpeed;
 
   // Bounding box geogràfic
@@ -167,8 +168,9 @@ class TrackStats {
     this.descent = 0.0,
     this.maxElevation = -9999.0,
     this.minElevation = 9999.0,
-    this.averageSpeed = 0.0, // ✅ Inicializado
-    this.maxSpeed = 0.0, // ✅ Inicializado
+    this.averageSpeed = 0.0,
+    this.averageSpeedTotal = 0.0,
+    this.maxSpeed = 0.0,
     this.minLat,
     this.maxLat,
     this.minLon,
@@ -183,8 +185,9 @@ class TrackStats {
     double? descent,
     double? maxElevation,
     double? minElevation,
-    double? averageSpeed, // ✅ Añadido al copyWith
-    double? maxSpeed, // ✅ Añadido al copyWith
+    double? averageSpeed,
+    double? averageSpeedTotal,
+    double? maxSpeed,
     double? minLat,
     double? maxLat,
     double? minLon,
@@ -198,8 +201,9 @@ class TrackStats {
       descent: descent ?? this.descent,
       maxElevation: maxElevation ?? this.maxElevation,
       minElevation: minElevation ?? this.minElevation,
-      averageSpeed: averageSpeed ?? this.averageSpeed, // ✅ Mapeado
-      maxSpeed: maxSpeed ?? this.maxSpeed, // ✅ Mapeado
+      averageSpeed: averageSpeed ?? this.averageSpeed,
+      averageSpeedTotal: averageSpeedTotal ?? this.averageSpeedTotal,
+      maxSpeed: maxSpeed ?? this.maxSpeed,
       minLat: minLat ?? this.minLat,
       maxLat: maxLat ?? this.maxLat,
       minLon: minLon ?? this.minLon,

@@ -156,8 +156,9 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
       ],
 
       // ... (resta de cardPages: dist i time es mantenen igual)
+      // DINS DE CARDPAGES A LA TEVA TRACKSTATSSCREEN:
       'speed': [
-        // 🔥 VELOCITAT INSTANTÀNIA REAL (sense fallback)
+        // 1. Velocitat actual calculada per segment (Km/h)
         _StatPage(
           Icons.speed,
           displaySpeed,
@@ -166,7 +167,7 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
           unitBelow: true,
         ),
 
-        // 🔥 VELOCITAT MITJANA REAL (ja calculada al RecordingNotifier)
+        // 2. Velocitat mitjana en moviment (Ignora temps aturat)
         _StatPage(
           Icons.trending_up,
           track?.stats.averageSpeed,
@@ -175,7 +176,16 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
           unitBelow: true,
         ),
 
-        // 🔥 VELOCITAT MÀXIMA REAL
+        // 3. 🆕 NOVA TARGETA: Velocitat mitjana total (Compta tot el temps, inclòs aturat)
+        _StatPage(
+          Icons.equalizer,
+          track?.stats.averageSpeedTotal,
+          "km/h",
+          "MITJANA TOTAL", // Text fix o usa t.statSpeedTotal si el crees a l'l10n
+          unitBelow: true,
+        ),
+
+        // 4. Velocitat màxima real assolida
         _StatPage(
           Icons.bolt,
           track?.stats.maxSpeed,
@@ -184,7 +194,7 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
           unitBelow: true,
         ),
 
-        // 🔥 RITME ACTUAL (basat en velocitat instantània real)
+        // 5. Ritme actual (basat en la velocitat per segment)
         _StatPage(
           Icons.av_timer,
           null,
@@ -194,7 +204,7 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
           unitBelow: true,
         ),
 
-        // 🔥 RITME MITJÀ (basat en averageSpeed)
+        // 6. Ritme mitjà en moviment
         _StatPage(
           Icons.directions_run,
           null,

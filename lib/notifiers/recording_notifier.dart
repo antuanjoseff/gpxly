@@ -89,6 +89,9 @@ class RecordingNotifier extends Notifier<Track> {
 
     double calculatedDistanceAtPoint = newDistance;
 
+    // 🆕 VARIABLE PER AL CÀLCUL DE LA VELOCITAT ACTUAL PER SEGMENTS
+    double currentSpeedKmh = 0.0;
+
     if (state.points.isNotEmpty) {
       final lastPoint = state.points.last;
 
@@ -99,13 +102,22 @@ class RecordingNotifier extends Notifier<Track> {
         newPoint.position.longitude,
       );
 
-      // El teu filtre anti-bogeries de distància
+      // El teu filtre anti-bogeries de distància (Mantingut intacte)
       if (step.isFinite && step < 200) {
         newDistance += step;
         calculatedDistanceAtPoint = newDistance;
       }
 
-      // El teu filtre de sensibilitat de desnivell de muntanya
+      // 🌟 NOVA LÒGICA: Calculem la velocitat actual en funció de la distància i el temps entre els dos últims punts
+      final int segmentSeconds = newPoint.timestamp
+          .difference(lastPoint.timestamp)
+          .inSeconds;
+      if (segmentSeconds > 0 && step.isFinite && step > 0.2) {
+        // (metres / segons) * 3.6 = Km/h
+        currentSpeedKmh = (step / segmentSeconds) * 3.6;
+      }
+
+      // El teu filtre de sensibilitat de desnivell de muntanya (Mantingut intacte)
       final double diffAlt = newPoint.altitude - lastPoint.altitude;
       if (diffAlt > 0.5) {
         newAscent += diffAlt;
@@ -122,37 +134,35 @@ class RecordingNotifier extends Notifier<Track> {
       newMin = newPoint.altitude;
     }
 
-    // 🟢 1. SUAVIZADO Y CONVERSIÓN DE LA VELOCIDAD ACTUAL
-    // Convertimos los m/s del GPS a Km/h reales en una variable segura
-    double currentSpeedKmh = newPoint.speed * 3.6;
-
     // Filtro anti-locuras: si el coche/caminante da negativo o si estamos parados por metros, es 0
     if (currentSpeedKmh.isNegative || currentSpeedKmh > 120.0 || _isStopped) {
       currentSpeedKmh = 0.0;
     }
 
-    // 🟢 2. VELOCITAT MITJANA REAL (Corregida sin duplicar unidades)
+    // 🟢 2. CÀLCUL DE LES DUES VELOCITATS MITJANES (En moviment i Total)
     final Duration totalDuration = ref.read(timerProvider);
     final Duration movingDuration = totalDuration - stoppedDuration;
     double newAvgSpeed = 0.0;
+    double newAvgSpeedTotal = 0.0; // 🆕 Nova variable per a la mitjana total
 
+    final double distanceKm = newDistance / 1000.0;
+
+    // A. Mitjana en Moviment (Mantinguda exactament igual: ignora el temps aturat)
     if (movingDuration.inSeconds > 5 && newDistance > 0) {
-      final double distanceKm = newDistance / 1000.0;
       final double timeHours = movingDuration.inSeconds / 3600.0;
-
-      // Esto da Km/h puros. Al usar el Timer de 5 segundos que pusimos antes,
-      // divisor y dividendo se mantendrán perfectamente estables.
       newAvgSpeed = distanceKm / timeHours;
     }
 
+    // B. 🆕 Mitjana Total: Té en compte absolutament tot el temps, inclòs el temps aturat
+    if (totalDuration.inSeconds > 5 && newDistance > 0) {
+      final double timeHoursTotal = totalDuration.inSeconds / 3600.0;
+      newAvgSpeedTotal = distanceKm / timeHoursTotal;
+    }
+
     // 🟢 3. VELOCITAT MÀXIMA FILTRADA (Evita registrar saltos si el usuario está quieto)
-    // Para que un pico de velocidad sea aceptado como "máxima real", el usuario no debe estar en
-    // estado de parada por metros (_isStopped == false) ni debe superar un umbral lógico de aceleración.
     if (currentSpeedKmh > newMaxSpeed &&
         currentSpeedKmh < 120.0 &&
         !_isStopped) {
-      // Opcional: si la velocidad actual es sospechosamente alta respecto a la media (ej: un salto de golpe),
-      // podés protegerlo comparando que no sea 10 veces mayor al promedio tras los primeros minutos.
       newMaxSpeed = currentSpeedKmh;
     }
 
@@ -161,7 +171,7 @@ class RecordingNotifier extends Notifier<Track> {
       distanceAtPoint: calculatedDistanceAtPoint,
     );
 
-    // Reconstruïm el nou bloc de TrackStats compacte amb les velocitats injectades [INDEX]
+    // Reconstruïm el nou bloc de TrackStats compacte amb les DUES velocitats mitjanes injectades [INDEX]
     final updatedStats = state.stats.copyWith(
       distance: newDistance,
       ascent: newAscent,
@@ -170,7 +180,9 @@ class RecordingNotifier extends Notifier<Track> {
       minElevation: newMin,
       stoppedDuration: stoppedDuration,
       duration: totalDuration,
-      averageSpeed: newAvgSpeed,
+      averageSpeed: newAvgSpeed, // Mitjana en moviment
+      averageSpeedTotal:
+          newAvgSpeedTotal, // 🆕 Mitjana total injectada de forma atòmica
       maxSpeed: newMaxSpeed,
     );
 
@@ -178,7 +190,8 @@ class RecordingNotifier extends Notifier<Track> {
     state = state.copyWith(
       points: [...state.points, userPositionWithDistance],
       stats: updatedStats,
-      currentSpeed: currentSpeedKmh,
+      currentSpeed:
+          currentSpeedKmh, // Desa la velocitat calculada per segment en Km/h
     );
 
     // Actualitzem el teu rang d'elevacions per al gràfic
