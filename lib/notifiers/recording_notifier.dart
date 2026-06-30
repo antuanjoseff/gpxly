@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
@@ -8,8 +7,11 @@ import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:senda/models/track.dart';
 import 'package:senda/models/user_position.dart';
 import 'package:senda/notifiers/elevation_range_notifier.dart';
+import 'package:senda/notifiers/gps_settings_notifier.dart';
+import 'package:senda/notifiers/helpers/thresholds.dart';
 import 'package:senda/notifiers/location_notifier.dart'; // Bloc 1 [INDEX]
 import 'package:senda/notifiers/timer_notifier.dart';
+import 'package:senda/utils/geo_utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class RecordingNotifier extends Notifier<Track> {
@@ -58,38 +60,30 @@ class RecordingNotifier extends Notifier<Track> {
 
   // 📐 ALGORISME MATEMÀTIC DE GRAVACIÓ REFACTORITZAT
   void _addProcessedPoint(UserPosition newPoint) {
-    // 1️⃣ Cancelamos el timer del punto anterior porque acaba de llegar uno nuevo del GPS
     _gpsTimeoutTimer?.cancel();
-
-    // 2️⃣ Procesamos la velocidad del punto que acaba de entrar (Lógica original)
     _updateStopTime(newPoint.speed, newPoint.timestamp);
 
-    // 3️⃣ 🚨 LA SOLUCIÓN: Si pasan 5 segundos sin que entre OTRO punto de GPS, asumimos parada por metros
     _gpsTimeoutTimer = Timer(const Duration(seconds: 5), () {
       if (state.recordingState == RecordingState.recording && !_isStopped) {
         _stopStart = DateTime.now();
         _isStopped = true;
 
-        // Forzamos un refresco atómico en Riverpod para que la pantalla sume el tiempo parado en vivo
         state = state.copyWith(
           stats: state.stats.copyWith(stoppedDuration: stoppedDuration),
         );
       }
     });
 
-    // ----------------------------------------------------------------------
-    // 🟢 A PARTIR DE ACÁ TU CÓDIGO SE MANTIENE 100% IDÉNTICO E INTACTO
-    // ----------------------------------------------------------------------
     double newDistance = state.stats.distance;
     double newAscent = state.stats.ascent;
     double newDescent = state.stats.descent;
     double newMax = state.stats.maxElevation;
     double newMin = state.stats.minElevation;
-    double newMaxSpeed = state.stats.maxSpeed; // Rescatem la màxima actual
+    double newMaxSpeed = state.stats.maxSpeed;
 
     double calculatedDistanceAtPoint = newDistance;
 
-    // 🆕 VARIABLE PER AL CÀLCUL DE LA VELOCITAT ACTUAL PER SEGMENTS
+    // 🔥 NOVA VELOCITAT ESTABLE
     double currentSpeedKmh = 0.0;
 
     if (state.points.isNotEmpty) {
@@ -102,22 +96,20 @@ class RecordingNotifier extends Notifier<Track> {
         newPoint.position.longitude,
       );
 
-      // El teu filtre anti-bogeries de distància (Mantingut intacte)
       if (step.isFinite && step < 200) {
         newDistance += step;
         calculatedDistanceAtPoint = newDistance;
       }
 
-      // 🌟 NOVA LÒGICA: Calculem la velocitat actual en funció de la distància i el temps entre els dos últims punts
-      final int segmentSeconds = newPoint.timestamp
-          .difference(lastPoint.timestamp)
-          .inSeconds;
-      if (segmentSeconds > 0 && step.isFinite && step > 0.2) {
-        // (metres / segons) * 3.6 = Km/h
-        currentSpeedKmh = (step / segmentSeconds) * 3.6;
+      // 🔥 SUBSTITUCIÓ DEL CÀLCUL ANTIC DE VELOCITAT
+      final gps = ref.read(gpsSettingsProvider);
+
+      if (gps.useTime) {
+        currentSpeedKmh = _computeSpeedWithTimeWindow(state.points, gps);
+      } else {
+        currentSpeedKmh = _computeSpeedWithDistanceWindow(state.points, gps);
       }
 
-      // El teu filtre de sensibilitat de desnivell de muntanya (Mantingut intacte)
       final double diffAlt = newPoint.altitude - lastPoint.altitude;
       if (diffAlt > 0.5) {
         newAscent += diffAlt;
@@ -126,7 +118,6 @@ class RecordingNotifier extends Notifier<Track> {
       }
     }
 
-    // Actualitzem límits d'elevació
     if (state.points.isEmpty || newPoint.altitude > newMax) {
       newMax = newPoint.altitude;
     }
@@ -134,44 +125,37 @@ class RecordingNotifier extends Notifier<Track> {
       newMin = newPoint.altitude;
     }
 
-    // Filtro anti-locuras: si el coche/caminante da negativo o si estamos parados por metros, es 0
     if (currentSpeedKmh.isNegative || currentSpeedKmh > 120.0 || _isStopped) {
       currentSpeedKmh = 0.0;
     }
 
-    // 🟢 2. CÀLCUL DE LES DUES VELOCITATS MITJANES (En moviment i Total)
     final Duration totalDuration = ref.read(timerProvider);
     final Duration movingDuration = totalDuration - stoppedDuration;
     double newAvgSpeed = 0.0;
-    double newAvgSpeedTotal = 0.0; // 🆕 Nova variable per a la mitjana total
+    double newAvgSpeedTotal = 0.0;
 
     final double distanceKm = newDistance / 1000.0;
 
-    // A. Mitjana en Moviment (Mantinguda exactament igual: ignora el temps aturat)
     if (movingDuration.inSeconds > 5 && newDistance > 0) {
       final double timeHours = movingDuration.inSeconds / 3600.0;
       newAvgSpeed = distanceKm / timeHours;
     }
 
-    // B. 🆕 Mitjana Total: Té en compte absolutament tot el temps, inclòs el temps aturat
     if (totalDuration.inSeconds > 5 && newDistance > 0) {
       final double timeHoursTotal = totalDuration.inSeconds / 3600.0;
       newAvgSpeedTotal = distanceKm / timeHoursTotal;
     }
 
-    // 🟢 3. VELOCITAT MÀXIMA FILTRADA (Evita registrar saltos si el usuario está quieto)
     if (currentSpeedKmh > newMaxSpeed &&
         currentSpeedKmh < 120.0 &&
         !_isStopped) {
       newMaxSpeed = currentSpeedKmh;
     }
 
-    // Guardem la distància d'aquest segment acumulada a dins de la UserPosition [INDEX]
     final userPositionWithDistance = newPoint.copyWith(
       distanceAtPoint: calculatedDistanceAtPoint,
     );
 
-    // Reconstruïm el nou bloc de TrackStats compacte amb les DUES velocitats mitjanes injectades [INDEX]
     final updatedStats = state.stats.copyWith(
       distance: newDistance,
       ascent: newAscent,
@@ -180,26 +164,21 @@ class RecordingNotifier extends Notifier<Track> {
       minElevation: newMin,
       stoppedDuration: stoppedDuration,
       duration: totalDuration,
-      averageSpeed: newAvgSpeed, // Mitjana en moviment
-      averageSpeedTotal:
-          newAvgSpeedTotal, // 🆕 Mitjana total injectada de forma atòmica
+      averageSpeed: newAvgSpeed,
+      averageSpeedTotal: newAvgSpeedTotal,
       maxSpeed: newMaxSpeed,
     );
 
-    // Actualitzem l'estat central de Riverpod d'un sol cop de forma atòmica [INDEX]
     state = state.copyWith(
       points: [...state.points, userPositionWithDistance],
       stats: updatedStats,
-      currentSpeed:
-          currentSpeedKmh, // Desa la velocitat calculada per segment en Km/h
+      currentSpeed: currentSpeedKmh,
     );
 
-    // Actualitzem el teu rang d'elevacions per al gràfic
     ref
         .read(elevationRangeProvider.notifier)
         .updateWithNewAltitude(newPoint.altitude);
 
-    // Auto-save cada 10 punts neta
     if (state.points.length % 10 == 0) {
       _autoSaveToPrefs();
     }
@@ -393,6 +372,138 @@ class RecordingNotifier extends Notifier<Track> {
       stats: TrackStats(),
     );
     clearCache();
+  }
+
+  List<UserPosition> _filterPointsByAccuracy(List<UserPosition> points) {
+    if (points.length < 2) return points;
+
+    final filtered = <UserPosition>[];
+
+    for (int i = 0; i < points.length; i++) {
+      final p = points[i];
+
+      // Punt massa imprecís
+      if (p.accuracy > 15.0) continue;
+
+      // Segment massa sorollós
+      if (i > 0) {
+        final prev = points[i - 1];
+
+        final step = distanceBetween(
+          prev.position.latitude,
+          prev.position.longitude,
+          p.position.latitude,
+          p.position.longitude,
+        );
+
+        final acc = prev.accuracy + p.accuracy;
+        if (step < acc) continue;
+      }
+
+      filtered.add(p);
+    }
+
+    return filtered;
+  }
+
+  double _computeSpeedWithTimeWindow(
+    List<UserPosition> points,
+    GpsSettings gps,
+  ) {
+    if (points.length < 2) return 0.0;
+
+    final filtered = _filterPointsByAccuracy(points);
+    if (filtered.length < 2) return 0.0;
+
+    final windowSeconds = TrackThresholds.minSpeedWindowSeconds;
+
+    final List<UserPosition> window = [];
+    final last = filtered.last;
+    window.add(last);
+
+    for (int i = filtered.length - 2; i >= 0; i--) {
+      final p = filtered[i];
+      final dt = last.timestamp.difference(p.timestamp).inSeconds;
+
+      if (dt >= windowSeconds) {
+        window.add(p);
+        break;
+      }
+
+      window.add(p);
+    }
+
+    if (window.length < 2) return 0.0;
+
+    final first = window.last;
+
+    final dist = distanceBetween(
+      first.position.latitude,
+      first.position.longitude,
+      last.position.latitude,
+      last.position.longitude,
+    );
+
+    final dt =
+        last.timestamp.difference(first.timestamp).inMilliseconds / 1000.0;
+
+    if (dt <= 0.0) return 0.0;
+
+    final speedMs = dist / dt;
+    return speedMs * 3.6;
+  }
+
+  double _computeSpeedWithDistanceWindow(
+    List<UserPosition> points,
+    GpsSettings gps,
+  ) {
+    if (points.length < 2) return 0.0;
+
+    final filtered = _filterPointsByAccuracy(points);
+    if (filtered.length < 2) return 0.0;
+
+    final minMeters = TrackThresholds.minSpeedWindowMeters;
+
+    final List<UserPosition> window = [];
+    final last = filtered.last;
+    window.add(last);
+
+    double accumulated = 0.0;
+
+    for (int i = filtered.length - 2; i >= 0; i--) {
+      final p = filtered[i];
+
+      final step = distanceBetween(
+        p.position.latitude,
+        p.position.longitude,
+        window.last.position.latitude,
+        window.last.position.longitude,
+      );
+
+      accumulated += step;
+      window.add(p);
+
+      if (accumulated >= minMeters) break;
+    }
+
+    if (window.length < 2) return 0.0;
+
+    final first = window.last;
+
+    final dist = distanceBetween(
+      first.position.latitude,
+      first.position.longitude,
+      last.position.latitude,
+      last.position.longitude,
+    );
+
+    final dt =
+        last.timestamp.difference(first.timestamp).inMilliseconds / 1000.0;
+
+    if (dt <= 0.0) return 0.0;
+
+    final speedMs = dist / dt;
+    return speedMs * 3.6;
   }
 }
 

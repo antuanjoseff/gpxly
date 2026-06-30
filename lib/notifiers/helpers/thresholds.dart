@@ -33,4 +33,8 @@ class TrackThresholds {
 
   // LÍMIT MÀXIM D'ARXIUS COG PERSISTENTS A DISC
   static const int maxPersistentFiles = 10;
+
+  // Velocitat estable
+  static const int minSpeedWindowSeconds = 4; // finestra temporal mínima
+  static const double minSpeedWindowMeters = 12.0; // finestra espacial mínima
 }
