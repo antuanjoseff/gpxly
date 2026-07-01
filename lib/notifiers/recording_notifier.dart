@@ -42,7 +42,6 @@ class RecordingNotifier extends Notifier<Track> {
       state = state.copyWith(
         currentPosition: next.position,
         currentHeading: next.heading,
-        currentSpeed: next.speed,
       );
 
       // Només afegim a la llista si la gravació està activa [INDEX]
@@ -58,7 +57,6 @@ class RecordingNotifier extends Notifier<Track> {
     );
   }
 
-  // 📐 ALGORISME MATEMÀTIC DE GRAVACIÓ REFACTORITZAT
   void _addProcessedPoint(UserPosition newPoint) {
     _gpsTimeoutTimer?.cancel();
     _updateStopTime(newPoint.speed, newPoint.timestamp);
@@ -82,8 +80,6 @@ class RecordingNotifier extends Notifier<Track> {
     double newMaxSpeed = state.stats.maxSpeed;
 
     double calculatedDistanceAtPoint = newDistance;
-
-    // 🔥 NOVA VELOCITAT ESTABLE
     double currentSpeedKmh = 0.0;
 
     if (state.points.isNotEmpty) {
@@ -101,14 +97,21 @@ class RecordingNotifier extends Notifier<Track> {
         calculatedDistanceAtPoint = newDistance;
       }
 
-      // 🔥 SUBSTITUCIÓ DEL CÀLCUL ANTIC DE VELOCITAT
-      final gps = ref.read(gpsSettingsProvider);
+      // =======================================================================
+      // 📐 COMPUTE SEGMENT TELEMETRY: (Metres / Segons) * 3.6 -> Km/h
+      // =======================================================================
+      final int timeDiffMs = newPoint.timestamp
+          .difference(lastPoint.timestamp)
+          .inMilliseconds;
+      final double timeDiffSeconds = timeDiffMs / 1000.0;
 
-      if (gps.useTime) {
-        currentSpeedKmh = _computeSpeedWithTimeWindow(state.points, gps);
+      // Si el segment té un temps vàlid i ens hem mogut un mínim per filtrar el soroll residual (0.2m)
+      if (timeDiffSeconds > 0.0 && step.isFinite && step > 0.2) {
+        currentSpeedKmh = (step / timeDiffSeconds) * 3.6;
       } else {
-        currentSpeedKmh = _computeSpeedWithDistanceWindow(state.points, gps);
+        currentSpeedKmh = 0.0;
       }
+      // =======================================================================
 
       final double diffAlt = newPoint.altitude - lastPoint.altitude;
       if (diffAlt > 0.5) {
@@ -125,7 +128,8 @@ class RecordingNotifier extends Notifier<Track> {
       newMin = newPoint.altitude;
     }
 
-    if (currentSpeedKmh.isNegative || currentSpeedKmh > 120.0 || _isStopped) {
+    // Filtre protector per a salts geomètrics absurds o rebots de satèl·lits
+    if (currentSpeedKmh.isNegative || currentSpeedKmh > 130.0 || _isStopped) {
       currentSpeedKmh = 0.0;
     }
 
@@ -147,11 +151,12 @@ class RecordingNotifier extends Notifier<Track> {
     }
 
     if (currentSpeedKmh > newMaxSpeed &&
-        currentSpeedKmh < 120.0 &&
+        currentSpeedKmh < 130.0 &&
         !_isStopped) {
       newMaxSpeed = currentSpeedKmh;
     }
 
+    // Mantenim l'objecte original de hardware intacte sense alterar la seva velocitat
     final userPositionWithDistance = newPoint.copyWith(
       distanceAtPoint: calculatedDistanceAtPoint,
     );
@@ -172,7 +177,8 @@ class RecordingNotifier extends Notifier<Track> {
     state = state.copyWith(
       points: [...state.points, userPositionWithDistance],
       stats: updatedStats,
-      currentSpeed: currentSpeedKmh,
+      currentSpeed:
+          currentSpeedKmh, // La UI rep directament el valor del darrer segon estable
     );
 
     ref
