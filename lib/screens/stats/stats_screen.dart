@@ -30,6 +30,7 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
       'speed': PageController(initialPage: prefs.indices['speed'] ?? 0),
       'alt': PageController(initialPage: prefs.indices['alt'] ?? 0),
       'coords': PageController(initialPage: prefs.indices['coords'] ?? 0),
+      'gps': PageController(initialPage: prefs.indices['gps'] ?? 0),
     };
   }
 
@@ -224,7 +225,21 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
           Icons.filter_hdr,
           currentAltitude,
           "m",
-          t.statElevation,
+          t.statElevationCurrent,
+          unitBelow: true,
+        ),
+        _StatPage(
+          Icons.landscape,
+          track?.stats.maxElevation,
+          "m",
+          t.statMaxElevation,
+          unitBelow: true,
+        ),
+        _StatPage(
+          Icons.terrain,
+          track?.stats.minElevation,
+          "m",
+          t.statMinElevation,
           unitBelow: true,
         ),
         _StatPage(
@@ -235,14 +250,14 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
           isInt: true,
           unitBelow: true,
         ),
-        if (hasBarometer)
-          _StatPage(
-            Icons.compress,
-            pressure,
-            "hPa",
-            t.statBarometerPressure,
-            unitBelow: true,
-          ),
+        _StatPage(
+          Icons.arrow_downward,
+          track?.descent,
+          "m",
+          t.statDescent,
+          isInt: true,
+          unitBelow: true,
+        ),
       ],
 
       'coords': [
@@ -261,6 +276,34 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
           t.statPositionDMS,
           customValue: _formatLatLngToDMS(activePosition),
           unitBelow: true, //
+        ),
+      ],
+      'gps': [
+        // PÀGINA 1 → NO CLICABLE
+        _StatPage(
+          Icons.compress,
+          pressure,
+          "hPa",
+          t.statBarometerPressure,
+          unitBelow: true,
+        ),
+        // PÀGINA 2 → CLICABLE
+        GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const SatelliteDetailScreen()),
+            );
+          },
+          child: _StatPage(
+            Icons.satellite_alt,
+            null,
+            "",
+            t.statSatellites,
+            customValue:
+                "${liveLocation?.satellitesUsed ?? 0}/${liveLocation?.satellitesInView ?? 0}",
+            unitBelow: true,
+          ),
         ),
       ],
     };
@@ -284,21 +327,6 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
               ref.read(statsPrefsProvider.notifier).reorder(oldIndex, newIndex);
             },
             children: currentOrder.map((key) {
-              if (key == 'gps') {
-                return _GpsStaticCard(
-                  key: ValueKey(key),
-                  satellitesUsed: liveLocation?.satellitesUsed ?? 0,
-                  satellitesInView: liveLocation?.satellitesInView ?? 0,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const SatelliteDetailScreen(),
-                      ),
-                    );
-                  },
-                );
-              }
               return _StatCard(
                 key: ValueKey(key),
                 controller: _controllers![key]!,
