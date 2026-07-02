@@ -168,25 +168,25 @@ class AppLocalizationsCa extends AppLocalizations {
   String get trackStatsTitle => 'Dades de la ruta';
 
   @override
-  String get statTime => 'TMP';
+  String get statTime => 'Temps total';
 
   @override
-  String get statDistance => 'DIST';
+  String get statDistance => 'Distància total';
 
   @override
-  String get statSpeed => 'VEL';
+  String get statSpeed => 'Velocitat actual';
 
   @override
-  String get statMaxElevation => 'MAX';
+  String get statMaxElevation => 'Cota màxima';
 
   @override
-  String get statMinElevation => 'MIN';
+  String get statMinElevation => 'Cota mínima';
 
   @override
-  String get statAscent => '+ASC';
+  String get statAscent => 'Desnivell acumulat +';
 
   @override
-  String get statDescent => '-DES';
+  String get statDescent => 'Desnivell acumulat -';
 
   @override
   String get elevationProfile => 'Perfil d\'elevació';
@@ -496,6 +496,9 @@ class AppLocalizationsCa extends AppLocalizations {
   String get statSpeedAverage => 'Velocitat mitjana';
 
   @override
+  String get statSpeedTotal => 'Velocitat mitjana total';
+
+  @override
   String get statElevation => 'Altitud';
 
   @override
@@ -583,7 +586,7 @@ class AppLocalizationsCa extends AppLocalizations {
   String get statPace => 'Ritme';
 
   @override
-  String get statBarometerPressure => 'PRESIÓ BARO.';
+  String get statBarometerPressure => 'Pressió atmosfèrica';
 
   @override
   String get statRangeSelectedTitle => 'Rang seleccionat';

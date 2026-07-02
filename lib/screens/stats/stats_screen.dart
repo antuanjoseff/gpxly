@@ -155,11 +155,7 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
           customValue: _formatDuration(stoppedDuration),
         ),
       ],
-
-      // ... (resta de cardPages: dist i time es mantenen igual)
-      // DINS DE CARDPAGES A LA TEVA TRACKSTATSSCREEN:
       'speed': [
-        // 1. Velocitat actual calculada per segment (Km/h)
         _StatPage(
           Icons.speed,
           displaySpeed,
@@ -167,8 +163,6 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
           t.statSpeed,
           unitBelow: true,
         ),
-
-        // 2. Velocitat mitjana en moviment (Ignora temps aturat)
         _StatPage(
           Icons.trending_up,
           track?.stats.averageSpeed,
@@ -176,17 +170,13 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
           t.statSpeedAverage,
           unitBelow: true,
         ),
-
-        // 3. 🆕 NOVA TARGETA: Velocitat mitjana total (Compta tot el temps, inclòs aturat)
         _StatPage(
           Icons.equalizer,
           track?.stats.averageSpeedTotal,
           "km/h",
-          "MITJANA TOTAL", // Text fix o usa t.statSpeedTotal si el crees a l'l10n
+          t.statSpeedTotal,
           unitBelow: true,
         ),
-
-        // 4. Velocitat màxima real assolida
         _StatPage(
           Icons.bolt,
           track?.stats.maxSpeed,
@@ -194,8 +184,6 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
           t.statSpeedMax,
           unitBelow: true,
         ),
-
-        // 5. Ritme actual (basat en la velocitat per segment)
         _StatPage(
           Icons.av_timer,
           null,
@@ -204,8 +192,6 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
           customValue: _formatCurrentPace(displaySpeed),
           unitBelow: true,
         ),
-
-        // 6. Ritme mitjà en moviment
         _StatPage(
           Icons.directions_run,
           null,
@@ -219,7 +205,6 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
           unitBelow: true,
         ),
       ],
-
       'alt': [
         _StatPage(
           Icons.filter_hdr,
@@ -259,7 +244,6 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
           unitBelow: true,
         ),
       ],
-
       'coords': [
         _StatPage(
           Icons.my_location,
@@ -267,7 +251,7 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
           "",
           t.statPositionDecimal,
           customValue: _formatLatLngToDecimal(activePosition),
-          unitBelow: true, //
+          unitBelow: true,
         ),
         _StatPage(
           Icons.explore,
@@ -275,11 +259,10 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
           "",
           t.statPositionDMS,
           customValue: _formatLatLngToDMS(activePosition),
-          unitBelow: true, //
+          unitBelow: true,
         ),
       ],
       'gps': [
-        // PÀGINA 1 → NO CLICABLE
         _StatPage(
           Icons.compress,
           pressure,
@@ -287,7 +270,6 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
           t.statBarometerPressure,
           unitBelow: true,
         ),
-        // PÀGINA 2 → CLICABLE
         GestureDetector(
           onTap: () {
             Navigator.push(
@@ -344,14 +326,12 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
   }
 }
 
-/// 🛰️ Targeta estàtica per al diagnòstic del GPS estil llista
 class _GpsStaticCard extends StatelessWidget {
   final int satellitesUsed;
   final int satellitesInView;
   final VoidCallback onTap;
 
   const _GpsStaticCard({
-    super.key,
     required this.satellitesUsed,
     required this.satellitesInView,
     required this.onTap,
@@ -439,7 +419,6 @@ class _GpsStaticCard extends StatelessWidget {
   }
 }
 
-/// 🗂️ Targeta carrusel multianidada reactiva (Evita pèrdues de state)
 class _StatCard extends StatefulWidget {
   final double height;
   final List<Widget> pages;
@@ -541,7 +520,6 @@ class _StatCardState extends State<_StatCard> {
   }
 }
 
-/// 📊 Pàgina de dades d'una mètrica individual (Alineació central global de la graella)
 class _StatPage extends StatelessWidget {
   final IconData icon;
   final double? value;
@@ -575,20 +553,23 @@ class _StatPage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // 1. CAPÇALERA (Títol + Icona es manté estilitzat a sobre)
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: Text(
-                  label.toUpperCase(),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: Colors.grey.shade600,
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.8,
+                child: SizedBox(
+                  height: 28,
+                  child: Text(
+                    label.toUpperCase(),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Colors.grey.shade600,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.8,
+                      height: 1.2,
+                    ),
                   ),
                 ),
               ),
@@ -596,8 +577,6 @@ class _StatPage extends StatelessWidget {
               Icon(icon, color: AppColors.primary, size: 20),
             ],
           ),
-
-          // 2. COS CENTRAL DINÀMIC (Sempre centrat en horitzontal i vertical)
           Expanded(
             child: Align(
               alignment: Alignment.center,
@@ -605,7 +584,6 @@ class _StatPage extends StatelessWidget {
                 fit: BoxFit.scaleDown,
                 child: unitBelow
                     ? Column(
-                        // LAYOUT VERTICAL CENTRAT (Velocitats, Ritmes, Alçades i Coordenades)
                         crossAxisAlignment: CrossAxisAlignment.center,
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -617,8 +595,7 @@ class _StatPage extends StatelessWidget {
                               fontSize: 34,
                               fontWeight: FontWeight.w800,
                               fontFamily: 'monospace',
-                              height:
-                                  1.1, // Un pèl de marge per a la doble línia de coordenades
+                              height: 1.1,
                             ),
                           ),
                           if (unit.isNotEmpty) ...[
@@ -636,7 +613,6 @@ class _StatPage extends StatelessWidget {
                         ],
                       )
                     : Row(
-                        // LAYOUT HORITZONTAL CENTRAT (Distància i Temps)
                         crossAxisAlignment: CrossAxisAlignment.baseline,
                         textBaseline: TextBaseline.alphabetic,
                         children: [
@@ -665,8 +641,6 @@ class _StatPage extends StatelessWidget {
               ),
             ),
           ),
-
-          // 3. ESPAI DE SEGURETAT INFERIOR
           const SizedBox(height: 12),
         ],
       ),

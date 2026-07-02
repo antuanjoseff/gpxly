@@ -418,43 +418,43 @@ abstract class AppLocalizations {
   /// No description provided for @statTime.
   ///
   /// In en, this message translates to:
-  /// **'TIME'**
+  /// **'Total time'**
   String get statTime;
 
   /// No description provided for @statDistance.
   ///
   /// In en, this message translates to:
-  /// **'DIST'**
+  /// **'Total distance'**
   String get statDistance;
 
   /// No description provided for @statSpeed.
   ///
   /// In en, this message translates to:
-  /// **'SPEED'**
+  /// **'Current speed'**
   String get statSpeed;
 
   /// No description provided for @statMaxElevation.
   ///
   /// In en, this message translates to:
-  /// **'MAX'**
+  /// **'Maximum altitude'**
   String get statMaxElevation;
 
   /// No description provided for @statMinElevation.
   ///
   /// In en, this message translates to:
-  /// **'MIN'**
+  /// **'Minimum altitude'**
   String get statMinElevation;
 
   /// No description provided for @statAscent.
   ///
   /// In en, this message translates to:
-  /// **'+ASC'**
+  /// **'Accumulated ascent +'**
   String get statAscent;
 
   /// No description provided for @statDescent.
   ///
   /// In en, this message translates to:
-  /// **'-DES'**
+  /// **'Accumulated descent -'**
   String get statDescent;
 
   /// No description provided for @elevationProfile.
@@ -1063,6 +1063,12 @@ abstract class AppLocalizations {
   /// **'Average speed'**
   String get statSpeedAverage;
 
+  /// No description provided for @statSpeedTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Total average speed'**
+  String get statSpeedTotal;
+
   /// No description provided for @statElevation.
   ///
   /// In en, this message translates to:
@@ -1240,7 +1246,7 @@ abstract class AppLocalizations {
   /// No description provided for @statBarometerPressure.
   ///
   /// In en, this message translates to:
-  /// **'BARO. PRES.'**
+  /// **'Atmospheric pressure'**
   String get statBarometerPressure;
 
   /// No description provided for @statRangeSelectedTitle.
