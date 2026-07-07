@@ -916,7 +916,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
         } else {
           ref.read(navigationProvider.notifier).dismissReverseTrackDialog();
         }
-
+        ref.read(navigationProvider.notifier).unlockReverseDetection();
         _isShowingReverseDialog = false;
       }
     });

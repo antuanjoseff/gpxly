@@ -122,14 +122,14 @@ class AlarmEngine {
           _accUp += delta; // Sumem a la pujada
           // ✅ ELIMINAT: _accDown = 0; (Ja no esborrem el passat)
           if (_accUp >= settings.accMeters) {
-            sounds.playAltitudeAlarm();
+            sounds.playAccumulatedAlarm();
             _accUp = 0;
           }
         } else {
           _accDown += delta.abs(); // Sumem a la baixada
           // ✅ ELIMINAT: _accUp = 0; (Ja no esborrem el passat)
           if (_accDown >= settings.accMeters) {
-            sounds.playAltitudeAlarm();
+            sounds.playAccumulatedAlarm();
             _accDown = 0;
           }
         }
@@ -162,7 +162,7 @@ class AlarmEngine {
             _smoothedAlt <= (threshold - hysteresis);
 
         if (crossUp || crossDown) {
-          sounds.playAltitudeAlarm();
+          sounds.playCotaAlarm();
           _lastCotaFloor = currentFloor;
           _baseCotaAlt =
               currentFloor *

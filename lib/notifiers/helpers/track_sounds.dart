@@ -78,10 +78,22 @@ class TrackSounds {
     }
   }
 
-  Future<void> playAltitudeAlarm() async {
+  Future<void> playCotaAlarm() async {
     try {
       await player.play(
         AssetSource('sound/owl_sound.mp3'),
+        volume: 1.0,
+        ctx: _alarmContext,
+      );
+    } catch (e) {
+      print("Error playing altitude alarm: $e");
+    }
+  }
+
+  Future<void> playAccumulatedAlarm() async {
+    try {
+      await player.play(
+        AssetSource('sound/cardinal_sound.mp3'),
         volume: 1.0,
         ctx: _alarmContext,
       );

@@ -15,7 +15,6 @@ import 'package:senda/services/permissions_service.dart';
 import 'package:senda/utils/distance_utils.dart'; // Per al teu mètode calculateDistanceManual / distanceBetween
 
 // Importació dels teus helpers matemàtics i de so reals
-import 'helpers/closest_result.dart';
 import 'helpers/geometry_utils.dart';
 import 'helpers/offtrack_logic.dart';
 import 'helpers/progress_tracker.dart';
@@ -239,10 +238,14 @@ class NavigationNotifier extends Notifier<NavigationState> {
     }
 
     // --- NIVELL 3: reverse detection, trending robust ---
+    if (_reverseDetectionLocked) {
+      // Motor de detecció inversa aturat temporalment
+      return;
+    }
+
     if (count >= TrackThresholds.minPositionsLevel3 &&
         state.mode == FollowMode.onTrack &&
-        !_reverseDialogShown &&
-        !_reverseDetectionLocked) {
+        !_reverseDialogShown) {
       final headingDiff = geometry.headingDifference(
         closest.bearing,
         closest.userBearing,
@@ -251,11 +254,11 @@ class NavigationNotifier extends Notifier<NavigationState> {
       if (isNear &&
           headingDiff > 140 &&
           reverseDetector.isReverseDirection(closest, _lastUserPositions)) {
-        _reverseDialogShown = true;
+        // 🔥 Aturem el motor de detecció inversa
         _reverseDetectionLocked = true;
 
+        _reverseDialogShown = true;
         state = state.copyWith(showReverseTrackDialog: true);
-
         return;
       }
     }
@@ -434,14 +437,17 @@ class NavigationNotifier extends Notifier<NavigationState> {
     _distanceProgressOnTrack = 0.0;
 
     _reverseDialogShown = false;
-    _reverseDetectionLocked = false;
+
+    // 🔥 Reprenem el motor després d’un petit delay
+    Future.delayed(const Duration(seconds: 3), () {
+      _reverseDetectionLocked = false;
+    });
 
     state = state.copyWith(showReverseTrackDialog: false);
   }
 
   void dismissReverseTrackDialog() {
     _reverseDialogShown = false;
-    _reverseDetectionLocked = false;
     state = state.copyWith(showReverseTrackDialog: false);
   }
 
@@ -467,6 +473,10 @@ class NavigationNotifier extends Notifier<NavigationState> {
     if (state.isPaused) {
       _lastProjectedPoint = null;
     }
+  }
+
+  void unlockReverseDetection() {
+    _reverseDetectionLocked = false;
   }
 }
 

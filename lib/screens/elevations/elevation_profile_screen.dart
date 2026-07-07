@@ -86,34 +86,25 @@ class _ElevationProfileScreenState
     late List<double> futureDistsGlobal;
 
     if (shouldShowFuture) {
-      // Proporción exacta para que el futuro ocupe siempre el 25% de la gráfica visible
-      final double maxFutureDistanceVisible = pastLastDist / 3.0;
-
       final remainingAlts = remaining.altitudes;
       final remainingDists = remaining.distances;
 
-      // 🧮 CALCULEM L'OFFSET ENTRE L'ÚLTIM PUNT REAL I EL PRIMER FUTUR
+      // Offset per evitar graó entre passat i futur
       double elevationOffset = 0.0;
       if (realAlts.isNotEmpty && remainingAlts.isNotEmpty) {
         elevationOffset = realAlts.last - remainingAlts.first;
       }
 
-      final List<double> tempFutureAlts = [];
-      final List<double> tempFutureDists = [];
+      // FUTUR COMPLET, SENSE TRUNCAR
+      futureAlts = [
+        for (int i = 0; i < remainingAlts.length; i++)
+          remainingAlts[i] + elevationOffset,
+      ];
 
-      for (int i = 0; i < remainingDists.length; i++) {
-        // Solo añadimos los puntos del futuro que entran dentro de este 25% espacial
-        if (remainingDists[i] <= maxFutureDistanceVisible) {
-          // Apliquem l'offset sumant la diferència a cada punt futur per evitar el graó
-          tempFutureAlts.add(remainingAlts[i] + elevationOffset);
-          tempFutureDists.add(pastLastDist + remainingDists[i]);
-        } else {
-          break; // Ventana llena, detenemos el bucle
-        }
-      }
-
-      futureAlts = tempFutureAlts;
-      futureDistsGlobal = tempFutureDists;
+      futureDistsGlobal = [
+        for (int i = 0; i < remainingDists.length; i++)
+          pastLastDist + remainingDists[i],
+      ];
     } else {
       // Si no hay navegación activa, mostramos la ruta de referencia completa
       final importedDists = calculateDistances(imported?.coordinates ?? []);

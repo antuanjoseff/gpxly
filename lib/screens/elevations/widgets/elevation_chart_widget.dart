@@ -49,9 +49,6 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
   int? _localEndIdx;
   int? _localGraphIdx;
 
-  static const double _pastVisualShareWhenRecordingFollow = 0.80;
-  static const double _futureVisualShareWhenRecordingFollow = 0.20;
-
   DateTime _lastThrottleTime = DateTime.fromMillisecondsSinceEpoch(0);
   static const int _throttleDurationMs = 32;
   DateTime _lastStatsThrottleTime = DateTime.fromMillisecondsSinceEpoch(0);
@@ -100,61 +97,22 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
     final bool recordingAndFollowing = isRecording && hasFutureTrack;
     final bool showFutureTrack = !isRecording || recordingAndFollowing;
 
-    final displayPastDists = <double>[...safePastDists];
-    final displayPastAlts = <double>[...safePastAlts];
-    final displayFutureDists = <double>[];
-    final displayFutureAlts = <double>[];
+    // NOVA LÒGICA: distàncies reals, sense compressió 80/20
+    final displayPastDists = [...safePastDists];
+    final displayPastAlts = [...safePastAlts];
+    final displayFutureDists = [...safeFutureDists];
+    final displayFutureAlts = [...safeFutureAlts];
 
-    if (showFutureTrack) {
-      displayFutureDists.addAll(safeFutureDists);
-      displayFutureAlts.addAll(safeFutureAlts);
-    }
+    // Suavitzat opcional entre passat i futur
+    if (displayPastAlts.isNotEmpty && displayFutureAlts.isNotEmpty) {
+      final double joinDelta = displayPastAlts.last - displayFutureAlts.first;
 
-    double Function(double) mapRealDistanceToDisplayDistance = (d) => d;
-    if (recordingAndFollowing &&
-        displayPastDists.isNotEmpty &&
-        displayFutureDists.isNotEmpty) {
-      final double splitDist = displayPastDists.last;
-      final double maxFutureDist = displayFutureDists.last;
-      final double futureSpan = (maxFutureDist - splitDist).abs();
-
-      if (splitDist > 0 && futureSpan > 0) {
-        final double displaySplit =
-            maxFutureDist * _pastVisualShareWhenRecordingFollow;
-        final double displayFutureSpan =
-            maxFutureDist * _futureVisualShareWhenRecordingFollow;
-
-        mapRealDistanceToDisplayDistance = (realDist) {
-          if (realDist <= splitDist) {
-            return (realDist / splitDist) * displaySplit;
-          }
-          final t = ((realDist - splitDist) / (maxFutureDist - splitDist))
-              .clamp(0.0, 1.0);
-          return displaySplit + (t * displayFutureSpan);
-        };
-
-        for (int i = 0; i < displayPastDists.length; i++) {
-          displayPastDists[i] = mapRealDistanceToDisplayDistance(
-            displayPastDists[i],
-          );
-        }
-        for (int i = 0; i < displayFutureDists.length; i++) {
-          displayFutureDists[i] = mapRealDistanceToDisplayDistance(
-            displayFutureDists[i],
-          );
-        }
-      }
-
-      if (displayPastAlts.isNotEmpty && displayFutureAlts.isNotEmpty) {
-        // Smooth the first part of future altitudes to avoid hard visual jumps at the join.
-        final double joinDelta = displayPastAlts.last - displayFutureAlts.first;
-        if (joinDelta.abs() > 8.0) {
-          for (int i = 0; i < displayFutureAlts.length; i++) {
-            final double t = i / displayFutureAlts.length;
-            final double easing = (1.0 - t).clamp(0.0, 1.0);
-            displayFutureAlts[i] =
-                displayFutureAlts[i] + (joinDelta * easing * easing);
-          }
+      if (joinDelta.abs() > 8.0) {
+        for (int i = 0; i < displayFutureAlts.length; i++) {
+          final double t = i / displayFutureAlts.length;
+          final double easing = (1.0 - t).clamp(0.0, 1.0);
+          displayFutureAlts[i] =
+              displayFutureAlts[i] + (joinDelta * easing * easing);
         }
       }
     }
@@ -184,12 +142,10 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
         ? displayPastDists.length - 1
         : (globalDists.length - 1);
 
-    final mappedRecordedWaypointDists = widget.recordedWaypointGlobalDists
-        .map(mapRealDistanceToDisplayDistance)
-        .toList();
-    final mappedImportedWaypointDists = widget.importedWaypointGlobalDists
-        .map(mapRealDistanceToDisplayDistance)
-        .toList();
+    // Distàncies reals, sense map
+    final mappedRecordedWaypointDists = [...widget.recordedWaypointGlobalDists];
+
+    final mappedImportedWaypointDists = [...widget.importedWaypointGlobalDists];
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -336,7 +292,6 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
               }
             }
 
-            // 🚀 2. FILTRE THROTTLE DE ESTADÍSTICAS: Frenamos el cálculo pesado a 200ms
             // De esta forma la CPU no se satura calculando desniveles punto por punto
             if (now.difference(_lastStatsThrottleTime).inMilliseconds >=
                 _statsThrottleDurationMs) {
@@ -618,7 +573,7 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
               applyCutOffY: true,
             ),
           ),
-        // 🚀 CAPA DE FONS 2: DEGRADAT ÚNIC DEL RANG SELECCIONAT (S'encén de forma paral·lela)
+        // CAPA DE FONS 2: DEGRADAT ÚNIC DEL RANG SELECCIONAT (S'encén de forma paral·lela)
         if (showRangeArea && rangeSelectedSpots.isNotEmpty)
           LineChartBarData(
             spots: rangeSelectedSpots,
