@@ -138,9 +138,7 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
     const double globalBottomReserved = 16.0;
 
     final maxDist = globalDists.last > 0 ? globalDists.last : 1.0;
-    final selectableMaxIndex = displayPastDists.isNotEmpty
-        ? displayPastDists.length - 1
-        : (globalDists.length - 1);
+    final selectableMaxIndex = globalDists.length - 1;
 
     // Distàncies reals, sense map
     final mappedRecordedWaypointDists = [...widget.recordedWaypointGlobalDists];
@@ -430,13 +428,22 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
 
     final List<FlSpot> rangeSelectedSpots = [];
     if (showRangeArea && allSpots.isNotEmpty) {
-      final startClamp = sIdx.clamp(0, allSpots.length - 1);
-      final endClamp = eIdx.clamp(0, allSpots.length - 1);
-      final int actualStart = startClamp < endClamp ? startClamp : endClamp;
-      final int actualEnd = startClamp > endClamp ? startClamp : endClamp;
+      // 1. Obtenemos las distancias usando los índices directamente sobre los puntos del gráfico
+      final int startClamp = sIdx!.clamp(0, allSpots.length - 1);
+      final int endClamp = eIdx!.clamp(0, allSpots.length - 1);
 
-      for (int i = actualStart; i <= actualEnd; i++) {
-        rangeSelectedSpots.add(allSpots[i]);
+      final double startDist = allSpots[startClamp].x;
+      final double endDist = allSpots[endClamp].x;
+
+      // 2. Determinamos los límites geográficos mínimos y máximos
+      final double minDist = startDist < endDist ? startDist : endDist;
+      final double maxDistBound = startDist > endDist ? startDist : endDist;
+
+      // 3. Filtramos los puntos que caen dentro del rango de distancia
+      for (final spot in allSpots) {
+        if (spot.x >= minDist && spot.x <= maxDistBound) {
+          rangeSelectedSpots.add(spot);
+        }
       }
     }
 
