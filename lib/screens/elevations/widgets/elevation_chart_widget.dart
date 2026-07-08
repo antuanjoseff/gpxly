@@ -595,6 +595,7 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
           ),
         // 🚀 CAPA SUPERIOR: LES LÍNIES FINES DE COLOR
         if (pastSpots.isNotEmpty) buildBar(pastSpots, trackColor),
+
         if (futureSpots.isNotEmpty)
           buildBar(futureSpots, importedTrackColor, dashed: futureDashed),
       ],

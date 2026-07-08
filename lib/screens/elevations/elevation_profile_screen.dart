@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/l10n/app_localizations.dart';
+import 'package:senda/models/track.dart';
 import 'package:senda/models/waypoint.dart';
 import 'package:senda/notifiers/elevation_selection_provider.dart';
 import 'package:senda/notifiers/imported_track_notifier.dart';
@@ -61,8 +62,6 @@ class _ElevationProfileScreenState
     // 🚨 LLEGIM EL PROVIDER DE SELECCIÓ COMPARTIT
     // 🟢 SOLUCIÓ: Llegim les propietats directes de l'objecte d'estat unificat
     final selection = ref.watch(elevationSelectionProvider);
-    final int? currentStart = selection.startTrackIndex;
-    final int? currentEnd = selection.endTrackIndex;
     selectedIndexStart = selection.startTrackIndex;
     selectedIndexEnd = selection.endTrackIndex;
 
@@ -74,18 +73,27 @@ class _ElevationProfileScreenState
 
     final realAlts = real.altitudes;
     final realDists = real.distances;
+    final bool isRecording = real.recordingState == RecordingState.recording;
+    final importedDists = calculateDistances(imported?.coordinates ?? []);
 
     final double pastLastDist = realDists.isNotEmpty ? realDists.last : 0.0;
-    final bool shouldShowFuture =
+    final bool isFollowingOnTrack =
         follow.isFollowing && !follow.isOffTrack && remaining != null;
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // 🆕 LÒGICA DE FINESTRA ASIMÈTRICA: MODIFICADES NOMÉS LES ALÇADES FUTURES
-    // ─────────────────────────────────────────────────────────────────────────
+    // Dades efectives del gràfic segons mode:
+    // 1) només gravar -> només track real
+    // 2) només seguir -> tot el track guia
+    // 3) gravar + seguir -> real + tram pendent
+    late List<double> chartPastAlts;
+    late List<double> chartPastDists;
+
     late List<double> futureAlts;
     late List<double> futureDistsGlobal;
 
-    if (shouldShowFuture) {
+    if (isRecording && isFollowingOnTrack) {
+      chartPastAlts = realAlts;
+      chartPastDists = realDists;
+
       final remainingAlts = remaining.altitudes;
       final remainingDists = remaining.distances;
 
@@ -105,16 +113,26 @@ class _ElevationProfileScreenState
         for (int i = 0; i < remainingDists.length; i++)
           pastLastDist + remainingDists[i],
       ];
+    } else if (isRecording) {
+      chartPastAlts = realAlts;
+      chartPastDists = realDists;
+      futureAlts = const [];
+      futureDistsGlobal = const [];
+    } else if (follow.isFollowing && imported != null) {
+      chartPastAlts = const [];
+      chartPastDists = const [];
+      futureAlts = imported.altitudes;
+      futureDistsGlobal = importedDists;
     } else {
-      // Si no hay navegación activa, mostramos la ruta de referencia completa
-      final importedDists = calculateDistances(imported?.coordinates ?? []);
+      chartPastAlts = realAlts;
+      chartPastDists = realDists;
       futureAlts = imported?.altitudes ?? [];
       futureDistsGlobal = importedDists;
     }
 
     // Unificamos las listas filtradas para el eje global de coordenadas
-    final globalDists = <double>[...realDists, ...futureDistsGlobal];
-    final globalAlts = <double>[...realAlts, ...futureAlts];
+    final globalDists = <double>[...chartPastDists, ...futureDistsGlobal];
+    final globalAlts = <double>[...chartPastAlts, ...futureAlts];
 
     // ─────────────────────────────────────────────
     // 3) WAYPOINTS
@@ -132,14 +150,7 @@ class _ElevationProfileScreenState
 
     final importedWaypointGlobalDists = <double>[];
 
-    if (!shouldShowFuture) {
-      final importedDists = calculateDistances(imported?.coordinates ?? []);
-      for (final wp in importedWps) {
-        if (wp.trackIndex < importedDists.length) {
-          importedWaypointGlobalDists.add(importedDists[wp.trackIndex]);
-        }
-      }
-    } else {
+    if (isRecording && isFollowingOnTrack) {
       for (final wp in importedWps) {
         final idx = wp.trackIndex;
         if (idx < remaining.anchorIndex) continue;
@@ -151,9 +162,15 @@ class _ElevationProfileScreenState
           );
         }
       }
+    } else if (!isRecording) {
+      for (final wp in importedWps) {
+        if (wp.trackIndex < importedDists.length) {
+          importedWaypointGlobalDists.add(importedDists[wp.trackIndex]);
+        }
+      }
     }
 
-    final hasReal = realAlts.isNotEmpty;
+    final hasReal = chartPastAlts.isNotEmpty;
     final hasFuture = futureAlts.isNotEmpty;
 
     // ─────────────────────────────────────────────
@@ -164,28 +181,40 @@ class _ElevationProfileScreenState
     double? rangeDescent;
     Duration? rangeTime;
 
-    if (selectedIndexStart != null && selectedIndexEnd != null) {
+    if (selectedIndexStart != null &&
+        selectedIndexEnd != null &&
+        globalDists.isNotEmpty &&
+        globalAlts.isNotEmpty) {
       final start = selectedIndexStart!;
       final end = selectedIndexEnd!;
+      if (start < 0 || end < 0) {
+        rangeDistance = null;
+      } else {
+        final safeStart = start.clamp(0, globalDists.length - 1);
+        final safeEnd = end.clamp(0, globalDists.length - 1);
+        final rangeStart = safeStart < safeEnd ? safeStart : safeEnd;
+        final rangeEnd = safeStart > safeEnd ? safeStart : safeEnd;
 
-      rangeDistance = (globalDists[end] - globalDists[start]).abs();
+        rangeDistance = (globalDists[rangeEnd] - globalDists[rangeStart]).abs();
 
-      double ascent = 0;
-      double descent = 0;
+        double ascent = 0;
+        double descent = 0;
 
-      for (int i = start + 1; i <= end; i++) {
-        final diff = globalAlts[i] - globalAlts[i - 1];
-        if (diff > 0) ascent += diff;
-        if (diff < 0) descent += diff.abs();
-      }
+        for (int i = rangeStart + 1; i <= rangeEnd; i++) {
+          final diff = globalAlts[i] - globalAlts[i - 1];
+          if (diff > 0) ascent += diff;
+          if (diff < 0) descent += diff.abs();
+        }
 
-      rangeAscent = ascent;
-      rangeDescent = descent;
+        rangeAscent = ascent;
+        rangeDescent = descent;
 
-      if (real.timestamps.length > end && real.timestamps.length > start) {
-        final t0 = real.timestamps[start];
-        final t1 = real.timestamps[end];
-        rangeTime = t1.difference(t0);
+        if (real.timestamps.length > rangeEnd &&
+            real.timestamps.length > rangeStart) {
+          final t0 = real.timestamps[rangeStart];
+          final t1 = real.timestamps[rangeEnd];
+          rangeTime = t1.difference(t0);
+        }
       }
     }
 
@@ -239,8 +268,8 @@ class _ElevationProfileScreenState
             child: ElevationChartWidget(
               // 🟢 CLAU ESTÀTICA TOTALMENT FIXA: Es manté per evitar el redibuix de la GPU
               key: const ValueKey("elevation_chart_static_pure"),
-              pastAlts: realAlts,
-              pastDists: realDists,
+              pastAlts: chartPastAlts,
+              pastDists: chartPastDists,
               futureAlts: futureAlts,
               futureDistsGlobal: futureDistsGlobal,
 
