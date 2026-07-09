@@ -22,4 +22,7 @@ class AppDimensions {
 
   // 🎯 Mínim de coordenades necessàries per poder activar l'eina de tall (Tisores)
   static const int minCoordinatesForSelection = 2;
+
+  /// Finestra vertical mínima del perfil d'elevació en metres.
+  static const double minElevationChartWindow = 50.0;
 }

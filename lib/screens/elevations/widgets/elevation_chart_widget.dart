@@ -1,4 +1,6 @@
 // lib/screens/elevations/widgets/elevation_chart_widget.dart (BLOC 1 DE 3)
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -8,6 +10,7 @@ import 'package:senda/screens/elevations/painters/selection_painter.dart';
 import 'package:senda/screens/elevations/utils/chart_utils.dart';
 import 'package:senda/theme/app_colors.dart';
 import 'package:senda/notifiers/elevation_selection_provider.dart';
+import 'package:senda/theme/app_dimensions.dart';
 import 'package:senda/utils/distance_utils.dart';
 
 class ElevationChartWidget extends ConsumerStatefulWidget {
@@ -126,13 +129,19 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
 
     final minAlt = globalAlts.reduce((a, b) => a < b ? a : b);
     final maxAlt = globalAlts.reduce((a, b) => a > b ? a : b);
-    final diff = (maxAlt - minAlt).abs();
 
-    final double paddingRange = diff < 10 ? 10 : diff;
+    final double elevationDiff = (maxAlt - minAlt).abs();
 
-    // 🚀 COIXÍ DE SEGURETAT SUPERIOR: Deixem un 35% lliure al sostre per als tooltips fixos
-    final forcedMinY = minAlt - (paddingRange * 0.10);
-    final forcedMaxY = maxAlt + (paddingRange * 0.35);
+    final double elevationRange = math.max(
+      elevationDiff,
+      AppDimensions.minElevationChartWindow,
+    );
+
+    final double elevationPaddingBottom = elevationRange * 0.10;
+    final double elevationPaddingTop = elevationRange * 0.35;
+
+    final forcedMinY = minAlt - elevationPaddingBottom;
+    final forcedMaxY = maxAlt + elevationPaddingTop;
 
     const double globalTopReserved = 28.0;
     const double globalBottomReserved = 16.0;
