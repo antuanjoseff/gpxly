@@ -1,17 +1,16 @@
 // lib/screens/elevations/widgets/elevation_chart_widget.dart (BLOC 1 DE 3)
 import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:senda/models/track.dart';
-import 'package:senda/notifiers/recording_notifier.dart';
-import 'package:senda/screens/elevations/painters/selection_painter.dart';
-import 'package:senda/screens/elevations/utils/chart_utils.dart';
 import 'package:senda/theme/app_colors.dart';
 import 'package:senda/notifiers/elevation_selection_provider.dart';
 import 'package:senda/theme/app_dimensions.dart';
 import 'package:senda/utils/distance_utils.dart';
+import 'package:senda/screens/elevations/painters/selection_painter.dart';
+import 'package:senda/screens/elevations/utils/chart_utils.dart';
+import 'package:senda/notifiers/recording_notifier.dart';
 
 class ElevationChartWidget extends ConsumerStatefulWidget {
   final List<double> pastDists;
@@ -70,6 +69,29 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
     }
   }
 
+  Widget _buildFlutterTooltip(String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.9),
+        borderRadius: BorderRadius.circular(6),
+        boxShadow: const [
+          BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
+        ],
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 10.5,
+          fontWeight: FontWeight.bold,
+          fontFamily: 'monospace',
+        ),
+      ),
+    );
+  }
+
+  // lib/screens/elevations/widgets/elevation_chart_widget.dart (BLOC 2 DE 3)
   @override
   Widget build(BuildContext context) {
     final pastDists = widget.pastDists;
@@ -77,9 +99,8 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
     final futureDists = widget.futureDistsGlobal;
     final futureAlts = widget.futureAlts;
 
-    if (pastDists.isEmpty && futureDists.isEmpty) {
+    if (pastDists.isEmpty && futureDists.isEmpty)
       return const SizedBox.shrink();
-    }
 
     final safePastLength = (pastDists.length == pastAlts.length)
         ? pastDists.length
@@ -88,75 +109,51 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
         ? futureDists.length
         : 0;
 
-    final safePastDists = pastDists.take(safePastLength).toList();
-    final safePastAlts = pastAlts.take(safePastLength).toList();
-    final safeFutureDists = futureDists.take(safeFutureLength).toList();
-    final safeFutureAlts = futureAlts.take(safeFutureLength).toList();
+    final displayPastDists = pastDists.take(safePastLength).toList();
+    final displayPastAlts = pastAlts.take(safePastLength).toList();
+    final displayFutureDists = futureDists.take(safeFutureLength).toList();
+    final displayFutureAlts = futureAlts.take(safeFutureLength).toList();
 
     final bool isRecording =
         ref.watch(trackRecordingProvider).recordingState ==
         RecordingState.recording;
-    final bool hasFutureTrack = safeFutureDists.isNotEmpty;
-    final bool recordingAndFollowing = isRecording && hasFutureTrack;
-    final bool showFutureTrack = !isRecording || recordingAndFollowing;
-
-    // NOVA LÒGICA: distàncies reals, sense compressió 80/20
-    final displayPastDists = [...safePastDists];
-    final displayPastAlts = [...safePastAlts];
-    final displayFutureDists = [...safeFutureDists];
-    final displayFutureAlts = [...safeFutureAlts];
-
-    // Suavitzat opcional entre passat i futur
-    if (displayPastAlts.isNotEmpty && displayFutureAlts.isNotEmpty) {
-      final double joinDelta = displayPastAlts.last - displayFutureAlts.first;
-
-      if (joinDelta.abs() > 8.0) {
-        for (int i = 0; i < displayFutureAlts.length; i++) {
-          final double t = i / displayFutureAlts.length;
-          final double easing = (1.0 - t).clamp(0.0, 1.0);
-          displayFutureAlts[i] =
-              displayFutureAlts[i] + (joinDelta * easing * easing);
-        }
-      }
-    }
+    final bool recordingAndFollowing =
+        isRecording && displayFutureDists.isNotEmpty;
 
     final globalDists = <double>[...displayPastDists, ...displayFutureDists];
     final globalAlts = <double>[...displayPastAlts, ...displayFutureAlts];
 
-    if (globalDists.isEmpty || globalAlts.isEmpty) {
+    if (globalDists.isEmpty || globalAlts.isEmpty)
       return const SizedBox.shrink();
-    }
 
     final minAlt = globalAlts.reduce((a, b) => a < b ? a : b);
     final maxAlt = globalAlts.reduce((a, b) => a > b ? a : b);
-
     final double elevationDiff = (maxAlt - minAlt).abs();
 
     final double elevationRange = math.max(
       elevationDiff,
       AppDimensions.minElevationChartWindow,
     );
-
     final double elevationPaddingBottom = elevationRange * 0.10;
-    final double elevationPaddingTop = elevationRange * 0.35;
+    final double elevationPaddingTop = elevationRange * 0.15;
 
     final forcedMinY = minAlt - elevationPaddingBottom;
     final forcedMaxY = maxAlt + elevationPaddingTop;
+    final double yRange = (forcedMaxY - forcedMinY) == 0
+        ? 1.0
+        : (forcedMaxY - forcedMinY);
 
-    const double globalTopReserved = 28.0;
+    const double globalTopReserved = 0.0;
     const double globalBottomReserved = 16.0;
 
     final maxDist = globalDists.last > 0 ? globalDists.last : 1.0;
     final selectableMaxIndex = globalDists.length - 1;
 
-    // Distàncies reals, sense map
-    final mappedRecordedWaypointDists = [...widget.recordedWaypointGlobalDists];
-
-    final mappedImportedWaypointDists = [...widget.importedWaypointGlobalDists];
-
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
+        final height = constraints.maxHeight;
+        final chartHeight = height - globalBottomReserved - globalTopReserved;
 
         double mapX(double dist) {
           if (maxDist == 0) return 0;
@@ -165,8 +162,7 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
 
         int clampIndex(int? idx) {
           if (idx == null || idx < 0 || idx >= globalDists.length) return -1;
-          if (idx > selectableMaxIndex) return -1;
-          return idx;
+          return idx > selectableMaxIndex ? -1 : idx;
         }
 
         final graphIdx = clampIndex(_localGraphIdx);
@@ -177,8 +173,16 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
         final startX = startIdx >= 0 ? mapX(globalDists[startIdx]) : null;
         final endX = endIdx >= 0 ? mapX(globalDists[endIdx]) : null;
 
+        double getPointY(int idx) {
+          final double rel = (globalAlts[idx] - forcedMinY) / yRange;
+          return globalTopReserved +
+              (chartHeight * (1.0 - rel.clamp(0.0, 1.0)));
+        }
+
         final currentMode = ref.watch(elevationSelectionProvider).mode;
-        // lib/screens/elevations/widgets/elevation_chart_widget.dart (BLOC 2 DE 3)
+        final bool showRangeArea =
+            currentMode == SelectionMode.range && startIdx >= 0 && endIdx >= 0;
+
         return GestureDetector(
           behavior: HitTestBehavior.translucent,
           onLongPressStart: (_) {
@@ -192,17 +196,13 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
               0,
               totalPoints - 1,
             );
-
             ref
                 .read(elevationSelectionProvider.notifier)
                 .setManualRange(sIdx, eIdx);
-
             ref
                 .read(elevationSelectionProvider.notifier)
                 .activateMapSelectionTool();
-
             setState(() {
-              _draggingNeedle = 0;
               _localStartIdx = sIdx;
               _localEndIdx = eIdx;
               _localGraphIdx = null;
@@ -262,12 +262,10 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
             int idx = ChartLogic.calculateIndexFromX(x, width, globalDists);
             idx = idx.clamp(0, selectableMaxIndex);
 
-            // 1. ACTUALITZACIÓ LOCAL VISUAL (Máxima velocidad a 32ms para el ojo humano)
             final now = DateTime.now();
             if (now.difference(_lastThrottleTime).inMilliseconds >=
                 _throttleDurationMs) {
               _lastThrottleTime = now;
-
               if (_draggingNeedle == 1) {
                 final actualEnd = endIdx >= 0 ? endIdx : idx;
                 setState(() {
@@ -299,11 +297,9 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
               }
             }
 
-            // De esta forma la CPU no se satura calculando desniveles punto por punto
             if (now.difference(_lastStatsThrottleTime).inMilliseconds >=
                 _statsThrottleDurationMs) {
               _lastStatsThrottleTime = now;
-
               if (_localStartIdx != null &&
                   _localEndIdx != null &&
                   _draggingNeedle != 3) {
@@ -317,9 +313,7 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
               }
             }
           },
-
           onPanEnd: (_) {
-            // Forzamos la actualización inmediata al soltar para sincronizar el último píxel
             if (_localStartIdx != null &&
                 _localEndIdx != null &&
                 _draggingNeedle != 3 &&
@@ -335,7 +329,9 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
             setState(() => _draggingNeedle = -1);
           },
           onPanCancel: () => setState(() => _draggingNeedle = -1),
+          // lib/screens/elevations/widgets/elevation_chart_widget.dart (BLOC 3 DE 3)
           child: Stack(
+            clipBehavior: Clip.none,
             children: [
               Positioned(
                 left: 0,
@@ -344,7 +340,6 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
                 height: globalBottomReserved,
                 child: Container(color: Colors.white),
               ),
-              // Capa 1: El gràfic de línies de fons de FL Chart (Amb fons gris)
               Positioned.fill(
                 child: LineChart(
                   _buildChartData(
@@ -364,7 +359,6 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
                   ),
                 ),
               ),
-              // Capa 2: Les agulles verticals i bafarades simètriques fixes/mòbils del SelectionPainter
               Positioned.fill(
                 child: CustomPaint(
                   painter: SelectionPainter(
@@ -379,15 +373,50 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
                     graphNeedleColor: widget.graphNeedleColor,
                     sliderStartNeedleColor: widget.sliderStartNeedleColor,
                     sliderEndNeedleColor: widget.sliderEndNeedleColor,
-                    recordedWaypointGlobalDists: mappedRecordedWaypointDists,
-                    importedWaypointGlobalDists: mappedImportedWaypointDists,
+                    recordedWaypointGlobalDists:
+                        widget.recordedWaypointGlobalDists,
+                    importedWaypointGlobalDists:
+                        widget.importedWaypointGlobalDists,
                     recordedWaypointColor: AppColors.recordingTrackColor,
                     importedWaypointColor: AppColors.routeTrackColor,
                     topReserved: globalTopReserved,
                     bottomReserved: globalBottomReserved,
+                    minY: forcedMinY,
+                    maxY: forcedMaxY,
                   ),
                 ),
               ),
+
+              // TOOLTIPS NATIVOS FLUTTER: Elevados a -18px para que salgan por arriba del gráfico
+              if (showRangeArea) ...[
+                Positioned(
+                  top: -18,
+                  left: 4,
+                  child: _buildFlutterTooltip(
+                    "${(globalDists[startIdx] / 1000.0).toStringAsFixed(2)} km | ${globalAlts[startIdx].toStringAsFixed(0)} m",
+                    widget.sliderStartNeedleColor,
+                  ),
+                ),
+                Positioned(
+                  top: -18,
+                  right: 4,
+                  child: _buildFlutterTooltip(
+                    "${(globalDists[endIdx] / 1000.0).toStringAsFixed(2)} km | ${globalAlts[endIdx].toStringAsFixed(0)} m",
+                    widget.sliderEndNeedleColor,
+                  ),
+                ),
+              ],
+
+              // TOOLTIP AZUL MÓVIL: Flota dinámicamente a 12px exactos por encima de la montaña
+              if (graphIdx >= 0 && graphX != null)
+                Positioned(
+                  left: (graphX - 65).clamp(4.0, width - 134.0),
+                  top: (getPointY(graphIdx) - 34).clamp(-12.0, height),
+                  child: _buildFlutterTooltip(
+                    "${(globalDists[graphIdx] / 1000.0).toStringAsFixed(2)} km | ${globalAlts[graphIdx].toStringAsFixed(0)} m",
+                    widget.graphNeedleColor,
+                  ),
+                ),
             ],
           ),
         );
@@ -395,7 +424,6 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
     );
   }
 
-  // lib/screens/elevations/widgets/elevation_chart_widget.dart (BLOC 3 DE 3)
   LineChartData _buildChartData({
     required BuildContext context,
     required List<double> pastAlts,
@@ -425,38 +453,39 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
       for (int i = 0; i < safeFutureCount; i++)
         FlSpot(futureDists[i], futureAlts[i]),
     ];
-
     final List<FlSpot> allSpots = [...pastSpots, ...futureSpots];
+
     final currentSelection = ref.read(elevationSelectionProvider);
-    final int? sIdx = currentSelection.startTrackIndex;
-    final int? eIdx = currentSelection.endTrackIndex;
     final bool showRangeArea =
         currentSelection.mode == SelectionMode.range &&
-        sIdx != null &&
-        eIdx != null;
+        currentSelection.startTrackIndex != null &&
+        currentSelection.endTrackIndex != null;
 
     final List<FlSpot> rangeSelectedSpots = [];
     if (showRangeArea && allSpots.isNotEmpty) {
-      // 1. Obtenemos las distancias usando los índices directamente sobre los puntos del gráfico
-      final int startClamp = sIdx!.clamp(0, allSpots.length - 1);
-      final int endClamp = eIdx!.clamp(0, allSpots.length - 1);
+      final int startClamp = currentSelection.startTrackIndex!.clamp(
+        0,
+        allSpots.length - 1,
+      );
+      final int endClamp = currentSelection.endTrackIndex!.clamp(
+        0,
+        allSpots.length - 1,
+      );
+      final double minDist = math.min(
+        allSpots[startClamp].x,
+        allSpots[endClamp].x,
+      );
+      final double maxDistBound = math.max(
+        allSpots[startClamp].x,
+        allSpots[endClamp].x,
+      );
 
-      final double startDist = allSpots[startClamp].x;
-      final double endDist = allSpots[endClamp].x;
-
-      // 2. Determinamos los límites geográficos mínimos y máximos
-      final double minDist = startDist < endDist ? startDist : endDist;
-      final double maxDistBound = startDist > endDist ? startDist : endDist;
-
-      // 3. Filtramos los puntos que caen dentro del rango de distancia
       for (final spot in allSpots) {
-        if (spot.x >= minDist && spot.x <= maxDistBound) {
+        if (spot.x >= minDist && spot.x <= maxDistBound)
           rangeSelectedSpots.add(spot);
-        }
       }
     }
 
-    // 🚀 LÍNIES FINES NETES: Cap d'elles pintarà un degradat individual propi
     LineChartBarData buildBar(
       List<FlSpot> spots,
       Color color, {
@@ -464,14 +493,12 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
     }) {
       return LineChartBarData(
         spots: spots,
-        isCurved: true,
-        curveSmoothness: 0.3,
+        isCurved: false,
         isStrokeCapRound: true,
-        preventCurveOverShooting: true,
         barWidth: 3,
         dotData: const FlDotData(show: false),
         color: color,
-        dashArray: dashed ? [10, 7] : null,
+        dashArray: dashed ? [5, 5] : null,
         belowBarData: BarAreaData(show: false),
       );
     }
@@ -480,13 +507,11 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
       minY: forcedMinY,
       maxY: forcedMaxY,
       minX: 0,
-      backgroundColor: Colors.grey.shade100.withAlpha(
-        130,
-      ), // Fons translúcid elegant de control
       maxX: maxDist,
+      backgroundColor: Colors.grey.shade100.withValues(alpha: 0.5),
       gridData: const FlGridData(show: false),
       borderData: FlBorderData(show: false),
-      clipData: const FlClipData.none(),
+      clipData: const FlClipData.all(),
       titlesData: FlTitlesData(
         topTitles: AxisTitles(
           sideTitles: SideTitles(
@@ -510,10 +535,12 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
               final isFirst = value == 0;
               final isLast = (maxDist - value).abs() < 0.001;
 
-              final fullText = formatDistance(value);
-              final parts = fullText.split(' ');
-              final numberPart = parts.isNotEmpty ? parts[0] : fullText;
-              final unitPart = parts.length > 1 ? parts[1] : '';
+              final String fullText = formatDistance(value);
+              final List<String> parts = fullText.split(' ');
+
+              // Tipado estricto String para evitar el error de asignación Object
+              final String numberPart = parts.isNotEmpty ? parts[0] : fullText;
+              final String unitPart = parts.length > 1 ? parts[1] : '';
 
               const textStyle = TextStyle(
                 color: Colors.black,
@@ -573,29 +600,23 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
       ),
       lineTouchData: const LineTouchData(enabled: false),
       lineBarsData: [
-        // 🚀 CAPA DE FONS 1: DEGRADAT ÚNIC GENERAL (Es desactiva automàticament en seleccionar)
         if (!showRangeArea && allSpots.isNotEmpty)
           LineChartBarData(
             spots: allSpots,
-            isCurved: true,
-            curveSmoothness: 0.3,
-            preventCurveOverShooting: true,
+            isCurved: false,
             barWidth: 0,
             dotData: const FlDotData(show: false),
             belowBarData: BarAreaData(
               show: true,
-              color: trackColor.withAlpha(28),
+              color: trackColor.withValues(alpha: 0.1),
               cutOffY: forcedMinY,
               applyCutOffY: true,
             ),
           ),
-        // CAPA DE FONS 2: DEGRADAT ÚNIC DEL RANG SELECCIONAT (S'encén de forma paral·lela)
         if (showRangeArea && rangeSelectedSpots.isNotEmpty)
           LineChartBarData(
             spots: rangeSelectedSpots,
-            isCurved: true,
-            curveSmoothness: 0.3,
-            preventCurveOverShooting: true,
+            isCurved: false,
             barWidth: 0,
             dotData: const FlDotData(show: false),
             belowBarData: BarAreaData(
@@ -603,15 +624,16 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [trackColor.withAlpha(191), trackColor.withAlpha(38)],
+                colors: [
+                  trackColor.withValues(alpha: 0.7),
+                  trackColor.withValues(alpha: 0.15),
+                ],
               ),
               cutOffY: forcedMinY,
               applyCutOffY: true,
             ),
           ),
-        // 🚀 CAPA SUPERIOR: LES LÍNIES FINES DE COLOR
         if (pastSpots.isNotEmpty) buildBar(pastSpots, trackColor),
-
         if (futureSpots.isNotEmpty)
           buildBar(futureSpots, importedTrackColor, dashed: futureDashed),
       ],
