@@ -34,8 +34,6 @@ class MapElevationHud extends ConsumerWidget {
     // Si no hay grabación activa, recurrimos al cálculo del provider general de la ruta
     final stats = ref.watch(segmentStatsProvider);
 
-    // 2️⃣ VARIABLES DE CONTROL PER A LA BARRA NEGRA (Tipus double unificats sense errors)
-    // 2️⃣ VARIABLES DE CONTROL PER A LA BARRA NEGRA (Tipus double unificats sense errors)
     double finalDistanceMeters = 0.0;
     double finalAscent = 0.0;
     double finalDescent = 0.0;
@@ -45,52 +43,27 @@ class MapElevationHud extends ConsumerWidget {
     String finalAvgSpeedStr = stats.avgSpeedStr;
 
     if (isRecording) {
-      // Quilometratge real basat en l'últim punt del GPS gravat
-      finalDistanceMeters = realTrack.distances.isNotEmpty
-          ? realTrack.distances.last * 1000.0
-          : 0.0;
+      // Llegim les dades ja calculades directament del teu provider
+      finalDistanceMeters = realTrack.stats.distance;
+      finalAscent = realTrack.stats.ascent.roundToDouble();
+      finalDescent = realTrack.stats.descent.roundToDouble();
 
-      // Càlcul de desnivells reals de la gravació
-      double ascent = 0.0;
-      double descent = 0.0;
-      for (int i = 1; i < realTrack.altitudes.length; i++) {
-        final diff = realTrack.altitudes[i] - realTrack.altitudes[i - 1];
-        if (diff > 0) ascent += diff;
-        if (diff < 0) descent += diff.abs();
-      }
-      finalAscent = ascent.roundToDouble();
-      finalDescent = descent.roundToDouble();
+      // Formatem el temps real en moviment calculat pel provider
+      final movingDuration =
+          realTrack.stats.duration - realTrack.stats.stoppedDuration;
+      final hours = movingDuration.inHours;
+      final minutes = movingDuration.inMinutes.remainder(60);
 
-      // 🟢 CÀLCUL MANUAL DEL TEMPS REAL DE GRAVACIÓ:
-      // Comparem el primer timestamp gravat amb l'últim per saber els minuts de veritat
-      if (realTrack.timestamps.length > 1) {
-        final duration = realTrack.timestamps.last.difference(
-          realTrack.timestamps.first,
-        );
-        final hours = duration.inHours;
-        final minutes = duration.inMinutes.remainder(60);
-
-        if (hours > 0) {
-          finalTimeStr = "${hours}h ${minutes.toString().padLeft(2, '0')}m";
-        } else {
-          finalTimeStr =
-              "${minutes}m ${duration.inSeconds.remainder(60).toString().padLeft(2, '0')}s";
-        }
-
-        // 🟢 CÀLCUL MANUAL DE LA VELOCITAT MITJANA REAL:
-        // Velocitat = (Metres / 1000) / (Segons / 3600) -> km/h
-        if (duration.inSeconds > 0) {
-          final double km = finalDistanceMeters / 1000.0;
-          final double h = duration.inSeconds / 3600.0;
-          final double avgSpeed = km / h;
-          finalAvgSpeedStr = "${avgSpeed.toStringAsFixed(1)} km/h";
-        } else {
-          finalAvgSpeedStr = "0.0 km/h";
-        }
+      if (hours > 0) {
+        finalTimeStr = "${hours}h ${minutes.toString().padLeft(2, '0')}m";
       } else {
-        finalTimeStr = "0m 00s";
-        finalAvgSpeedStr = "0.0 km/h";
+        finalTimeStr =
+            "${minutes}m ${movingDuration.inSeconds.remainder(60).toString().padLeft(2, '0')}s";
       }
+
+      // Formatem la velocitat mitjana calculada pel provider
+      finalAvgSpeedStr =
+          "${realTrack.stats.averageSpeed.toStringAsFixed(1)} km/h";
     } else {
       finalDistanceMeters = stats.distanceMeters;
       finalAscent = stats.ascentMeters;
@@ -114,9 +87,6 @@ class MapElevationHud extends ConsumerWidget {
             },
           ),
 
-          // 🟩 LA BARRA NEGRA D'ESTADÍSTIQUES (Sincronitzada de manera local sense race conditions)
-          // 🟩 LA BARRA NEGRA D'ESTADÍSTIQUES (Sincronitzada i neta d'errors de mètodes)
-          // 🟩 LA BARRA NEGRA D'ESTADÍSTIQUES (Totalment lliure d'interferències de temps històrics)
           SegmentStatsWidget(
             distanceMeters: finalDistanceMeters,
             timeElapsedStr: finalTimeStr,
