@@ -57,6 +57,7 @@ class NavigationNotifier extends Notifier<NavigationState> {
 
   LatLng? _lastProjectedPoint;
   double _distanceProgressOnTrack = 0.0;
+  int? _lastMatchedSegmentIndex;
 
   @override
   NavigationState build() {
@@ -102,6 +103,7 @@ class NavigationNotifier extends Notifier<NavigationState> {
     _lastDistances.clear();
     _distanceProgressOnTrack = 0.0;
     _lastProjectedPoint = null;
+    _lastMatchedSegmentIndex = null;
     _isCurrentlyOffTrack = false;
     _reverseDialogShown = false;
     _reverseDetectionLocked = false;
@@ -130,9 +132,12 @@ class NavigationNotifier extends Notifier<NavigationState> {
       referencePos,
       importedLatLng,
       _lastUserPositions,
+      preferredSegmentIndex: _lastMatchedSegmentIndex,
+      segmentSearchWindow: TrackThresholds.mapMatchSegmentWindow,
     );
     _lastDistances.add(closest.distance);
     _lastProjectedPoint = closest.projectedPoint;
+    _lastMatchedSegmentIndex = closest.segmentIndex;
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -148,6 +153,7 @@ class NavigationNotifier extends Notifier<NavigationState> {
     _lastUserPositions.clear();
     _distanceProgressOnTrack = 0.0;
     _lastProjectedPoint = null;
+    _lastMatchedSegmentIndex = null;
     offTrackAlertsSent = 0;
     _offTrackStart = null;
     _isCurrentlyOffTrack = false;
@@ -186,7 +192,10 @@ class NavigationNotifier extends Notifier<NavigationState> {
       userPos,
       importedLatLng,
       _lastUserPositions,
+      preferredSegmentIndex: _lastMatchedSegmentIndex,
+      segmentSearchWindow: TrackThresholds.mapMatchSegmentWindow,
     );
+    _lastMatchedSegmentIndex = closest.segmentIndex;
 
     final proj = closest.projectedPoint;
 
@@ -435,6 +444,7 @@ class NavigationNotifier extends Notifier<NavigationState> {
     _lastProjectedPoint = null;
     _lastDistances.clear();
     _distanceProgressOnTrack = 0.0;
+    _lastMatchedSegmentIndex = null;
 
     _reverseDialogShown = false;
 
@@ -447,6 +457,12 @@ class NavigationNotifier extends Notifier<NavigationState> {
   }
 
   void dismissReverseTrackDialog() {
+    _lastUserPositions.clear();
+    _lastDistances.clear();
+    _lastProjectedPoint = null;
+    _distanceProgressOnTrack = 0.0;
+    _lastMatchedSegmentIndex = null;
+
     _reverseDialogShown = false;
     state = state.copyWith(showReverseTrackDialog: false);
   }

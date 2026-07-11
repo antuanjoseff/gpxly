@@ -10,10 +10,11 @@ class TrackThresholds {
   static const double navGpsAccuracy = 20.0;
 
   // Reverse detection
-  static const double reverseMinDistance = 20;
+  static const double reverseMinDistance = 50;
 
   // Buffer de posicions
   static const int lastNPositions = 10;
+  static const int mapMatchSegmentWindow = 80;
 
   // 🔥 Nous paràmetres
   static const int minPositionsLevel2 =
