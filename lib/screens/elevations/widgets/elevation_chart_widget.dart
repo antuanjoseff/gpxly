@@ -411,7 +411,7 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
               if (graphIdx >= 0 && graphX != null)
                 Positioned(
                   left: (graphX - 65).clamp(4.0, width - 134.0),
-                  top: (getPointY(graphIdx) - 34).clamp(-12.0, height),
+                  top: -18,
                   child: _buildFlutterTooltip(
                     "${(globalDists[graphIdx] / 1000.0).toStringAsFixed(2)} km | ${globalAlts[graphIdx].toStringAsFixed(0)} m",
                     widget.graphNeedleColor,
