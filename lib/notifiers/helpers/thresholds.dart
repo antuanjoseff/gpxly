@@ -11,6 +11,9 @@ class TrackThresholds {
 
   // Reverse detection
   static const double reverseMinDistance = 20;
+  static const int reverseSegmentWindow = 10;
+  static const int reverseMinNegativeSteps = 6;
+  static const int reverseMinDeltaSum = 4;
 
   // Buffer de posicions
   static const int lastNPositions = 10;

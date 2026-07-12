@@ -36,6 +36,25 @@ class ReverseDetector {
     return diff > 140;
   }
 
+  bool isReverseSegmentProgression(List<int> segmentIndices) {
+    final n = TrackThresholds.reverseSegmentWindow;
+    if (segmentIndices.length < n) return false;
+
+    final window = segmentIndices.sublist(segmentIndices.length - n);
+
+    int negativeSteps = 0;
+    int deltaSum = 0;
+
+    for (int i = 1; i < window.length; i++) {
+      final delta = window[i] - window[i - 1];
+      deltaSum += delta;
+      if (delta < 0) negativeSteps++;
+    }
+
+    return negativeSteps >= TrackThresholds.reverseMinNegativeSteps &&
+        deltaSum <= -TrackThresholds.reverseMinDeltaSum;
+  }
+
   // ------------------------------------------------------------
   // Bearing mitjà entre punts consecutius
   // ------------------------------------------------------------

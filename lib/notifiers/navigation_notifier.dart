@@ -35,6 +35,7 @@ class NavigationNotifier extends Notifier<NavigationState> {
   // ─── ESTAT INTERN REQUERIT PER ELS TEUS ALGORISMES MANTINGUT AL 100% ───
   final List<double> _lastDistances = [];
   final List<LatLng> _lastUserPositions = [];
+  final List<int> _lastSegmentIndices = [];
 
   DateTime? _offTrackStart;
   DateTime? _lastOffTrackAlert;
@@ -100,6 +101,7 @@ class NavigationNotifier extends Notifier<NavigationState> {
     _hasEverBeenOffTrack = false;
     offTrackAlertsSent = 0;
     _lastUserPositions.clear();
+    _lastSegmentIndices.clear();
     _lastDistances.clear();
     _distanceProgressOnTrack = 0.0;
     _lastProjectedPoint = null;
@@ -151,6 +153,7 @@ class NavigationNotifier extends Notifier<NavigationState> {
 
     _lastDistances.clear();
     _lastUserPositions.clear();
+    _lastSegmentIndices.clear();
     _distanceProgressOnTrack = 0.0;
     _lastProjectedPoint = null;
     _lastMatchedSegmentIndex = null;
@@ -196,6 +199,10 @@ class NavigationNotifier extends Notifier<NavigationState> {
       segmentSearchWindow: TrackThresholds.mapMatchSegmentWindow,
     );
     _lastMatchedSegmentIndex = closest.segmentIndex;
+    _lastSegmentIndices.add(closest.segmentIndex);
+    if (_lastSegmentIndices.length > TrackThresholds.reverseSegmentWindow) {
+      _lastSegmentIndices.removeAt(0);
+    }
 
     final proj = closest.projectedPoint;
 
@@ -259,9 +266,12 @@ class NavigationNotifier extends Notifier<NavigationState> {
         closest.bearing,
         closest.userBearing,
       );
+      final hasReverseSegmentTrend = reverseDetector
+          .isReverseSegmentProgression(_lastSegmentIndices);
 
       if (isNear &&
           headingDiff > 140 &&
+          hasReverseSegmentTrend &&
           reverseDetector.isReverseDirection(closest, _lastUserPositions)) {
         // 🔥 Aturem el motor de detecció inversa
         _reverseDetectionLocked = true;
@@ -441,6 +451,7 @@ class NavigationNotifier extends Notifier<NavigationState> {
     ref.read(importedTrackProvider.notifier).reverseTrack();
 
     _lastUserPositions.clear(); // Borra el rumb antic
+    _lastSegmentIndices.clear();
     _lastProjectedPoint = null;
     _lastDistances.clear();
     _distanceProgressOnTrack = 0.0;
@@ -458,6 +469,7 @@ class NavigationNotifier extends Notifier<NavigationState> {
 
   void dismissReverseTrackDialog() {
     _lastUserPositions.clear();
+    _lastSegmentIndices.clear();
     _lastDistances.clear();
     _lastProjectedPoint = null;
     _distanceProgressOnTrack = 0.0;
