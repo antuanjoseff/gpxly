@@ -25,4 +25,7 @@ class AppDimensions {
 
   /// Finestra vertical mínima del perfil d'elevació en metres.
   static const double minElevationChartWindow = 50.0;
+
+  /// Rang mínim real entre Y mínima i Y màxima del gràfic d'elevació.
+  static const double minElevationChartYAxisRange = 100.0;
 }

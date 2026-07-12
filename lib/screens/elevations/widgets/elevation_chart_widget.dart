@@ -137,8 +137,17 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
     final double elevationPaddingBottom = elevationRange * 0.10;
     final double elevationPaddingTop = elevationRange * 0.15;
 
-    final forcedMinY = minAlt - elevationPaddingBottom;
-    final forcedMaxY = maxAlt + elevationPaddingTop;
+    double forcedMinY = minAlt - elevationPaddingBottom;
+    double forcedMaxY = maxAlt + elevationPaddingTop;
+
+    final double currentYAxisRange = forcedMaxY - forcedMinY;
+    if (currentYAxisRange < AppDimensions.minElevationChartYAxisRange) {
+      final double missingRange =
+          AppDimensions.minElevationChartYAxisRange - currentYAxisRange;
+      forcedMinY -= missingRange / 2;
+      forcedMaxY += missingRange / 2;
+    }
+
     final double yRange = (forcedMaxY - forcedMinY) == 0
         ? 1.0
         : (forcedMaxY - forcedMinY);
