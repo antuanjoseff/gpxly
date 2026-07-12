@@ -13,6 +13,7 @@ import 'package:senda/models/waypoint.dart';
 import 'package:senda/notifiers/elevation_selection_provider.dart';
 import 'package:senda/notifiers/gps_speed_notifier.dart';
 import 'package:senda/notifiers/helpers/elevation_magnet_helper.dart';
+import 'package:senda/notifiers/helpers/thresholds.dart';
 
 // Notifiers natius de Senda
 import 'package:senda/notifiers/imported_track_notifier.dart';
@@ -72,6 +73,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
   bool styleInitialized = false;
   bool _fullScreen = false;
   Timer? _mapStopTimer;
+  Timer? _submenuAutoHideTimer;
   LatLng? _initialCameraTarget;
   double _initialZoom = 14;
   bool waypointLayersReady = false;
@@ -135,6 +137,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
     // 2. Atura els sensors natius si cal
     NativeBarometerChannel.stop();
+    _submenuAutoHideTimer?.cancel();
 
     // 3. 🛡️ NETEJA DEL MAPA: Avisem al motor natiu de MapLibre que es destrueixi immediatament
     // Això talla en sec qualsevol renderitzat, animació o descàrrega de tiles en segon pla.
@@ -148,6 +151,29 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
     // 4. Finalment, destrueix el giny de Flutter de forma normal
     super.dispose();
+  }
+
+  void _cancelSubmenuAutoHideTimer() {
+    _submenuAutoHideTimer?.cancel();
+    _submenuAutoHideTimer = null;
+  }
+
+  void _restartSubmenuAutoHideTimerIfNeeded() {
+    final bool anySubmenuOpen = _showRecordingSubMenu || _showNavigationSubMenu;
+    if (!anySubmenuOpen) {
+      _cancelSubmenuAutoHideTimer();
+      return;
+    }
+
+    _cancelSubmenuAutoHideTimer();
+    _submenuAutoHideTimer = Timer(TrackThresholds.submenuAutoHideDelay, () {
+      if (!mounted) return;
+      setState(() {
+        _showRecordingSubMenu = false;
+        _showNavigationSubMenu = false;
+      });
+      _cancelSubmenuAutoHideTimer();
+    });
   }
 
   Future<void> _loadLastPosition() async {
@@ -1313,11 +1339,14 @@ class _MapScreenState extends ConsumerState<MapScreen>
                       child: RecordingSubMenu(
                         state: ref.watch(trackRecordingProvider).recordingState,
                         onAction: (action) {
+                          _cancelSubmenuAutoHideTimer();
                           setState(() => _showRecordingSubMenu = false);
                           _openRecordingControl(context, ref, action);
                         },
-                        onClose: () =>
-                            setState(() => _showRecordingSubMenu = false),
+                        onClose: () {
+                          _cancelSubmenuAutoHideTimer();
+                          setState(() => _showRecordingSubMenu = false);
+                        },
                       ),
                     ),
                   ),
@@ -1342,6 +1371,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                                 .isNotEmpty ??
                             false,
                         onAction: (bool val) {
+                          _cancelSubmenuAutoHideTimer();
                           setState(() => _showNavigationSubMenu = false);
                           _handleSendaNavigationAction(
                             val
@@ -1353,8 +1383,10 @@ class _MapScreenState extends ConsumerState<MapScreen>
                                       : "clear_imported"),
                           );
                         },
-                        onClose: () =>
-                            setState(() => _showNavigationSubMenu = false),
+                        onClose: () {
+                          _cancelSubmenuAutoHideTimer();
+                          setState(() => _showNavigationSubMenu = false);
+                        },
                       ),
                     ),
                   ),
@@ -1382,6 +1414,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     _showRecordingSubMenu = !_showRecordingSubMenu;
                     _showNavigationSubMenu = false;
                   });
+                  _restartSubmenuAutoHideTimerIfNeeded();
                 },
 
                 // 🔥 NOU
@@ -1391,6 +1424,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                       false;
 
                   if (!hasTrack) {
+                    _cancelSubmenuAutoHideTimer();
                     _openNavigationControl(context, ref, false);
                     return;
                   }
@@ -1399,6 +1433,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     _showNavigationSubMenu = !_showNavigationSubMenu;
                     _showRecordingSubMenu = false;
                   });
+                  _restartSubmenuAutoHideTimerIfNeeded();
                 },
               ),
           ],

@@ -32,6 +32,9 @@ class TrackThresholds {
   // Gràfic d'elevacions
   static const double futureTrackVisibility = 0.3; // 30% of axis
 
+  // Submenús del menú inferior
+  static const Duration submenuAutoHideDelay = Duration(seconds: 4);
+
   // LÍMIT MÀXIM D'ARXIUS COG PERSISTENTS A DISC
   static const int maxPersistentFiles = 10;
 
