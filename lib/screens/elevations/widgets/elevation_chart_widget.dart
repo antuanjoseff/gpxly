@@ -24,6 +24,7 @@ class ElevationChartWidget extends ConsumerStatefulWidget {
   final Color sliderEndNeedleColor;
   final List<double> recordedWaypointGlobalDists;
   final List<double> importedWaypointGlobalDists;
+  final int? autoGraphIndex;
 
   const ElevationChartWidget({
     super.key,
@@ -38,6 +39,7 @@ class ElevationChartWidget extends ConsumerStatefulWidget {
     required this.sliderEndNeedleColor,
     required this.recordedWaypointGlobalDists,
     required this.importedWaypointGlobalDists,
+    this.autoGraphIndex,
   });
 
   @override
@@ -148,10 +150,6 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
       forcedMaxY += missingRange / 2;
     }
 
-    final double yRange = (forcedMaxY - forcedMinY) == 0
-        ? 1.0
-        : (forcedMaxY - forcedMinY);
-
     const double globalTopReserved = 0.0;
     const double globalBottomReserved = 16.0;
 
@@ -161,8 +159,6 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        final height = constraints.maxHeight;
-        final chartHeight = height - globalBottomReserved - globalTopReserved;
 
         double mapX(double dist) {
           if (maxDist == 0) return 0;
@@ -174,19 +170,16 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
           return idx > selectableMaxIndex ? -1 : idx;
         }
 
-        final graphIdx = clampIndex(_localGraphIdx);
+        final int? effectiveGraphIdx = (_draggingNeedle == -1)
+            ? (_localGraphIdx ?? widget.autoGraphIndex)
+            : _localGraphIdx;
+        final graphIdx = clampIndex(effectiveGraphIdx);
         final startIdx = clampIndex(_localStartIdx);
         final endIdx = clampIndex(_localEndIdx);
 
         final graphX = graphIdx >= 0 ? mapX(globalDists[graphIdx]) : null;
         final startX = startIdx >= 0 ? mapX(globalDists[startIdx]) : null;
         final endX = endIdx >= 0 ? mapX(globalDists[endIdx]) : null;
-
-        double getPointY(int idx) {
-          final double rel = (globalAlts[idx] - forcedMinY) / yRange;
-          return globalTopReserved +
-              (chartHeight * (1.0 - rel.clamp(0.0, 1.0)));
-        }
 
         final currentMode = ref.watch(elevationSelectionProvider).mode;
         final bool showRangeArea =

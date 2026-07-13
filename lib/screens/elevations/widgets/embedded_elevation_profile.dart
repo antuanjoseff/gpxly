@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/models/track.dart';
 import 'package:senda/notifiers/imported_track_notifier.dart';
+import 'package:senda/notifiers/location_notifier.dart';
 import 'package:senda/notifiers/recording_notifier.dart';
 import 'package:senda/notifiers/remaining_track_notifier.dart';
-import 'package:senda/notifiers/segment_stats_notifier.dart';
 import 'package:senda/notifiers/waypoints_imported_notifier.dart';
 import 'package:senda/notifiers/waypoints_recorded_notifier.dart';
 import 'package:senda/screens/elevations/widgets/elevation_chart_widget.dart';
@@ -30,11 +30,40 @@ class EmbeddedElevationProfile extends ConsumerWidget {
     final real = ref.watch(trackRecordingProvider);
     final imported = ref.watch(importedTrackProvider);
     final remaining = ref.watch(remainingTrackProvider);
+    final userPosition = ref.watch(locationProvider);
 
     final realAlts = real.altitudes;
     final realDists = real.distances;
-    final realTimes = real.timestamps;
     final bool isRecording = real.recordingState == RecordingState.recording;
+
+    int? autoGraphIndex;
+    if (isRecording) {
+      if (real.points.isNotEmpty) {
+        // En gravació: l'agulla blava segueix sempre l'últim punt GPS rebut.
+        autoGraphIndex = real.points.length - 1;
+      }
+    } else if (imported != null && userPosition != null) {
+      final coords = imported.coordinates;
+      if (coords.isNotEmpty) {
+        final gpsLat = userPosition.position.latitude;
+        final gpsLon = userPosition.position.longitude;
+
+        int nearestIdx = 0;
+        double minDistSq = double.infinity;
+        for (int i = 0; i < coords.length; i++) {
+          final dLat = coords[i][1] - gpsLat;
+          final dLon = coords[i][0] - gpsLon;
+          final distSq = dLat * dLat + dLon * dLon;
+          if (distSq < minDistSq) {
+            minDistSq = distSq;
+            nearestIdx = i;
+          }
+        }
+
+        // No gravant + track importat: agulla a la coordenada importada més propera al GPS.
+        autoGraphIndex = realDists.length + nearestIdx;
+      }
+    }
 
     // Determinamos si el usuario está siguiendo activamente el track guiado
     final bool isFollowingActive = remaining != null;
@@ -44,7 +73,6 @@ class EmbeddedElevationProfile extends ConsumerWidget {
     late List<double> chartPastDists;
     late List<double> futureAlts;
     late List<double> futureDistsGlobal;
-    late List<DateTime> futureTimes;
 
     if (isRecording && isFollowingActive) {
       // 1) MODO MIXTO: Grabando y Siguiendo activamente la guía
@@ -69,7 +97,6 @@ class EmbeddedElevationProfile extends ConsumerWidget {
         for (int i = 0; i < remainingDists.length; i++)
           pastLastDist + remainingDists[i] + (i == 0 ? 0.001 : 0.0),
       ];
-      futureTimes = remaining.timestamps;
     } else if (imported != null) {
       // 2) MODO GUÍA PASIVA: Hay un track cargado (estés o no grabando de forma independiente)
       // Mantenemos la guía íntegra para que el eje X no colapse a 1 metro en la Home
@@ -77,14 +104,12 @@ class EmbeddedElevationProfile extends ConsumerWidget {
       chartPastDists = realDists;
       futureAlts = imported.altitudes;
       futureDistsGlobal = imported.distances;
-      futureTimes = imported.timestamps;
     } else {
       // 3) MODO SÓLO GRABACIÓN: No hay ninguna ruta cargada en el mapa
       chartPastAlts = realAlts;
       chartPastDists = realDists;
       futureAlts = const [];
       futureDistsGlobal = const [];
-      futureTimes = const [];
     }
 
     final recordedWps = ref.watch(waypointsProvider);
@@ -133,6 +158,7 @@ class EmbeddedElevationProfile extends ConsumerWidget {
             sliderEndNeedleColor: Colors.red,
             recordedWaypointGlobalDists: recordedWaypointDists,
             importedWaypointGlobalDists: importedWaypointDists,
+            autoGraphIndex: autoGraphIndex,
           ),
         ),
       ],
