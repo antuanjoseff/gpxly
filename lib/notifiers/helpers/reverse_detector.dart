@@ -24,7 +24,9 @@ class ReverseDetector {
     );
 
     // Si no hi ha moviment real → no hi ha reverse
-    if (netDistance < TrackThresholds.reverseMinDistance) return false;
+    if (netDistance < TrackThresholds.reverseRecentMovementDistance) {
+      return false;
+    }
 
     // --- 4. Bearing mitjà de moviment ---
     final movementBearing = _averageBearing(window);
@@ -37,7 +39,7 @@ class ReverseDetector {
   }
 
   bool isReverseSegmentProgression(List<int> segmentIndices) {
-    final n = TrackThresholds.reverseSegmentWindow;
+    const n = TrackThresholds.reverseSegmentWindow;
     if (segmentIndices.length < n) return false;
 
     final window = segmentIndices.sublist(segmentIndices.length - n);

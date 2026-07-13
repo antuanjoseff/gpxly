@@ -48,7 +48,6 @@ class NavigationNotifier extends Notifier<NavigationState> {
   bool _isCurrentlyOffTrack = false;
 
   bool _hasEverBeenOnTrack = false;
-  bool _hasEverBeenOffTrack = false;
   DateTime? _offTrackFirstAlertTime;
   double? _offTrackFirstAlertDistance;
 
@@ -58,6 +57,7 @@ class NavigationNotifier extends Notifier<NavigationState> {
 
   LatLng? _lastProjectedPoint;
   double _distanceProgressOnTrack = 0.0;
+  double _reverseDistanceOnTrack = 0.0;
   int? _lastMatchedSegmentIndex;
 
   @override
@@ -98,12 +98,12 @@ class NavigationNotifier extends Notifier<NavigationState> {
 
     // 2. Reiniciem variables de control intern de l'autòmat
     _hasEverBeenOnTrack = false;
-    _hasEverBeenOffTrack = false;
     offTrackAlertsSent = 0;
     _lastUserPositions.clear();
     _lastSegmentIndices.clear();
     _lastDistances.clear();
     _distanceProgressOnTrack = 0.0;
+    _reverseDistanceOnTrack = 0.0;
     _lastProjectedPoint = null;
     _lastMatchedSegmentIndex = null;
     _isCurrentlyOffTrack = false;
@@ -155,6 +155,7 @@ class NavigationNotifier extends Notifier<NavigationState> {
     _lastUserPositions.clear();
     _lastSegmentIndices.clear();
     _distanceProgressOnTrack = 0.0;
+    _reverseDistanceOnTrack = 0.0;
     _lastProjectedPoint = null;
     _lastMatchedSegmentIndex = null;
     offTrackAlertsSent = 0;
@@ -207,6 +208,7 @@ class NavigationNotifier extends Notifier<NavigationState> {
     final proj = closest.projectedPoint;
 
     // --- PROGRESSIÓ SOBRE EL TRACK MANTINGUDA ---
+    double projectedStep = 0.0;
     if (_lastProjectedPoint != null) {
       final step = calculateDistanceManual(
         // Utilitza el teu utilitari natiu de càlcul entre coordenades
@@ -216,6 +218,7 @@ class NavigationNotifier extends Notifier<NavigationState> {
         proj.longitude,
       );
       if (step > 0 && step < 50) {
+        projectedStep = step;
         _distanceProgressOnTrack += step;
       }
     }
@@ -243,6 +246,10 @@ class NavigationNotifier extends Notifier<NavigationState> {
     final isNear = dist < TrackThresholds.nearThreshold;
     final isFar = dist > TrackThresholds.farThreshold;
 
+    if (state.mode == FollowMode.onTrack && isNear && projectedStep > 0) {
+      _reverseDistanceOnTrack += projectedStep;
+    }
+
     // --- NIVELL 2: trending away, heading wrong, offtrack bàsic ---
     bool isTrendingAway = false;
     bool isHeadingWrong = false;
@@ -261,6 +268,7 @@ class NavigationNotifier extends Notifier<NavigationState> {
 
     if (count >= TrackThresholds.minPositionsLevel3 &&
         state.mode == FollowMode.onTrack &&
+        _reverseDistanceOnTrack >= TrackThresholds.reverseMinDistance &&
         !_reverseDialogShown) {
       final headingDiff = geometry.headingDifference(
         closest.bearing,
@@ -339,8 +347,6 @@ class NavigationNotifier extends Notifier<NavigationState> {
             onUserDriftingAway(dist);
           }
         }
-
-        _hasEverBeenOffTrack = true;
         newMode = FollowMode.offTrack;
         newIsOffTrack = true;
       }
@@ -381,6 +387,7 @@ class NavigationNotifier extends Notifier<NavigationState> {
         prevMode != FollowMode.onTrack && newMode == FollowMode.onTrack;
 
     if (hasEnteredOnTrack) {
+      _reverseDistanceOnTrack = 0.0;
       onUserBackOnTrack();
     }
   }
@@ -455,6 +462,7 @@ class NavigationNotifier extends Notifier<NavigationState> {
     _lastProjectedPoint = null;
     _lastDistances.clear();
     _distanceProgressOnTrack = 0.0;
+    _reverseDistanceOnTrack = 0.0;
     _lastMatchedSegmentIndex = null;
 
     _reverseDialogShown = false;
@@ -473,6 +481,7 @@ class NavigationNotifier extends Notifier<NavigationState> {
     _lastDistances.clear();
     _lastProjectedPoint = null;
     _distanceProgressOnTrack = 0.0;
+    _reverseDistanceOnTrack = 0.0;
     _lastMatchedSegmentIndex = null;
 
     _reverseDialogShown = false;
