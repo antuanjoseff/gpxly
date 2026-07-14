@@ -292,13 +292,13 @@ class NavigationNotifier extends Notifier<NavigationState> {
     }
 
     if (count >= TrackThresholds.minPositionsLevel3 &&
-        state.mode == FollowMode.onTrack &&
+        _hasEverBeenOnTrack &&
+        state.mode != FollowMode.offTrack &&
         _reverseDistanceOnTrack >= TrackThresholds.reverseMinDistance &&
         !_reverseDialogShown) {
       final hasReverseSegmentTrend = reverseDetector
           .isReverseSegmentProgression(_lastSegmentIndices);
 
-      // Conservades TOTES les teves condicions originals nítides, utilitzant el headingDiff real de moviment
       if (isNear &&
           headingDiff > 140 &&
           hasReverseSegmentTrend &&
