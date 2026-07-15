@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -15,7 +16,6 @@ import 'package:senda/services/permissions_service.dart';
 import 'package:senda/utils/distance_utils.dart'; // Per al teu mètode calculateDistanceManual / distanceBetween
 
 // Importació dels teus helpers matemàtics i de so reals
-import 'helpers/closest_result.dart';
 import 'helpers/geometry_utils.dart';
 import 'helpers/offtrack_logic.dart';
 import 'helpers/progress_tracker.dart';
@@ -36,6 +36,7 @@ class NavigationNotifier extends Notifier<NavigationState> {
   // ─── ESTAT INTERN REQUERIT PER ELS TEUS ALGORISMES MANTINGUT AL 100% ───
   final List<double> _lastDistances = [];
   final List<LatLng> _lastUserPositions = [];
+  final List<int> _lastSegmentIndices = [];
 
   DateTime? _offTrackStart;
   DateTime? _lastOffTrackAlert;
@@ -48,7 +49,6 @@ class NavigationNotifier extends Notifier<NavigationState> {
   bool _isCurrentlyOffTrack = false;
 
   bool _hasEverBeenOnTrack = false;
-  bool _hasEverBeenOffTrack = false;
   DateTime? _offTrackFirstAlertTime;
   double? _offTrackFirstAlertDistance;
 
@@ -58,6 +58,8 @@ class NavigationNotifier extends Notifier<NavigationState> {
 
   LatLng? _lastProjectedPoint;
   double _distanceProgressOnTrack = 0.0;
+  double _reverseDistanceOnTrack = 0.0;
+  int? _lastMatchedSegmentIndex;
 
   @override
   NavigationState build() {
@@ -97,12 +99,14 @@ class NavigationNotifier extends Notifier<NavigationState> {
 
     // 2. Reiniciem variables de control intern de l'autòmat
     _hasEverBeenOnTrack = false;
-    _hasEverBeenOffTrack = false;
     offTrackAlertsSent = 0;
     _lastUserPositions.clear();
+    _lastSegmentIndices.clear();
     _lastDistances.clear();
     _distanceProgressOnTrack = 0.0;
+    _reverseDistanceOnTrack = 0.0;
     _lastProjectedPoint = null;
+    _lastMatchedSegmentIndex = null;
     _isCurrentlyOffTrack = false;
     _reverseDialogShown = false;
     _reverseDetectionLocked = false;
@@ -131,9 +135,12 @@ class NavigationNotifier extends Notifier<NavigationState> {
       referencePos,
       importedLatLng,
       _lastUserPositions,
+      preferredSegmentIndex: _lastMatchedSegmentIndex,
+      segmentSearchWindow: TrackThresholds.mapMatchSegmentWindow,
     );
     _lastDistances.add(closest.distance);
     _lastProjectedPoint = closest.projectedPoint;
+    _lastMatchedSegmentIndex = closest.segmentIndex;
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -147,8 +154,11 @@ class NavigationNotifier extends Notifier<NavigationState> {
 
     _lastDistances.clear();
     _lastUserPositions.clear();
+    _lastSegmentIndices.clear();
     _distanceProgressOnTrack = 0.0;
+    _reverseDistanceOnTrack = 0.0;
     _lastProjectedPoint = null;
+    _lastMatchedSegmentIndex = null;
     offTrackAlertsSent = 0;
     _offTrackStart = null;
     _isCurrentlyOffTrack = false;
@@ -161,6 +171,9 @@ class NavigationNotifier extends Notifier<NavigationState> {
 
   // ─────────────────────────────────────────────────────────────
   // 📐 EL MOTOR ANALÍTIC CENTRAL (updateUserPosition de l'autòmat)
+  // ─────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────
+  // 📐 EL MOTOR ANALÍTIC CENTRAL RECONSTRUÏT AMB PRECISIÓ ABSOLUTA
   // ─────────────────────────────────────────────────────────────
   void _updateUserPositionAndEvaluate(
     LatLng userPos, {
@@ -187,20 +200,28 @@ class NavigationNotifier extends Notifier<NavigationState> {
       userPos,
       importedLatLng,
       _lastUserPositions,
+      preferredSegmentIndex: _lastMatchedSegmentIndex,
+      segmentSearchWindow: TrackThresholds.mapMatchSegmentWindow,
     );
+    _lastMatchedSegmentIndex = closest.segmentIndex;
+    _lastSegmentIndices.add(closest.segmentIndex);
+    if (_lastSegmentIndices.length > TrackThresholds.reverseSegmentWindow) {
+      _lastSegmentIndices.removeAt(0);
+    }
 
     final proj = closest.projectedPoint;
 
     // --- PROGRESSIÓ SOBRE EL TRACK MANTINGUDA ---
+    double projectedStep = 0.0;
     if (_lastProjectedPoint != null) {
       final step = calculateDistanceManual(
-        // Utilitza el teu utilitari natiu de càlcul entre coordenades
         _lastProjectedPoint!.latitude,
         _lastProjectedPoint!.longitude,
         proj.latitude,
         proj.longitude,
       );
       if (step > 0 && step < 50) {
+        projectedStep = step;
         _distanceProgressOnTrack += step;
       }
     }
@@ -228,6 +249,33 @@ class NavigationNotifier extends Notifier<NavigationState> {
     final isNear = dist < TrackThresholds.nearThreshold;
     final isFar = dist > TrackThresholds.farThreshold;
 
+    // =========================================================================
+    // 🌟 UNIC RETOC COORDENAT: CÀLCUL DEL VECTOR D'AVANÇ REAL EN MAPA
+    // =========================================================================
+    double rumbRealAvanc = userHeading;
+    if (_lastUserPositions.length >= 3) {
+      rumbRealAvanc = _calculateHeadingBetweenPoints(
+        _lastUserPositions[_lastUserPositions.length - 3],
+        _lastUserPositions.last,
+      );
+    }
+
+    final headingDiff = geometry.headingDifference(
+      closest.bearing,
+      rumbRealAvanc,
+    );
+    // =========================================================================
+
+    // Acumulació de metres inversa intel·ligent basada en angles reals de trajectòria
+    if (state.mode == FollowMode.onTrack &&
+        isNear &&
+        projectedStep > 0 &&
+        headingDiff > 130) {
+      _reverseDistanceOnTrack += projectedStep;
+    } else if (headingDiff < 45 && projectedStep > 0) {
+      _reverseDistanceOnTrack = 0.0;
+    }
+
     // --- NIVELL 2: trending away, heading wrong, offtrack bàsic ---
     bool isTrendingAway = false;
     bool isHeadingWrong = false;
@@ -235,38 +283,42 @@ class NavigationNotifier extends Notifier<NavigationState> {
     if (count >= TrackThresholds.minPositionsLevel2) {
       isTrendingAway = offtrackLogic.isTrendingAway(_lastDistances);
       isHeadingWrong =
-          geometry.headingDifference(closest.bearing, closest.userBearing) > 45;
+          headingDiff > 45; // Actualitzat amb la diferència de trajectòria neta
     }
 
     // --- NIVELL 3: reverse detection, trending robust ---
+    if (_reverseDetectionLocked) {
+      return;
+    }
+
     if (count >= TrackThresholds.minPositionsLevel3 &&
-        state.mode == FollowMode.onTrack &&
-        !_reverseDialogShown &&
-        !_reverseDetectionLocked) {
-      final headingDiff = geometry.headingDifference(
-        closest.bearing,
-        closest.userBearing,
-      );
+        _hasEverBeenOnTrack &&
+        state.mode != FollowMode.offTrack &&
+        _reverseDistanceOnTrack >= TrackThresholds.reverseMinDistance &&
+        !_reverseDialogShown) {
+      final hasReverseSegmentTrend = reverseDetector
+          .isReverseSegmentProgression(_lastSegmentIndices);
 
       if (isNear &&
           headingDiff > 140 &&
+          hasReverseSegmentTrend &&
           reverseDetector.isReverseDirection(closest, _lastUserPositions)) {
-        _reverseDialogShown = true;
         _reverseDetectionLocked = true;
-
+        _reverseDialogShown = true;
         state = state.copyWith(showReverseTrackDialog: true);
-
         return;
       }
     }
 
-    // --- AUTÒMAT D'ESTATS ---
+    // --- AUTÒMAT D'ESTATS (Passant els paràmetres compilats cap avall) ---
     _handleFollowState(
       dist: dist,
       isNear: isNear,
       isFar: isFar,
       isTrendingAway: isTrendingAway,
       isHeadingWrong: isHeadingWrong,
+      calculatedHeading: rumbRealAvanc,
+      closestBearing: closest.bearing,
     );
 
     state = state.copyWith(distanceToTrackLine: dist);
@@ -275,12 +327,17 @@ class NavigationNotifier extends Notifier<NavigationState> {
   // ─────────────────────────────────────────────────────────────
   // 🤖 L'AUTÒMAT D'ESTATS REUBICAT (_handleFollowState)
   // ─────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────
+  // 🤖 L'AUTÒMAT D'ESTATS COORDENAT AMB PARÀMETRES DE SUPORT
+  // ─────────────────────────────────────────────────────────────
   void _handleFollowState({
     required double dist,
     required bool isNear,
     required bool isFar,
     required bool isTrendingAway,
     required bool isHeadingWrong,
+    required double calculatedHeading,
+    required double closestBearing,
   }) {
     final prevMode = state.mode;
     var newMode = prevMode;
@@ -317,8 +374,6 @@ class NavigationNotifier extends Notifier<NavigationState> {
             onUserDriftingAway(dist);
           }
         }
-
-        _hasEverBeenOffTrack = true;
         newMode = FollowMode.offTrack;
         newIsOffTrack = true;
       }
@@ -330,6 +385,7 @@ class NavigationNotifier extends Notifier<NavigationState> {
         _isCurrentlyOffTrack = false;
         newIsOffTrack = false;
       }
+
       // --- SEGON AVÍS OFFTRACK AL CAP D'1 MINUT I SI ESTÀ MÉS LLUNY ---
       if (_isCurrentlyOffTrack &&
           _offTrackFirstAlertTime != null &&
@@ -359,6 +415,18 @@ class NavigationNotifier extends Notifier<NavigationState> {
         prevMode != FollowMode.onTrack && newMode == FollowMode.onTrack;
 
     if (hasEnteredOnTrack) {
+      // 🟢 MODIFICAT: Escut per evitar esborrar els metres fets si continuem anant al revés
+      // Calculem la diferència angular real de reentrada amb la trajectòria de moviment
+      final headingDiffCheck = geometry.headingDifference(
+        closestBearing,
+        calculatedHeading,
+      );
+
+      // Només posem a zero si l'usuari avança realment cap endavant a favor del track (<120°)
+      if (headingDiffCheck < 120) {
+        _reverseDistanceOnTrack = 0.0;
+      }
+
       onUserBackOnTrack();
     }
   }
@@ -429,19 +497,33 @@ class NavigationNotifier extends Notifier<NavigationState> {
     ref.read(importedTrackProvider.notifier).reverseTrack();
 
     _lastUserPositions.clear(); // Borra el rumb antic
+    _lastSegmentIndices.clear();
     _lastProjectedPoint = null;
     _lastDistances.clear();
     _distanceProgressOnTrack = 0.0;
+    _reverseDistanceOnTrack = 0.0;
+    _lastMatchedSegmentIndex = null;
 
     _reverseDialogShown = false;
-    _reverseDetectionLocked = false;
+
+    // 🔥 Reprenem el motor després d’un petit delay
+    Future.delayed(const Duration(seconds: 3), () {
+      _reverseDetectionLocked = false;
+    });
 
     state = state.copyWith(showReverseTrackDialog: false);
   }
 
   void dismissReverseTrackDialog() {
+    _lastUserPositions.clear();
+    _lastSegmentIndices.clear();
+    _lastDistances.clear();
+    _lastProjectedPoint = null;
+    _distanceProgressOnTrack = 0.0;
+    _reverseDistanceOnTrack = 0.0;
+    _lastMatchedSegmentIndex = null;
+
     _reverseDialogShown = false;
-    _reverseDetectionLocked = false;
     state = state.copyWith(showReverseTrackDialog: false);
   }
 
@@ -467,6 +549,25 @@ class NavigationNotifier extends Notifier<NavigationState> {
     if (state.isPaused) {
       _lastProjectedPoint = null;
     }
+  }
+
+  void unlockReverseDetection() {
+    _reverseDetectionLocked = false;
+  }
+
+  // 📐 CALCULA EL RUMB REAL D'AVANÇ ENTRE DOS PUNTS GEOMÈTRICS (MÈTODE HAVERSINE VECTOR)
+  double _calculateHeadingBetweenPoints(LatLng p1, LatLng p2) {
+    final double lat1 = p1.latitude * math.pi / 180;
+    final double lat2 = p2.latitude * math.pi / 180;
+    final double lonDiff = (p2.longitude - p1.longitude) * math.pi / 180;
+
+    final double y = math.sin(lonDiff) * math.cos(lat2);
+    final double x =
+        math.cos(lat1) * math.sin(lat2) -
+        math.sin(lat1) * math.cos(lat2) * math.cos(lonDiff);
+
+    // Converteix el radià resultant a graus positius nítids (0 a 360)
+    return (math.atan2(y, x) * 180 / math.pi + 360) % 360;
   }
 }
 

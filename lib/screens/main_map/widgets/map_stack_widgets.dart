@@ -1,7 +1,8 @@
-// lib/screens/main_map/widgets/map_stack_widgets.dart
+// lib/screens/main_map/widgets/map_stack_widgets.dart (BLOC 1 DE 2)
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
+import 'package:senda/models/track.dart';
 import 'package:senda/notifiers/elevation_selection_provider.dart';
 import 'package:senda/notifiers/helpers/elevation_magnet_helper.dart';
 import 'package:senda/notifiers/imported_track_notifier.dart';
@@ -25,16 +26,58 @@ class MapElevationHud extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // 1️⃣ Escuchamos los estados de grabación e importación de forma directa
+    final realTrack = ref.watch(trackRecordingProvider);
+    final importedTrack = ref.watch(importedTrackProvider);
+    final isRecording = realTrack.recordingState == RecordingState.recording;
+
+    // Si no hay grabación activa, recurrimos al cálculo del provider general de la ruta
     final stats = ref.watch(segmentStatsProvider);
+
+    double finalDistanceMeters = 0.0;
+    double finalAscent = 0.0;
+    double finalDescent = 0.0;
+
+    // Variables locals per calcular el temps i velocitat reals de gravació a mà
+    String finalTimeStr = stats.timeElapsedStr;
+    String finalAvgSpeedStr = stats.avgSpeedStr;
+
+    if (isRecording) {
+      // Llegim les dades ja calculades directament del teu provider
+      finalDistanceMeters = realTrack.stats.distance;
+      finalAscent = realTrack.stats.ascent.roundToDouble();
+      finalDescent = realTrack.stats.descent.roundToDouble();
+
+      // Formatem el temps real en moviment calculat pel provider
+      final movingDuration =
+          realTrack.stats.duration - realTrack.stats.stoppedDuration;
+      final hours = movingDuration.inHours;
+      final minutes = movingDuration.inMinutes.remainder(60);
+
+      if (hours > 0) {
+        finalTimeStr = "${hours}h ${minutes.toString().padLeft(2, '0')}m";
+      } else {
+        finalTimeStr =
+            "${minutes}m ${movingDuration.inSeconds.remainder(60).toString().padLeft(2, '0')}s";
+      }
+
+      // Formatem la velocitat mitjana calculada pel provider
+      finalAvgSpeedStr =
+          "${realTrack.stats.averageSpeed.toStringAsFixed(1)} km/h";
+    } else {
+      finalDistanceMeters = stats.distanceMeters;
+      finalAscent = stats.ascentMeters;
+      finalDescent = stats.descentMeters;
+    }
 
     return Positioned(
       left: 0,
       right: 0,
       bottom: 0.0, // Clavat al fons de la pantalla
       child: Column(
-        mainAxisSize: MainAxisSize.min, // Ocupa només l'espai necessari
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // 📊 EL GRÀFIC D'ELEVACIONS
+          // 📊 EL GRÀFIC D'ELEVACIONS (Que rebrà el flux de dades net sense parpelleigs)
           ElevationPanel(
             isCollapsed: isChartCollapsed,
             onCollapseChanged: (collapsed) {
@@ -44,13 +87,12 @@ class MapElevationHud extends ConsumerWidget {
             },
           ),
 
-          // 🟩 LA BARRA NEGRA D'ESTADÍSTIQUES (A sota, tocant-se directament)
           SegmentStatsWidget(
-            distanceMeters: stats.distanceMeters,
-            timeElapsedStr: stats.timeElapsedStr,
-            avgSpeedStr: stats.avgSpeedStr,
-            ascentMeters: stats.ascentMeters,
-            descentMeters: stats.descentMeters,
+            distanceMeters: finalDistanceMeters,
+            timeElapsedStr: finalTimeStr,
+            avgSpeedStr: finalAvgSpeedStr,
+            ascentMeters: finalAscent,
+            descentMeters: finalDescent,
             onTap: () {
               final newValue = !isChartCollapsed;
               onCollapseChanged(newValue);

@@ -5,7 +5,6 @@ import 'package:senda/l10n/app_localizations.dart';
 import 'package:senda/notifiers/alarm_settings_notifier.dart';
 import 'package:senda/services/permissions_service.dart';
 import 'package:senda/theme/app_colors.dart';
-import 'package:senda/screens/settings/tabs/gps_settings_tab.dart'; // Per si utilitzes el SectionTitle heretat
 
 class AlarmSettingsTab extends ConsumerStatefulWidget {
   const AlarmSettingsTab({super.key});
@@ -160,7 +159,14 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
                     progressValue,
                     isAccMode ? Icons.trending_up : Icons.layers,
                     () {
-                      ref.read(alarmEngineProvider).sounds.playAltitudeAlarm();
+                      if (isAccMode) {
+                        ref
+                            .read(alarmEngineProvider)
+                            .sounds
+                            .playAccumulatedAlarm();
+                      } else {
+                        ref.read(alarmEngineProvider).sounds.playCotaAlarm();
+                      }
                     },
                   );
                 },

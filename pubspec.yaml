@@ -97,6 +97,7 @@ flutter:
     - assets/sound/five_door_knocks.mp3
     - assets/sound/sonar_sound.mp3
     - assets/sound/owl_sound.mp3
+    - assets/sound/cardinal_sound.mp3
     - assets/sound/beep_sound.mp3
     - assets/icon/waypoint.png
     - assets/icon/waypoint_imported.png

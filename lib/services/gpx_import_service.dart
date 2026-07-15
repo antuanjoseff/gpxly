@@ -1,12 +1,12 @@
 // lib/services/gpx_import_service.dart
+import 'dart:math' as math;
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gpx/gpx.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
-// Models immutables refactoritzats
 import 'package:senda/models/track.dart';
 import 'package:senda/models/user_position.dart';
 import 'package:senda/models/waypoint.dart';
-// Providers i utilitats existents de la teva aplicació
 import 'package:senda/notifiers/imported_track_notifier.dart';
 import 'package:senda/notifiers/waypoints_imported_notifier.dart';
 import 'package:senda/utils/calculations.dart';
@@ -25,7 +25,6 @@ class GpxImportService {
     final gpxPoints = gpx.trks.first.trksegs.first.trkpts;
     if (gpxPoints.isEmpty) return;
 
-    final alts = <double>[];
     final loadedPoints = <UserPosition>[];
     double accumulatedDistance = 0.0;
 
@@ -33,25 +32,20 @@ class GpxImportService {
     double minLon = 180.0, maxLon = -180.0;
     double minEle = double.infinity, maxEle = -double.infinity;
 
-    // 🚀 NOVES VARIABLES PER ALS ATRIBUTS OBLIDATS
     double maxSpeed = 0.0;
 
     double? lastLat;
     double? lastLon;
-    DateTime?
-    lastTime; // 🚀 Per mesurar el temps entre punts i trobar la velocitat
+    DateTime? lastTime;
 
-    // 1. PARSEJAR I MAPEAR EL CORRENT DE PUNTS (TRACK)
     for (int i = 0; i < gpxPoints.length; i++) {
       final p = gpxPoints[i];
-      if (p.lat == null || p.lon == null) continue;
+      if (p.lat == null || p.lon == null || p.time == null) continue;
 
       final currentLat = p.lat!;
       final currentLon = p.lon!;
       final currentAlt = p.ele ?? 0.0;
       final normalizedTime = truncateSeconds(p.time!.toLocal());
-
-      alts.add(currentAlt);
 
       if (currentLat < minLat) minLat = currentLat;
       if (currentLat > maxLat) maxLat = currentLat;
@@ -60,10 +54,9 @@ class GpxImportService {
       if (currentAlt < minEle) minEle = currentAlt;
       if (currentAlt > maxEle) maxEle = currentAlt;
 
-      double segmentSpeed = 0.0; // Velocitat calculada per a aquest punt
+      double segmentSpeed = 0.0;
 
       if (i > 0 && lastLat != null && lastLon != null && lastTime != null) {
-        // Calculem els metres fets en aquest pas
         final double distanceDelta = haversineDistance(
           lastLat,
           lastLon,
@@ -72,23 +65,21 @@ class GpxImportService {
         );
         accumulatedDistance += distanceDelta;
 
-        // Calculem el temps passat en segons
         final int timeDeltaSeconds = normalizedTime
             .difference(lastTime)
             .inSeconds;
 
-        // 🚀 CÀLCUL DE LA VELOCITAT DINÀMICA DEL PUNT
         if (timeDeltaSeconds > 0) {
-          segmentSpeed = distanceDelta / timeDeltaSeconds; // m/s
+          segmentSpeed = distanceDelta / timeDeltaSeconds;
           if (segmentSpeed > maxSpeed) {
-            maxSpeed = segmentSpeed; // Guardem el pic més alt
+            maxSpeed = segmentSpeed;
           }
         }
       }
 
       lastLat = currentLat;
       lastLon = currentLon;
-      lastTime = normalizedTime; // Guardem el temps per a la següent iteració
+      lastTime = normalizedTime;
 
       loadedPoints.add(
         UserPosition(
@@ -98,8 +89,7 @@ class GpxImportService {
           timestamp: normalizedTime,
           accuracy: 0.0,
           vAccuracy: 0.0,
-          speed:
-              segmentSpeed, // 🚀 ARA SÍ: Cada punt guarda la seva velocitat calculada
+          speed: segmentSpeed,
           heading: 0.0,
           satellites: p.sat ?? 0,
           distanceAtPoint: accumulatedDistance,
@@ -109,6 +99,44 @@ class GpxImportService {
 
     if (loadedPoints.isEmpty) return;
 
+    // 1) Simplificació Douglas–Peucker
+    final simplifiedPoints = simplifyTrack(loadedPoints, 4.0);
+    if (simplifiedPoints.isEmpty) return;
+
+    // 2) Recalcular distància acumulada sobre el track simplificat
+    double acc = 0.0;
+    for (int i = 0; i < simplifiedPoints.length; i++) {
+      if (i > 0) {
+        acc += haversineDistance(
+          simplifiedPoints[i - 1].position.latitude,
+          simplifiedPoints[i - 1].position.longitude,
+          simplifiedPoints[i].position.latitude,
+          simplifiedPoints[i].position.longitude,
+        );
+      }
+      simplifiedPoints[i] = simplifiedPoints[i].copyWith(distanceAtPoint: acc);
+    }
+
+    // 3) Bounds recalculats sobre el track simplificat
+    minLat = simplifiedPoints
+        .map((p) => p.position.latitude)
+        .reduce((a, b) => a < b ? a : b);
+    maxLat = simplifiedPoints
+        .map((p) => p.position.latitude)
+        .reduce((a, b) => a > b ? a : b);
+    minLon = simplifiedPoints
+        .map((p) => p.position.longitude)
+        .reduce((a, b) => a < b ? a : b);
+    maxLon = simplifiedPoints
+        .map((p) => p.position.longitude)
+        .reduce((a, b) => a > b ? a : b);
+    minEle = simplifiedPoints
+        .map((p) => p.altitude)
+        .reduce((a, b) => a < b ? a : b);
+    maxEle = simplifiedPoints
+        .map((p) => p.altitude)
+        .reduce((a, b) => a > b ? a : b);
+
     print(
       ">>> INDESTRUCTIBLE GPX BOUNDS: "
       "minLat=$minLat, maxLat=$maxLat, "
@@ -116,36 +144,36 @@ class GpxImportService {
     );
 
     Duration totalDuration = Duration.zero;
-    if (loadedPoints.length > 1) {
-      totalDuration = loadedPoints.last.timestamp.difference(
-        loadedPoints.first.timestamp,
+    if (simplifiedPoints.length > 1) {
+      totalDuration = simplifiedPoints.last.timestamp.difference(
+        simplifiedPoints.first.timestamp,
       );
     }
 
-    // 🚀 CÀLCUL FINAL DE LA VELOCITAT MITJANA (m/s)
     double averageSpeed = 0.0;
     if (totalDuration.inSeconds > 0) {
-      averageSpeed = accumulatedDistance / totalDuration.inSeconds;
+      averageSpeed = acc / totalDuration.inSeconds;
     }
 
-    final ascent = computeAscent(alts);
-    final descent = computeDescent(alts);
+    final simplifiedAlts = simplifiedPoints
+        .map((p) => p.altitude)
+        .toList(growable: false);
+    final ascent = computeAscent(simplifiedAlts);
+    final descent = computeDescent(simplifiedAlts);
 
-    // 3. CONSTRUCCIÓ DE L'ESTAT CENTRAL DEL TRACK
     final importedTrack = Track(
-      points: loadedPoints,
+      points: simplifiedPoints,
       recordingState: RecordingState.idle,
       stats: TrackStats(
         duration: totalDuration,
-        stoppedDuration: Duration
-            .zero, // Es queda a zero de manera conscient (manca d'acceleròmetre al fitxer)
-        distance: accumulatedDistance,
+        stoppedDuration: Duration.zero,
+        distance: acc,
         ascent: ascent,
         descent: descent,
         maxElevation: maxEle == -double.infinity ? 0.0 : maxEle,
         minElevation: minEle == double.infinity ? 0.0 : minEle,
-        averageSpeed: averageSpeed, // 🚀 ENLLAÇAT CORRECTAMENT
-        maxSpeed: maxSpeed, // 🚀 ENLLAÇAT CORRECTAMENT
+        averageSpeed: averageSpeed,
+        maxSpeed: maxSpeed,
         minLat: minLat,
         maxLat: maxLat,
         minLon: minLon,
@@ -155,17 +183,13 @@ class GpxImportService {
 
     ref.read(importedTrackProvider.notifier).setTrack(importedTrack);
 
-    // ─────────────────────────────────────────────────
-    // 4. PARSEJAR WAYPOINTS SENSE COL·LAPSE GEOMÈTRIC
-    // ─────────────────────────────────────────────────
-    // ✅ OPTIMITZACIÓ DE CERCA: En lloc d'usar 'importedTrack.coordinates' que demana getters
-    // dinàmics i simula vectors a cada volta del bucle, llegim directament la llista compacta 'loadedPoints' en RAM.
+    // 4) Waypoints sobre el track simplificat
     int findClosestTrackIndex(double wpLat, double wpLon) {
       double minDist = double.infinity;
       int minIndex = 0;
 
-      for (int i = 0; i < loadedPoints.length; i++) {
-        final pos = loadedPoints[i].position;
+      for (int i = 0; i < simplifiedPoints.length; i++) {
+        final pos = simplifiedPoints[i].position;
         final d = haversineDistance(wpLat, wpLon, pos.latitude, pos.longitude);
 
         if (d < minDist) {
@@ -182,7 +206,7 @@ class GpxImportService {
       if (w.lat == null || w.lon == null) continue;
 
       final closestIndex = findClosestTrackIndex(w.lat!, w.lon!);
-      final targetPoint = loadedPoints[closestIndex];
+      final targetPoint = simplifiedPoints[closestIndex];
 
       importedWaypoints.add(
         Waypoint(
@@ -213,5 +237,61 @@ class GpxImportService {
       0,
       0,
     );
+  }
+
+  static List<UserPosition> simplifyTrack(
+    List<UserPosition> points,
+    double toleranceMeters,
+  ) {
+    if (points.length < 3) return points;
+
+    double perpendicularDistance(
+      UserPosition p,
+      UserPosition start,
+      UserPosition end,
+    ) {
+      final x0 = p.position.longitude;
+      final y0 = p.position.latitude;
+      final x1 = start.position.longitude;
+      final y1 = start.position.latitude;
+      final x2 = end.position.longitude;
+      final y2 = end.position.latitude;
+
+      final num = ((y2 - y1) * x0) - ((x2 - x1) * y0) + (x2 * y1) - (y2 * x1);
+      final den = math.sqrt(math.pow(y2 - y1, 2) + math.pow(x2 - x1, 2));
+
+      if (den == 0) {
+        return haversineDistance(
+          p.position.latitude,
+          p.position.longitude,
+          start.position.latitude,
+          start.position.longitude,
+        );
+      }
+      return (num.abs() / den) * 111320.0;
+    }
+
+    List<UserPosition> dp(List<UserPosition> pts) {
+      double maxDist = 0.0;
+      int index = 0;
+
+      for (int i = 1; i < pts.length - 1; i++) {
+        final d = perpendicularDistance(pts[i], pts.first, pts.last);
+        if (d > maxDist) {
+          maxDist = d;
+          index = i;
+        }
+      }
+
+      if (maxDist > toleranceMeters) {
+        final left = dp(pts.sublist(0, index + 1));
+        final right = dp(pts.sublist(index, pts.length));
+        return [...left, ...right.skip(1)];
+      } else {
+        return [pts.first, pts.last];
+      }
+    }
+
+    return dp(points);
   }
 }

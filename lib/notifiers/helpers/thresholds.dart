@@ -1,5 +1,6 @@
 class TrackThresholds {
   static const double nearThreshold = 10;
+  static const double nearReverseThreshold = 20;
   static const double farThreshold = 35;
   static const int trendWindow = 6;
   static const Duration offTrackDelay = Duration(seconds: 20);
@@ -10,10 +11,15 @@ class TrackThresholds {
   static const double navGpsAccuracy = 20.0;
 
   // Reverse detection
-  static const double reverseMinDistance = 20;
+  static const double reverseMinDistance = 60;
+  static const double reverseRecentMovementDistance = 20;
+  static const int reverseSegmentWindow = 10;
+  static const int reverseMinNegativeSteps = 6;
+  static const int reverseMinDeltaSum = 4;
 
   // Buffer de posicions
   static const int lastNPositions = 10;
+  static const int mapMatchSegmentWindow = 80;
 
   // 🔥 Nous paràmetres
   static const int minPositionsLevel2 =
@@ -30,6 +36,9 @@ class TrackThresholds {
 
   // Gràfic d'elevacions
   static const double futureTrackVisibility = 0.3; // 30% of axis
+
+  // Submenús del menú inferior
+  static const Duration submenuAutoHideDelay = Duration(seconds: 4);
 
   // LÍMIT MÀXIM D'ARXIUS COG PERSISTENTS A DISC
   static const int maxPersistentFiles = 10;
