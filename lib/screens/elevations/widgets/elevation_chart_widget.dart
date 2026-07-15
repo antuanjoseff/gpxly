@@ -495,7 +495,9 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
     }) {
       return LineChartBarData(
         spots: spots,
-        isCurved: false,
+        isCurved: true,
+        curveSmoothness: 0.4,
+        preventCurveOverShooting: false,
         isStrokeCapRound: true,
         barWidth: 3,
         dotData: const FlDotData(show: false),
@@ -605,7 +607,9 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
         if (!showRangeArea && allSpots.isNotEmpty)
           LineChartBarData(
             spots: allSpots,
-            isCurved: false,
+            isCurved: true,
+            curveSmoothness: 0.4,
+            preventCurveOverShooting: false,
             barWidth: 0,
             dotData: const FlDotData(show: false),
             belowBarData: BarAreaData(
@@ -618,7 +622,9 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
         if (showRangeArea && rangeSelectedSpots.isNotEmpty)
           LineChartBarData(
             spots: rangeSelectedSpots,
-            isCurved: false,
+            isCurved: true,
+            curveSmoothness: 0.4,
+            preventCurveOverShooting: false,
             barWidth: 0,
             dotData: const FlDotData(show: false),
             belowBarData: BarAreaData(
