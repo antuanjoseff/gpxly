@@ -1,6 +1,8 @@
 // lib/notifiers/imported_track_notifier.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/models/track.dart';
+import 'package:senda/models/user_position.dart';
+import 'package:senda/utils/geo_utils.dart';
 
 class ImportedTrackNotifier extends Notifier<Track?> {
   // Guardem de forma efímera fins a quin punt hem de dibuixar al mapa
@@ -60,7 +62,29 @@ class ImportedTrackNotifier extends Notifier<Track?> {
     if (t == null || t.points.isEmpty) return;
 
     _simulationIndex = -1;
-    state = t.copyWith(points: t.points.reversed.toList());
+    final reversedPoints = _recomputeCumulativeDistances(
+      t.points.reversed.toList(),
+    );
+    state = t.copyWith(points: reversedPoints);
+  }
+
+  List<UserPosition> _recomputeCumulativeDistances(List<UserPosition> points) {
+    double acc = 0.0;
+    final rebuilt = <UserPosition>[];
+
+    for (int i = 0; i < points.length; i++) {
+      if (i > 0) {
+        acc += haversineDistance(
+          points[i - 1].position.latitude,
+          points[i - 1].position.longitude,
+          points[i].position.latitude,
+          points[i].position.longitude,
+        );
+      }
+      rebuilt.add(points[i].copyWith(distanceAtPoint: acc));
+    }
+
+    return rebuilt;
   }
 }
 

@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/l10n/app_localizations.dart';
+import 'package:senda/models/track.dart';
 import 'package:senda/models/waypoint.dart';
 import 'package:senda/notifiers/elevation_selection_provider.dart';
 import 'package:senda/notifiers/imported_track_notifier.dart';
@@ -29,42 +30,28 @@ class ElevationProfileScreen extends ConsumerStatefulWidget {
 
 class _ElevationProfileScreenState
     extends ConsumerState<ElevationProfileScreen> {
-  int? selectedIndexStart;
-  int? selectedIndexEnd;
   int? selectedIndexGraph;
-
-  // 🚨 AIXÒ SÓN LES DUES LÍNIES QUE HEM AFEGIT NOSALTRES AL SEU COSTAT:
   int? _prevWpIndex;
   int? _lastWpIndex;
-  void _onToggleWaypoint(
-    Waypoint wp,
-    Set<int> allWpIndexes,
-    List<double> globalDists,
-  ) {
-    final int idx = wp.trackIndex;
 
+  // 🟢 FUNCIÓ DE SELECCIÓ CORREGIDA: Comunica l'estat directament al provider global
+  void _onToggleWaypoint(Waypoint wp, Set<int> allWpIndexes) {
     setState(() {
       selectedIndexGraph = null; // Neteja la línia flotant
-
-      // PROVA DE MOVIMENT DIRECTE:
-      // Clavem el waypoint directament a l'inici per comprovar si el gràfic respon
-      selectedIndexStart = idx;
-      selectedIndexEnd =
-          idx + 5; // Fem una selecció simulada de 5 punts per dibuixar un tram
     });
+    ref
+        .read(elevationSelectionProvider.notifier)
+        .toggleWaypoint(wp.trackIndex, allWpIndexes);
   }
 
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context)!;
-
-    // 🚨 LLEGIM EL PROVIDER DE SELECCIÓ COMPARTIT
-    // 🟢 SOLUCIÓ: Llegim les propietats directes de l'objecte d'estat unificat
+    final recordingState = ref.watch(trackRecordingProvider).recordingState;
+    // 🚨 LLEGIM EL PROVIDER DE SELECCIÓ COMPARTIT COM A VARIABLES FINALS DE REDIBUIX
     final selection = ref.watch(elevationSelectionProvider);
-    final int? currentStart = selection.startTrackIndex;
-    final int? currentEnd = selection.endTrackIndex;
-    selectedIndexStart = selection.startTrackIndex;
-    selectedIndexEnd = selection.endTrackIndex;
+    final int? selectedIndexStart = selection.startTrackIndex;
+    final int? selectedIndexEnd = selection.endTrackIndex;
 
     // Escuchadores de datos de Riverpod
     final real = ref.watch(trackRecordingProvider);
@@ -74,60 +61,78 @@ class _ElevationProfileScreenState
 
     final realAlts = real.altitudes;
     final realDists = real.distances;
+    final bool isRecording = real.recordingState == RecordingState.recording;
+    final importedDists = calculateDistances(imported?.coordinates ?? []);
 
     final double pastLastDist = realDists.isNotEmpty ? realDists.last : 0.0;
-    final bool shouldShowFuture =
+    final bool isFollowingOnTrack =
         follow.isFollowing && !follow.isOffTrack && remaining != null;
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // 🆕 LÒGICA DE FINESTRA ASIMÈTRICA: MODIFICADES NOMÉS LES ALÇADES FUTURES
-    // ─────────────────────────────────────────────────────────────────────────
+    // Dades efectives del gràfic segons mode
+    // Dades efectives del gràfic segons mode
+    late List<double> chartPastAlts;
+    late List<double> chartPastDists;
     late List<double> futureAlts;
     late List<double> futureDistsGlobal;
 
-    if (shouldShowFuture) {
-      // Proporción exacta para que el futuro ocupe siempre el 25% de la gráfica visible
-      final double maxFutureDistanceVisible = pastLastDist / 3.0;
+    if (isRecording && isFollowingOnTrack) {
+      print("🔍 [MODE PERFIL] Actiu: GRAVAR + SEGUIR (Mixt)");
+      chartPastAlts = realAlts;
+      chartPastDists = realDists;
 
       final remainingAlts = remaining.altitudes;
       final remainingDists = remaining.distances;
 
-      // 🧮 CALCULEM L'OFFSET ENTRE L'ÚLTIM PUNT REAL I EL PRIMER FUTUR
       double elevationOffset = 0.0;
       if (realAlts.isNotEmpty && remainingAlts.isNotEmpty) {
         elevationOffset = realAlts.last - remainingAlts.first;
       }
 
-      final List<double> tempFutureAlts = [];
-      final List<double> tempFutureDists = [];
+      futureAlts = [
+        for (int i = 0; i < remainingAlts.length; i++)
+          remainingAlts[i] + elevationOffset,
+      ];
 
-      for (int i = 0; i < remainingDists.length; i++) {
-        // Solo añadimos los puntos del futuro que entran dentro de este 25% espacial
-        if (remainingDists[i] <= maxFutureDistanceVisible) {
-          // Apliquem l'offset sumant la diferència a cada punt futur per evitar el graó
-          tempFutureAlts.add(remainingAlts[i] + elevationOffset);
-          tempFutureDists.add(pastLastDist + remainingDists[i]);
-        } else {
-          break; // Ventana llena, detenemos el bucle
-        }
-      }
-
-      futureAlts = tempFutureAlts;
-      futureDistsGlobal = tempFutureDists;
+      futureDistsGlobal = [
+        for (int i = 0; i < remainingDists.length; i++)
+          pastLastDist + remainingDists[i] + (i == 0 ? 0.001 : 0.0),
+      ];
+    } else if (isRecording && imported != null) {
+      print("🔍 [MODE PERFIL] Actiu: GRAVAR + TRACK IMPORTAT PASSIU");
+      chartPastAlts = realAlts;
+      chartPastDists = realDists;
+      futureAlts = imported.altitudes;
+      futureDistsGlobal = importedDists;
+    } else if (isRecording) {
+      print("🔍 [MODE PERFIL] Actiu: NOMÉS GRAVAR (Sense res més)");
+      chartPastAlts = realAlts;
+      chartPastDists = realDists;
+      futureAlts = const [];
+      futureDistsGlobal = const [];
+    } else if (follow.isFollowing && imported != null) {
+      print("🔍 [MODE PERFIL] Actiu: NOMÉS SEGUIR");
+      chartPastAlts = const [];
+      chartPastDists = const [];
+      futureAlts = imported.altitudes;
+      futureDistsGlobal = importedDists;
     } else {
-      // Si no hay navegación activa, mostramos la ruta de referencia completa
-      final importedDists = calculateDistances(imported?.coordinates ?? []);
+      print(
+        "🔍 [MODE PERFIL] Actiu: REPÒS / INICIAL (imported: ${imported != null})",
+      );
+      chartPastAlts = realAlts;
+      chartPastDists = realDists;
       futureAlts = imported?.altitudes ?? [];
       futureDistsGlobal = importedDists;
     }
 
-    // Unificamos las listas filtradas para el eje global de coordenadas
-    final globalDists = <double>[...realDists, ...futureDistsGlobal];
-    final globalAlts = <double>[...realAlts, ...futureAlts];
+    final globalDists = <double>[...chartPastDists, ...futureDistsGlobal];
+    final globalAlts = <double>[...chartPastAlts, ...futureAlts];
 
-    // ─────────────────────────────────────────────
-    // 3) WAYPOINTS
-    // ─────────────────────────────────────────────
+    print(
+      "📊 [MÈTODE BUILD] globalDists length: ${globalDists.length}, maxDist detectada: ${globalDists.isNotEmpty ? globalDists.last : 'buida'}",
+    );
+
+    // WAYPOINTS
     final recordedWps = ref.watch(waypointsProvider);
     final importedWps = ref.watch(importedWaypointsProvider);
 
@@ -141,14 +146,7 @@ class _ElevationProfileScreenState
 
     final importedWaypointGlobalDists = <double>[];
 
-    if (!shouldShowFuture) {
-      final importedDists = calculateDistances(imported?.coordinates ?? []);
-      for (final wp in importedWps) {
-        if (wp.trackIndex < importedDists.length) {
-          importedWaypointGlobalDists.add(importedDists[wp.trackIndex]);
-        }
-      }
-    } else {
+    if (isRecording && isFollowingOnTrack) {
       for (final wp in importedWps) {
         final idx = wp.trackIndex;
         if (idx < remaining.anchorIndex) continue;
@@ -160,49 +158,65 @@ class _ElevationProfileScreenState
           );
         }
       }
+    } else if (!isRecording) {
+      for (final wp in importedWps) {
+        if (wp.trackIndex < importedDists.length) {
+          importedWaypointGlobalDists.add(importedDists[wp.trackIndex]);
+        }
+      }
     }
 
-    final hasReal = realAlts.isNotEmpty;
+    final hasReal = chartPastAlts.isNotEmpty;
     final hasFuture = futureAlts.isNotEmpty;
-
-    // ─────────────────────────────────────────────
-    // 5) ESTADÍSTIQUES DEL TRAM SELECCIONAT
-    // ─────────────────────────────────────────────
+    // lib/screens/elevations/elevation_profile_screen.dart (BLOC 2 DE 2)
+    // ESTADÍSTIQUES DEL TRAM SELECCIONAT
     double? rangeDistance;
     double? rangeAscent;
     double? rangeDescent;
     Duration? rangeTime;
 
-    if (selectedIndexStart != null && selectedIndexEnd != null) {
-      final start = selectedIndexStart!;
-      final end = selectedIndexEnd!;
+    if (selectedIndexStart != null &&
+        selectedIndexEnd != null &&
+        globalDists.isNotEmpty &&
+        globalAlts.isNotEmpty) {
+      final start = selectedIndexStart;
+      final end = selectedIndexEnd;
+      if (start < 0 || end < 0) {
+        rangeDistance = null;
+      } else {
+        final safeStart = start.clamp(0, globalDists.length - 1);
+        final safeEnd = end.clamp(0, globalDists.length - 1);
+        final rangeStart = safeStart < safeEnd ? safeStart : safeEnd;
+        final rangeEnd = safeStart > safeEnd ? safeStart : safeEnd;
 
-      rangeDistance = (globalDists[end] - globalDists[start]).abs();
+        rangeDistance = (globalDists[rangeEnd] - globalDists[rangeStart]).abs();
 
-      double ascent = 0;
-      double descent = 0;
+        double ascent = 0;
+        double descent = 0;
 
-      for (int i = start + 1; i <= end; i++) {
-        final diff = globalAlts[i] - globalAlts[i - 1];
-        if (diff > 0) ascent += diff;
-        if (diff < 0) descent += diff.abs();
-      }
+        for (int i = rangeStart + 1; i <= rangeEnd; i++) {
+          final diff = globalAlts[i] - globalAlts[i - 1];
+          if (diff > 0) ascent += diff;
+          if (diff < 0) descent += diff.abs();
+        }
 
-      rangeAscent = ascent;
-      rangeDescent = descent;
+        rangeAscent = ascent;
+        rangeDescent = descent;
 
-      if (real.timestamps.length > end && real.timestamps.length > start) {
-        final t0 = real.timestamps[start];
-        final t1 = real.timestamps[end];
-        rangeTime = t1.difference(t0);
+        if (real.timestamps.length > rangeEnd &&
+            real.timestamps.length > rangeStart) {
+          final t0 = real.timestamps[rangeStart];
+          final t1 = real.timestamps[rangeEnd];
+          rangeTime = t1.difference(t0);
+        }
       }
     }
 
-    // 1. 🚨 ENGANXA AIXÒ AQUÍ (Just a sobre del return Scaffold)
     final Set<int> allWpIndexes = {
       ...recordedWps.map((w) => w.trackIndex),
       ...importedWps.map((w) => w.trackIndex),
     };
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F7),
       appBar: AppBar(
@@ -241,23 +255,17 @@ class _ElevationProfileScreenState
                 ),
               ],
             ),
-            // 🟢 MODIFICACIÓ PRECISA: El gràfic passa a ocupar exactament el 20% de la pantalla
             height:
                 MediaQuery.of(context).size.height *
                 AppDimensions.elevationChartHeightRatio,
             child: ElevationChartWidget(
-              // 🟢 CLAU ESTÀTICA TOTALMENT FIXA: Es manté per evitar el redibuix de la GPU
-              key: const ValueKey("elevation_chart_static_pure"),
-              pastAlts: realAlts,
-              pastDists: realDists,
+              // key: const ValueKey("elevation_chart_static_pure"),
+              pastAlts: chartPastAlts,
+              pastDists: chartPastDists,
               futureAlts: futureAlts,
               futureDistsGlobal: futureDistsGlobal,
-
-              // 🟢 DADES GEOMÈTRIQUES DE LA RUTA I WAYPOINTS
               recordedWaypointGlobalDists: recordedWaypointGlobalDists,
               importedWaypointGlobalDists: importedWaypointGlobalDists,
-
-              // 🟢 ESTILS VISUALS EN PARÀMETRE
               realColor: trackColor,
               importedColor: importedTrackColor,
               graphNeedleColor: AppColors.primary,
@@ -285,7 +293,6 @@ class _ElevationProfileScreenState
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Título de la sección del tramo
                     Text(
                       t.statRangeSelectedTitle,
                       style: const TextStyle(
@@ -295,8 +302,6 @@ class _ElevationProfileScreenState
                       ),
                     ),
                     const SizedBox(height: 12),
-
-                    // Distancia del tramo
                     Text(
                       "${t.statRangeDistance}: ${(rangeDistance / 1000).toStringAsFixed(2)} km",
                       style: const TextStyle(
@@ -305,8 +310,6 @@ class _ElevationProfileScreenState
                       ),
                     ),
                     const SizedBox(height: 4),
-
-                    // Desnivel positivo acumulado del tramo
                     Text(
                       "${t.statRangeAscent}: ${rangeAscent!.toStringAsFixed(0)} m",
                       style: const TextStyle(
@@ -315,8 +318,6 @@ class _ElevationProfileScreenState
                       ),
                     ),
                     const SizedBox(height: 4),
-
-                    // Desnivel negativo acumulado del tramo
                     Text(
                       "${t.statRangeDescent}: ${rangeDescent!.toStringAsFixed(0)} m",
                       style: const TextStyle(
@@ -324,34 +325,29 @@ class _ElevationProfileScreenState
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    const SizedBox(height: 4),
-
-                    // Tiempo invertido en el tramo
-                    if (rangeTime != null)
+                    if (rangeTime != null) ...[
+                      const SizedBox(height: 4),
                       Text(
                         "${t.statRangeTime}: ${rangeTime.inMinutes} min",
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
+                        style: const TextStyle(fontSize: 14),
                       ),
+                    ],
                   ],
                 ),
               ),
             ),
           ],
 
-          // ... a la part inferior del teu mètode build:
-          WaypointsListWidget(
-            recorded: recordedWps,
-            imported: importedWps,
-            selectedStartIndex: selectedIndexStart,
-            selectedEndIndex: selectedIndexEnd,
-            onToggleWaypoint: (wp) => ref
-                .read(elevationSelectionProvider.notifier)
-                .toggleWaypoint(wp.trackIndex, allWpIndexes),
+          // 🟢 SOLUCIÓ EXPANSIÓ: S'afegeix Expanded per permetre que la llista faci scroll vertical sense trencar el viewport de la Column
+          Expanded(
+            child: WaypointsListWidget(
+              recorded: recordedWps,
+              imported: importedWps,
+              selectedStartIndex: selectedIndexStart,
+              selectedEndIndex: selectedIndexEnd,
+              onToggleWaypoint: (wp) => _onToggleWaypoint(wp, allWpIndexes),
+            ),
           ),
-
           const SizedBox(height: 40),
         ],
       ),

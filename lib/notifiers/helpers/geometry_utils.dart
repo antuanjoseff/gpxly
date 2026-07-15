@@ -6,8 +6,10 @@ class TrackGeometryUtils {
   ClosestResult closestPointAndSegment(
     LatLng p,
     List<LatLng> track,
-    List<LatLng> lastUserPositions,
-  ) {
+    List<LatLng> lastUserPositions, {
+    int? preferredSegmentIndex,
+    int segmentSearchWindow = 0,
+  }) {
     double minDist = double.infinity;
     double segmentBearing = 0;
     double userBearing = 0;
@@ -16,7 +18,25 @@ class TrackGeometryUtils {
 
     LatLng? bestProj;
 
-    for (int i = 0; i < track.length - 1; i++) {
+    final int maxSegment = track.length - 2;
+    int startSegment = 0;
+    int endSegment = maxSegment;
+
+    if (preferredSegmentIndex != null &&
+        segmentSearchWindow > 0 &&
+        maxSegment >= 0) {
+      final clampedPreferred = preferredSegmentIndex.clamp(0, maxSegment);
+      startSegment = (clampedPreferred - segmentSearchWindow).clamp(
+        0,
+        maxSegment,
+      );
+      endSegment = (clampedPreferred + segmentSearchWindow).clamp(
+        0,
+        maxSegment,
+      );
+    }
+
+    for (int i = startSegment; i <= endSegment; i++) {
       final a = track[i];
       final b = track[i + 1];
 

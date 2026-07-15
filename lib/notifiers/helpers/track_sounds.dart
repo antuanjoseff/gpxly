@@ -46,7 +46,7 @@ class TrackSounds {
     try {
       final fileName = _random.nextInt(2) == 0
           ? 'sound/five_door_knocks.mp3'
-          : 'sound/metal_hammer';
+          : 'sound/metal_hammer.mp3';
 
       await player.play(AssetSource(fileName), volume: 1.0, ctx: _alarmContext);
     } catch (e) {
@@ -78,10 +78,22 @@ class TrackSounds {
     }
   }
 
-  Future<void> playAltitudeAlarm() async {
+  Future<void> playCotaAlarm() async {
     try {
       await player.play(
         AssetSource('sound/owl_sound.mp3'),
+        volume: 1.0,
+        ctx: _alarmContext,
+      );
+    } catch (e) {
+      print("Error playing altitude alarm: $e");
+    }
+  }
+
+  Future<void> playAccumulatedAlarm() async {
+    try {
+      await player.play(
+        AssetSource('sound/cardinal_sound.mp3'),
         volume: 1.0,
         ctx: _alarmContext,
       );
