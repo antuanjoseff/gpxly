@@ -335,8 +335,14 @@ class NavigationNotifier extends Notifier<NavigationState> {
             TrackThresholds.reverseBackwardTriggerMeters &&
         !_reverseDialogShown) {
       if (isNear) {
+        // 1. Bloquegem immediatament el motor per evitar esdeveniments seqüencials
         _reverseDetectionLocked = true;
         _reverseDialogShown = true;
+
+        // 2. 🔊 DISPAREM EL SO AQUÍ (Funciona a la butxaca a l'acte!)
+        sounds.playReversedTrackSound();
+
+        // 3. Notifiquem a la UI que caldrà mostrar el diàleg en tornar
         state = state.copyWith(showReverseTrackDialog: true);
         return;
       }

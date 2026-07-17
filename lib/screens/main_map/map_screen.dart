@@ -909,32 +909,28 @@ class _MapScreenState extends ConsumerState<MapScreen>
     });
 
     // OIENT 9
+    // OIENT 9: DIÀLEG INTERACTIU DE RUMB INVERS
     ref.listen<NavigationState>(navigationProvider, (prev, next) async {
-      // 🛡️ CONTROL INICIAL CRÍTIC: Evitem utilitzar el context si la pantalla ja no existeix
+      // 🛡️ CONTROL INICIAL CRÍTIC: Si la pantalla s'ha tancat, avortem
       if (!mounted) return;
 
+      // Només actuem si el motor demana el diàleg i la UI no el té ja obert
       if (next.showReverseTrackDialog && !_isShowingReverseDialog) {
         _isShowingReverseDialog = true;
-
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          // 🛡️ Re-comprovació dins del callback de fotograma per si de cas
-          if (!mounted) return;
-          ref.read(navigationProvider.notifier).sounds.playReversedTrackSound();
-        });
 
         // 🛡️ Guardem el resultat del diàleg envoltat de seguretat
         bool? accept;
         try {
+          // El diàleg s'obrirà només quan l'app estigui en foreground.
+          // Si està en background, s'esperarà aquí de forma segura sense congelar el so.
           accept = await AppMessages.showReverseTrackDialog(context);
         } catch (e) {
-          print(
-            "Error al mostrar el diàleg de ruta inversa (pantalla tancada): $e",
-          );
+          print("Error al mostrar el diàleg de ruta inversa: $e");
           _isShowingReverseDialog = false;
           return;
         }
 
-        // 🛡️ RE-COMPROVACIÓ POST-AWAIT: Crucial! L'usuari ha pogut tancar la pantalla mentre mirava el diàleg
+        // 🛡️ RE-COMPROVACIÓ POST-AWAIT: L'usuari ha pogut tancar la pantalla mentre mirava el diàleg
         if (!mounted) return;
 
         if (accept == true) {
@@ -942,7 +938,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
         } else {
           ref.read(navigationProvider.notifier).dismissReverseTrackDialog();
         }
-        ref.read(navigationProvider.notifier).unlockReverseDetection();
+
+        // Alliberem el control local de la UI
         _isShowingReverseDialog = false;
       }
     });
