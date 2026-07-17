@@ -11,9 +11,15 @@ class TrackThresholds {
   static const double navGpsAccuracy = 20.0;
 
   // Reverse detection
-  static const double reverseMinDistance = 60;
+  static const double reverseBackwardTriggerMeters = 40;
+  static const double reverseDeltaEpsilonMeters = 1.5;
+  static const double reverseMaxAlongTrackJumpBaseMeters = 30;
+  static const double reverseMaxAlongTrackJumpPerGpsMeter = 2.5;
+  static const int reverseMaxSegmentJumpWhenSlow = 60;
+  static const double reverseSlowStepMeters = 8;
+  static const double reverseMinDistance = 50;
   static const double reverseRecentMovementDistance = 20;
-  static const int reverseSegmentWindow = 10;
+  static const int reverseSegmentWindow = 20;
   static const int reverseMinNegativeSteps = 6;
   static const int reverseMinDeltaSum = 4;
 

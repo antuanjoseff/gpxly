@@ -37,6 +37,7 @@ class NavigationNotifier extends Notifier<NavigationState> {
   final List<double> _lastDistances = [];
   final List<LatLng> _lastUserPositions = [];
   final List<int> _lastSegmentIndices = [];
+  final List<double> _trackCumulativeDistances = [];
 
   DateTime? _offTrackStart;
   DateTime? _lastOffTrackAlert;
@@ -58,7 +59,9 @@ class NavigationNotifier extends Notifier<NavigationState> {
 
   LatLng? _lastProjectedPoint;
   double _distanceProgressOnTrack = 0.0;
-  double _reverseDistanceOnTrack = 0.0;
+  double? _lastAlongTrackDistance;
+  double _reverseBackwardAccumMeters = 0.0;
+  int? _lastAlongTrackSegmentIndex;
   int? _lastMatchedSegmentIndex;
 
   @override
@@ -103,8 +106,11 @@ class NavigationNotifier extends Notifier<NavigationState> {
     _lastUserPositions.clear();
     _lastSegmentIndices.clear();
     _lastDistances.clear();
+    _trackCumulativeDistances.clear();
     _distanceProgressOnTrack = 0.0;
-    _reverseDistanceOnTrack = 0.0;
+    _lastAlongTrackDistance = null;
+    _reverseBackwardAccumMeters = 0.0;
+    _lastAlongTrackSegmentIndex = null;
     _lastProjectedPoint = null;
     _lastMatchedSegmentIndex = null;
     _isCurrentlyOffTrack = false;
@@ -131,6 +137,10 @@ class NavigationNotifier extends Notifier<NavigationState> {
         .map((c) => LatLng(c[1], c[0]))
         .toList();
 
+    _trackCumulativeDistances
+      ..clear()
+      ..addAll(_buildTrackCumulativeDistances(importedLatLng));
+
     final closest = geometry.closestPointAndSegment(
       referencePos,
       importedLatLng,
@@ -155,8 +165,11 @@ class NavigationNotifier extends Notifier<NavigationState> {
     _lastDistances.clear();
     _lastUserPositions.clear();
     _lastSegmentIndices.clear();
+    _trackCumulativeDistances.clear();
     _distanceProgressOnTrack = 0.0;
-    _reverseDistanceOnTrack = 0.0;
+    _lastAlongTrackDistance = null;
+    _reverseBackwardAccumMeters = 0.0;
+    _lastAlongTrackSegmentIndex = null;
     _lastProjectedPoint = null;
     _lastMatchedSegmentIndex = null;
     offTrackAlertsSent = 0;
@@ -171,9 +184,6 @@ class NavigationNotifier extends Notifier<NavigationState> {
 
   // ─────────────────────────────────────────────────────────────
   // 📐 EL MOTOR ANALÍTIC CENTRAL (updateUserPosition de l'autòmat)
-  // ─────────────────────────────────────────────────────────────
-  // ─────────────────────────────────────────────────────────────
-  // 📐 EL MOTOR ANALÍTIC CENTRAL RECONSTRUÏT AMB PRECISIÓ ABSOLUTA
   // ─────────────────────────────────────────────────────────────
   void _updateUserPositionAndEvaluate(
     LatLng userPos, {
@@ -195,6 +205,8 @@ class NavigationNotifier extends Notifier<NavigationState> {
         .map((c) => LatLng(c[1], c[0]))
         .toList();
 
+    final int? previousMatchedSegmentIndex = _lastMatchedSegmentIndex;
+
     // --- NIVELL 1: CÀLCULS BÀSICS ---
     final closest = geometry.closestPointAndSegment(
       userPos,
@@ -212,7 +224,6 @@ class NavigationNotifier extends Notifier<NavigationState> {
     final proj = closest.projectedPoint;
 
     // --- PROGRESSIÓ SOBRE EL TRACK MANTINGUDA ---
-    double projectedStep = 0.0;
     if (_lastProjectedPoint != null) {
       final step = calculateDistanceManual(
         _lastProjectedPoint!.latitude,
@@ -221,11 +232,49 @@ class NavigationNotifier extends Notifier<NavigationState> {
         proj.longitude,
       );
       if (step > 0 && step < 50) {
-        projectedStep = step;
         _distanceProgressOnTrack += step;
       }
     }
     _lastProjectedPoint = proj;
+
+    if (_trackCumulativeDistances.isEmpty && importedLatLng.length > 1) {
+      _trackCumulativeDistances.addAll(
+        _buildTrackCumulativeDistances(importedLatLng),
+      );
+    }
+
+    final distanceAlongTrack = _computeDistanceAlongTrack(
+      track: importedLatLng,
+      cumulativeDistances: _trackCumulativeDistances,
+      segmentIndex: closest.segmentIndex,
+      projectedPoint: proj,
+    );
+
+    final bool alongTrackPlausible = _isAlongTrackUpdatePlausible(
+      currentAlongTrackDistance: distanceAlongTrack,
+      currentSegmentIndex: closest.segmentIndex,
+      previousMatchedSegmentIndex: previousMatchedSegmentIndex,
+    );
+
+    if (alongTrackPlausible) {
+      final prevAlongTrack = _lastAlongTrackDistance;
+      if (prevAlongTrack != null) {
+        final deltaAlongTrack = distanceAlongTrack - prevAlongTrack;
+        final epsilon = TrackThresholds.reverseDeltaEpsilonMeters;
+
+        if (deltaAlongTrack < -epsilon) {
+          _reverseBackwardAccumMeters += -deltaAlongTrack;
+        } else if (deltaAlongTrack > epsilon) {
+          _reverseBackwardAccumMeters = math.max(
+            0.0,
+            _reverseBackwardAccumMeters - deltaAlongTrack,
+          );
+        }
+      }
+
+      _lastAlongTrackDistance = distanceAlongTrack;
+      _lastAlongTrackSegmentIndex = closest.segmentIndex;
+    }
 
     // --- FINAL DEL TRACK ---
     final List<double> lastCoords = imported.coordinates.last;
@@ -250,7 +299,7 @@ class NavigationNotifier extends Notifier<NavigationState> {
     final isFar = dist > TrackThresholds.farThreshold;
 
     // =========================================================================
-    // 🌟 UNIC RETOC COORDENAT: CÀLCUL DEL VECTOR D'AVANÇ REAL EN MAPA
+    // 🌟 CÀLCUL DE RUMB REAL (es manté només per a off-track)
     // =========================================================================
     double rumbRealAvanc = userHeading;
     if (_lastUserPositions.length >= 3) {
@@ -264,17 +313,6 @@ class NavigationNotifier extends Notifier<NavigationState> {
       closest.bearing,
       rumbRealAvanc,
     );
-    // =========================================================================
-
-    // Acumulació de metres inversa intel·ligent basada en angles reals de trajectòria
-    if (state.mode == FollowMode.onTrack &&
-        isNear &&
-        projectedStep > 0 &&
-        headingDiff > 130) {
-      _reverseDistanceOnTrack += projectedStep;
-    } else if (headingDiff < 45 && projectedStep > 0) {
-      _reverseDistanceOnTrack = 0.0;
-    }
 
     // --- NIVELL 2: trending away, heading wrong, offtrack bàsic ---
     bool isTrendingAway = false;
@@ -282,11 +320,10 @@ class NavigationNotifier extends Notifier<NavigationState> {
 
     if (count >= TrackThresholds.minPositionsLevel2) {
       isTrendingAway = offtrackLogic.isTrendingAway(_lastDistances);
-      isHeadingWrong =
-          headingDiff > 45; // Actualitzat amb la diferència de trajectòria neta
+      isHeadingWrong = headingDiff > 55; // Marge suau ampliat per a corbes
     }
 
-    // --- NIVELL 3: reverse detection, trending robust ---
+    // --- NIVELL 3: REVERSE DETECTION INTEGRADA AMB FILTRE COHERENT ---
     if (_reverseDetectionLocked) {
       return;
     }
@@ -294,15 +331,10 @@ class NavigationNotifier extends Notifier<NavigationState> {
     if (count >= TrackThresholds.minPositionsLevel3 &&
         _hasEverBeenOnTrack &&
         state.mode != FollowMode.offTrack &&
-        _reverseDistanceOnTrack >= TrackThresholds.reverseMinDistance &&
+        _reverseBackwardAccumMeters >=
+            TrackThresholds.reverseBackwardTriggerMeters &&
         !_reverseDialogShown) {
-      final hasReverseSegmentTrend = reverseDetector
-          .isReverseSegmentProgression(_lastSegmentIndices);
-
-      if (isNear &&
-          headingDiff > 140 &&
-          hasReverseSegmentTrend &&
-          reverseDetector.isReverseDirection(closest, _lastUserPositions)) {
+      if (isNear) {
         _reverseDetectionLocked = true;
         _reverseDialogShown = true;
         state = state.copyWith(showReverseTrackDialog: true);
@@ -310,7 +342,7 @@ class NavigationNotifier extends Notifier<NavigationState> {
       }
     }
 
-    // --- AUTÒMAT D'ESTATS (Passant els paràmetres compilats cap avall) ---
+    // --- AUTÒMAT D'ESTATS NAIUS MANTINGUT AL 100% ---
     _handleFollowState(
       dist: dist,
       isNear: isNear,
@@ -324,9 +356,6 @@ class NavigationNotifier extends Notifier<NavigationState> {
     state = state.copyWith(distanceToTrackLine: dist);
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // 🤖 L'AUTÒMAT D'ESTATS REUBICAT (_handleFollowState)
-  // ─────────────────────────────────────────────────────────────
   // ─────────────────────────────────────────────────────────────
   // 🤖 L'AUTÒMAT D'ESTATS COORDENAT AMB PARÀMETRES DE SUPORT
   // ─────────────────────────────────────────────────────────────
@@ -415,18 +444,7 @@ class NavigationNotifier extends Notifier<NavigationState> {
         prevMode != FollowMode.onTrack && newMode == FollowMode.onTrack;
 
     if (hasEnteredOnTrack) {
-      // 🟢 MODIFICAT: Escut per evitar esborrar els metres fets si continuem anant al revés
-      // Calculem la diferència angular real de reentrada amb la trajectòria de moviment
-      final headingDiffCheck = geometry.headingDifference(
-        closestBearing,
-        calculatedHeading,
-      );
-
-      // Només posem a zero si l'usuari avança realment cap endavant a favor del track (<120°)
-      if (headingDiffCheck < 120) {
-        _reverseDistanceOnTrack = 0.0;
-      }
-
+      _reverseBackwardAccumMeters = 0.0;
       onUserBackOnTrack();
     }
   }
@@ -501,8 +519,21 @@ class NavigationNotifier extends Notifier<NavigationState> {
     _lastProjectedPoint = null;
     _lastDistances.clear();
     _distanceProgressOnTrack = 0.0;
-    _reverseDistanceOnTrack = 0.0;
+    _trackCumulativeDistances.clear();
+    _lastAlongTrackDistance = null;
+    _reverseBackwardAccumMeters = 0.0;
+    _lastAlongTrackSegmentIndex = null;
     _lastMatchedSegmentIndex = null;
+
+    final imported = ref.read(importedTrackProvider);
+    if (imported != null && imported.coordinates.length > 1) {
+      final importedLatLng = imported.coordinates
+          .map((c) => LatLng(c[1], c[0]))
+          .toList();
+      _trackCumulativeDistances.addAll(
+        _buildTrackCumulativeDistances(importedLatLng),
+      );
+    }
 
     _reverseDialogShown = false;
 
@@ -520,7 +551,10 @@ class NavigationNotifier extends Notifier<NavigationState> {
     _lastDistances.clear();
     _lastProjectedPoint = null;
     _distanceProgressOnTrack = 0.0;
-    _reverseDistanceOnTrack = 0.0;
+    _trackCumulativeDistances.clear();
+    _lastAlongTrackDistance = null;
+    _reverseBackwardAccumMeters = 0.0;
+    _lastAlongTrackSegmentIndex = null;
     _lastMatchedSegmentIndex = null;
 
     _reverseDialogShown = false;
@@ -553,6 +587,95 @@ class NavigationNotifier extends Notifier<NavigationState> {
 
   void unlockReverseDetection() {
     _reverseDetectionLocked = false;
+  }
+
+  List<double> _buildTrackCumulativeDistances(List<LatLng> track) {
+    if (track.isEmpty) return const [];
+
+    final result = <double>[0.0];
+    var acc = 0.0;
+
+    for (int i = 1; i < track.length; i++) {
+      acc += calculateDistanceManual(
+        track[i - 1].latitude,
+        track[i - 1].longitude,
+        track[i].latitude,
+        track[i].longitude,
+      );
+      result.add(acc);
+    }
+
+    return result;
+  }
+
+  double _computeDistanceAlongTrack({
+    required List<LatLng> track,
+    required List<double> cumulativeDistances,
+    required int segmentIndex,
+    required LatLng projectedPoint,
+  }) {
+    if (track.length < 2 || cumulativeDistances.isEmpty) {
+      return 0.0;
+    }
+
+    final int safeSegment = segmentIndex.clamp(0, track.length - 2);
+    final double baseDistance = safeSegment < cumulativeDistances.length
+        ? cumulativeDistances[safeSegment]
+        : cumulativeDistances.last;
+
+    final double segmentPartialDistance = calculateDistanceManual(
+      track[safeSegment].latitude,
+      track[safeSegment].longitude,
+      projectedPoint.latitude,
+      projectedPoint.longitude,
+    );
+
+    return baseDistance + segmentPartialDistance;
+  }
+
+  bool _isAlongTrackUpdatePlausible({
+    required double currentAlongTrackDistance,
+    required int currentSegmentIndex,
+    required int? previousMatchedSegmentIndex,
+  }) {
+    final prevAlongTrack = _lastAlongTrackDistance;
+    if (prevAlongTrack == null) return true;
+
+    final double delta = (currentAlongTrackDistance - prevAlongTrack).abs();
+    final double gpsStep = _estimateLastGpsStepMeters();
+
+    final double maxAllowedDelta =
+        TrackThresholds.reverseMaxAlongTrackJumpBaseMeters +
+        (gpsStep * TrackThresholds.reverseMaxAlongTrackJumpPerGpsMeter);
+
+    if (delta > maxAllowedDelta) {
+      return false;
+    }
+
+    final int? prevSegment =
+        _lastAlongTrackSegmentIndex ?? previousMatchedSegmentIndex;
+    if (prevSegment == null) return true;
+
+    final int segmentJump = (currentSegmentIndex - prevSegment).abs();
+    if (gpsStep <= TrackThresholds.reverseSlowStepMeters &&
+        segmentJump > TrackThresholds.reverseMaxSegmentJumpWhenSlow) {
+      return false;
+    }
+
+    return true;
+  }
+
+  double _estimateLastGpsStepMeters() {
+    if (_lastUserPositions.length < 2) return 0.0;
+
+    final LatLng a = _lastUserPositions[_lastUserPositions.length - 2];
+    final LatLng b = _lastUserPositions.last;
+    return calculateDistanceManual(
+      a.latitude,
+      a.longitude,
+      b.latitude,
+      b.longitude,
+    );
   }
 
   // 📐 CALCULA EL RUMB REAL D'AVANÇ ENTRE DOS PUNTS GEOMÈTRICS (MÈTODE HAVERSINE VECTOR)

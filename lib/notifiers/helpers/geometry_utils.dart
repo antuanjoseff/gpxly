@@ -63,8 +63,25 @@ class TrackGeometryUtils {
         proj.longitude,
       );
 
-      if (d < minDist) {
-        minDist = d;
+      // =========================================================================
+      // 🛠️ FILTRE D'ANTI-SALT PER A TRAJECTÒRIES PROBABILÍSTIQUES COHERENTS
+      // =========================================================================
+      double virtualDistance = d;
+
+      if (preferredSegmentIndex != null) {
+        final int indexDifference = (i - preferredSegmentIndex).abs();
+
+        // Si el segment avaluat està lluny de l'anterior (ex: saltar d'anada a tornada),
+        // hi afegim una penalització virtual de 15 metres. El GPS només farà el salt
+        // si l'usuari realment s'ha mogut cap al nou camí de manera sostinguda.
+        if (indexDifference > 8) {
+          virtualDistance += 15.0;
+        }
+      }
+      // =========================================================================
+
+      if (virtualDistance < minDist) {
+        minDist = virtualDistance;
         segmentBearing = bearingBetween(a, b);
 
         if (lastUserPositions.length >= 2) {
@@ -81,13 +98,21 @@ class TrackGeometryUtils {
       }
     }
 
+    // Retornem la distància física real (sense penalització) per no enganyar els automatismes d'Off-Track
+    final double realDistance = distanceBetween(
+      p.latitude,
+      p.longitude,
+      bestProj!.latitude,
+      bestProj.longitude,
+    );
+
     return ClosestResult(
-      distance: minDist,
+      distance: realDistance,
       bearing: segmentBearing,
       userBearing: userBearing,
       segmentIndex: bestSegmentIndex,
       t: bestT,
-      projectedPoint: bestProj!,
+      projectedPoint: bestProj,
     );
   }
 
