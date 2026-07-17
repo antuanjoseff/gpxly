@@ -1324,10 +1324,11 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   ),
 
                   // 🚀 CAPA 5: ELS BOTONS FLOTANTS DE LES TISORES
-                  MapScissorsButtons(
-                    isChartCollapsed: _isChartCollapsed,
-                    mapController: mapController,
-                  ),
+                  if (!_fullScreen)
+                    MapScissorsButtons(
+                      isChartCollapsed: _isChartCollapsed,
+                      mapController: mapController,
+                    ),
                   // RECORDING SUB MENU
                   AnimatedPositioned(
                     duration: const Duration(milliseconds: 220),
