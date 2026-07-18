@@ -1,4 +1,6 @@
 // lib/notifiers/helpers/elevation_magnet_helper.dart
+import 'dart:math' as math;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
@@ -26,9 +28,13 @@ class ElevationMagnetHelper {
     try {
       final notifier = ref.read(elevationSelectionProvider.notifier);
 
-      // 1. Recuperem les coordenades actuals del centre del mapa
-      final double centerLat = ref.read(mapCenterLatProvider);
-      final double centerLon = ref.read(mapCenterLonProvider);
+      // 🚀 CIRURGIA PAS 1: LLEGIM EL CENTRE DIRECTE DE LA CÀMERA DE LA GPU
+      // Evitem el retard o arrofoniment de text del provider i obtenim els decimals pures de precisió
+      final CameraPosition? currentCamera = mapController.cameraPosition;
+      if (currentCamera == null) return;
+
+      final double centerLat = currentCamera.target.latitude;
+      final double centerLon = currentCamera.target.longitude;
 
       // 2. Esbrinem si estem gravant o usant una ruta importada
       final bool isRecording =
@@ -44,13 +50,17 @@ class ElevationMagnetHelper {
       int nearestIndex = 0;
       double minDistance = double.maxFinite;
 
-      // 3. El bucle geomètric de precisió
+      // 🚀 CIRURGIA PAS 3: EL BUCLE GEOMÈTRIC CORREGIT PER LA CURVATURA (COSINUS DE LA LATITUD)
+      // Multipliquem la diferència de longitud pel cosinus de la latitud per corregir l'ovalat geomètric de la Terra
+      final double radiAnemometre = math.cos(centerLat * math.pi / 180.0);
+
       for (int i = 0; i < coordsAEvaluar.length; i++) {
         final double ptLon = coordsAEvaluar[i][0]; // [0] és la Longitud
         final double ptLat = coordsAEvaluar[i][1]; // [1] és la Latitud
 
         final double dLat = ptLat - centerLat;
-        final double dLon = ptLon - centerLon;
+        // 🧲 Apliquem la correcció de projecció a la longitud per tenir una distància real en metres a la pantalla
+        final double dLon = (ptLon - centerLon) * radiAnemometre;
         final double distSq = (dLat * dLat) + (dLon * dLon);
 
         if (distSq < minDistance) {
@@ -59,7 +69,7 @@ class ElevationMagnetHelper {
         }
       }
 
-      // 4. Sincronització de l'estat a Riverpod
+      // 4. Sincronització de l'estat a Riverpod (Es manté intacte)
       notifier.updateProvisionalEnd(nearestIndex);
 
       final liveState = ref.read(elevationSelectionProvider);
@@ -81,8 +91,6 @@ class ElevationMagnetHelper {
       );
 
       // 5. Pintem a la GPU esperando a que la operación nativa finalice
-      // Nota: Asegúrate de añadir el 'await' aquí. Si 'updateSelectedSegmentGeometry'
-      // no es un Future, edítala para que use la lógica de comprobar con getSourceIds()
       await updateSelectedSegmentGeometry(
         mapController,
         geometryState,
@@ -91,7 +99,6 @@ class ElevationMagnetHelper {
     } catch (e) {
       debugPrint("⚠️ Errada en el helper de magnetisme: $e");
     } finally {
-      // Liberamos el candado pase lo que pase
       _isRecalculating = false;
     }
   }

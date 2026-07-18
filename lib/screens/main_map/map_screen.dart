@@ -394,28 +394,25 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
     final int wpTrackIndex = waypoint.trackIndex;
 
-    if (!_isChartCollapsed) {
-      final currentSelection = ref.read(elevationSelectionProvider);
+    // 🔍 LLEGIM L'ESTAT ACTUAL DE LA SELECCIÓ
+    final currentSelection = ref.read(elevationSelectionProvider);
 
-      if (currentSelection.mode == SelectionMode.range) {
-        final Set<int> allWpIndexes = [
-          ...recorded,
-          ...imported,
-        ].map((w) => w.trackIndex).toSet();
+    // 🛡️ REGLA DE NEGOCI: Si l'eina de les tisores està activa (en qualsevol estat), mana la selecció de tram
+    if (currentSelection.mapToolState != MapSelectionToolState.off) {
+      final Set<int> allWpIndexes = [
+        ...recorded,
+        ...imported,
+      ].map((w) => w.trackIndex).toSet();
 
-        ref
-            .read(elevationSelectionProvider.notifier)
-            .toggleWaypoint(wpTrackIndex, allWpIndexes);
+      // Utilitzem la lògica unificada dels 2 últims clics que hem preparat al teu notifier
+      ref
+          .read(elevationSelectionProvider.notifier)
+          .toggleWaypoint(wpTrackIndex, allWpIndexes);
 
-        return;
-      } else {
-        ref
-            .read(elevationSelectionProvider.notifier)
-            .setSinglePoint(wpTrackIndex);
-        return;
-      }
+      return; // 🛑 Sortim immediatament per evitar obrir els detalls i protegir el botó verd
     }
 
+    // 🔵 ESCENARI PER DEFECTE (Tisores apagades): Es mostren les propietats del waypoint de forma normal
     Duration? elapsed;
     final track = wpId.startsWith('rec_')
         ? ref.read(trackRecordingProvider)
@@ -1043,12 +1040,13 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
                         final sel = ref.read(elevationSelectionProvider);
 
-                        // 🚀 L'IMANT GEOMÈTRIC EN UNA SOLA LÍNIA REUSABLE:
-                        // Només s'executa si l'eina està activa buscant inici o final
-                        if (sel.mapToolState ==
-                                MapSelectionToolState.selectingStart ||
-                            sel.mapToolState ==
-                                MapSelectionToolState.selectingEnd) {
+                        // 🚀 L'IMANT GEOMÈTRIC EN UNA SOLA LÍNIA REUSABLE PROTEGIT:
+                        // Només s'executa si l'eina busca inici/final I si la font és el moviment real del mapa
+                        if ((sel.mapToolState ==
+                                    MapSelectionToolState.selectingStart ||
+                                sel.mapToolState ==
+                                    MapSelectionToolState.selectingEnd) &&
+                            sel.source == SelectionSource.map) {
                           ElevationMagnetHelper.recalcularIActualitzar(
                             ref: ref,
                             mapController: mapController!,

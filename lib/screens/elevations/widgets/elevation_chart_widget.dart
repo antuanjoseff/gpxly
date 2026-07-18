@@ -279,6 +279,8 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
                     _localStartIdx = idx;
                     _localEndIdx = actualEnd;
                   }
+                  _localGraphIdx =
+                      null; // 🔒 Netegem el blau local de seguretat
                 });
               } else if (_draggingNeedle == 2) {
                 final actualStart = startIdx >= 0 ? startIdx : idx;
@@ -291,6 +293,8 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
                     _localStartIdx = actualStart;
                     _localEndIdx = idx;
                   }
+                  _localGraphIdx =
+                      null; // 🔒 Netegem el blau local de seguretat
                 });
               } else if (_draggingNeedle == 3) {
                 setState(() {
@@ -302,9 +306,11 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
             if (now.difference(_lastStatsThrottleTime).inMilliseconds >=
                 _statsThrottleDurationMs) {
               _lastStatsThrottleTime = now;
+
+              // 🛡️ REGLA DE NEGOCI: Si arrosseguem agulles de tram (1 o 2), prohibim actualitzar el punt blau
               if (_localStartIdx != null &&
                   _localEndIdx != null &&
-                  _draggingNeedle != 3) {
+                  (_draggingNeedle == 1 || _draggingNeedle == 2)) {
                 ref
                     .read(elevationSelectionProvider.notifier)
                     .setManualRange(_localStartIdx!, _localEndIdx!);
@@ -316,10 +322,10 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
             }
           },
           onPanEnd: (_) {
+            // 🛡️ REGLA DE NEGOCI FINALIZACIÓ: Només guardem el punt blau si veníem de moure el blau
             if (_localStartIdx != null &&
                 _localEndIdx != null &&
-                _draggingNeedle != 3 &&
-                _draggingNeedle != -1) {
+                (_draggingNeedle == 1 || _draggingNeedle == 2)) {
               ref
                   .read(elevationSelectionProvider.notifier)
                   .setManualRange(_localStartIdx!, _localEndIdx!);

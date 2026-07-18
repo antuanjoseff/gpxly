@@ -26,29 +26,38 @@ class MapElevationHud extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // 1️⃣ Escuchamos los estados de grabación e importación de forma directa
     final realTrack = ref.watch(trackRecordingProvider);
-    final importedTrack = ref.watch(importedTrackProvider);
     final isRecording = realTrack.recordingState == RecordingState.recording;
 
-    // Si no hay grabación activa, recurrimos al cálculo del provider general de la ruta
+    // 🚀 Escoltem el segment_stats_notifier (que ja calcula Tot o Tram segons convingui)
     final stats = ref.watch(segmentStatsProvider);
+
+    // 🚀 Mirem si hi ha una selecció de tram activa real a l'app
+    final selection = ref.watch(elevationSelectionProvider);
+    final bool hiHaTramActiu =
+        (selection.mode == SelectionMode.range) ||
+        (selection.mapToolState == MapSelectionToolState.selected);
 
     double finalDistanceMeters = 0.0;
     double finalAscent = 0.0;
     double finalDescent = 0.0;
+    String finalTimeStr = "";
+    String finalAvgSpeedStr = "";
 
-    // Variables locals per calcular el temps i velocitat reals de gravació a mà
-    String finalTimeStr = stats.timeElapsedStr;
-    String finalAvgSpeedStr = stats.avgSpeedStr;
-
-    if (isRecording) {
-      // Llegim les dades ja calculades directament del teu provider
+    // 🔄 LA REGLA DE NEGOCI CORREGIDA:
+    if (hiHaTramActiu) {
+      // 1️⃣ SI HI HA UN TRAM SELECCIONAT: Mostrem sempre les dades filtrades del segment
+      finalDistanceMeters = stats.distanceMeters;
+      finalAscent = stats.ascentMeters;
+      finalDescent = stats.descentMeters;
+      finalTimeStr = stats.timeElapsedStr;
+      finalAvgSpeedStr = stats.avgSpeedStr;
+    } else if (isRecording) {
+      // 2️⃣ SI NO HI HA TRAM I S'ESTÀ GRAVANT: Mostrem les dades totals en viu de la gravació
       finalDistanceMeters = realTrack.stats.distance;
       finalAscent = realTrack.stats.ascent.roundToDouble();
       finalDescent = realTrack.stats.descent.roundToDouble();
 
-      // Formatem el temps real en moviment calculat pel provider
       final movingDuration =
           realTrack.stats.duration - realTrack.stats.stoppedDuration;
       final hours = movingDuration.inHours;
@@ -61,13 +70,15 @@ class MapElevationHud extends ConsumerWidget {
             "${minutes}m ${movingDuration.inSeconds.remainder(60).toString().padLeft(2, '0')}s";
       }
 
-      // Formatem la velocitat mitjana calculada pel provider
       finalAvgSpeedStr =
           "${realTrack.stats.averageSpeed.toStringAsFixed(1)} km/h";
     } else {
+      // 3️⃣ SI NO HI HA TRAM NI GRAVACIÓ: Mostrem el total del track general (importat/restant)
       finalDistanceMeters = stats.distanceMeters;
       finalAscent = stats.ascentMeters;
       finalDescent = stats.descentMeters;
+      finalTimeStr = stats.timeElapsedStr;
+      finalAvgSpeedStr = stats.avgSpeedStr;
     }
 
     return Positioned(
