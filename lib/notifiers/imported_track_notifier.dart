@@ -15,57 +15,6 @@ class ImportedTrackNotifier extends Notifier<Track?> {
 
   void setTrack(Track t) {
     _simulationIndex = -1; // Reset de control
-
-    // 🛡️ REGLA DE NEGOCI ROBUSTA: Si el track té punts d'altitud, interceptem i recalculem
-    if (t.points.isNotEmpty) {
-      final List<double> globalAlts = t.altitudes;
-      final int n = globalAlts.length;
-
-      // 🚀 PAS 1: SUAVITZAT DE MITJANA MÒBIL (Finestra de 5 punts)
-      final List<double> altitudsSuaus = [];
-      const int finestra = 5;
-      const int radi = finestra ~/ 2;
-
-      for (int i = 0; i < n; i++) {
-        final int inici = (i - radi).clamp(0, n);
-        final int fi = (i + radi + 1).clamp(0, n);
-
-        double suma = 0;
-        int comptador = 0;
-        for (int j = inici; j < fi; j++) {
-          suma += globalAlts[j];
-          comptador++;
-        }
-        altitudsSuaus.add(suma / comptador);
-      }
-
-      // 🚀 PAS 2: CÀLCUL AMB LLINDAR FIX ROBUST (3.5 metres)
-      const double elevationThreshold = 3.5;
-      double ascent = 0.0;
-      double descent = 0.0;
-      double lastValidAlt = altitudsSuaus[0];
-
-      for (int i = 1; i < n; i++) {
-        final currentAlt = altitudsSuaus[i];
-        final diff = currentAlt - lastValidAlt;
-
-        if (diff.abs() >= elevationThreshold) {
-          if (diff > 0) {
-            ascent += diff;
-          } else {
-            descent += diff.abs();
-          }
-          lastValidAlt = currentAlt;
-        }
-      }
-
-      // 🚀 PAS 3: INJECTEM ELS VALORS NETS A DINS DEL MODEL IMMUTABLE
-      final updatedStats = t.stats.copyWith(ascent: ascent, descent: descent);
-
-      state = t.copyWith(stats: updatedStats);
-      return;
-    }
-
     state = t;
   }
 

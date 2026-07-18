@@ -11,6 +11,7 @@ import 'package:senda/notifiers/gps_settings_notifier.dart';
 import 'package:senda/notifiers/helpers/thresholds.dart';
 import 'package:senda/notifiers/location_notifier.dart'; // Bloc 1 [INDEX]
 import 'package:senda/notifiers/timer_notifier.dart';
+import 'package:senda/utils/calculations.dart';
 import 'package:senda/utils/geo_utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -113,12 +114,21 @@ class RecordingNotifier extends Notifier<Track> {
       }
       // =======================================================================
 
-      final double diffAlt = newPoint.altitude - lastPoint.altitude;
-      if (diffAlt > 0.5) {
-        newAscent += diffAlt;
-      } else if (diffAlt < -0.5) {
-        newDescent += diffAlt.abs();
-      }
+      // 1️⃣ Construïm la llista d'altituds completa (incloent el nou punt)
+      final List<double> alts = [
+        ...state.points.map((p) => p.altitude),
+        newPoint.altitude,
+      ];
+
+      // 2️⃣ Suavitzat centralitzat (mitjana mòbil)
+      final List<double> smooth = ElevationUtils.smooth(alts);
+
+      // 3️⃣ Càlcul robust centralitzat (threshold 3.5m)
+      final Map<String, double> result = ElevationUtils.robustGain(smooth);
+
+      // 4️⃣ Assignem els valors acumulats
+      newAscent = result["ascent"]!;
+      newDescent = result["descent"]!;
     }
 
     if (state.points.isEmpty || newPoint.altitude > newMax) {

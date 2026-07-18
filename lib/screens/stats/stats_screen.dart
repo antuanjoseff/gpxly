@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:reorderable_grid_view/reorderable_grid_view.dart';
 import 'package:senda/l10n/app_localizations.dart';
+import 'package:senda/models/track.dart';
 import 'package:senda/notifiers/imported_track_notifier.dart';
 import 'package:senda/notifiers/recording_notifier.dart';
 import 'package:senda/notifiers/location_notifier.dart';
@@ -10,6 +11,7 @@ import 'package:senda/screens/stats/notifiers/stats_prefs_notifier.dart';
 import 'package:senda/screens/stats/satellites/screens/satellite_detail_screen.dart';
 import 'package:senda/theme/app_colors.dart';
 import 'package:senda/providers/barometer_provider.dart';
+import 'package:senda/utils/calculations.dart';
 
 class TrackStatsScreen extends ConsumerStatefulWidget {
   const TrackStatsScreen({super.key});
@@ -85,6 +87,15 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
     return "${kmPart}km ${mPart}m";
   }
 
+  (double ascent, double descent) _computeElevationGain(dynamic track) {
+    if (track == null || track.altitudes.length < 2) {
+      return (0.0, 0.0);
+    }
+    final smoothAlts = ElevationUtils.smooth(track.altitudes);
+    final result = ElevationUtils.robustGain(smoothAlts);
+    return (result['ascent'] ?? 0.0, result['descent'] ?? 0.0);
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context)!;
@@ -98,11 +109,16 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
 
     final realTrack = ref.watch(trackRecordingProvider);
     final importedTrack = ref.watch(importedTrackProvider);
-    final track = realTrack.points.isNotEmpty
+    final bool isRecording =
+        realTrack.recordingState == RecordingState.recording;
+
+    final track = isRecording && realTrack.points.isNotEmpty
         ? realTrack
         : (importedTrack != null && importedTrack.points.isNotEmpty
               ? importedTrack
-              : null);
+              : (realTrack.points.isNotEmpty ? realTrack : null));
+
+    final (ascent, descent) = _computeElevationGain(track);
 
     final duration = track?.stats.duration ?? Duration.zero;
     final liveLocation = ref.watch(locationProvider);
@@ -229,7 +245,7 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
         ),
         _StatPage(
           Icons.arrow_upward,
-          track?.ascent,
+          ascent,
           "m",
           t.statAscent,
           isInt: true,
@@ -237,7 +253,7 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
         ),
         _StatPage(
           Icons.arrow_downward,
-          track?.descent,
+          descent,
           "m",
           t.statDescent,
           isInt: true,

@@ -5,6 +5,7 @@ import 'package:senda/notifiers/elevation_selection_provider.dart';
 import 'package:senda/notifiers/recording_notifier.dart';
 import 'package:senda/notifiers/imported_track_notifier.dart';
 import 'package:senda/notifiers/remaining_track_notifier.dart';
+import 'package:senda/utils/calculations.dart';
 
 class SegmentStats {
   final double distanceMeters;
@@ -100,43 +101,16 @@ class SegmentStatsNotifier extends Notifier<SegmentStats> {
     double descent = 0;
 
     if (globalAlts.isNotEmpty && start < globalAlts.length) {
-      // 🚀 CIRURGIA PAS 1: SUAVITZAT DE MITJANA MÒBIL (Sincronitzat amb Python)
-      final List<double> altitudsSuaus = [];
-      final int n = globalAlts.length;
-      const int finestra = 5;
-      const int radi = finestra ~/ 2;
+      // 1️⃣ Suavitzat centralitzat
+      final altitudsSuaus = ElevationUtils.smooth(globalAlts);
 
-      for (int i = 0; i < n; i++) {
-        // Corregim els límits de la finestra eliminant el .clamp per evitar asimetries als extrems
-        final int inici = (i - radi) < 0 ? 0 : (i - radi);
-        final int fi = (i + radi + 1) > n ? n : (i + radi + 1);
+      // 2️⃣ Càlcul robust centralitzat
+      final result = ElevationUtils.robustGain(
+        altitudsSuaus.sublist(start, end + 1),
+      );
 
-        double suma = 0;
-        int comptador = 0;
-        for (int j = inici; j < fi; j++) {
-          suma += globalAlts[j];
-          comptador++;
-        }
-        altitudsSuaus.add(suma / comptador);
-      }
-
-      // 🚀 CIRURGIA PAS 2: CÀLCUL AMB LLINDAR FIX ROBUST (3.5 metres)
-      const double elevationThreshold = 3.5;
-      double lastValidAlt = altitudsSuaus[start];
-
-      for (int i = start + 1; i <= end; i++) {
-        final currentAlt = altitudsSuaus[i];
-        final diff = currentAlt - lastValidAlt;
-
-        if (diff.abs() >= elevationThreshold) {
-          if (diff > 0) {
-            ascent += diff;
-          } else {
-            descent += diff.abs();
-          }
-          lastValidAlt = currentAlt;
-        }
-      }
+      ascent = result["ascent"]!;
+      descent = result["descent"]!;
     }
 
     String timeStr = "--:--";
