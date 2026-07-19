@@ -26,14 +26,14 @@ void stopWaypointPulse(MapLibreMapController controller) {
   _waypointPulseTimer = null;
 
   try {
-    // 🟢 COMPILACIÓN CORRECTA: Usamos la clase nativa asignando solo el radio base
+    // 🟢 RESTAURACIÓ BLINDADA: Retornem el radi (8.0) i l'opacitat completa (1.0) natius
     controller.setLayerProperties(
       "waypoints_recorded_layer",
-      const CircleLayerProperties(circleRadius: 8.0),
+      const CircleLayerProperties(circleRadius: 8.0, circleOpacity: 1.0),
     );
     controller.setLayerProperties(
       "waypoints_imported_layer",
-      const CircleLayerProperties(circleRadius: 8.0),
+      const CircleLayerProperties(circleRadius: 8.0, circleOpacity: 1.0),
     );
   } catch (e) {
     debugPrint("⚠️ No s'ha pogut restaurar el radi base al aturar el pols: $e");
@@ -46,23 +46,34 @@ void stopWaypointPulse(MapLibreMapController controller) {
 void _updateWaypointPulse(MapLibreMapController controller) {
   try {
     const double baseRadius = 8.0;
+
+    // 🚀 MILLORA 1: Augmentem l'amplitud del pols (abans arribava a 10.0, ara creixerà fins a 14.0)
     final double radius = baseRadius + _pulseValue;
 
-    // 🟢 COMPILACIÓN CORRECTA: Pasamos el double dinámico del pulso de forma segura
+    // 🚀 MILLORA 2: Calculem una opacitat dinàmica inversament proporcional al radi (Fade-out progressiu)
+    // Quan el cercle es fa gran, es va tornant translúcid de forma molt orgànica.
+    final double opacity = 1.0 - (_pulseValue / 6.5);
+    final double finalOpacity = opacity.clamp(
+      0.2,
+      1.0,
+    ); // Evitem que desaparegui del tot
+
     controller.setLayerProperties(
       "waypoints_recorded_layer",
-      CircleLayerProperties(circleRadius: radius),
+      CircleLayerProperties(circleRadius: radius, circleOpacity: finalOpacity),
     );
     controller.setLayerProperties(
       "waypoints_imported_layer",
-      CircleLayerProperties(circleRadius: radius),
+      CircleLayerProperties(circleRadius: radius, circleOpacity: finalOpacity),
     );
 
+    // 🚀 MILLORA 3: Increments lleugerament més alts per donar un batec més viu i dinàmic
     if (_pulseIncreasing) {
-      _pulseValue += 0.25;
-      if (_pulseValue >= 2.0) _pulseIncreasing = false;
+      _pulseValue += 0.5; // Abans era 0.25
+      if (_pulseValue >= 6.0)
+        _pulseIncreasing = false; // Pic de radi màxim a 14.0
     } else {
-      _pulseValue -= 0.25;
+      _pulseValue -= 0.5;
       if (_pulseValue <= 0.0) _pulseIncreasing = true;
     }
   } catch (e) {

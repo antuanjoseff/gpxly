@@ -47,8 +47,9 @@ class MapAnimator {
   // 🛰️ 1. LLISCAMENT DEL CERCLE BLAU (Mantenim l'oient A del GPS)
   // ─────────────────────────────────────────────────────────────
   void animateUserPosition(LatLng? newPos, {double bottomPadding = 0.0}) {
-    if (newPos == null || isAnimating)
+    if (newPos == null || isAnimating) {
       return; // Si està corrent la gravació, el bucle unificat ja ho mourà
+    }
 
     // newPos = _calculateOffsetTarget(newPos, bottomPadding);
     if (_lastUserPos == null) {

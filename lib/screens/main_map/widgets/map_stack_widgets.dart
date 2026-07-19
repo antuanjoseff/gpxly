@@ -12,6 +12,8 @@ import 'package:senda/screens/elevations/widgets/segment_stats_widget.dart';
 import 'package:senda/screens/main_map/widgets/map_bottom_controls/elevation_panel.dart';
 import 'package:senda/theme/app_colors.dart';
 import 'package:senda/theme/app_dimensions.dart';
+import 'package:senda/widgets/reticle_mode_selector.dart';
+import 'package:senda/widgets/waypoint_mode_selector.dart';
 
 /// 🚀 WIDGET MODULAR 1: EL CONTROL DE GRÀFICS I ESTADÍSTIQUES FIXES
 class MapElevationHud extends ConsumerWidget {
@@ -124,55 +126,57 @@ class MapElevationHud extends ConsumerWidget {
   }
 }
 
-/// 🚀 WIDGET MODULAR 2: EL BOTÓN MAESTRO DE LAS TIJERAS (CON FILTRO DE COORDENADAS)
 class MapScissorsButtons extends ConsumerWidget {
   final bool isChartCollapsed;
   final MapLibreMapController? mapController;
+  final Function(bool)
+  onCollapseChanged; // 🟢 CALLBACK REQUERIT PER AL GEST INICIAL
 
   const MapScissorsButtons({
     super.key,
     required this.isChartCollapsed,
-    required this.mapController,
+    required this.onCollapseChanged,
+    this.mapController,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // 1️⃣ Obtenim l'estat dels tracks i la selecció de Riverpod
     final sel = ref.watch(elevationSelectionProvider);
     final importedTrack = ref.watch(importedTrackProvider);
     final recordingTrack = ref.watch(trackRecordingProvider);
 
-    // 2️⃣ Extraiem el nombre de coordenades de cada track de forma segura
     final int importedCoordsCount = importedTrack?.coordinates.length ?? 0;
     final int recordingCoordsCount = recordingTrack.coordinates.length ?? 0;
 
-    // 3️⃣ Validem si algun dels dos tracks té prou coordenades (Mínim N)
     final bool hasEnoughImported =
         importedCoordsCount >= AppDimensions.minCoordinatesForSelection;
     final bool hasEnoughRecording =
         recordingCoordsCount >= AppDimensions.minCoordinatesForSelection;
 
-    // 🛡️ REGLA DE NEGOCI: Si no hi ha cap ruta vàlida amb més de N punts, amaguem completament el botó
     if (!hasEnoughImported && !hasEnoughRecording) {
       return const SizedBox.shrink();
     }
 
-    // A partir d'aquí la lògica de renderitzat i mides es manté idèntica
     final double screenHeight = MediaQuery.sizeOf(context).height;
     final double chartHeight =
         screenHeight * AppDimensions.elevationChartHeightRatio;
 
     final bool hasImportedTrack = importedTrack != null;
-    final bool hasRecordingTrack = recordingTrack
-        .coordinates
-        .isNotEmpty; // 🚀 Nova comprovació per al gravat
+    final bool hasRecordingTrack = recordingTrack.coordinates.isNotEmpty;
 
+    // 🔍 1. Mirem si l'eina de les tisores està oberta en qualsevol estat
+    final bool isToolActive = sel.mapToolState != MapSelectionToolState.off;
+
+    // 🚀 2. CONDICIÓ DE SUBBOTONS: Els botons auxiliars només són visibles a l'inici (selectingStart).
+    // S'amagaran de forma automàtica en triar un dels dos modes (selectingEnd o selected).
+    final bool showAuxiliaryButtons =
+        sel.mapToolState == MapSelectionToolState.selectingStart;
+
+    // 🟢 3. SINCRONIA D'ALÇADA LLIURE: Traiem qualsevol bloqueig fix de fons.
+    // Tot el grup horitzontal de botons es mourà de manera coordinada segons com estigui el gràfic realment a la pantalla.
     final bool isChartVisibleReal =
         !isChartCollapsed && (hasImportedTrack || hasRecordingTrack);
-
     final double bottomOffset = isChartVisibleReal ? 60.0 + chartHeight : 60.0;
-
-    final bool isToolActive = sel.mapToolState != MapSelectionToolState.off;
 
     final Widget iconTijerasPersonalizado = SizedBox(
       width: 36,
@@ -205,43 +209,109 @@ class MapScissorsButtons extends ConsumerWidget {
       ),
     );
 
-    return Stack(
-      children: [
-        // 🔵 BOTÓ PRINCIPAL (TISORES / CANCEL·LAR)
-        AnimatedPositioned(
-          duration: const Duration(milliseconds: 250),
-          right: 16,
-          bottom: bottomOffset,
-          child: FloatingActionButton(
-            heroTag: "btn_tisores_toggle_maestro",
-            backgroundColor: isToolActive
-                ? AppColors.logoGreen
-                : AppColors.primary,
-            foregroundColor: Colors.white,
-            onPressed: () {
-              if (isToolActive) {
+    return AnimatedPositioned(
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeInOut,
+      right: 16,
+      bottom: bottomOffset,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.end,
+        crossAxisAlignment:
+            CrossAxisAlignment.center, // Alineació central horitzontal perfecta
+        children: [
+          // 🟢 Si l'eina de les tisores està a l'inici, s'injecten els submodes a l'ESQUERRA
+          if (showAuxiliaryButtons) ...[
+            ReticleModeSelector(
+              isActive: sel.selectionMode == MapSelectionMode.reticle,
+              onPressed: () {
                 ref
                     .read(elevationSelectionProvider.notifier)
-                    .deactivateMapSelectionTool();
-              } else {
-                _handleInitialActivation(ref);
-              }
-            },
-            child: iconTijerasPersonalizado,
+                    .activateReticleMode();
+                if (mapController != null) {
+                  ElevationMagnetHelper.recalcularIActualitzar(
+                    ref: ref,
+                    mapController: mapController!,
+                  );
+                }
+              },
+            ),
+            const SizedBox(width: 10), // Espaiat constant simètric
+            WaypointModeSelector(
+              isActive: sel.selectionMode == MapSelectionMode.waypoint,
+              onPressed: () {
+                ref
+                    .read(elevationSelectionProvider.notifier)
+                    .activateWaypointMode();
+                if (mapController != null) {
+                  ElevationMagnetHelper.recalcularIActualitzar(
+                    ref: ref,
+                    mapController: mapController!,
+                  );
+                }
+              },
+            ),
+            const SizedBox(
+              width: 14,
+            ), // Marge d'enllaç constant amb el botó mestre
+          ],
+
+          // 🔵 BOTÓ PRINCIPAL MESTRE (TISORES / CANCEL·LAR / RESET)
+          SizedBox(
+            width: 56,
+            height: 56,
+            child: FloatingActionButton(
+              heroTag: "btn_tisores_toggle_maestro",
+              backgroundColor: isToolActive
+                  ? AppColors.logoGreen
+                  : AppColors.primary,
+              foregroundColor: Colors.white,
+              onPressed: () {
+                if (isToolActive) {
+                  // 🚀 REVERSIBILITAT DEL BOTÓ MESTRE: Si l'usuari ja té punts o el tram fixat (selected) i prem la creu (X),
+                  // en lloc de tancar l'eina directament, fa un reset per tornar a l'inici de la tria i mostrar els subbotons.
+                  if (sel.mapToolState == MapSelectionToolState.selected ||
+                      sel.mapToolState == MapSelectionToolState.selectingEnd) {
+                    ref
+                        .read(elevationSelectionProvider.notifier)
+                        .resetMapSelection();
+                  } else {
+                    // Si ja estava a l'estat inicial d'espera (selectingStart), llavors sí que es tanca l'eina completament
+                    ref
+                        .read(elevationSelectionProvider.notifier)
+                        .deactivateMapSelectionTool();
+                  }
+                } else {
+                  // Restauració de la lògica original d'activació de Senda
+                  if (sel.selectionMode == MapSelectionMode.waypoint) {
+                    ref
+                        .read(elevationSelectionProvider.notifier)
+                        .activateWaypointMode();
+                  } else {
+                    ref
+                        .read(elevationSelectionProvider.notifier)
+                        .activateReticleMode();
+                  }
+
+                  if (mapController != null) {
+                    ElevationMagnetHelper.recalcularIActualitzar(
+                      ref: ref,
+                      mapController: mapController!,
+                    );
+                  }
+
+                  // 🚀 GEST AUTOMÀTIC: Únicament en el moment exacte de prémer les tisores de zero,
+                  // col·lapsem el gràfic per obrir espai de treball lliure inicial al mapa.
+                  onCollapseChanged(true);
+                }
+              },
+              child: isToolActive
+                  ? const Icon(Icons.close, size: 28)
+                  : iconTijerasPersonalizado,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
-  }
-
-  void _handleInitialActivation(WidgetRef ref) {
-    ref.read(elevationSelectionProvider.notifier).activateMapSelectionTool();
-
-    if (mapController != null) {
-      ElevationMagnetHelper.recalcularIActualitzar(
-        ref: ref,
-        mapController: mapController!,
-      );
-    }
   }
 }

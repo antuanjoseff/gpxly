@@ -50,7 +50,7 @@ class GpsAccuracyBars extends ConsumerWidget {
     }
 
     // El text dels metres només es mostra si el GPS funciona i rep dades reals
-    final bool showText = isGpsReady && accuracy != null && accuracy != 999.0;
+    final bool showText = isGpsReady && accuracy != 999.0;
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,

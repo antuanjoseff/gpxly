@@ -83,7 +83,7 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
     final kmPart = totalMeters ~/ 1000;
     final mPart = totalMeters % 1000;
 
-    if (mPart == 0) return "${kmPart} km";
+    if (mPart == 0) return "$kmPart km";
     return "${kmPart}km ${mPart}m";
   }
 

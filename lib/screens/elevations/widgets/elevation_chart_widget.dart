@@ -101,8 +101,9 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
     final futureDists = widget.futureDistsGlobal;
     final futureAlts = widget.futureAlts;
 
-    if (pastDists.isEmpty && futureDists.isEmpty)
+    if (pastDists.isEmpty && futureDists.isEmpty) {
       return const SizedBox.shrink();
+    }
 
     final safePastLength = (pastDists.length == pastAlts.length)
         ? pastDists.length
@@ -125,8 +126,9 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
     final globalDists = <double>[...displayPastDists, ...displayFutureDists];
     final globalAlts = <double>[...displayPastAlts, ...displayFutureAlts];
 
-    if (globalDists.isEmpty || globalAlts.isEmpty)
+    if (globalDists.isEmpty || globalAlts.isEmpty) {
       return const SizedBox.shrink();
+    }
 
     final minAlt = globalAlts.reduce((a, b) => a < b ? a : b);
     final maxAlt = globalAlts.reduce((a, b) => a > b ? a : b);
@@ -489,8 +491,9 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
       );
 
       for (final spot in allSpots) {
-        if (spot.x >= minDist && spot.x <= maxDistBound)
+        if (spot.x >= minDist && spot.x <= maxDistBound) {
           rangeSelectedSpots.add(spot);
+        }
       }
     }
 

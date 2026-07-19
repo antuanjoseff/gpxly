@@ -1,12 +1,10 @@
 // lib/notifiers/helpers/elevation_magnet_helper.dart
 import 'dart:math' as math;
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:senda/models/track.dart';
 import 'package:senda/notifiers/elevation_selection_provider.dart';
-import 'package:senda/notifiers/gps_speed_notifier.dart';
 import 'package:senda/notifiers/recording_notifier.dart';
 import 'package:senda/notifiers/imported_track_notifier.dart';
 import 'package:senda/utils/map_layers.dart';
@@ -59,7 +57,7 @@ class ElevationMagnetHelper {
         final double ptLat = coordsAEvaluar[i][1]; // [1] és la Latitud
 
         final double dLat = ptLat - centerLat;
-        // 🧲 Apliquem la correcció de projecció a la longitud per tenir una distància real en metres a la pantalla
+        // 🧲 Apliquem la correcció de projecció a la longitud per tener una distància real en metres a la pantalla
         final double dLon = (ptLon - centerLon) * radiAnemometre;
         final double distSq = (dLat * dLat) + (dLon * dLon);
 
@@ -78,6 +76,8 @@ class ElevationMagnetHelper {
         endIndex: nearestIndex,
       );
 
+      // 🟢 MODIFICACIÓ DE SEGURETAT: Li passem explícitament el selectionMode actual
+      // perquè en fer el copyWith cap a la línia de la GPU no es destrueixi en ple moviment.
       final geometryState = liveState.copyWith(
         startTrackIndex: liveState.startTrackIndex,
         endTrackIndex:
@@ -88,6 +88,7 @@ class ElevationMagnetHelper {
         mode: liveState.mapToolState == MapSelectionToolState.selectingEnd
             ? SelectionMode.range
             : SelectionMode.single,
+        selectionMode: liveState.selectionMode, // 👈 PROTECCIÓ EN MOVIMENT
       );
 
       // 5. Pintem a la GPU esperando a que la operación nativa finalice

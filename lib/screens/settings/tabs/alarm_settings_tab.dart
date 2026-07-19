@@ -25,7 +25,7 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
     final h = s ~/ 3600;
     final m = (s % 3600) ~/ 60;
     if (m == 0) return "$h h";
-    return "$h h ${m} min";
+    return "$h h $m min";
   }
 
   @override

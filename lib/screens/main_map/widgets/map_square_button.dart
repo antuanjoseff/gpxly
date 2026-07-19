@@ -30,7 +30,7 @@ class MapSquareButton extends StatelessWidget {
     // - Passem de 48px a 56px de diàmetre horitzontal i vertical.
     // - D'aquesta manera queden exactament igual d'amples i alts que el botó de les tisores.
     // - Deixem el border-radius en 16.0 perquè conservi la forma quadrada arrodonida.
-    final double buttonSize = 56.0;
+    const double buttonSize = 56.0;
     final double currentRadius = isAction
         ? 18.0
         : 16.0; // 🎯 Pugem una mica el radi proporcionalment

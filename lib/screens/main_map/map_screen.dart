@@ -24,8 +24,6 @@ import 'package:senda/notifiers/map_selection_tool_notifier.dart';
 import 'package:senda/notifiers/navigation_notifier.dart';
 import 'package:senda/notifiers/permissions_notifier.dart';
 import 'package:senda/notifiers/recording_notifier.dart';
-import 'package:senda/notifiers/remaining_track_notifier.dart';
-import 'package:senda/notifiers/segment_stats_notifier.dart';
 import 'package:senda/notifiers/track_settings_notifier.dart';
 import 'package:senda/notifiers/waypoints_imported_notifier.dart';
 import 'package:senda/notifiers/waypoints_recorded_notifier.dart';
@@ -57,6 +55,8 @@ import 'package:senda/ui/app_messages.dart';
 import 'package:senda/utils/color_extensions.dart';
 import 'package:senda/utils/map_animator.dart';
 import 'package:senda/utils/map_layers.dart';
+import 'package:senda/widgets/reticle_mode_selector.dart';
+import 'package:senda/widgets/waypoint_mode_selector.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:senda/utils/distance_utils.dart';
 
@@ -99,7 +99,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
   static const int _mapThrottleMs = 32;
 
   late MapAnimator mapAnimator;
-  double _currentMapPadding = 0;
+  final double _currentMapPadding = 0;
 
   @override
   void initState() {
@@ -434,34 +434,24 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final pressure = ref.watch(barometerProvider).value;
     final isRunning = ref.watch(locationProvider.notifier).isSimulationRunning;
     final isPaused = ref.watch(locationProvider.notifier).isSimulationPaused;
-    final trackSettings = ref.watch(trackSettingsProvider);
-    final stats = ref.watch(segmentStatsProvider);
-    final real = ref.watch(trackRecordingProvider);
-    final imported = ref.watch(importedTrackProvider);
-    final remaining = ref.watch(remainingTrackProvider);
-
-    final hasAnyTrack =
-        real.points.isNotEmpty ||
-        (imported?.points.isNotEmpty ?? false) ||
-        (remaining?.distances.isNotEmpty ?? false);
-
+    // final real = ref.watch(trackRecordingProvider);
+    // final imported = ref.watch(importedTrackProvider);
+    // final sel = ref.watch(elevationSelectionProvider);
     // ─────────────────────────────────────────────────────────────
-    // 🛡️ RECEPTOR DE SELECCIÓN ADAPTADO (ESCUDO ANTICRASH DE GPU)
+    // OIENT 1 RECEPTOR DE SELECCIÓ DE TRAM
     ref.listen(elevationSelectionProvider, (previous, next) async {
-      // 🛡️ COMPROBACIÓ MESTRA AMPLIADA
       if (!styleInitialized || mapController == null || !mounted) return;
 
-      final bool isRange = next.mode == SelectionMode.range;
-
-      if (isRange) {
+      // 🔵 Mode waypoint → activar pulse
+      if (next.selectionMode == MapSelectionMode.waypoint) {
         startWaypointPulse(mapController!);
       } else {
+        // 🔴 Mode reticle o none → desactivar pulse
         stopWaypointPulse(mapController!);
       }
 
+      // --- la resta del teu codi de l’oient 1 ---
       final geom = MapGeometryHelper(ref: ref, mapController: mapController);
-      final int? indexIniciUnificat =
-          next.startTrackIndex ?? next.singlePointIndex;
 
       final bool isRecording =
           ref.read(trackRecordingProvider).recordingState ==
@@ -477,7 +467,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
         updateSelectedSegmentGeometry(mapController!, next, coordsActuales);
 
-        // 🚀 Mantenim pintada la línia també si ja s'ha seleccionat el tram completat
         if (next.mapToolState == MapSelectionToolState.selected) {
           updateSelectedSegmentGeometry(mapController!, next, coordsActuales);
         }
@@ -493,34 +482,16 @@ class _MapScreenState extends ConsumerState<MapScreen>
         );
       } catch (_) {}
     });
-    // 🚀 2️⃣ SEGOND OIENT EXCLUSIU PER AL CONTROL DEL DESPLEGABLE INFERIOR
-    // 🚀 2️⃣ SEGONS OIENT EXCLUSIU PER OBRIR EL GRÀFIC AL FINAL DE LA SELECCIÓ
-    ref.listen<ElevationSelectionState>(elevationSelectionProvider, (
-      previous,
-      next,
-    ) {
-      if (!mounted) return;
 
-      // SI L'USUARI FIXA EL SEGON PUNT (Passem de buscar el fi a tram permanent fixat)
-      if (previous?.mapToolState == MapSelectionToolState.selectingEnd &&
-          next.mapToolState == MapSelectionToolState.selected) {
-        // Si el gràfic estava amagat (_isChartCollapsed és true), l'obrim a l'instant!
-        if (_isChartCollapsed) {
-          setState(() {
-            _isChartCollapsed = false;
-          });
-        }
-      }
-    });
-
-    // 🛰️ OIENT 1: POSICIÓ DE L’USUARI (BLINDAT)
+    // 🛰️ OIENT 3: POSICIÓ DE L’USUARI (BLINDAT)
     ref.listen<UserPosition?>(locationProvider, (prev, next) async {
       // 🛡️ CONTROL INICIAL: Afegim !mounted
       if (!styleInitialized ||
           mapController == null ||
           next == null ||
-          !mounted)
+          !mounted) {
         return;
+      }
 
       final recState = ref.read(trackRecordingProvider).recordingState;
 
@@ -630,7 +601,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
       }
     });
 
-    // 📊 OIENT 2: GRAVACIÓ FÍSICA (BLINDAT)
+    // 📊 OIENT 4: GRAVACIÓ FÍSICA (BLINDAT)
     ref.listen<Track>(trackRecordingProvider, (prev, next) {
       // 🛡️ CONTROL INICIAL: Afegim la comprovació de cicle de vida !mounted
       if (!styleInitialized || mapController == null || !mounted) return;
@@ -675,13 +646,21 @@ class _MapScreenState extends ConsumerState<MapScreen>
       }
     });
 
-    // OIENT 3: TRACK IMPORTAT (BLINDAT)
+    // OIENT 5: TRACK IMPORTAT (BLINDAT)
+    // OIENT 5: TRACK IMPORTAT (BLINDAT CONTRA INTERFERÈNCIES DE SELECCIÓ)
     ref.listen<Track?>(importedTrackProvider, (prev, next) {
       // 🛡️ CONTROL INICIAL: Evitem l'execució si la pantalla ja no està muntada
       if (!styleInitialized || mapController == null || !mounted) return;
 
+      // 🔍 LLEGIM SI L'EINA DE SELECCIÓ ESTÀ APAGADA AMB EL RECEPTOR DIRECTE
+      final selection = ref.read(elevationSelectionProvider);
+      final bool isToolOff =
+          selection.mapToolState == MapSelectionToolState.off;
+
       // 🔥 MOSTRAR AUTOMÀTICAMENT EL PANELL D’ELEVACIONS
-      if (next != null && next.coordinates.isNotEmpty) {
+      // 🚀 MODIFICACIÓ CLAU: Només forcem l'obertura del gràfic si hi ha ruta
+      // I ÚNICAMENT si l'eina de selecció de trams està apagada.
+      if (next != null && next.coordinates.isNotEmpty && isToolOff) {
         if (mounted) setState(() => _isChartCollapsed = false);
       }
 
@@ -761,14 +740,15 @@ class _MapScreenState extends ConsumerState<MapScreen>
       }
     });
 
-    // OIENT 4: WAYPOINTS GRAVATS (BLINDAT)
+    // OIENT 6: WAYPOINTS GRAVATS (BLINDAT)
     ref.listen(waypointsProvider, (prev, next) async {
       // 🛡️ CONTROL INICIAL: Evitem l'execució si el giny ja s'està destruint
       if (!styleInitialized ||
           !waypointLayersReady ||
           mapController == null ||
-          !mounted)
+          !mounted) {
         return;
+      }
 
       try {
         // Actualitzem la font de dades fent servir el controlador de forma segura
@@ -793,14 +773,15 @@ class _MapScreenState extends ConsumerState<MapScreen>
       }
     });
 
-    // OIENT 5: WAYPOINTS IMPORTATS (BLINDAT)
+    // OIENT 7: WAYPOINTS IMPORTATS (BLINDAT)
     ref.listen(importedWaypointsProvider, (prev, next) async {
       // 🛡️ CONTROL INICIAL: Evitem l'execució si el giny ja s'està destruint o tancant
       if (!styleInitialized ||
           !waypointLayersReady ||
           mapController == null ||
-          !mounted)
+          !mounted) {
         return;
+      }
 
       try {
         // Actualitzem la font de dades dels punts de pas importats de manera segura
@@ -825,7 +806,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
       }
     });
 
-    // OIENT 6
+    // OIENT 8
     ref.listen(trackSettingsProvider, (previous, next) {
       // 🛡️ CONTROL INICIAL: Evitem l'execució si la pantalla s'està destruint
       if (mapController == null || !styleInitialized || !mounted) return;
@@ -857,7 +838,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
       }
     });
 
-    // OIENT 7
+    // OIENT 9
     ref.listen(importedTrackSettingsProvider, (previous, next) {
       // 🛡️ CONTROL INICIAL: Evitem l'execució si la pantalla ja no està muntada
       if (!styleInitialized || mapController == null || !mounted) return;
@@ -874,8 +855,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
           ),
         );
 
-        if (!mounted)
+        if (!mounted) {
           return; // Re-comprovació de seguretat abans de la segona capa
+        }
 
         mapController?.setLayerProperties(
           "waypoints_imported_layer",
@@ -890,7 +872,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
       }
     });
 
-    // OIENT 8: ALERTES I DIÀLEGS
+    // OIENT 10: ALERTES I DIÀLEGS
     ref.listen<NavigationState>(navigationProvider, (prev, next) {
       // 🛡️ CONTROL INICIAL CRÍTIC: Si la pantalla s'ha tancat, no podem utilitzar el 'context'
       if (!mounted) return;
@@ -905,8 +887,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
       }
     });
 
-    // OIENT 9
-    // OIENT 9: DIÀLEG INTERACTIU DE RUMB INVERS
+    // OIENT 11 DIÀLEG INTERACTIU DE RUMB INVERS
     ref.listen<NavigationState>(navigationProvider, (prev, next) async {
       // 🛡️ CONTROL INICIAL CRÍTIC: Si la pantalla s'ha tancat, avortem
       if (!mounted) return;
@@ -941,7 +922,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
       }
     });
 
-    // OIENT 10
+    // OIENT 12
     ref.listen<NavigationState>(navigationProvider, (prev, next) {
       // 🛡️ CONTROL INICIAL CRÍTIC: Si la pantalla ja no existeix, evitem utilitzar el context
       if (!mounted) return;
@@ -956,7 +937,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
       }
     });
 
-    // OIENT 11
+    // OIENT 13
     ref.listen<NavigationState>(navigationProvider, (prev, next) {
       // 🛡️ CONTROL INICIAL CRÍTIC: Si la pantalla ja no està muntada, avortem per protegir el context
       if (!mounted) return;
@@ -1129,174 +1110,162 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     },
                   ),
 
-                  // 🎯 CAPA 2: RETICLE CENTRAL AUTOMÀTIC I BOTÓ DE SELECCIÓ (INTEGRACIÓ INDESTRUCTIBLE)
+                  // 🎯 CAPA 2: RETICLE CENTRAL AUTOMÀTIC I BOTÓ DE SELECCIÓ (SENSE PARPELLEIGS)
                   Consumer(
                     builder: (context, ref, _) {
                       final sel = ref.watch(elevationSelectionProvider);
 
-                      // 🚀 1. CONDICIÓN AMPLIADA: Incluimos 'selected' para que la retícula no desaparezca al fijar el tramo
-                      final bool isToolActive =
+                      // 🚀 CONDICIÓ BLINDADA: La retícula es mostra SIEMPRE que l'eina estigui activa i en mode reticle.
+                      // Ignorem totalment si 'showCenterButton' és true o false mentre es mou el mapa!
+                      final bool showReticleVisual =
+                          sel.selectionMode == MapSelectionMode.reticle &&
+                          (sel.mapToolState ==
+                                  MapSelectionToolState.selectingStart ||
+                              sel.mapToolState ==
+                                  MapSelectionToolState.selectingEnd ||
+                              sel.mapToolState ==
+                                  MapSelectionToolState.selected);
+
+                      if (!showReticleVisual) return const SizedBox.shrink();
+
+                      // Mantenim exactament la teva lògica de colors original de Senda
+                      final bool isStartOrSelected =
                           sel.mapToolState ==
                               MapSelectionToolState.selectingStart ||
-                          sel.mapToolState ==
-                              MapSelectionToolState.selectingEnd ||
                           sel.mapToolState == MapSelectionToolState.selected;
 
-                      if (isToolActive) {
-                        // 🟢 Si está en modo 'selected', el comportamiento visual vuelve a ser el de un inicio (Verde)
-                        final bool isStartOrSelected =
-                            sel.mapToolState ==
-                                MapSelectionToolState.selectingStart ||
-                            sel.mapToolState == MapSelectionToolState.selected;
+                      final Color reticleColor = isStartOrSelected
+                          ? const Color(0xFF4CAF50) // 🟢 Verd per a l'Inici
+                          : const Color(0xFFF44336); // 🔴 Vermell per al Final
 
-                        final Color reticleColor = isStartOrSelected
-                            ? const Color(
-                                0xFF4CAF50,
-                              ) // 🟢 Verde para el Inicio (o reinicio de tramo)
-                            : const Color(0xFFF44336); // 🔴 Rojo para el Final
-
-                        return Positioned.fill(
-                          child: Stack(
-                            children: [
-                              // 1. EL VISOR CENTRAL PERSONALITZAT
-                              IgnorePointer(
-                                ignoring: true,
-                                child: Center(
-                                  child: MapSelectionReticle(
-                                    color: reticleColor,
-                                  ),
-                                ),
+                      return Positioned.fill(
+                        child: Stack(
+                          children: [
+                            // 1. EL VISOR CENTRAL PERSONALITZAT (S'immunitza contra el moviment del mapa)
+                            IgnorePointer(
+                              ignoring: true,
+                              child: Center(
+                                child: MapSelectionReticle(color: reticleColor),
                               ),
+                            ),
 
-                              // 2. EL BOTÓ FLOTANT DE SELECCIÓ
-                              if (sel.showCenterButton == true)
-                                Align(
-                                  alignment: Alignment.center,
-                                  child: Transform.translate(
-                                    offset: const Offset(0, -60),
-                                    child: Material(
-                                      elevation: 6,
-                                      shadowColor: Colors.black38,
+                            // 2. EL BOTÓ FLOTANT DE CONFIRMACIÓ (Aquest sí que respon a showCenterButton)
+                            if (sel.showCenterButton == true)
+                              Align(
+                                alignment: Alignment.center,
+                                child: Transform.translate(
+                                  offset: const Offset(0, -60),
+                                  child: Material(
+                                    elevation: 6,
+                                    shadowColor: Colors.black38,
+                                    borderRadius: BorderRadius.circular(20),
+                                    color: reticleColor,
+                                    child: InkWell(
                                       borderRadius: BorderRadius.circular(20),
-                                      color: reticleColor,
-                                      child: InkWell(
-                                        borderRadius: BorderRadius.circular(20),
-                                        onTap: () {
-                                          final centerLat = ref.read(
-                                            mapCenterLatProvider,
-                                          );
-                                          final centerLon = ref.read(
-                                            mapCenterLonProvider,
-                                          );
-                                          final imported = ref.read(
-                                            importedTrackProvider,
-                                          );
-                                          final real = ref.read(
-                                            trackRecordingProvider,
-                                          );
+                                      onTap: () {
+                                        // Mantenim exactament el teu codi d'onTap original intacte de Senda...
+                                        final centerLat = ref.read(
+                                          mapCenterLatProvider,
+                                        );
+                                        final centerLon = ref.read(
+                                          mapCenterLonProvider,
+                                        );
+                                        final imported = ref.read(
+                                          importedTrackProvider,
+                                        );
+                                        final real = ref.read(
+                                          trackRecordingProvider,
+                                        );
 
-                                          final coords =
-                                              (real.recordingState ==
-                                                  RecordingState.recording)
-                                              ? real.coordinates
-                                              : imported?.coordinates ?? [];
+                                        final coords =
+                                            (real.recordingState ==
+                                                RecordingState.recording)
+                                            ? real.coordinates
+                                            : imported?.coordinates ?? [];
 
-                                          if (coords.isEmpty) return;
+                                        if (coords.isEmpty) return;
 
-                                          int nearestIndex = 0;
-                                          double minDist = double.infinity;
-                                          for (
-                                            int i = 0;
-                                            i < coords.length;
-                                            i++
-                                          ) {
-                                            final dLat =
-                                                coords[i][1] - centerLat;
-                                            final dLon =
-                                                coords[i][0] - centerLon;
-                                            final dist =
-                                                dLat * dLat + dLon * dLon;
-                                            if (dist < minDist) {
-                                              minDist = dist;
-                                              nearestIndex = i;
-                                            }
+                                        int nearestIndex = 0;
+                                        double minDist = double.infinity;
+                                        for (
+                                          int i = 0;
+                                          i < coords.length;
+                                          i++
+                                        ) {
+                                          final dLat = coords[i][1] - centerLat;
+                                          final dLon = coords[i][0] - centerLon;
+                                          final dist =
+                                              dLat * dLat + dLon * dLon;
+                                          if (dist < minDist) {
+                                            minDist = dist;
+                                            nearestIndex = i;
                                           }
+                                        }
 
-                                          // 🎯 2. ACCIONES DEL BOTÓN SEGÚN EL ESTADO
-                                          final notifier = ref.read(
-                                            elevationSelectionProvider.notifier,
+                                        final notifier = ref.read(
+                                          elevationSelectionProvider.notifier,
+                                        );
+
+                                        if (sel.mapToolState ==
+                                            MapSelectionToolState.selected) {
+                                          notifier.iniciarNouTramDesDeSelected(
+                                            nearestIndex,
                                           );
+                                        } else if (sel.mapToolState ==
+                                            MapSelectionToolState
+                                                .selectingStart) {
+                                          notifier.fixStartFromMap(
+                                            nearestIndex,
+                                          );
+                                        } else if (sel.mapToolState ==
+                                            MapSelectionToolState
+                                                .selectingEnd) {
+                                          notifier.fixEndFromMap(nearestIndex);
+                                        }
 
-                                          if (sel.mapToolState ==
-                                              MapSelectionToolState.selected) {
-                                            // ✂️ Si ya había un tramo persistiendo, presionar el botón verde "Fixar inici"
-                                            // borra el tramo viejo e inicia uno nuevo usando el centro actual del mapa
-                                            notifier
-                                                .iniciarNouTramDesDeSelected(
-                                                  nearestIndex,
-                                                );
-                                          } else if (sel.mapToolState ==
-                                              MapSelectionToolState
-                                                  .selectingStart) {
-                                            notifier.fixStartFromMap(
-                                              nearestIndex,
-                                            );
-                                          } else if (sel.mapToolState ==
-                                              MapSelectionToolState
-                                                  .selectingEnd) {
-                                            notifier.fixEndFromMap(
-                                              nearestIndex,
-                                            );
-                                          }
-
-                                          // 5️⃣ Ocultamos el botón tras la pulsación
-                                          notifier.hideSelectionButton();
-                                        },
-                                        child: Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 14,
-                                            vertical: 8,
-                                          ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Icon(
-                                                isStartOrSelected
-                                                    ? Icons.play_arrow
-                                                    : Icons.flag,
+                                        notifier.hideSelectionButton();
+                                      },
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 14,
+                                          vertical: 8,
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              isStartOrSelected
+                                                  ? Icons.play_arrow
+                                                  : Icons.flag,
+                                              color: Colors.white,
+                                              size: 16,
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              isStartOrSelected
+                                                  ? AppLocalizations.of(
+                                                          context,
+                                                        )!
+                                                        .fixStart // 🟢 "Fixar inici"
+                                                  : AppLocalizations.of(
+                                                      context,
+                                                    )!.fixEnd, // 🔴 "Fixar fi"
+                                              style: const TextStyle(
                                                 color: Colors.white,
-                                                size: 16,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 13,
                                               ),
-                                              const SizedBox(width: 6),
-                                              // 🏷️ 3. TEXTOS LOCALIZADOS DINÁMICOS
-                                              Text(
-                                                isStartOrSelected
-                                                    ? AppLocalizations.of(
-                                                            context,
-                                                          )!
-                                                          .fixStart // 🟢 "Fixar inici"
-                                                    : AppLocalizations.of(
-                                                        context,
-                                                      )!.fixEnd, // 🔴 "Fixar fi"
-                                                style: const TextStyle(
-                                                  color: Colors.white,
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 13,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
+                                            ),
+                                          ],
                                         ),
                                       ),
                                     ),
                                   ),
                                 ),
-                            ],
-                          ),
-                        );
-                      }
-
-                      return const SizedBox.shrink();
+                              ),
+                          ],
+                        ),
+                      );
                     },
                   ),
 
@@ -1309,8 +1278,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                       onAddWaypoint: () => _onAddWaypoint(context, ref),
                     ),
 
-                  // 🔥 PANELL D’ELEVACIONS
-                  // 🚀 CAPA 4: EL MODUL DE GRAFICS I ESTADÍSTIQUES FIXES
+                  // CAPA 4: EL MODUL DE GRAFICS I ESTADÍSTIQUES FIXES
                   MapElevationHud(
                     isChartCollapsed: _isChartCollapsed,
                     onCollapseChanged: (collapsed) {
@@ -1318,12 +1286,14 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     },
                   ),
 
-                  // 🚀 CAPA 5: ELS BOTONS FLOTANTS DE LES TISORES
-                  if (!_fullScreen)
-                    MapScissorsButtons(
-                      isChartCollapsed: _isChartCollapsed,
-                      mapController: mapController,
-                    ),
+                  MapScissorsButtons(
+                    isChartCollapsed: _isChartCollapsed,
+                    mapController: mapController,
+                    onCollapseChanged: (collapsed) {
+                      setState(() => _isChartCollapsed = collapsed);
+                    },
+                  ),
+
                   // RECORDING SUB MENU
                   AnimatedPositioned(
                     duration: const Duration(milliseconds: 220),

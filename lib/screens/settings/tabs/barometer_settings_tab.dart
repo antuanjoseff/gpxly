@@ -27,7 +27,7 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
   bool _isHudCollapsed = true;
 
   // Controls de guàrdia per saber si l'usuari interacciona amb el mapa
-  bool _hasCenteredOnUser = false;
+  final bool _hasCenteredOnUser = false;
   bool _userMovedMap = false;
 
   static const int _maxDownloadedCellsLimit = 8;

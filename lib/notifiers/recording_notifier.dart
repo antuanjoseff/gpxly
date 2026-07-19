@@ -431,7 +431,7 @@ class RecordingNotifier extends Notifier<Track> {
     final filtered = _filterPointsByAccuracy(points);
     if (filtered.length < 2) return 0.0;
 
-    final windowSeconds = TrackThresholds.minSpeedWindowSeconds;
+    const windowSeconds = TrackThresholds.minSpeedWindowSeconds;
 
     final List<UserPosition> window = [];
     final last = filtered.last;
@@ -478,7 +478,7 @@ class RecordingNotifier extends Notifier<Track> {
     final filtered = _filterPointsByAccuracy(points);
     if (filtered.length < 2) return 0.0;
 
-    final minMeters = TrackThresholds.minSpeedWindowMeters;
+    const minMeters = TrackThresholds.minSpeedWindowMeters;
 
     final List<UserPosition> window = [];
     final last = filtered.last;

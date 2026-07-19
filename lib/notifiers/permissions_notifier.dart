@@ -6,7 +6,6 @@ import 'package:permission_handler/permission_handler.dart' as perm;
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:senda/models/track.dart';
 import 'package:senda/notifiers/recording_notifier.dart';
-import 'package:senda/services/recording_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class PermissionsNotifier extends Notifier<GpsPermissionState> {

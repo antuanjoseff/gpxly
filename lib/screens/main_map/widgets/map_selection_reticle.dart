@@ -69,7 +69,7 @@ class _ReticlePainter extends CustomPainter {
     final double thickEnd = radius * 0.45; // On acaba el bloc gruixut
     final double thinStart =
         radius * 0.35; // On comença la línia fina (després de la punta)
-    final double centerGap =
+    const double centerGap =
         2.0; // El petit buit lliure al centre exacte (sense punt)
 
     // 🎯 4. DIBUIX DE LES LÍNIES GROIXUDES (Amb la punta bisellada/estrenyida cap al centre)

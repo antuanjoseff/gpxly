@@ -260,7 +260,7 @@ class NavigationNotifier extends Notifier<NavigationState> {
       final prevAlongTrack = _lastAlongTrackDistance;
       if (prevAlongTrack != null) {
         final deltaAlongTrack = distanceAlongTrack - prevAlongTrack;
-        final epsilon = TrackThresholds.reverseDeltaEpsilonMeters;
+        const epsilon = TrackThresholds.reverseDeltaEpsilonMeters;
 
         if (deltaAlongTrack < -epsilon) {
           _reverseBackwardAccumMeters += -deltaAlongTrack;
