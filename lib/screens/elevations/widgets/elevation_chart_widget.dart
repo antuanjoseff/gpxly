@@ -418,9 +418,9 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
               ],
 
               // TOOLTIP AZUL MÓVIL: Flota dinámicamente a 12px exactos por encima de la montaña
-              if (graphIdx >= 0 && graphX != null)
+              if (!showRangeArea && graphIdx >= 0 && graphX != null)
                 Positioned(
-                  left: (graphX - 65).clamp(4.0, width - 134.0),
+                  left: (graphX - 65).clamp(4.0, width - 65.0),
                   top: -18,
                   child: _buildFlutterTooltip(
                     "${(globalDists[graphIdx] / 1000.0).toStringAsFixed(2)} km | ${globalAlts[graphIdx].toStringAsFixed(0)} m",
