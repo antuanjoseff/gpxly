@@ -713,4 +713,13 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get fixEnd => 'Punto final';
+
+  @override
+  String get deleteCurrentTrackTitle => '¿Eliminar datos?';
+
+  @override
+  String get deleteCurrentTrackMessage => '¿Quieres eliminar la información actual del track?';
+
+  @override
+  String get deleteCurrentTrackKeep => 'MANTENER';
 }

@@ -605,7 +605,14 @@ class _MapScreenState extends ConsumerState<MapScreen>
     ref.listen<Track>(trackRecordingProvider, (prev, next) {
       // 🛡️ CONTROL INICIAL: Afegim la comprovació de cicle de vida !mounted
       if (!styleInitialized || mapController == null || !mounted) return;
-
+      // 🗑️ El track s'ha eliminat
+      if (next.points.isEmpty) {
+        mapController!.setGeoJsonSource("track_line", {
+          "type": "FeatureCollection",
+          "features": [],
+        });
+        return;
+      }
       try {
         if (next.recordingState == RecordingState.recording) {
           mapAnimator.updateFromTrack(next, !smartCenterEnabled);

@@ -1500,6 +1500,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'End point'**
   String get fixEnd;
+
+  /// No description provided for @deleteCurrentTrackTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete data?'**
+  String get deleteCurrentTrackTitle;
+
+  /// No description provided for @deleteCurrentTrackMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Do you want to delete the current track information?'**
+  String get deleteCurrentTrackMessage;
+
+  /// No description provided for @deleteCurrentTrackKeep.
+  ///
+  /// In en, this message translates to:
+  /// **'KEEP'**
+  String get deleteCurrentTrackKeep;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

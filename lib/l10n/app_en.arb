@@ -294,5 +294,10 @@
   "gpsSearching": "Searching...",
 
   "fixStart": "Start point",
-  "fixEnd": "End point"
+  "fixEnd": "End point",
+
+  "deleteCurrentTrackTitle": "Delete data?",
+  "deleteCurrentTrackMessage": "Do you want to delete the current track information?",
+  "deleteCurrentTrackKeep": "KEEP"
+
 }

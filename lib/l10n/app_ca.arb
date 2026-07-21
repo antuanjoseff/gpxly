@@ -294,5 +294,9 @@
   "gpsSearching": "Buscant...",
 
   "fixStart": "Punt d'inici",
-  "fixEnd": "Punt final"
+  "fixEnd": "Punt final",
+
+  "deleteCurrentTrackTitle": "Eliminar dades?",
+  "deleteCurrentTrackMessage": "Vols eliminar la informació actual del track?",
+  "deleteCurrentTrackKeep": "MANTENIR"
 }

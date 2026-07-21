@@ -239,15 +239,16 @@ class AppMessages {
   static Future<bool?> showDeleteTrackDialog(BuildContext context) =>
       _showBaseDialog(
         context: context,
-        title: "Eliminar dades?",
-        message: "Vols eliminar la informació actual del track?",
+        title: AppLocalizations.of(context)!.deleteCurrentTrackTitle,
+        message: AppLocalizations.of(context)!.deleteCurrentTrackMessage,
         icon: Icons.delete_forever,
         iconColor: Colors.redAccent,
-        confirmLabel: "ELIMINAR",
+        confirmLabel: AppLocalizations.of(context)!.deleteConfirm,
         confirmColor: Colors.redAccent,
-        cancelLabel: "MANTENIR",
+        cancelLabel: AppLocalizations.of(context)!.deleteCurrentTrackKeep,
         barrierDismissible: false,
       );
+
   static Future<bool?> showDeleteImportedTrackDialog(BuildContext context) =>
       _showBaseDialog(
         context: context,
