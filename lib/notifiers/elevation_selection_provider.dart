@@ -438,7 +438,7 @@ class ElevationSelectionNotifier extends Notifier<ElevationSelectionState> {
     _lastWpIndex = null;
     _darrerWpClicat = null;
     _isJustSelectedFromMap = false;
-    state = ElevationSelectionState(
+    state = const ElevationSelectionState(
       mode: SelectionMode.single,
       mapToolState: MapSelectionToolState.selectingStart,
       source: SelectionSource.chart,

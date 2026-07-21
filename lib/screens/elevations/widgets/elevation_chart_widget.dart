@@ -203,9 +203,9 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
             ref
                 .read(elevationSelectionProvider.notifier)
                 .setManualRange(sIdx, eIdx);
-            ref
-                .read(elevationSelectionProvider.notifier)
-                .activateMapSelectionTool();
+            // ref
+            //     .read(elevationSelectionProvider.notifier)
+            //     .activateMapSelectionTool();
             setState(() {
               _localStartIdx = sIdx;
               _localEndIdx = eIdx;
@@ -372,8 +372,8 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
               Positioned.fill(
                 child: CustomPaint(
                   painter: SelectionPainter(
-                    graphX: graphX,
-                    graphIndex: graphIdx,
+                    graphX: showRangeArea ? null : graphX,
+                    graphIndex: showRangeArea ? null : graphIdx,
                     startX: startX,
                     startIndex: startIdx,
                     endX: endX,
@@ -420,7 +420,7 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
               // TOOLTIP AZUL MÓVIL: Flota dinámicamente a 12px exactos por encima de la montaña
               if (!showRangeArea && graphIdx >= 0 && graphX != null)
                 Positioned(
-                  left: (graphX - 65).clamp(4.0, width - 65.0),
+                  left: (graphX - 65).clamp(4.0, width - 130.0),
                   top: -18,
                   child: _buildFlutterTooltip(
                     "${(globalDists[graphIdx] / 1000.0).toStringAsFixed(2)} km | ${globalAlts[graphIdx].toStringAsFixed(0)} m",
