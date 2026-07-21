@@ -8,6 +8,8 @@ import 'package:senda/notifiers/helpers/elevation_magnet_helper.dart';
 import 'package:senda/notifiers/imported_track_notifier.dart';
 import 'package:senda/notifiers/recording_notifier.dart';
 import 'package:senda/notifiers/segment_stats_notifier.dart';
+import 'package:senda/notifiers/waypoints_imported_notifier.dart';
+import 'package:senda/notifiers/waypoints_recorded_notifier.dart';
 import 'package:senda/screens/elevations/widgets/segment_stats_widget.dart';
 import 'package:senda/screens/main_map/widgets/map_bottom_controls/elevation_panel.dart';
 import 'package:senda/theme/app_colors.dart';
@@ -141,6 +143,21 @@ class MapScissorsButtons extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final recordedWps = ref.watch(waypointsProvider);
+    final importedWps = ref.watch(importedWaypointsProvider);
+
+    final recTrack = ref.read(trackRecordingProvider);
+    final bool isRecording =
+        recTrack.recordingState == RecordingState.recording;
+
+    // Si estem gravant → waypoints del track gravat
+    // Si NO estem gravant → waypoints del track importat
+    final int activeWaypointCount = isRecording
+        ? recordedWps.length
+        : importedWps.length;
+
+    final bool hasEnoughWaypoints = activeWaypointCount >= 2;
+
     final sel = ref.watch(elevationSelectionProvider);
     final importedTrack = ref.watch(importedTrackProvider);
     final recordingTrack = ref.watch(trackRecordingProvider);
@@ -237,20 +254,22 @@ class MapScissorsButtons extends ConsumerWidget {
               },
             ),
             const SizedBox(width: 10), // Espaiat constant simètric
-            WaypointModeSelector(
-              isActive: sel.selectionMode == MapSelectionMode.waypoint,
-              onPressed: () {
-                ref
-                    .read(elevationSelectionProvider.notifier)
-                    .activateWaypointMode();
-                if (mapController != null) {
-                  ElevationMagnetHelper.recalcularIActualitzar(
-                    ref: ref,
-                    mapController: mapController!,
-                  );
-                }
-              },
-            ),
+            if (hasEnoughWaypoints)
+              WaypointModeSelector(
+                isActive: sel.selectionMode == MapSelectionMode.waypoint,
+                onPressed: () {
+                  ref
+                      .read(elevationSelectionProvider.notifier)
+                      .activateWaypointMode();
+                  if (mapController != null) {
+                    ElevationMagnetHelper.recalcularIActualitzar(
+                      ref: ref,
+                      mapController: mapController!,
+                    );
+                  }
+                },
+              ),
+
             const SizedBox(
               width: 14,
             ), // Marge d'enllaç constant amb el botó mestre
