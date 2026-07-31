@@ -1,18 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/l10n/app_localizations.dart';
-import 'package:senda/notifiers/imported_track_settings_notifier.dart';
+import 'package:senda/notifiers/track_settings_notifier.dart';
 import 'package:senda/theme/app_colors.dart';
-import 'package:senda/widgets/colors/track_color_picker_dialog.dart';
 import 'package:senda/widgets/custom_settings_card.dart';
-import 'package:senda/screens/settings/tabs/track_settings_tab.dart';
 
-class ImportedTrackSettingsTab extends ConsumerWidget {
-  const ImportedTrackSettingsTab({super.key});
+class TrackSettingsTab extends ConsumerWidget {
+  const TrackSettingsTab({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final settings = ref.watch(importedTrackSettingsProvider);
+    final settings = ref.watch(trackSettingsProvider);
     final t = AppLocalizations.of(context)!;
 
     return Scaffold(
@@ -23,7 +22,7 @@ class ImportedTrackSettingsTab extends ConsumerWidget {
         centerTitle: false,
         iconTheme: const IconThemeData(color: Colors.white),
         title: Text(
-          t.importedTrack,
+          t.trackTab,
           style: const TextStyle(
             color: Colors.white,
             fontSize: 18,
@@ -34,6 +33,7 @@ class ImportedTrackSettingsTab extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          // --- SECCIÓN COLOR ---
           SectionTitle(t.trackColor),
 
           Container(
@@ -53,6 +53,7 @@ class ImportedTrackSettingsTab extends ConsumerWidget {
               children: [
                 Row(
                   children: [
+                    // Círculo de color actual
                     Container(
                       width: 24,
                       height: 24,
@@ -75,9 +76,8 @@ class ImportedTrackSettingsTab extends ConsumerWidget {
                     ),
                   ],
                 ),
-
                 const SizedBox(height: 20),
-
+                // Línea de previsualización
                 CustomPaint(
                   size: const Size(double.infinity, 20),
                   painter: TrackPathPainter(
@@ -85,9 +85,8 @@ class ImportedTrackSettingsTab extends ConsumerWidget {
                     strokeWidth: 6,
                   ),
                 ),
-
                 const SizedBox(height: 20),
-
+                // Botón Outlined (mismo estilo que ImportedTrack)
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
@@ -101,18 +100,8 @@ class ImportedTrackSettingsTab extends ConsumerWidget {
                     ),
                     icon: const Icon(Icons.palette_outlined, size: 20),
                     label: Text(t.changeTrackColor),
-                    onPressed: () async {
-                      final color = await showTrackColorPickerDialog(
-                        context: context,
-                        initialColor: settings.color,
-                      );
-
-                      if (color != null) {
-                        ref
-                            .read(importedTrackSettingsProvider.notifier)
-                            .setColor(color);
-                      }
-                    },
+                    onPressed: () =>
+                        _openColorPicker(context, ref, settings.color),
                   ),
                 ),
               ],
@@ -120,9 +109,9 @@ class ImportedTrackSettingsTab extends ConsumerWidget {
           ),
 
           const SizedBox(height: 8),
-
           SectionTitle(t.trackWidth),
 
+          // --- SECCIÓN ANCHO (CON SLIDER) ---
           SettingsCard(
             title: t.trackWidth,
             valueText: "${settings.width.toStringAsFixed(1)} px",
@@ -131,11 +120,10 @@ class ImportedTrackSettingsTab extends ConsumerWidget {
             max: 10,
             divisions: 18,
             onChanged: (v) =>
-                ref.read(importedTrackSettingsProvider.notifier).setWidth(v),
+                ref.read(trackSettingsProvider.notifier).setWidth(v),
             extraChild: Column(
               children: [
                 const SizedBox(height: 12),
-
                 Container(
                   width: double.infinity,
                   height: 40,
@@ -159,4 +147,70 @@ class ImportedTrackSettingsTab extends ConsumerWidget {
       ),
     );
   }
+
+  // 🌟 FUNCIÓ MODIFICADA AMB EL PICKER DE LA IMATGE 🌟
+  void _openColorPicker(
+    BuildContext context,
+    WidgetRef ref,
+    Color currentColor,
+  ) {
+    final t = AppLocalizations.of(context)!;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(t.pickColor),
+        content: SingleChildScrollView(
+          child: ColorPicker(
+            pickerColor: currentColor,
+            onColorChanged: (c) {
+              // Actualitza l'estat en temps real mentre l'usuari belluga el selector
+              ref.read(trackSettingsProvider.notifier).setColor(c);
+            },
+            // 🛠️ Ajustaments clau per calcar la teva imatge:
+            pickerAreaHeightPercent:
+                0.0, // Amaga la zona gran de selecció lliure HSV per mostrar només les paletes tipus Material
+            enableAlpha:
+                true, // Activa la barra inferior de transparència amb el cercle indicador numèric
+            displayThumbColor:
+                true, // Mostra el color triat a l'interior dels cercles lliscants
+            paletteType: PaletteType.hsvWithHue,
+            labelTypes:
+                const [], // Deixem la llista buida per amagar els selectors de text HEX/RGB i fer-ho més net
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class TrackPathPainter extends CustomPainter {
+  final Color color;
+  final double strokeWidth;
+  TrackPathPainter({required this.color, required this.strokeWidth});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = strokeWidth
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    canvas.drawLine(
+      Offset(0, size.height / 2),
+      Offset(size.width, size.height / 2),
+      paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant TrackPathPainter oldDelegate) =>
+      oldDelegate.color != color || oldDelegate.strokeWidth != strokeWidth;
 }

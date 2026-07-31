@@ -140,35 +140,31 @@ class AlarmEngine {
       _accDown = 0;
     }
 
-    // 2️⃣ LÒGICA: COTES ABSOLUTES (Corregit: histèresi real i independent)
+    // 2️⃣ LÒGICA: COTES ABSOLUTES (Histèresi igual a la configuració de la cota)
     if (settings.cotaEnabled && settings.cotaMeters > 0) {
+      // Calculem el pis actual dividint l'altura suavitzada pel llindar de cota
       int currentFloor = (_smoothedAlt / settings.cotaMeters).floor();
 
       if (_lastCotaFloor == null) {
         _lastCotaFloor = currentFloor;
         _baseCotaAlt = currentFloor * settings.cotaMeters.toDouble();
-      } else if (currentFloor != _lastCotaFloor) {
-        const double hysteresis = 4.0; // 4-5 metres de marge de seguretat
+      } else {
+        // Definim exactament les línies físiques que delimiten el nostre "pis" actual
+        double cotaSuperior = (_lastCotaFloor! + 1) * settings.cotaMeters;
+        double cotaInferior = _lastCotaFloor! * settings.cotaMeters;
 
-        double threshold = (currentFloor > _lastCotaFloor!)
-            ? currentFloor * settings.cotaMeters
-            : (currentFloor + 1) * settings.cotaMeters;
-
-        bool crossUp =
-            currentFloor > _lastCotaFloor! &&
-            _smoothedAlt >= (threshold + hysteresis);
-        bool crossDown =
-            currentFloor < _lastCotaFloor! &&
-            _smoothedAlt <= (threshold - hysteresis);
-
-        if (crossUp || crossDown) {
+        // Dispara cap amunt: si passem de la cota superior del nostre pis actual
+        if (_smoothedAlt >= cotaSuperior) {
           sounds.playCotaAlarm();
-          _lastCotaFloor = currentFloor;
-          _baseCotaAlt =
-              currentFloor *
-              settings.cotaMeters.toDouble(); // Actualitzem la base per a la UI
+          _lastCotaFloor = _lastCotaFloor! + 1; // Pugem un pis l'estat intern
+          _baseCotaAlt = _lastCotaFloor! * settings.cotaMeters.toDouble();
         }
-        // ✅ CORREGIT: Hem eliminat el 'else' erroni d'aquí que trencava la histèresi!
+        // Dispara cap avall: si baixem de la línia base inferior d'aquest mateix pis
+        else if (_smoothedAlt < cotaInferior) {
+          sounds.playCotaAlarm();
+          _lastCotaFloor = _lastCotaFloor! - 1; // Baixem un pis l'estat intern
+          _baseCotaAlt = _lastCotaFloor! * settings.cotaMeters.toDouble();
+        }
       }
     } else {
       // Si l'alarma s'apaga, netegem l'estat de les cotes

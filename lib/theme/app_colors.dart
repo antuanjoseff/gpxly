@@ -17,9 +17,11 @@ class AppColors {
   static const Color dialogGreen = Color(0xFF6CCF7A); // Verd pastel suau
   static const Color dialogTextDark = Color(0xFF1A1A1A); // Gris fosc per text
   static const Color routeTrackColor = Color(0xFFFF9500); // Gris fosc per text
-  static const Color recordingTrackColor = Color(
-    0xFFFF0000,
-  ); // Gris fosc per text
+  static const Color recordingTrackColor = Color(0xFFFF0000);
+
+  // 🌟 NOVES VARIABLES PER ALS TRACKS 🌟
+  static const Color recordedTrackColor = recordingTrackColor;
+  static const Color importedTrackColor = deepGreen;
 
   // Opcional: paleta temàtica
   static const Color primary = skyBlue;

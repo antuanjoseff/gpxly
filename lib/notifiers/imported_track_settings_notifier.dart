@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:senda/theme/app_colors.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/track_settings.dart';
 
 class ImportedTrackSettingsNotifier extends Notifier<TrackSettings> {
   @override
   TrackSettings build() {
-    const initial = TrackSettings();
+    final initial = const TrackSettings().copyWith(
+      color: AppColors.importedTrackColor,
+    );
     _loadFromPrefs();
     return initial;
   }

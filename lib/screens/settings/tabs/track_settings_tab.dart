@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/l10n/app_localizations.dart';
 import 'package:senda/notifiers/track_settings_notifier.dart';
 import 'package:senda/theme/app_colors.dart';
+import 'package:senda/widgets/colors/track_color_picker_dialog.dart';
 import 'package:senda/widgets/custom_settings_card.dart';
 
 class TrackSettingsTab extends ConsumerWidget {
@@ -33,7 +33,6 @@ class TrackSettingsTab extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // --- SECCIÓN COLOR ---
           SectionTitle(t.trackColor),
 
           Container(
@@ -53,7 +52,6 @@ class TrackSettingsTab extends ConsumerWidget {
               children: [
                 Row(
                   children: [
-                    // Círculo de color actual
                     Container(
                       width: 24,
                       height: 24,
@@ -76,8 +74,9 @@ class TrackSettingsTab extends ConsumerWidget {
                     ),
                   ],
                 ),
+
                 const SizedBox(height: 20),
-                // Línea de previsualización
+
                 CustomPaint(
                   size: const Size(double.infinity, 20),
                   painter: TrackPathPainter(
@@ -85,8 +84,9 @@ class TrackSettingsTab extends ConsumerWidget {
                     strokeWidth: 6,
                   ),
                 ),
+
                 const SizedBox(height: 20),
-                // Botón Outlined (mismo estilo que ImportedTrack)
+
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
@@ -100,8 +100,18 @@ class TrackSettingsTab extends ConsumerWidget {
                     ),
                     icon: const Icon(Icons.palette_outlined, size: 20),
                     label: Text(t.changeTrackColor),
-                    onPressed: () =>
-                        _openColorPicker(context, ref, settings.color),
+                    onPressed: () async {
+                      final color = await showTrackColorPickerDialog(
+                        context: context,
+                        initialColor: settings.color,
+                      );
+
+                      if (color != null) {
+                        ref
+                            .read(trackSettingsProvider.notifier)
+                            .setColor(color);
+                      }
+                    },
                   ),
                 ),
               ],
@@ -109,9 +119,9 @@ class TrackSettingsTab extends ConsumerWidget {
           ),
 
           const SizedBox(height: 8),
+
           SectionTitle(t.trackWidth),
 
-          // --- SECCIÓN ANCHO (CON SLIDER) ---
           SettingsCard(
             title: t.trackWidth,
             valueText: "${settings.width.toStringAsFixed(1)} px",
@@ -124,6 +134,7 @@ class TrackSettingsTab extends ConsumerWidget {
             extraChild: Column(
               children: [
                 const SizedBox(height: 12),
+
                 Container(
                   width: double.infinity,
                   height: 40,
@@ -147,35 +158,12 @@ class TrackSettingsTab extends ConsumerWidget {
       ),
     );
   }
-
-  void _openColorPicker(
-    BuildContext context,
-    WidgetRef ref,
-    Color currentColor,
-  ) {
-    final t = AppLocalizations.of(context)!;
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(t.pickColor),
-        content: SingleChildScrollView(
-          child: BlockPicker(
-            pickerColor: currentColor,
-            onColorChanged: (c) {
-              ref.read(trackSettingsProvider.notifier).setColor(c);
-              Navigator.pop(context);
-            },
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 class TrackPathPainter extends CustomPainter {
   final Color color;
   final double strokeWidth;
+
   TrackPathPainter({required this.color, required this.strokeWidth});
 
   @override
@@ -194,6 +182,7 @@ class TrackPathPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant TrackPathPainter oldDelegate) =>
-      oldDelegate.color != color || oldDelegate.strokeWidth != strokeWidth;
+  bool shouldRepaint(covariant TrackPathPainter oldDelegate) {
+    return oldDelegate.color != color || oldDelegate.strokeWidth != strokeWidth;
+  }
 }
