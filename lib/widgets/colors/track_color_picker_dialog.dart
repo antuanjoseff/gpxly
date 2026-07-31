@@ -33,12 +33,24 @@ class _TrackColorPickerDialogState extends State<_TrackColorPickerDialog> {
   void initState() {
     super.initState();
 
-    _hsv = HSVColor.fromColor(widget.initialColor);
+    // 1. Guardem l'alpha real inicial (de 0.0 a 1.0)
     _alpha = widget.initialColor.alpha / 255.0;
+
+    // 2. Creem l'HSV netejant l'opacitat (forçant alpha a 1.0) perquè no bloquegi els càlculs,
+    // i ens assegurem que la saturació i el valor no estiguin a 0 (per si el color era negre o blanc)
+    final tempHsv = HSVColor.fromColor(widget.initialColor);
+
+    _hsv = HSVColor.fromAHSV(
+      1.0,
+      tempHsv.hue,
+      tempHsv.saturation == 0 ? 1.0 : tempHsv.saturation,
+      tempHsv.value == 0 ? 0.8 : tempHsv.value, // 0.8 evita el negre absolut
+    );
   }
 
+  // Genera el color final fusionant el color triat amb l'opacitat actual de l'Slider
   Color get _currentColor {
-    return _hsv.toColor().withAlpha((_alpha * 255).round());
+    return _hsv.toColor().withOpacity(_alpha.clamp(0.0, 1.0));
   }
 
   @override
@@ -58,6 +70,7 @@ class _TrackColorPickerDialogState extends State<_TrackColorPickerDialog> {
 
               const SizedBox(height: 28),
 
+              // Cercle de previsualització
               Container(
                 width: 72,
                 height: 72,
@@ -70,15 +83,26 @@ class _TrackColorPickerDialogState extends State<_TrackColorPickerDialog> {
 
               const SizedBox(height: 32),
 
+              // Selector de Tonalitat (Hue)
               HueSlider(
                 hue: _hsv.hue,
                 onChanged: (value) {
                   setState(() {
+                    // Si el color d'origen és massa fosc o apagat (com el deepGreen),
+                    // forcem una saturació i brillantor mínimes (ex: 0.9) perquè l'usuari
+                    // vegi clarament el color brillant que està escollint en el cercle.
+                    final double activeSaturation = _hsv.saturation < 0.6
+                        ? 0.9
+                        : _hsv.saturation;
+                    final double activeValue = _hsv.value < 0.6
+                        ? 0.9
+                        : _hsv.value;
+
                     _hsv = HSVColor.fromAHSV(
                       1.0,
                       value,
-                      _hsv.saturation,
-                      _hsv.value,
+                      activeSaturation,
+                      activeValue,
                     );
                   });
                 },
@@ -86,12 +110,16 @@ class _TrackColorPickerDialogState extends State<_TrackColorPickerDialog> {
 
               const SizedBox(height: 28),
 
+              // Selector d'Opacitat (Alpha)
               AlphaSlider(
                 color: _hsv.toColor(),
                 alpha: _alpha,
                 onChanged: (value) {
                   setState(() {
-                    _alpha = value;
+                    // Forcem decimals nets per al rang del Slider de Flutter (0.0 - 1.0)
+                    _alpha = double.parse(
+                      value.toStringAsFixed(2),
+                    ).clamp(0.0, 1.0);
                   });
                 },
               ),
