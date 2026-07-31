@@ -7,9 +7,7 @@ import '../models/track_settings.dart';
 class ImportedTrackSettingsNotifier extends Notifier<TrackSettings> {
   @override
   TrackSettings build() {
-    final initial = const TrackSettings().copyWith(
-      color: AppColors.importedTrackColor,
-    );
+    final initial = TrackSettings(color: AppColors.importedTrackColor);
     _loadFromPrefs();
     return initial;
   }
@@ -20,7 +18,7 @@ class ImportedTrackSettingsNotifier extends Notifier<TrackSettings> {
     final savedColor = prefs.getInt('imported_track_color');
     final savedWidth = prefs.getDouble('imported_track_width');
 
-    state = TrackSettings(
+    state = state.copyWith(
       color: savedColor != null ? Color(savedColor) : state.color,
       width: savedWidth ?? state.width,
     );

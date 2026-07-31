@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:senda/theme/app_colors.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/track_settings.dart';
 
 class TrackSettingsNotifier extends Notifier<TrackSettings> {
   @override
   TrackSettings build() {
-    const initial = TrackSettings();
+    final initial = TrackSettings(color: AppColors.recordedTrackColor);
+
     _loadFromPrefs();
     return initial;
   }
@@ -17,7 +19,7 @@ class TrackSettingsNotifier extends Notifier<TrackSettings> {
     final savedColor = prefs.getInt('track_color');
     final savedWidth = prefs.getDouble('track_width');
 
-    state = TrackSettings(
+    state = state.copyWith(
       color: savedColor != null ? Color(savedColor) : state.color,
       width: savedWidth ?? state.width,
     );
