@@ -22,12 +22,14 @@ class NativeGpsChannel {
     required int seconds,
     required double meters,
     required double accuracy,
+    required bool debug,
   }) async {
     await _methods.invokeMethod('start', {
       'useTime': useTime,
       'seconds': seconds,
       'meters': meters,
       'accuracy': accuracy,
+      'debug': debug,
     });
   }
 
@@ -57,5 +59,10 @@ class NativeGpsChannel {
     return _getRawStream()
         .where((event) => event['type'] == 'gnss_status')
         .map((event) => event['satellites'] as List<dynamic>);
+  }
+
+  // 4. STREAM DE DEBUG GPS (Drops, lots, resums, etc.)
+  static Stream<Map<String, dynamic>> get debugStream {
+    return _getRawStream().where((event) => event['type'] == 'gps_debug');
   }
 }

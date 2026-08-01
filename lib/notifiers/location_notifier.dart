@@ -18,6 +18,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class LocationNotifier extends Notifier<UserPosition?> {
   StreamSubscription? _gpsSub;
+  StreamSubscription? _gpsDebugSub;
   bool gpsActive = false;
   bool _isSimulationRunning = false;
   bool _isSimulationPaused = false;
@@ -38,6 +39,7 @@ class LocationNotifier extends Notifier<UserPosition?> {
   UserPosition? build() {
     ref.onDispose(() {
       _gpsSub?.cancel();
+      _gpsDebugSub?.cancel();
       _simulationTimer
           ?.cancel(); // Netegem també el temporitzador si es destrueix el giny [INDEX]
       _cogService.clearAllCacheFiles();
@@ -71,11 +73,46 @@ class LocationNotifier extends Notifier<UserPosition?> {
     });
 
     // 5. Connectem la subscripció a la canonada filtrada d'ubicacions netes
-    final gpsSettings = ref.read(gpsSettingsProvider);
     _gpsSub?.cancel();
+    _gpsDebugSub?.cancel();
     _gpsSub = NativeGpsChannel.locationStream.listen((data) {
       _processIncomingGpsPoint(data);
     });
+
+    final logger = AltitudeLoggerService();
+    final debugEnabled = await logger.isDebugEnabled();
+    if (debugEnabled) {
+      _gpsDebugSub = NativeGpsChannel.debugStream.listen((event) {
+        final kind = event['kind']?.toString() ?? 'unknown';
+
+        if (kind == 'drop') {
+          logger.log(
+            "📉 GPS DROP -> reason=${event['reason']} acc=${event['accuracy']} thr=${event['threshold']} dtLastSent=${event['delta_from_last_sent_ms']}ms modeTime=${event['use_time']} sec=${event['seconds']} m=${event['meters']}",
+          );
+        } else if (kind == 'batch') {
+          logger.log(
+            "📦 GPS BATCH -> size=${event['batch_size']} modeTime=${event['use_time']} sec=${event['seconds']} m=${event['meters']}",
+          );
+        } else if (kind == 'summary') {
+          logger.log(
+            "📊 GPS SUMMARY(${event['summary_kind']}) -> recv=${event['received']} sent=${event['sent']} dropAcc=${event['drop_accuracy']} dropTime=${event['drop_time']} dropDist=${event['drop_distance']}",
+          );
+        } else if (kind == 'sent') {
+          final gap = (event['gap_ms'] as num?)?.toDouble() ?? 0.0;
+          if (gap >= 15000) {
+            logger.log(
+              "⏳ GPS GAP -> gap=${gap.toStringAsFixed(0)}ms acc=${event['accuracy']} sat=${event['sat_used']}/${event['sat_view']}",
+            );
+          }
+        } else if (kind == 'start') {
+          logger.log(
+            "🛰️ GPS START -> modeTime=${event['use_time']} sec=${event['seconds']} m=${event['meters']} accThr=${event['accuracy_threshold']}",
+          );
+        }
+      });
+    } else {
+      _gpsDebugSub = null;
+    }
 
     gpsActive = true;
   }
@@ -288,6 +325,8 @@ class LocationNotifier extends Notifier<UserPosition?> {
     NativeGpsChannel.stop();
     _gpsSub?.cancel();
     _gpsSub = null;
+    _gpsDebugSub?.cancel();
+    _gpsDebugSub = null;
     gpsActive = false;
     state = null;
   }

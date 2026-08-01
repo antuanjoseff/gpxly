@@ -11,6 +11,7 @@ import 'package:senda/notifiers/permissions_notifier.dart';
 import 'package:senda/notifiers/recording_notifier.dart'; // Bloc 2: Gravador i Stats
 import 'package:senda/notifiers/timer_notifier.dart';
 import 'package:senda/notifiers/waypoints_recorded_notifier.dart';
+import 'package:senda/services/altitude_logger.dart';
 import 'package:senda/services/permissions_service.dart';
 import 'package:senda/ui/app_messages.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -93,6 +94,8 @@ class RecordingHandler {
     ref.read(timerProvider.notifier).start();
 
     // ✅ ADAPTAT: Iniciem gravació física i engeguem el hardware a través dels nous blocs
+    await AltitudeLoggerService().clearLog();
+    await AltitudeLoggerService().log("[SESSION] Nova gravacio iniciada");
     recordingNotifier.startRecording();
     await locationNotifier.ensureGpsStarted();
 

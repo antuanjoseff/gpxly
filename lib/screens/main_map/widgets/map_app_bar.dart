@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/notifiers/alarm_settings_notifier.dart';
+import 'package:senda/notifiers/gps_debug_notifier.dart';
 import 'package:senda/notifiers/location_notifier.dart';
 import 'package:senda/notifiers/permissions_notifier.dart';
 import 'package:senda/screens/settings/tabs/alarm_settings_tab.dart';
@@ -14,12 +15,14 @@ class MapAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final double? pressure;
   final bool isRunning;
   final bool isPaused;
+  final VoidCallback onShareLog;
 
   const MapAppBar({
     super.key,
     required this.pressure,
     required this.isRunning,
     required this.isPaused,
+    required this.onShareLog,
   });
 
   @override
@@ -31,6 +34,7 @@ class MapAppBar extends ConsumerWidget implements PreferredSizeWidget {
 
     // 📡 Escuita reactiva de les alarmes de seguretat actives
     final alarms = ref.watch(alarmSettingsProvider);
+    final gpsDebugEnabled = ref.watch(gpsDebugProvider);
     final anyAlarmActive =
         alarms.distanceEnabled ||
         alarms.accEnabled ||
@@ -159,6 +163,23 @@ class MapAppBar extends ConsumerWidget implements PreferredSizeWidget {
       ),
 
       actions: [
+        if (gpsDebugEnabled)
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: GestureDetector(
+              onTap: onShareLog,
+              child: const SizedBox(
+                width: 32,
+                height: 32,
+                child: Icon(
+                  Icons.description_outlined,
+                  color: Colors.white,
+                  size: 22,
+                ),
+              ),
+            ),
+          ),
+
         if (anyAlarmActive)
           Padding(
             padding: const EdgeInsets.only(right: 10),

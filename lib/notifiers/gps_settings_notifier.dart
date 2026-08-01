@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:senda/services/native_barometer_channel.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:senda/notifiers/gps_debug_notifier.dart';
 import 'package:senda/notifiers/helpers/thresholds.dart';
 import 'package:senda/services/native_gps_channel.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -151,6 +152,7 @@ class GpsSettingsNotifier extends Notifier<GpsSettings> {
   // -----------------------------
   Future<void> apply() async {
     await _saveToPrefs();
+    final bool debugEnabled = ref.read(gpsDebugProvider);
 
     // 1. Iniciem/Actualitzem el GPS
     await NativeGpsChannel.start(
@@ -158,6 +160,7 @@ class GpsSettingsNotifier extends Notifier<GpsSettings> {
       seconds: state.seconds,
       meters: state.meters,
       accuracy: state.accuracy,
+      debug: debugEnabled,
     );
 
     // 2. Sincronitzem el Baròmetre

@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/notifiers/alarm_settings_notifier.dart';
+import 'package:senda/notifiers/gps_debug_notifier.dart';
 import 'package:senda/notifiers/gps_settings_notifier.dart';
 import 'package:senda/services/native_gps_channel.dart';
 
@@ -31,11 +32,13 @@ Future<void> applyAdaptiveGps({
       gpsSettings.useTime != (sec > 0);
 
   if (mustRestart) {
+    final debugEnabled = ref.read(gpsDebugProvider);
     await NativeGpsChannel.start(
       useTime: sec > 0,
       seconds: sec,
       meters: meters,
       accuracy: gpsSettings.accuracy,
+      debug: debugEnabled,
     );
   }
 }

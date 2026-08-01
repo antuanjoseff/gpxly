@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senda/l10n/app_localizations.dart';
+import 'package:senda/notifiers/gps_debug_notifier.dart';
 import 'package:senda/notifiers/gps_settings_notifier.dart';
+import 'package:senda/services/altitude_logger.dart';
 import 'package:senda/theme/app_colors.dart';
 import 'package:senda/widgets/custom_settings_card.dart';
 
@@ -11,6 +13,7 @@ class GpsSettingsTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final gps = ref.watch(gpsSettingsProvider);
+    final gpsDebugEnabled = ref.watch(gpsDebugProvider);
     final isFollowing = gps.isFollowing;
     final t = AppLocalizations.of(context)!;
 
@@ -105,6 +108,30 @@ class GpsSettingsTab extends ConsumerWidget {
               // 🎯 En aixecar el dit: Aplica la configuració a Kotlin d'un sol cop
               ref.read(gpsSettingsProvider.notifier).apply();
             },
+          ),
+          const SizedBox(height: 12),
+
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.black12),
+            ),
+            child: SwitchListTile.adaptive(
+              title: const Text(
+                "Mode diagnòstic GPS",
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+              subtitle: const Text(
+                "Registra telemetria detallada. Pot augmentar consum de bateria.",
+              ),
+              value: gpsDebugEnabled,
+              onChanged: (value) async {
+                await ref.read(gpsDebugProvider.notifier).setEnabled(value);
+                await AltitudeLoggerService().setDebugEnabled(value);
+                await ref.read(gpsSettingsProvider.notifier).apply();
+              },
+            ),
           ),
           const SizedBox(height: 40),
         ],

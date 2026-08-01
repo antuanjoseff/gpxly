@@ -30,6 +30,7 @@ class AlarmEngine {
   // LÒGICA 2: Cotes Absolutes (cota)
   int? _lastCotaFloor;
   double? _baseCotaAlt;
+  int? _lastPlayedCotaMark;
 
   // Temps
   DateTime? _lastTimeAlarm;
@@ -97,6 +98,7 @@ class AlarmEngine {
     _accUp = 0.0;
     _accDown = 0.0;
     _lastCotaFloor = null;
+    _lastPlayedCotaMark = null;
     _lastTimeAlarm = DateTime.now();
   }
 
@@ -155,13 +157,21 @@ class AlarmEngine {
 
         // Dispara cap amunt: si passem de la cota superior del nostre pis actual
         if (_smoothedAlt >= cotaSuperior) {
-          sounds.playCotaAlarm();
+          final int crossedCotaMark = cotaSuperior.round();
+          if (_lastPlayedCotaMark != crossedCotaMark) {
+            sounds.playCotaAlarm();
+            _lastPlayedCotaMark = crossedCotaMark;
+          }
           _lastCotaFloor = _lastCotaFloor! + 1; // Pugem un pis l'estat intern
           _baseCotaAlt = _lastCotaFloor! * settings.cotaMeters.toDouble();
         }
         // Dispara cap avall: si baixem de la línia base inferior d'aquest mateix pis
         else if (_smoothedAlt < cotaInferior) {
-          sounds.playCotaAlarm();
+          final int crossedCotaMark = cotaInferior.round();
+          if (_lastPlayedCotaMark != crossedCotaMark) {
+            sounds.playCotaAlarm();
+            _lastPlayedCotaMark = crossedCotaMark;
+          }
           _lastCotaFloor = _lastCotaFloor! - 1; // Baixem un pis l'estat intern
           _baseCotaAlt = _lastCotaFloor! * settings.cotaMeters.toDouble();
         }
@@ -170,6 +180,7 @@ class AlarmEngine {
       // Si l'alarma s'apaga, netegem l'estat de les cotes
       _lastCotaFloor = null;
       _baseCotaAlt = null;
+      _lastPlayedCotaMark = null;
     }
   }
 

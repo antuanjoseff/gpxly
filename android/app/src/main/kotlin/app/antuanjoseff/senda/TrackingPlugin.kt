@@ -94,12 +94,14 @@ class TrackingPlugin :
                     val seconds = call.argument<Int>("seconds") ?: 5
                     val meters = (call.argument<Double>("meters") ?: 10.0).toFloat()
                     val accuracy = (call.argument<Double>("accuracy") ?: 30.0).toFloat()
+                    val debug = call.argument<Boolean>("debug") ?: false
 
                     val intent = Intent(applicationContext, TrackingService::class.java).apply {
                         putExtra("useTime", useTime)
                         putExtra("seconds", seconds)
                         putExtra("meters", meters)
                         putExtra("accuracy", accuracy)
+                        putExtra("debug", debug)
                     }
 
                     applicationContext?.startForegroundService(intent)

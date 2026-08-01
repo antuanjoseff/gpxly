@@ -27,6 +27,15 @@ class TrackingService : Service() {
     private var seconds: Int = 5
     private var metersThreshold: Float = 10f
     private var accuracyThreshold: Float = 30f
+    private var debugEnabled: Boolean = false
+
+    private var totalReceived: Long = 0
+    private var totalSent: Long = 0
+    private var dropAccuracy: Long = 0
+    private var dropTimeGate: Long = 0
+    private var dropDistanceGate: Long = 0
+    private var lastSentFixTime: Long = 0
+    private var lastDropDebugWallTime: Long = 0
 
     // Callback per rebre l'estat dels satèl·lits
     private val gnssStatusCallback = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
@@ -78,6 +87,18 @@ class TrackingService : Service() {
 
         callback = object : LocationCallback() {
             override fun onLocationResult(result: LocationResult) {
+                if (debugEnabled && result.locations.size > 1) {
+                    TrackingPlugin.sendEvent(
+                        mapOf(
+                            "type" to "gps_debug",
+                            "kind" to "batch",
+                            "batch_size" to result.locations.size,
+                            "use_time" to useTime,
+                            "seconds" to seconds,
+                            "meters" to metersThreshold
+                        )
+                    )
+                }
                 for (loc in result.locations) sendLocationToFlutter(loc)
             }
         }
@@ -92,6 +113,28 @@ class TrackingService : Service() {
         seconds = intent.getIntExtra("seconds", 5)
         metersThreshold = intent.getFloatExtra("meters", 10.0f)
         accuracyThreshold = intent.getFloatExtra("accuracy", 30.0f)
+        debugEnabled = intent.getBooleanExtra("debug", false)
+
+        totalReceived = 0
+        totalSent = 0
+        dropAccuracy = 0
+        dropTimeGate = 0
+        dropDistanceGate = 0
+        lastSentFixTime = 0
+        lastDropDebugWallTime = 0
+
+        if (debugEnabled) {
+            TrackingPlugin.sendEvent(
+                mapOf(
+                    "type" to "gps_debug",
+                    "kind" to "start",
+                    "use_time" to useTime,
+                    "seconds" to seconds,
+                    "meters" to metersThreshold,
+                    "accuracy_threshold" to accuracyThreshold
+                )
+            )
+        }
 
         startForegroundServiceNotification()
         startLocationUpdates()
@@ -123,25 +166,48 @@ class TrackingService : Service() {
     }
 
     private fun sendLocationToFlutter(loc: Location) {
-        if (loc.accuracy > accuracyThreshold) return
+        totalReceived += 1
 
-        val now = System.currentTimeMillis()
+        if (loc.accuracy > accuracyThreshold) {
+            dropAccuracy += 1
+            maybeEmitDropDebug("accuracy", loc, null)
+            return
+        }
+
+        // IMPORTANT: use the fix timestamp from GNSS/Fused (`loc.time`) instead
+        // of wall clock `now`. Android may deliver batched points in one callback.
+        // If we gate by `now`, almost all points in a batch are dropped.
+        val fixTime = if (loc.time > 0L) loc.time else System.currentTimeMillis()
 
         if (useTime) {
-            if (now - lastTime < (seconds * 1000 * 0.9)) return
+            val minDelta = (seconds * 1000 * 0.9).toLong()
+            if (lastTime > 0L && fixTime - lastTime < minDelta) {
+                dropTimeGate += 1
+                maybeEmitDropDebug("time_gate", loc, minDelta)
+                return
+            }
         } else {
             // Deixa que passi el primer punt sempre (lastLocation == null)
             if (lastLocation != null) {
                 val dist = lastLocation!!.distanceTo(loc)
                 // Relaxem una mica el filtre manual (90% de la distància)
                 // perquè el GPS té petites variacions de precisió.
-                if (dist < (metersThreshold * 0.9)) return
+                val minDist = metersThreshold * 0.9
+                if (dist < minDist) {
+                    dropDistanceGate += 1
+                    maybeEmitDropDebug("distance_gate", loc, minDist.toLong())
+                    return
+                }
             }
         }
 
 
-        lastTime = now
+        lastTime = fixTime
         lastLocation = loc
+        totalSent += 1
+
+        val gapSincePrevSent = if (lastSentFixTime > 0L) fixTime - lastSentFixTime else 0L
+        lastSentFixTime = fixTime
 
         // Recuperem la vAccuracy (Vertical Accuracy)
         val vAcc = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && loc.hasVerticalAccuracy()) {
@@ -162,6 +228,66 @@ class TrackingService : Service() {
             "sat_used" to satellitesUsed,
             "sat_view" to satellitesInView
         ))
+
+        if (debugEnabled && gapSincePrevSent > 0L) {
+            TrackingPlugin.sendEvent(
+                mapOf(
+                    "type" to "gps_debug",
+                    "kind" to "sent",
+                    "gap_ms" to gapSincePrevSent,
+                    "accuracy" to loc.accuracy,
+                    "sat_used" to satellitesUsed,
+                    "sat_view" to satellitesInView
+                )
+            )
+        }
+
+        if (debugEnabled && totalReceived % 30L == 0L) {
+            emitSummary("periodic")
+        }
+    }
+
+    private fun maybeEmitDropDebug(reason: String, loc: Location, threshold: Long?) {
+        if (!debugEnabled) return
+        val now = System.currentTimeMillis()
+        if (now - lastDropDebugWallTime < 5000L) return
+        lastDropDebugWallTime = now
+
+        val fixTime = if (loc.time > 0L) loc.time else now
+        val deltaFromLastSent = if (lastSentFixTime > 0L) fixTime - lastSentFixTime else 0L
+
+        TrackingPlugin.sendEvent(
+            mapOf(
+                "type" to "gps_debug",
+                "kind" to "drop",
+                "reason" to reason,
+                "accuracy" to loc.accuracy,
+                "threshold" to (threshold ?: -1L),
+                "delta_from_last_sent_ms" to deltaFromLastSent,
+                "use_time" to useTime,
+                "seconds" to seconds,
+                "meters" to metersThreshold
+            )
+        )
+    }
+
+    private fun emitSummary(kind: String) {
+        if (!debugEnabled) return
+        TrackingPlugin.sendEvent(
+            mapOf(
+                "type" to "gps_debug",
+                "kind" to "summary",
+                "summary_kind" to kind,
+                "received" to totalReceived,
+                "sent" to totalSent,
+                "drop_accuracy" to dropAccuracy,
+                "drop_time" to dropTimeGate,
+                "drop_distance" to dropDistanceGate,
+                "use_time" to useTime,
+                "seconds" to seconds,
+                "meters" to metersThreshold
+            )
+        )
     }
 
     private fun startForegroundServiceNotification() {
@@ -194,6 +320,7 @@ class TrackingService : Service() {
     }
 
     override fun onDestroy() {
+        if (debugEnabled) emitSummary("stop")
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && gnssStatusCallback != null) {
             locationManager.unregisterGnssStatusCallback(gnssStatusCallback)
         }

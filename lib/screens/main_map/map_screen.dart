@@ -47,6 +47,7 @@ import 'package:senda/screens/main_map/helpers/recording_flow_handler.dart';
 
 // Serveis i utilitats
 import 'package:senda/services/hgt_service.dart';
+import 'package:senda/services/altitude_logger.dart';
 import 'package:senda/services/native_barometer_channel.dart';
 import 'package:senda/services/permissions_service.dart';
 import 'package:senda/services/recording_handler.dart';
@@ -100,6 +101,19 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
   late MapAnimator mapAnimator;
   final double _currentMapPadding = 0;
+
+  Future<void> _shareDebugLog() async {
+    final ok = await AltitudeLoggerService().shareLog();
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          ok ? "Log de debug compartit" : "No s'ha pogut compartir el log",
+        ),
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -985,6 +999,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 pressure: pressure,
                 isRunning: isRunning,
                 isPaused: isPaused,
+                onShareLog: _shareDebugLog,
               ),
         body: Column(
           children: [
