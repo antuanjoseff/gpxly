@@ -5,61 +5,61 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
-import 'package:senda/l10n/app_localizations.dart';
-import 'package:senda/models/navigation_state.dart';
-import 'package:senda/models/track.dart';
-import 'package:senda/models/user_position.dart';
-import 'package:senda/models/waypoint.dart';
-import 'package:senda/notifiers/elevation_selection_provider.dart';
-import 'package:senda/notifiers/gps_speed_notifier.dart';
-import 'package:senda/notifiers/helpers/elevation_magnet_helper.dart';
-import 'package:senda/notifiers/helpers/thresholds.dart';
+import 'package:strack_rec/l10n/app_localizations.dart';
+import 'package:strack_rec/models/navigation_state.dart';
+import 'package:strack_rec/models/track.dart';
+import 'package:strack_rec/models/user_position.dart';
+import 'package:strack_rec/models/waypoint.dart';
+import 'package:strack_rec/notifiers/elevation_selection_provider.dart';
+import 'package:strack_rec/notifiers/gps_speed_notifier.dart';
+import 'package:strack_rec/notifiers/helpers/elevation_magnet_helper.dart';
+import 'package:strack_rec/notifiers/helpers/thresholds.dart';
 
 // Notifiers natius de Senda
-import 'package:senda/notifiers/imported_track_notifier.dart';
-import 'package:senda/notifiers/imported_track_settings_notifier.dart';
-import 'package:senda/notifiers/location_notifier.dart';
-import 'package:senda/notifiers/map_bearing_provider.dart';
-import 'package:senda/notifiers/map_selection_tool_notifier.dart';
-import 'package:senda/notifiers/navigation_notifier.dart';
-import 'package:senda/notifiers/permissions_notifier.dart';
-import 'package:senda/notifiers/recording_notifier.dart';
-import 'package:senda/notifiers/track_settings_notifier.dart';
-import 'package:senda/notifiers/waypoints_imported_notifier.dart';
-import 'package:senda/notifiers/waypoints_recorded_notifier.dart';
-import 'package:senda/providers/barometer_provider.dart';
+import 'package:strack_rec/notifiers/imported_track_notifier.dart';
+import 'package:strack_rec/notifiers/imported_track_settings_notifier.dart';
+import 'package:strack_rec/notifiers/location_notifier.dart';
+import 'package:strack_rec/notifiers/map_bearing_provider.dart';
+import 'package:strack_rec/notifiers/map_selection_tool_notifier.dart';
+import 'package:strack_rec/notifiers/navigation_notifier.dart';
+import 'package:strack_rec/notifiers/permissions_notifier.dart';
+import 'package:strack_rec/notifiers/recording_notifier.dart';
+import 'package:strack_rec/notifiers/track_settings_notifier.dart';
+import 'package:strack_rec/notifiers/waypoints_imported_notifier.dart';
+import 'package:strack_rec/notifiers/waypoints_recorded_notifier.dart';
+import 'package:strack_rec/providers/barometer_provider.dart';
 
 // Widgets independents
-import 'package:senda/screens/main_map/widgets/map_app_bar.dart';
-import 'package:senda/screens/main_map/widgets/map_base_layer.dart';
-import 'package:senda/screens/main_map/widgets/map_bottom_controls.dart';
-import 'package:senda/screens/main_map/widgets/map_bottom_controls/navigation_submenu.dart';
-import 'package:senda/screens/main_map/widgets/map_bottom_controls/recording_submenu.dart';
-import 'package:senda/screens/main_map/widgets/map_selection_reticle.dart';
-import 'package:senda/screens/main_map/widgets/map_stack_widgets.dart';
-import 'package:senda/screens/main_map/widgets/map_top_controls.dart';
-import 'package:senda/theme/app_colors.dart';
+import 'package:strack_rec/screens/main_map/widgets/map_app_bar.dart';
+import 'package:strack_rec/screens/main_map/widgets/map_base_layer.dart';
+import 'package:strack_rec/screens/main_map/widgets/map_bottom_controls.dart';
+import 'package:strack_rec/screens/main_map/widgets/map_bottom_controls/navigation_submenu.dart';
+import 'package:strack_rec/screens/main_map/widgets/map_bottom_controls/recording_submenu.dart';
+import 'package:strack_rec/screens/main_map/widgets/map_selection_reticle.dart';
+import 'package:strack_rec/screens/main_map/widgets/map_stack_widgets.dart';
+import 'package:strack_rec/screens/main_map/widgets/map_top_controls.dart';
+import 'package:strack_rec/theme/app_colors.dart';
 
 // HELPERS
-import 'package:senda/screens/main_map/helpers/map_geometry_helper.dart';
-import 'package:senda/screens/main_map/helpers/navigation_flow_handler.dart';
-import 'package:senda/screens/main_map/helpers/recording_flow_handler.dart';
+import 'package:strack_rec/screens/main_map/helpers/map_geometry_helper.dart';
+import 'package:strack_rec/screens/main_map/helpers/navigation_flow_handler.dart';
+import 'package:strack_rec/screens/main_map/helpers/recording_flow_handler.dart';
 
 // Serveis i utilitats
-import 'package:senda/services/hgt_service.dart';
-import 'package:senda/services/altitude_logger.dart';
-import 'package:senda/services/native_barometer_channel.dart';
-import 'package:senda/services/permissions_service.dart';
-import 'package:senda/services/recording_handler.dart';
-import 'package:senda/theme/app_dimensions.dart';
-import 'package:senda/ui/app_messages.dart';
-import 'package:senda/utils/color_extensions.dart';
-import 'package:senda/utils/map_animator.dart';
-import 'package:senda/utils/map_layers.dart';
-import 'package:senda/widgets/reticle_mode_selector.dart';
-import 'package:senda/widgets/waypoint_mode_selector.dart';
+import 'package:strack_rec/services/hgt_service.dart';
+import 'package:strack_rec/services/altitude_logger.dart';
+import 'package:strack_rec/services/native_barometer_channel.dart';
+import 'package:strack_rec/services/permissions_service.dart';
+import 'package:strack_rec/services/recording_handler.dart';
+import 'package:strack_rec/theme/app_dimensions.dart';
+import 'package:strack_rec/ui/app_messages.dart';
+import 'package:strack_rec/utils/color_extensions.dart';
+import 'package:strack_rec/utils/map_animator.dart';
+import 'package:strack_rec/utils/map_layers.dart';
+import 'package:strack_rec/widgets/reticle_mode_selector.dart';
+import 'package:strack_rec/widgets/waypoint_mode_selector.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:senda/utils/distance_utils.dart';
+import 'package:strack_rec/utils/distance_utils.dart';
 
 class MapScreen extends ConsumerStatefulWidget {
   const MapScreen({super.key});

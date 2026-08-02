@@ -6,14 +6,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
 // Importacions de la nova línia de providers estructurada
-import 'package:senda/notifiers/location_notifier.dart'; // Bloc 1: Hardware GPS
-import 'package:senda/notifiers/permissions_notifier.dart';
-import 'package:senda/notifiers/recording_notifier.dart'; // Bloc 2: Gravador i Stats
-import 'package:senda/notifiers/timer_notifier.dart';
-import 'package:senda/notifiers/waypoints_recorded_notifier.dart';
-import 'package:senda/services/altitude_logger.dart';
-import 'package:senda/services/permissions_service.dart';
-import 'package:senda/ui/app_messages.dart';
+import 'package:strack_rec/notifiers/location_notifier.dart'; // Bloc 1: Hardware GPS
+import 'package:strack_rec/notifiers/permissions_notifier.dart';
+import 'package:strack_rec/notifiers/recording_notifier.dart'; // Bloc 2: Gravador i Stats
+import 'package:strack_rec/notifiers/timer_notifier.dart';
+import 'package:strack_rec/notifiers/waypoints_recorded_notifier.dart';
+import 'package:strack_rec/services/altitude_logger.dart';
+import 'package:strack_rec/services/permissions_service.dart';
+import 'package:strack_rec/ui/app_messages.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class RecordingHandler {

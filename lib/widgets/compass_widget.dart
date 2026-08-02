@@ -2,10 +2,10 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:senda/notifiers/gps_bearing_notifier.dart';
-import 'package:senda/notifiers/gps_speed_notifier.dart';
-import 'package:senda/notifiers/map_bearing_provider.dart';
-import 'package:senda/theme/app_colors.dart';
+import 'package:strack_rec/notifiers/gps_bearing_notifier.dart';
+import 'package:strack_rec/notifiers/gps_speed_notifier.dart';
+import 'package:strack_rec/notifiers/map_bearing_provider.dart';
+import 'package:strack_rec/theme/app_colors.dart';
 
 class CompassScalePanel extends ConsumerWidget {
   final VoidCallback? onTapCompass;

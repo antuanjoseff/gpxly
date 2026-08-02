@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:path_provider/path_provider.dart';
-import 'package:senda/services/hgt_service.dart';
+import 'package:strack_rec/services/hgt_service.dart';
 
 class HgtDebugTest {
   static Future<void> run() async {

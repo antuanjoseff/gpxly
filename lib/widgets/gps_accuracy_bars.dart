@@ -2,11 +2,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:senda/notifiers/gps_accuracy_notifier.dart';
-import 'package:senda/notifiers/permissions_notifier.dart';
-import 'package:senda/services/location_permission_flow.dart';
-import 'package:senda/ui/app_messages.dart';
-import 'package:senda/utils/gps_accuracy.dart';
+import 'package:strack_rec/notifiers/gps_accuracy_notifier.dart';
+import 'package:strack_rec/notifiers/permissions_notifier.dart';
+import 'package:strack_rec/services/location_permission_flow.dart';
+import 'package:strack_rec/ui/app_messages.dart';
+import 'package:strack_rec/utils/gps_accuracy.dart';
 
 class GpsAccuracyBars extends ConsumerWidget {
   final int totalBars;

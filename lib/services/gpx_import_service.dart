@@ -3,13 +3,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gpx/gpx.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
-import 'package:senda/models/track.dart';
-import 'package:senda/models/user_position.dart';
-import 'package:senda/models/waypoint.dart';
-import 'package:senda/notifiers/imported_track_notifier.dart';
-import 'package:senda/notifiers/waypoints_imported_notifier.dart';
-import 'package:senda/utils/calculations.dart';
-import 'package:senda/utils/geo_utils.dart';
+import 'package:strack_rec/models/track.dart';
+import 'package:strack_rec/models/user_position.dart';
+import 'package:strack_rec/models/waypoint.dart';
+import 'package:strack_rec/notifiers/imported_track_notifier.dart';
+import 'package:strack_rec/notifiers/waypoints_imported_notifier.dart';
+import 'package:strack_rec/utils/calculations.dart';
+import 'package:strack_rec/utils/geo_utils.dart';
 
 DateTime truncateSeconds(DateTime t) {
   return DateTime(t.year, t.month, t.day, t.hour, t.minute, t.second);

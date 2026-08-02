@@ -6,10 +6,10 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
-import 'package:senda/l10n/app_localizations.dart';
+import 'package:strack_rec/l10n/app_localizations.dart';
 // ✅ ADAPTAT: Importem el proveïdor de la ruta importada de la branca
-import 'package:senda/notifiers/imported_track_notifier.dart';
-import 'package:senda/services/gpx_import_service.dart';
+import 'package:strack_rec/notifiers/imported_track_notifier.dart';
+import 'package:strack_rec/services/gpx_import_service.dart';
 
 /// Flux complet d'importació GPX + zoom al mapa.
 /// Aquesta funció és cridada tant des de la bottom bar com des de l'AppBar.

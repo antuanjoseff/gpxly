@@ -1,4 +1,4 @@
-package app.antuanjoseff.senda
+package app.antuanjoseff.strack_rec
 
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine

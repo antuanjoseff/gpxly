@@ -5,10 +5,10 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
-import 'package:senda/models/waypoint.dart';
-import 'package:senda/notifiers/dem_bounds_notifier.dart';
-import 'package:senda/notifiers/elevation_selection_provider.dart';
-import 'package:senda/theme/app_colors.dart';
+import 'package:strack_rec/models/waypoint.dart';
+import 'package:strack_rec/notifiers/dem_bounds_notifier.dart';
+import 'package:strack_rec/notifiers/elevation_selection_provider.dart';
+import 'package:strack_rec/theme/app_colors.dart';
 
 Timer? _waypointPulseTimer;
 double _pulseValue = 0.0;

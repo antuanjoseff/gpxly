@@ -3,13 +3,13 @@ import 'dart:math';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
-import 'package:senda/models/alarm_progress.dart';
+import 'package:strack_rec/models/alarm_progress.dart';
 // ✅ ADAPTAT: Importem el nou canal de geolocalització atòmic
-import 'package:senda/models/user_position.dart';
-import 'package:senda/notifiers/alarm_settings_notifier.dart';
-import 'package:senda/notifiers/gps_altitude_notifier.dart';
-import 'package:senda/notifiers/helpers/track_sounds.dart';
-import 'package:senda/notifiers/location_notifier.dart'; // Bloc 1: Hardware i dades netes
+import 'package:strack_rec/models/user_position.dart';
+import 'package:strack_rec/notifiers/alarm_settings_notifier.dart';
+import 'package:strack_rec/notifiers/gps_altitude_notifier.dart';
+import 'package:strack_rec/notifiers/helpers/track_sounds.dart';
+import 'package:strack_rec/notifiers/location_notifier.dart'; // Bloc 1: Hardware i dades netes
 
 class AlarmEngine {
   final Ref rootRef;

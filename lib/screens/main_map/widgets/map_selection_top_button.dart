@@ -3,9 +3,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
-import 'package:senda/notifiers/elevation_selection_provider.dart';
-import 'package:senda/notifiers/helpers/map_selection_helper.dart';
-import 'package:senda/notifiers/map_selection_tool_notifier.dart';
+import 'package:strack_rec/notifiers/elevation_selection_provider.dart';
+import 'package:strack_rec/notifiers/helpers/map_selection_helper.dart';
+import 'package:strack_rec/notifiers/map_selection_tool_notifier.dart';
 
 class MapSelectionTopButton extends ConsumerWidget {
   final MapLibreMapController? mapController;

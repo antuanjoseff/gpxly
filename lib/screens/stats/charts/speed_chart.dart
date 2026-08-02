@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:senda/models/track.dart';
-import 'package:senda/theme/app_colors.dart';
+import 'package:strack_rec/models/track.dart';
+import 'package:strack_rec/theme/app_colors.dart';
 
 class SpeedChart extends StatefulWidget {
   final Track? real;

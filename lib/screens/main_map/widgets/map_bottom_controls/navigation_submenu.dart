@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:senda/l10n/app_localizations.dart';
-import 'package:senda/models/navigation_state.dart';
-import 'package:senda/theme/app_colors.dart';
+import 'package:strack_rec/l10n/app_localizations.dart';
+import 'package:strack_rec/models/navigation_state.dart';
+import 'package:strack_rec/theme/app_colors.dart';
 
 class NavigationSubMenu extends ConsumerWidget {
   final NavigationState navState;

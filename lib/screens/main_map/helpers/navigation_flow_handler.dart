@@ -2,11 +2,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
-import 'package:senda/notifiers/imported_track_notifier.dart';
-import 'package:senda/notifiers/navigation_notifier.dart';
-import 'package:senda/notifiers/waypoints_imported_notifier.dart';
-import 'package:senda/services/gpx_import_flow.dart';
-import 'package:senda/ui/app_messages.dart';
+import 'package:strack_rec/notifiers/imported_track_notifier.dart';
+import 'package:strack_rec/notifiers/navigation_notifier.dart';
+import 'package:strack_rec/notifiers/waypoints_imported_notifier.dart';
+import 'package:strack_rec/services/gpx_import_flow.dart';
+import 'package:strack_rec/ui/app_messages.dart';
 
 class NavigationFlowHandler {
   final WidgetRef ref;

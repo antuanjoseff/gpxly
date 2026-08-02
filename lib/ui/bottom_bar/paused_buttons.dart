@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:senda/l10n/app_localizations.dart';
-import 'package:senda/theme/app_colors.dart';
-import 'package:senda/widgets/track_base_button.dart';
+import 'package:strack_rec/l10n/app_localizations.dart';
+import 'package:strack_rec/theme/app_colors.dart';
+import 'package:strack_rec/widgets/track_base_button.dart';
 
 class PausedButtons extends StatelessWidget {
   final VoidCallback onResume;

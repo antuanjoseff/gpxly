@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "app.antuanjoseff.senda.gps_plugin"
+    namespace = "app.antuanjoseff.strack_rec.gps_plugin"
     compileSdk = 34
 
     defaultConfig {

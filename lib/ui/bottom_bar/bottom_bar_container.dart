@@ -1,11 +1,11 @@
 // lib/ui/bottom_bar/bottom_bar_container.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:senda/l10n/app_localizations.dart';
-import 'package:senda/models/track.dart';
+import 'package:strack_rec/l10n/app_localizations.dart';
+import 'package:strack_rec/models/track.dart';
 // ✅ ADAPTAT: Importem el nou proveïdor analític de navegació de la branca
-import 'package:senda/notifiers/navigation_notifier.dart'; // Bloc 3: Lògica de seguiment
-import 'package:senda/theme/app_colors.dart';
+import 'package:strack_rec/notifiers/navigation_notifier.dart'; // Bloc 3: Lògica de seguiment
+import 'package:strack_rec/theme/app_colors.dart';
 
 import 'bottom_bar_buttons.dart';
 

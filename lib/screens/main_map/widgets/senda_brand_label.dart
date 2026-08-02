@@ -1,7 +1,7 @@
 // lib/widgets/senda_brand_label.dart
 import 'dart:ui'; // 🔥 CRÍTIC: Import indispensable per poder utilitzar l'ImageFilter natiu
 import 'package:flutter/material.dart';
-import 'package:senda/theme/app_colors.dart'; // Importem els teus colors corporatius
+import 'package:strack_rec/theme/app_colors.dart'; // Importem els teus colors corporatius
 
 class SendaBrandLabel extends StatelessWidget {
   const SendaBrandLabel({super.key});

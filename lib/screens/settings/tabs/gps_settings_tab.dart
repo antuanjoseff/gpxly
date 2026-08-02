@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:senda/l10n/app_localizations.dart';
-import 'package:senda/notifiers/gps_debug_notifier.dart';
-import 'package:senda/notifiers/gps_settings_notifier.dart';
-import 'package:senda/services/altitude_logger.dart';
-import 'package:senda/theme/app_colors.dart';
-import 'package:senda/widgets/custom_settings_card.dart';
+import 'package:strack_rec/l10n/app_localizations.dart';
+import 'package:strack_rec/notifiers/gps_debug_notifier.dart';
+import 'package:strack_rec/notifiers/gps_settings_notifier.dart';
+import 'package:strack_rec/services/altitude_logger.dart';
+import 'package:strack_rec/theme/app_colors.dart';
+import 'package:strack_rec/widgets/custom_settings_card.dart';
 
 class GpsSettingsTab extends ConsumerWidget {
   const GpsSettingsTab({super.key});

@@ -1,10 +1,10 @@
 // lib/notifiers/remaining_track_notifier.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:senda/models/remaining_track_data.dart';
-import 'package:senda/notifiers/imported_track_notifier.dart'; // El teu provider de track importat
+import 'package:strack_rec/models/remaining_track_data.dart';
+import 'package:strack_rec/notifiers/imported_track_notifier.dart'; // El teu provider de track importat
 // ✅ ADAPTAT: Importem el nou gravador i el model de track unificat
-import 'package:senda/notifiers/recording_notifier.dart'; // Bloc 2: Gravació neta
-import 'package:senda/utils/geo_utils.dart'; // Per a haversineDistance
+import 'package:strack_rec/notifiers/recording_notifier.dart'; // Bloc 2: Gravació neta
+import 'package:strack_rec/utils/geo_utils.dart'; // Per a haversineDistance
 
 class RemainingTrackNotifier extends Notifier<RemainingTrackData?> {
   @override

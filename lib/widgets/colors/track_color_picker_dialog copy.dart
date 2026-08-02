@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:senda/l10n/app_localizations.dart';
+import 'package:strack_rec/l10n/app_localizations.dart';
 
 import 'hue_slider.dart';
 

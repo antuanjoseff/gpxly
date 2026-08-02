@@ -1,5 +1,5 @@
 import 'package:maplibre_gl/maplibre_gl.dart';
-import 'package:senda/utils/geo_utils.dart';
+import 'package:strack_rec/utils/geo_utils.dart';
 
 class ProgressTracker {
   double distanceProgressOnTrack = 0.0;

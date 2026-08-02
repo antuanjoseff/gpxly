@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:senda/l10n/app_localizations.dart';
-import 'package:senda/notifiers/alarm_settings_notifier.dart';
-import 'package:senda/services/permissions_service.dart';
-import 'package:senda/theme/app_colors.dart';
+import 'package:strack_rec/l10n/app_localizations.dart';
+import 'package:strack_rec/notifiers/alarm_settings_notifier.dart';
+import 'package:strack_rec/services/permissions_service.dart';
+import 'package:strack_rec/theme/app_colors.dart';
 
 class AlarmSettingsTab extends ConsumerStatefulWidget {
   const AlarmSettingsTab({super.key});

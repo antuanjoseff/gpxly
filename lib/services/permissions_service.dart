@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:senda/ui/app_messages.dart';
+import 'package:strack_rec/ui/app_messages.dart';
 
 enum GpsPermissionStatus { ok, gpsOff, permissionDenied }
 

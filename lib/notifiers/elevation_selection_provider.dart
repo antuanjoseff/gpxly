@@ -1,7 +1,7 @@
 // lib/notifiers/elevation_selection_provider.dart
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:senda/notifiers/nearest_track_point_notifier.dart';
+import 'package:strack_rec/notifiers/nearest_track_point_notifier.dart';
 
 enum SelectionMode { none, single, range }
 

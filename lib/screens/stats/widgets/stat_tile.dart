@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:senda/screens/stats/models/stat_chart_type.dart';
-import 'package:senda/theme/app_colors.dart';
+import 'package:strack_rec/screens/stats/models/stat_chart_type.dart';
+import 'package:strack_rec/theme/app_colors.dart';
 
 class StatTile extends StatelessWidget {
   final IconData icon;

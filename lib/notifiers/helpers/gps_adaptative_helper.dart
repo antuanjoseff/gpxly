@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:senda/notifiers/alarm_settings_notifier.dart';
-import 'package:senda/notifiers/gps_debug_notifier.dart';
-import 'package:senda/notifiers/gps_settings_notifier.dart';
-import 'package:senda/services/native_gps_channel.dart';
+import 'package:strack_rec/notifiers/alarm_settings_notifier.dart';
+import 'package:strack_rec/notifiers/gps_debug_notifier.dart';
+import 'package:strack_rec/notifiers/gps_settings_notifier.dart';
+import 'package:strack_rec/services/native_gps_channel.dart';
 
 bool needAdaptiveGps(Ref ref, bool isFollowing) {
   final alarms = ref.read(alarmSettingsProvider);

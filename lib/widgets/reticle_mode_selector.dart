@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:senda/theme/app_colors.dart';
-import 'package:senda/screens/main_map/widgets/map_selection_reticle.dart';
+import 'package:strack_rec/theme/app_colors.dart';
+import 'package:strack_rec/screens/main_map/widgets/map_selection_reticle.dart';
 
 class ReticleModeSelector extends StatelessWidget {
   final bool isActive;

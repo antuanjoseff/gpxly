@@ -6,12 +6,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:path_provider/path_provider.dart';
 // Models immutables refactoritzats
-import 'package:senda/models/user_position.dart';
+import 'package:strack_rec/models/user_position.dart';
 // Proveïdors existents de la teva aplicació
-import 'package:senda/notifiers/gpx_settings_notifier.dart'
+import 'package:strack_rec/notifiers/gpx_settings_notifier.dart'
     show gpxSettingsProvider;
-import 'package:senda/notifiers/recording_notifier.dart'; // El nou gravador Bloc 2
-import 'package:senda/notifiers/waypoints_recorded_notifier.dart';
+import 'package:strack_rec/notifiers/recording_notifier.dart'; // El nou gravador Bloc 2
+import 'package:strack_rec/notifiers/waypoints_recorded_notifier.dart';
 import 'package:share_plus/share_plus.dart';
 
 String buildGpxFilename() {

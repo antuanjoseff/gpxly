@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:senda/notifiers/permissions_notifier.dart';
-import 'package:senda/services/permissions_service.dart';
-import 'package:senda/ui/app_messages.dart';
+import 'package:strack_rec/notifiers/permissions_notifier.dart';
+import 'package:strack_rec/services/permissions_service.dart';
+import 'package:strack_rec/ui/app_messages.dart';
 import 'package:permission_handler/permission_handler.dart'; // Imprescindible per a openAppSettings
 
 Future<bool> requestLocationPermissionsUnified(

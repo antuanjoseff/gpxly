@@ -2,13 +2,13 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:senda/models/track.dart';
-import 'package:senda/notifiers/imported_track_notifier.dart';
+import 'package:strack_rec/models/track.dart';
+import 'package:strack_rec/notifiers/imported_track_notifier.dart';
 // ✅ ADAPTAT: Importem el nou proveïdor de gravació
-import 'package:senda/notifiers/recording_notifier.dart'; // Bloc 2: Gravació neta
-import 'package:senda/notifiers/timer_notifier.dart';
-import 'package:senda/theme/app_colors.dart';
-import 'package:senda/utils/distance_utils.dart';
+import 'package:strack_rec/notifiers/recording_notifier.dart'; // Bloc 2: Gravació neta
+import 'package:strack_rec/notifiers/timer_notifier.dart';
+import 'package:strack_rec/theme/app_colors.dart';
+import 'package:strack_rec/utils/distance_utils.dart';
 
 class HeaderLegendWidget extends ConsumerWidget {
   final bool hasReal;

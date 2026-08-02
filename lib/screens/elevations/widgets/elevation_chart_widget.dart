@@ -3,14 +3,14 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:senda/models/track.dart';
-import 'package:senda/theme/app_colors.dart';
-import 'package:senda/notifiers/elevation_selection_provider.dart';
-import 'package:senda/theme/app_dimensions.dart';
-import 'package:senda/utils/distance_utils.dart';
-import 'package:senda/screens/elevations/painters/selection_painter.dart';
-import 'package:senda/screens/elevations/utils/chart_utils.dart';
-import 'package:senda/notifiers/recording_notifier.dart';
+import 'package:strack_rec/models/track.dart';
+import 'package:strack_rec/theme/app_colors.dart';
+import 'package:strack_rec/notifiers/elevation_selection_provider.dart';
+import 'package:strack_rec/theme/app_dimensions.dart';
+import 'package:strack_rec/utils/distance_utils.dart';
+import 'package:strack_rec/screens/elevations/painters/selection_painter.dart';
+import 'package:strack_rec/screens/elevations/utils/chart_utils.dart';
+import 'package:strack_rec/notifiers/recording_notifier.dart';
 
 class ElevationChartWidget extends ConsumerStatefulWidget {
   final List<double> pastDists;

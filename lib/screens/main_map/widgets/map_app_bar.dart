@@ -1,15 +1,15 @@
 // lib/widgets/map_app_bar.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:senda/notifiers/alarm_settings_notifier.dart';
-import 'package:senda/notifiers/gps_debug_notifier.dart';
-import 'package:senda/notifiers/location_notifier.dart';
-import 'package:senda/notifiers/permissions_notifier.dart';
-import 'package:senda/screens/settings/tabs/alarm_settings_tab.dart';
-import 'package:senda/screens/stats/satellites/screens/satellite_detail_screen.dart';
-import 'package:senda/theme/app_colors.dart';
-import 'package:senda/widgets/gps_accuracy_bars.dart';
-import 'package:senda/l10n/app_localizations.dart'; // 🟢 Import de traduccions nates
+import 'package:strack_rec/notifiers/alarm_settings_notifier.dart';
+import 'package:strack_rec/notifiers/gps_debug_notifier.dart';
+import 'package:strack_rec/notifiers/location_notifier.dart';
+import 'package:strack_rec/notifiers/permissions_notifier.dart';
+import 'package:strack_rec/screens/settings/tabs/alarm_settings_tab.dart';
+import 'package:strack_rec/screens/stats/satellites/screens/satellite_detail_screen.dart';
+import 'package:strack_rec/theme/app_colors.dart';
+import 'package:strack_rec/widgets/gps_accuracy_bars.dart';
+import 'package:strack_rec/l10n/app_localizations.dart'; // 🟢 Import de traduccions nates
 
 class MapAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final double? pressure;

@@ -1,11 +1,11 @@
 // lib/notifiers/segment_stats_notifier.dart (RESTAVRAT SENSE TRENCAMENTS)
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:senda/models/track.dart';
-import 'package:senda/notifiers/elevation_selection_provider.dart';
-import 'package:senda/notifiers/recording_notifier.dart';
-import 'package:senda/notifiers/imported_track_notifier.dart';
-import 'package:senda/notifiers/remaining_track_notifier.dart';
-import 'package:senda/utils/calculations.dart';
+import 'package:strack_rec/models/track.dart';
+import 'package:strack_rec/notifiers/elevation_selection_provider.dart';
+import 'package:strack_rec/notifiers/recording_notifier.dart';
+import 'package:strack_rec/notifiers/imported_track_notifier.dart';
+import 'package:strack_rec/notifiers/remaining_track_notifier.dart';
+import 'package:strack_rec/utils/calculations.dart';
 
 class SegmentStats {
   final double distanceMeters;

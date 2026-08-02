@@ -1,24 +1,24 @@
 // lib/screens/elevations/elevation_profile_screen.dart (BLOC 1 DE 2)
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:senda/l10n/app_localizations.dart';
-import 'package:senda/models/track.dart';
-import 'package:senda/models/waypoint.dart';
-import 'package:senda/notifiers/elevation_selection_provider.dart';
-import 'package:senda/notifiers/imported_track_notifier.dart';
-import 'package:senda/notifiers/imported_track_settings_notifier.dart';
-import 'package:senda/notifiers/navigation_notifier.dart';
-import 'package:senda/notifiers/recording_notifier.dart';
-import 'package:senda/notifiers/remaining_track_notifier.dart';
-import 'package:senda/notifiers/track_settings_notifier.dart';
-import 'package:senda/notifiers/waypoints_imported_notifier.dart';
-import 'package:senda/notifiers/waypoints_recorded_notifier.dart';
-import 'package:senda/screens/elevations/widgets/elevation_chart_widget.dart';
-import 'package:senda/screens/elevations/widgets/header_legend_widget.dart';
-import 'package:senda/screens/elevations/widgets/waypoints_list_widget.dart';
-import 'package:senda/theme/app_colors.dart';
-import 'package:senda/theme/app_dimensions.dart';
-import 'package:senda/utils/distance_utils.dart';
+import 'package:strack_rec/l10n/app_localizations.dart';
+import 'package:strack_rec/models/track.dart';
+import 'package:strack_rec/models/waypoint.dart';
+import 'package:strack_rec/notifiers/elevation_selection_provider.dart';
+import 'package:strack_rec/notifiers/imported_track_notifier.dart';
+import 'package:strack_rec/notifiers/imported_track_settings_notifier.dart';
+import 'package:strack_rec/notifiers/navigation_notifier.dart';
+import 'package:strack_rec/notifiers/recording_notifier.dart';
+import 'package:strack_rec/notifiers/remaining_track_notifier.dart';
+import 'package:strack_rec/notifiers/track_settings_notifier.dart';
+import 'package:strack_rec/notifiers/waypoints_imported_notifier.dart';
+import 'package:strack_rec/notifiers/waypoints_recorded_notifier.dart';
+import 'package:strack_rec/screens/elevations/widgets/elevation_chart_widget.dart';
+import 'package:strack_rec/screens/elevations/widgets/header_legend_widget.dart';
+import 'package:strack_rec/screens/elevations/widgets/waypoints_list_widget.dart';
+import 'package:strack_rec/theme/app_colors.dart';
+import 'package:strack_rec/theme/app_dimensions.dart';
+import 'package:strack_rec/utils/distance_utils.dart';
 
 class ElevationProfileScreen extends ConsumerStatefulWidget {
   const ElevationProfileScreen({super.key});

@@ -1,11 +1,11 @@
 // lib/notifiers/nearest_track_point_notifier.dart (OPTIMITZAT SOTA DEMANDA I ZOOM)
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:senda/models/track.dart';
-import 'package:senda/notifiers/gps_speed_notifier.dart';
-import 'package:senda/notifiers/imported_track_notifier.dart';
-import 'package:senda/notifiers/recording_notifier.dart';
+import 'package:strack_rec/models/track.dart';
+import 'package:strack_rec/notifiers/gps_speed_notifier.dart';
+import 'package:strack_rec/notifiers/imported_track_notifier.dart';
+import 'package:strack_rec/notifiers/recording_notifier.dart';
 // 🚀 Importa aquí el provider on tinguis el zoom actual del mapa de Senda, exemple:
-// import 'package:senda/notifiers/map_zoom_notifier.dart';
+// import 'package:strack_rec/notifiers/map_zoom_notifier.dart';
 
 class NearestTrackPointNotifier extends Notifier<int> {
   @override

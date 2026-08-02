@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:senda/theme/app_dimensions.dart';
+import 'package:strack_rec/theme/app_dimensions.dart';
 
 class LayoutUtils {
   final double chartHeight;

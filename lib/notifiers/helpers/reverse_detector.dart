@@ -1,7 +1,7 @@
-import 'package:senda/notifiers/helpers/closest_result.dart';
+import 'package:strack_rec/notifiers/helpers/closest_result.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
-import 'package:senda/notifiers/helpers/thresholds.dart';
-import 'package:senda/utils/geo_utils.dart';
+import 'package:strack_rec/notifiers/helpers/thresholds.dart';
+import 'package:strack_rec/utils/geo_utils.dart';
 
 class ReverseDetector {
   bool isReverseDirection(ClosestResult c, List<LatLng> pts) {

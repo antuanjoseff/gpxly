@@ -1,19 +1,19 @@
 import 'dart:async'; // ✅ MANTINGUT / AFEGIT per al Timer
-import 'package:senda/services/altitude_logger.dart';
+import 'package:strack_rec/services/altitude_logger.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
-import 'package:senda/core/altitude/altitude_processor.dart';
+import 'package:strack_rec/core/altitude/altitude_processor.dart';
 // Models immutables refactoritzats
-import 'package:senda/models/user_position.dart';
-import 'package:senda/notifiers/gps_accuracy_notifier.dart';
-import 'package:senda/notifiers/gps_altitude_notifier.dart';
-import 'package:senda/notifiers/gps_bearing_notifier.dart';
-import 'package:senda/notifiers/gps_settings_notifier.dart';
+import 'package:strack_rec/models/user_position.dart';
+import 'package:strack_rec/notifiers/gps_accuracy_notifier.dart';
+import 'package:strack_rec/notifiers/gps_altitude_notifier.dart';
+import 'package:strack_rec/notifiers/gps_bearing_notifier.dart';
+import 'package:strack_rec/notifiers/gps_settings_notifier.dart';
 // ✅ AFEGIT: Importem el proveïdor de la ruta per poder actualitzar el seu progrés visual
-import 'package:senda/notifiers/imported_track_notifier.dart';
-import 'package:senda/services/cog_service.dart';
-import 'package:senda/services/native_barometer_channel.dart';
-import 'package:senda/services/native_gps_channel.dart';
+import 'package:strack_rec/notifiers/imported_track_notifier.dart';
+import 'package:strack_rec/services/cog_service.dart';
+import 'package:strack_rec/services/native_barometer_channel.dart';
+import 'package:strack_rec/services/native_gps_channel.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LocationNotifier extends Notifier<UserPosition?> {

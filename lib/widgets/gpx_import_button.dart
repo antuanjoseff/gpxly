@@ -7,8 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 // ✅ ADAPTAT: Importem el proveïdor de la ruta importada de la branca
-import 'package:senda/notifiers/imported_track_notifier.dart';
-import 'package:senda/services/gpx_import_service.dart';
+import 'package:strack_rec/notifiers/imported_track_notifier.dart';
+import 'package:strack_rec/services/gpx_import_service.dart';
 
 /// 🔁 Funció reutilitzable per importar GPX i centrar el mapa
 Future<void> importGpxAndZoom({

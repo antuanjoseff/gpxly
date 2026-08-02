@@ -1,11 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:senda/models/gps_permission.dart';
+import 'package:strack_rec/models/gps_permission.dart';
 import 'package:permission_handler/permission_handler.dart' as perm;
 import 'package:geolocator/geolocator.dart' as geo;
-import 'package:senda/models/track.dart';
-import 'package:senda/notifiers/recording_notifier.dart';
+import 'package:strack_rec/models/track.dart';
+import 'package:strack_rec/notifiers/recording_notifier.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class PermissionsNotifier extends Notifier<GpsPermissionState> {

@@ -1,4 +1,4 @@
-package app.antuanjoseff.senda
+package app.antuanjoseff.strack_rec
 
 import android.Manifest
 import android.util.Log

@@ -2,15 +2,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
-import 'package:senda/models/track.dart';
-import 'package:senda/notifiers/location_notifier.dart';
-import 'package:senda/notifiers/recording_notifier.dart';
-import 'package:senda/notifiers/timer_notifier.dart';
-import 'package:senda/screens/main_map/widgets/map_square_button.dart';
-import 'package:senda/screens/stats/stats_screen.dart';
-import 'package:senda/theme/app_colors.dart';
-import 'package:senda/widgets/compass_widget.dart';
-import 'package:senda/widgets/recording_status_bar.dart';
+import 'package:strack_rec/models/track.dart';
+import 'package:strack_rec/notifiers/location_notifier.dart';
+import 'package:strack_rec/notifiers/recording_notifier.dart';
+import 'package:strack_rec/notifiers/timer_notifier.dart';
+import 'package:strack_rec/screens/main_map/widgets/map_square_button.dart';
+import 'package:strack_rec/screens/stats/stats_screen.dart';
+import 'package:strack_rec/theme/app_colors.dart';
+import 'package:strack_rec/widgets/compass_widget.dart';
+import 'package:strack_rec/widgets/recording_status_bar.dart';
 
 class MapTopControls extends ConsumerWidget {
   final MapLibreMapController? mapController;

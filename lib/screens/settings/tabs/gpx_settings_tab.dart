@@ -1,9 +1,9 @@
 // lib/screens/settings/tabs/gpx_settings_tab.dart (Bloc 1 de 2)
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:senda/l10n/app_localizations.dart';
-import 'package:senda/notifiers/gpx_settings_notifier.dart';
-import 'package:senda/theme/app_colors.dart';
+import 'package:strack_rec/l10n/app_localizations.dart';
+import 'package:strack_rec/notifiers/gpx_settings_notifier.dart';
+import 'package:strack_rec/theme/app_colors.dart';
 
 class GpxSettingsTab extends ConsumerWidget {
   const GpxSettingsTab({super.key});

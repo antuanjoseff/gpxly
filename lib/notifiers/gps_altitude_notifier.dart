@@ -1,8 +1,8 @@
 import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:senda/notifiers/barometer_settings_notifier.dart';
-import 'package:senda/services/altitude_logger.dart';
-import 'package:senda/services/native_barometer_channel.dart';
+import 'package:strack_rec/notifiers/barometer_settings_notifier.dart';
+import 'package:strack_rec/services/altitude_logger.dart';
+import 'package:strack_rec/services/native_barometer_channel.dart';
 
 class GpsAltitudeNotifier extends Notifier<double> {
   double _lastBaroAlt = 0.0;

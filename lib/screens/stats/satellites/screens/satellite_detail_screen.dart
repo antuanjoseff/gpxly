@@ -1,8 +1,8 @@
 // lib/stats/satellites/screens/satellite_detail_screen.dart
 import 'package:flutter/material.dart';
-import 'package:senda/l10n/app_localizations.dart';
-import 'package:senda/theme/app_colors.dart';
-import 'package:senda/services/native_gps_channel.dart';
+import 'package:strack_rec/l10n/app_localizations.dart';
+import 'package:strack_rec/theme/app_colors.dart';
+import 'package:strack_rec/services/native_gps_channel.dart';
 import '../painters/skyplot_painter.dart';
 
 class SatelliteDetailScreen extends StatefulWidget {

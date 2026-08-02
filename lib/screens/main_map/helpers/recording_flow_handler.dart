@@ -2,16 +2,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
-import 'package:senda/models/track.dart';
+import 'package:strack_rec/models/track.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:senda/notifiers/location_notifier.dart';
-import 'package:senda/notifiers/recording_notifier.dart';
-import 'package:senda/notifiers/timer_notifier.dart';
-import 'package:senda/notifiers/waypoints_recorded_notifier.dart';
-import 'package:senda/services/gpx_exporter.dart';
-import 'package:senda/services/recording_handler.dart';
-import 'package:senda/services/location_permission_flow.dart';
-import 'package:senda/ui/app_messages.dart';
+import 'package:strack_rec/notifiers/location_notifier.dart';
+import 'package:strack_rec/notifiers/recording_notifier.dart';
+import 'package:strack_rec/notifiers/timer_notifier.dart';
+import 'package:strack_rec/notifiers/waypoints_recorded_notifier.dart';
+import 'package:strack_rec/services/gpx_exporter.dart';
+import 'package:strack_rec/services/recording_handler.dart';
+import 'package:strack_rec/services/location_permission_flow.dart';
+import 'package:strack_rec/ui/app_messages.dart';
 
 class RecordingFlowHandler {
   final WidgetRef ref;

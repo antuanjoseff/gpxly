@@ -6,9 +6,9 @@ import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
-import 'package:senda/notifiers/dem_bounds_notifier.dart';
-import 'package:senda/notifiers/helpers/thresholds.dart';
-import 'package:senda/services/altitude_logger.dart';
+import 'package:strack_rec/notifiers/dem_bounds_notifier.dart';
+import 'package:strack_rec/notifiers/helpers/thresholds.dart';
+import 'package:strack_rec/services/altitude_logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class CogMap {

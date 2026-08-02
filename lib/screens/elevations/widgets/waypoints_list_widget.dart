@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:senda/l10n/app_localizations.dart';
-import 'package:senda/models/waypoint.dart';
-import 'package:senda/theme/app_colors.dart';
+import 'package:strack_rec/l10n/app_localizations.dart';
+import 'package:strack_rec/models/waypoint.dart';
+import 'package:strack_rec/theme/app_colors.dart';
 
 class WaypointsListWidget extends StatefulWidget {
   final List<Waypoint> recorded;

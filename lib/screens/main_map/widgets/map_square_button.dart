@@ -1,6 +1,6 @@
 // lib/widgets/map_square_button.dart (MIDA FIXA CORPORATIVA DE 56PX)
 import 'package:flutter/material.dart';
-import 'package:senda/theme/app_colors.dart';
+import 'package:strack_rec/theme/app_colors.dart';
 
 enum MapButtonStyle {
   control, // 🛠️ Superiors: Fons color de l'App (AppColors.primary), icona blanca.

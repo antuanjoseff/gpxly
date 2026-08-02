@@ -1,7 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:senda/services/native_barometer_channel.dart';
+import 'package:strack_rec/services/native_barometer_channel.dart';
 
 final barometerProvider = StreamProvider<double>((ref) {
   return NativeBarometerChannel.pressureStream();

@@ -2,12 +2,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:senda/models/track.dart';
-import 'package:senda/notifiers/imported_track_notifier.dart';
-import 'package:senda/notifiers/navigation_notifier.dart';
-import 'package:senda/notifiers/recording_notifier.dart';
-import 'package:senda/theme/app_colors.dart';
-import 'package:senda/screens/settings/settings_screen.dart';
+import 'package:strack_rec/models/track.dart';
+import 'package:strack_rec/notifiers/imported_track_notifier.dart';
+import 'package:strack_rec/notifiers/navigation_notifier.dart';
+import 'package:strack_rec/notifiers/recording_notifier.dart';
+import 'package:strack_rec/theme/app_colors.dart';
+import 'package:strack_rec/screens/settings/settings_screen.dart';
 
 class MapActionSpeedDial extends ConsumerStatefulWidget {
   final bool isChartCollapsed;

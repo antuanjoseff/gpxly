@@ -6,14 +6,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 // Models immutables refactoritzats
-import 'package:senda/models/navigation_state.dart';
-import 'package:senda/models/user_position.dart';
-import 'package:senda/notifiers/gps_settings_notifier.dart';
-import 'package:senda/notifiers/imported_track_notifier.dart';
+import 'package:strack_rec/models/navigation_state.dart';
+import 'package:strack_rec/models/user_position.dart';
+import 'package:strack_rec/notifiers/gps_settings_notifier.dart';
+import 'package:strack_rec/notifiers/imported_track_notifier.dart';
 // Proveïdors i serveis externs de la teva app
-import 'package:senda/notifiers/location_notifier.dart'; // Bloc 1
-import 'package:senda/services/permissions_service.dart';
-import 'package:senda/utils/distance_utils.dart'; // Per al teu mètode calculateDistanceManual / distanceBetween
+import 'package:strack_rec/notifiers/location_notifier.dart'; // Bloc 1
+import 'package:strack_rec/services/permissions_service.dart';
+import 'package:strack_rec/utils/distance_utils.dart'; // Per al teu mètode calculateDistanceManual / distanceBetween
 
 // Importació dels teus helpers matemàtics i de so reals
 import 'helpers/geometry_utils.dart';

@@ -1,16 +1,16 @@
 // lib/ui/bottom_bar/bottom_bar_buttons.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:senda/l10n/app_localizations.dart';
-import 'package:senda/models/track.dart';
-import 'package:senda/notifiers/imported_track_notifier.dart';
+import 'package:strack_rec/l10n/app_localizations.dart';
+import 'package:strack_rec/models/track.dart';
+import 'package:strack_rec/notifiers/imported_track_notifier.dart';
 // ✅ ADAPTAT: Proveïdor analític de navegació que substitueix el trackFollowNotifierProvider
-import 'package:senda/notifiers/navigation_notifier.dart';
-import 'package:senda/notifiers/waypoints_imported_notifier.dart';
-import 'package:senda/services/permissions_service.dart';
-import 'package:senda/theme/app_colors.dart';
-import 'package:senda/ui/app_messages.dart';
-import 'package:senda/ui/bottom_bar/pressable_scale.dart';
+import 'package:strack_rec/notifiers/navigation_notifier.dart';
+import 'package:strack_rec/notifiers/waypoints_imported_notifier.dart';
+import 'package:strack_rec/services/permissions_service.dart';
+import 'package:strack_rec/theme/app_colors.dart';
+import 'package:strack_rec/ui/app_messages.dart';
+import 'package:strack_rec/ui/bottom_bar/pressable_scale.dart';
 
 class BottomBarButtons extends ConsumerWidget {
   final RecordingState state;

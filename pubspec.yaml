@@ -1,4 +1,4 @@
-name: senda
+name: strack_rec
 description: App Flutter para grabar y exportar tracks GPX, con podómetro y cálculo de calorías.
 version: 0.1.0+1
 environment:
@@ -61,17 +61,17 @@ dev_dependencies:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/icon/logo.png"
+  image_path: "assets/icon/strack-rec-icon.png"
 
 flutter_native_splash:
   color: "#FFFFFF"
-  background_image: assets/icon/logo.png # Una imatge que ja inclogui el logo al centre
+  background_image: assets/icon/strack-rec-icon.png # Una imatge que ja inclogui el logo al centre
   android: true
   ios: true
 
   # Especificacions per a Android 12+
   android_12:
-    image: assets/icon/logo.png
+    image: assets/icon/strack-rec-icon.png
     color: "#FFFFFF"
 
   # A iOS, 'center' sol funcionar millor que 'scaleAspectFit' per a logos

@@ -1,10 +1,10 @@
 // lib/screens/main_screen/helpers/map_geometry_helper.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
-import 'package:senda/notifiers/imported_track_notifier.dart';
-import 'package:senda/notifiers/navigation_notifier.dart';
-import 'package:senda/notifiers/recording_notifier.dart';
-import 'package:senda/notifiers/remaining_track_notifier.dart';
+import 'package:strack_rec/notifiers/imported_track_notifier.dart';
+import 'package:strack_rec/notifiers/navigation_notifier.dart';
+import 'package:strack_rec/notifiers/recording_notifier.dart';
+import 'package:strack_rec/notifiers/remaining_track_notifier.dart';
 
 class MapGeometryHelper {
   final WidgetRef ref;

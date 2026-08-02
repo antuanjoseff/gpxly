@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:senda/models/alarm_progress.dart';
-import 'package:senda/notifiers/helpers/alarm_engine.dart';
+import 'package:strack_rec/models/alarm_progress.dart';
+import 'package:strack_rec/notifiers/helpers/alarm_engine.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // 1. Primer definim l'enum fora de la classe (o importa'l si ja el tens en un fitxer de models)

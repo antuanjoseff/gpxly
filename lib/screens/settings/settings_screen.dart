@@ -1,17 +1,17 @@
 // lib/screens/settings/settings_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:senda/l10n/app_localizations.dart';
-import 'package:senda/notifiers/alarm_settings_notifier.dart';
-import 'package:senda/notifiers/barometer_settings_notifier.dart';
-import 'package:senda/notifiers/navigation_notifier.dart';
-import 'package:senda/screens/settings/tabs/alarm_settings_tab.dart';
-import 'package:senda/screens/settings/tabs/barometer_settings_tab.dart';
-import 'package:senda/screens/settings/tabs/gps_settings_tab.dart';
-import 'package:senda/screens/settings/tabs/gpx_settings_tab.dart';
-import 'package:senda/screens/settings/tabs/imported_track_settings_tab.dart';
-import 'package:senda/screens/settings/tabs/track_settings_tab.dart';
-import 'package:senda/theme/app_colors.dart';
+import 'package:strack_rec/l10n/app_localizations.dart';
+import 'package:strack_rec/notifiers/alarm_settings_notifier.dart';
+import 'package:strack_rec/notifiers/barometer_settings_notifier.dart';
+import 'package:strack_rec/notifiers/navigation_notifier.dart';
+import 'package:strack_rec/screens/settings/tabs/alarm_settings_tab.dart';
+import 'package:strack_rec/screens/settings/tabs/barometer_settings_tab.dart';
+import 'package:strack_rec/screens/settings/tabs/gps_settings_tab.dart';
+import 'package:strack_rec/screens/settings/tabs/gpx_settings_tab.dart';
+import 'package:strack_rec/screens/settings/tabs/imported_track_settings_tab.dart';
+import 'package:strack_rec/screens/settings/tabs/track_settings_tab.dart';
+import 'package:strack_rec/theme/app_colors.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});

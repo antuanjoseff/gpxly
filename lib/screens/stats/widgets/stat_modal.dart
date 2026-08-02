@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:senda/models/track.dart';
-import 'package:senda/screens/stats/charts/elevation_chart.dart';
-import 'package:senda/screens/stats/charts/slope_chart.dart';
-import 'package:senda/screens/stats/charts/speed_chart.dart';
-import 'package:senda/screens/stats/models/stat_chart_type.dart';
-import 'package:senda/theme/app_colors.dart';
+import 'package:strack_rec/models/track.dart';
+import 'package:strack_rec/screens/stats/charts/elevation_chart.dart';
+import 'package:strack_rec/screens/stats/charts/slope_chart.dart';
+import 'package:strack_rec/screens/stats/charts/speed_chart.dart';
+import 'package:strack_rec/screens/stats/models/stat_chart_type.dart';
+import 'package:strack_rec/theme/app_colors.dart';
 
 class StatModal extends StatelessWidget {
   final IconData icon;

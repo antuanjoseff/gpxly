@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:senda/models/navigation_state.dart';
-import 'package:senda/models/track.dart';
-import 'package:senda/notifiers/timer_notifier.dart';
-import 'package:senda/notifiers/recording_notifier.dart';
-import 'package:senda/notifiers/location_notifier.dart';
-import 'package:senda/screens/settings/settings_screen.dart';
-import 'package:senda/theme/app_colors.dart';
-import 'package:senda/l10n/app_localizations.dart';
+import 'package:strack_rec/models/navigation_state.dart';
+import 'package:strack_rec/models/track.dart';
+import 'package:strack_rec/notifiers/timer_notifier.dart';
+import 'package:strack_rec/notifiers/recording_notifier.dart';
+import 'package:strack_rec/notifiers/location_notifier.dart';
+import 'package:strack_rec/screens/settings/settings_screen.dart';
+import 'package:strack_rec/theme/app_colors.dart';
+import 'package:strack_rec/l10n/app_localizations.dart';
 import 'menu_tab.dart';
 
 class MenuBar extends ConsumerWidget {

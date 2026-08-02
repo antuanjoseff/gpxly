@@ -1,8 +1,8 @@
 // lib/screens/elevations/widgets/elevation_panel.dart (NET PER AL GRÀFIC INDEPENDENT)
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:senda/screens/elevations/widgets/embedded_elevation_profile.dart';
-import 'package:senda/theme/app_dimensions.dart';
+import 'package:strack_rec/screens/elevations/widgets/embedded_elevation_profile.dart';
+import 'package:strack_rec/theme/app_dimensions.dart';
 
 class ElevationPanel extends ConsumerWidget {
   final bool isCollapsed;

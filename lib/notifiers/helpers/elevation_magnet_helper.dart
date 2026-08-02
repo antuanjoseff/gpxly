@@ -3,11 +3,11 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
-import 'package:senda/models/track.dart';
-import 'package:senda/notifiers/elevation_selection_provider.dart';
-import 'package:senda/notifiers/recording_notifier.dart';
-import 'package:senda/notifiers/imported_track_notifier.dart';
-import 'package:senda/utils/map_layers.dart';
+import 'package:strack_rec/models/track.dart';
+import 'package:strack_rec/notifiers/elevation_selection_provider.dart';
+import 'package:strack_rec/notifiers/recording_notifier.dart';
+import 'package:strack_rec/notifiers/imported_track_notifier.dart';
+import 'package:strack_rec/utils/map_layers.dart';
 
 class ElevationMagnetHelper {
   // 🛡️ Candado estático: evita colisiones en la GPU si Riverpod o los movimientos

@@ -4,15 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
-import 'package:senda/models/track.dart';
-import 'package:senda/models/user_position.dart';
-import 'package:senda/notifiers/elevation_range_notifier.dart';
-import 'package:senda/notifiers/gps_settings_notifier.dart';
-import 'package:senda/notifiers/helpers/thresholds.dart';
-import 'package:senda/notifiers/location_notifier.dart'; // Bloc 1 [INDEX]
-import 'package:senda/notifiers/timer_notifier.dart';
-import 'package:senda/utils/calculations.dart';
-import 'package:senda/utils/geo_utils.dart';
+import 'package:strack_rec/models/track.dart';
+import 'package:strack_rec/models/user_position.dart';
+import 'package:strack_rec/notifiers/elevation_range_notifier.dart';
+import 'package:strack_rec/notifiers/gps_settings_notifier.dart';
+import 'package:strack_rec/notifiers/helpers/thresholds.dart';
+import 'package:strack_rec/notifiers/location_notifier.dart'; // Bloc 1 [INDEX]
+import 'package:strack_rec/notifiers/timer_notifier.dart';
+import 'package:strack_rec/utils/calculations.dart';
+import 'package:strack_rec/utils/geo_utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class RecordingNotifier extends Notifier<Track> {

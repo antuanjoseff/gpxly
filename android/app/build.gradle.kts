@@ -14,7 +14,7 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "app.antuanjoseff.senda"
+    namespace = "app.antuanjoseff.strack_rec"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = "28.2.13676358"
 
@@ -38,7 +38,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "app.antuanjoseff.senda"
+        applicationId = "app.antuanjoseff.strack_rec"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

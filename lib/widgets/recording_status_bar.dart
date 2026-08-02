@@ -1,8 +1,8 @@
 // lib/widgets/recording_status_bar.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:senda/models/track.dart';
-import 'package:senda/notifiers/location_notifier.dart';
+import 'package:strack_rec/models/track.dart';
+import 'package:strack_rec/notifiers/location_notifier.dart';
 
 // lib/widgets/recording_status_bar.dart
 

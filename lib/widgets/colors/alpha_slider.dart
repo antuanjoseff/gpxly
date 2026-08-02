@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:senda/widgets/colors/checkerboard_painter.dart';
+import 'package:strack_rec/widgets/colors/checkerboard_painter.dart';
 
 class AlphaSlider extends StatelessWidget {
   const AlphaSlider({

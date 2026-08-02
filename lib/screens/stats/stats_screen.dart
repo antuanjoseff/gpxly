@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:reorderable_grid_view/reorderable_grid_view.dart';
-import 'package:senda/l10n/app_localizations.dart';
-import 'package:senda/models/track.dart';
-import 'package:senda/notifiers/imported_track_notifier.dart';
-import 'package:senda/notifiers/recording_notifier.dart';
-import 'package:senda/notifiers/location_notifier.dart';
-import 'package:senda/notifiers/barometer_settings_notifier.dart'; // 🆕 El teu notifier de pressió
-import 'package:senda/screens/stats/notifiers/stats_prefs_notifier.dart';
-import 'package:senda/screens/stats/satellites/screens/satellite_detail_screen.dart';
-import 'package:senda/theme/app_colors.dart';
-import 'package:senda/providers/barometer_provider.dart';
-import 'package:senda/utils/calculations.dart';
+import 'package:strack_rec/l10n/app_localizations.dart';
+import 'package:strack_rec/models/track.dart';
+import 'package:strack_rec/notifiers/imported_track_notifier.dart';
+import 'package:strack_rec/notifiers/recording_notifier.dart';
+import 'package:strack_rec/notifiers/location_notifier.dart';
+import 'package:strack_rec/notifiers/barometer_settings_notifier.dart'; // 🆕 El teu notifier de pressió
+import 'package:strack_rec/screens/stats/notifiers/stats_prefs_notifier.dart';
+import 'package:strack_rec/screens/stats/satellites/screens/satellite_detail_screen.dart';
+import 'package:strack_rec/theme/app_colors.dart';
+import 'package:strack_rec/providers/barometer_provider.dart';
+import 'package:strack_rec/utils/calculations.dart';
 
 class TrackStatsScreen extends ConsumerStatefulWidget {
   const TrackStatsScreen({super.key});

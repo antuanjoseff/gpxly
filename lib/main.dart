@@ -1,13 +1,13 @@
 // main.dart
-import 'package:senda/l10n/app_localizations.dart';
+import 'package:strack_rec/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:senda/notifiers/location_notifier.dart';
-import 'package:senda/notifiers/permissions_notifier.dart';
-import 'package:senda/screens/main_map/map_screen.dart';
-import 'package:senda/services/cog_service.dart';
-import 'package:senda/theme/app_theme.dart';
+import 'package:strack_rec/notifiers/location_notifier.dart';
+import 'package:strack_rec/notifiers/permissions_notifier.dart';
+import 'package:strack_rec/screens/main_map/map_screen.dart';
+import 'package:strack_rec/services/cog_service.dart';
+import 'package:strack_rec/theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

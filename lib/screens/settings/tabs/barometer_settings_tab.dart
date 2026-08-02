@@ -2,14 +2,14 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
-import 'package:senda/l10n/app_localizations.dart';
-import 'package:senda/notifiers/dem_bounds_notifier.dart';
-import 'package:senda/services/cog_service.dart';
-import 'package:senda/theme/app_colors.dart';
-import 'package:senda/ui/app_messages.dart';
-import 'package:senda/notifiers/location_notifier.dart';
-import 'package:senda/utils/map_animator.dart';
-import 'package:senda/utils/map_constants.dart';
+import 'package:strack_rec/l10n/app_localizations.dart';
+import 'package:strack_rec/notifiers/dem_bounds_notifier.dart';
+import 'package:strack_rec/services/cog_service.dart';
+import 'package:strack_rec/theme/app_colors.dart';
+import 'package:strack_rec/ui/app_messages.dart';
+import 'package:strack_rec/notifiers/location_notifier.dart';
+import 'package:strack_rec/utils/map_animator.dart';
+import 'package:strack_rec/utils/map_constants.dart';
 
 class BarometerSettingsTab extends ConsumerStatefulWidget {
   const BarometerSettingsTab({super.key});

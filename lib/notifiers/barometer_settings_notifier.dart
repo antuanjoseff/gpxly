@@ -1,6 +1,6 @@
 // lib/notifiers/barometer_settings_notifier.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:senda/services/native_barometer_channel.dart';
+import 'package:strack_rec/services/native_barometer_channel.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class BarometerSettingsState {

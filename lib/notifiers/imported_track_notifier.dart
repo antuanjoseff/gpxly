@@ -1,8 +1,8 @@
 // lib/notifiers/imported_track_notifier.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:senda/models/track.dart';
-import 'package:senda/models/user_position.dart';
-import 'package:senda/utils/geo_utils.dart';
+import 'package:strack_rec/models/track.dart';
+import 'package:strack_rec/models/user_position.dart';
+import 'package:strack_rec/utils/geo_utils.dart';
 
 class ImportedTrackNotifier extends Notifier<Track?> {
   // Guardem de forma efímera fins a quin punt hem de dibuixar al mapa

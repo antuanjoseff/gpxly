@@ -3,8 +3,8 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:maplibre_gl/maplibre_gl.dart';
-import 'package:senda/models/track.dart';
-import 'package:senda/utils/map_layers.dart';
+import 'package:strack_rec/models/track.dart';
+import 'package:strack_rec/utils/map_layers.dart';
 
 class MapAnimator {
   final MapLibreMapController controller;
