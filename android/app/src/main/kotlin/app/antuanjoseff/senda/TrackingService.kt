@@ -6,6 +6,8 @@ import android.content.Context
 import android.content.Intent
 import android.os.IBinder
 import android.os.Build
+import android.os.PowerManager
+import android.os.SystemClock
 import android.location.Location
 import android.location.LocationManager
 import android.location.GnssStatus
@@ -35,7 +37,12 @@ class TrackingService : Service() {
     private var dropTimeGate: Long = 0
     private var dropDistanceGate: Long = 0
     private var lastSentFixTime: Long = 0
+    private var lastSentWallTime: Long = 0
     private var lastDropDebugWallTime: Long = 0
+    private var lastAutoRecoveryWallTime: Long = 0
+
+    private val gapRecoverMs = 60_000L
+    private val recoveryCooldownMs = 120_000L
 
     // Callback per rebre l'estat dels satèl·lits
     private val gnssStatusCallback = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
@@ -121,7 +128,9 @@ class TrackingService : Service() {
         dropTimeGate = 0
         dropDistanceGate = 0
         lastSentFixTime = 0
+        lastSentWallTime = 0
         lastDropDebugWallTime = 0
+        lastAutoRecoveryWallTime = 0
 
         if (debugEnabled) {
             TrackingPlugin.sendEvent(
@@ -207,7 +216,18 @@ class TrackingService : Service() {
         totalSent += 1
 
         val gapSincePrevSent = if (lastSentFixTime > 0L) fixTime - lastSentFixTime else 0L
+        val nowWall = System.currentTimeMillis()
+        val gapWallMs = if (lastSentWallTime > 0L) nowWall - lastSentWallTime else 0L
         lastSentFixTime = fixTime
+        lastSentWallTime = nowWall
+
+        val fixAgeMs = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 &&
+            loc.elapsedRealtimeNanos > 0L
+        ) {
+            (SystemClock.elapsedRealtimeNanos() - loc.elapsedRealtimeNanos) / 1_000_000L
+        } else {
+            -1L
+        }
 
         // Recuperem la vAccuracy (Vertical Accuracy)
         val vAcc = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && loc.hasVerticalAccuracy()) {
@@ -235,12 +255,26 @@ class TrackingService : Service() {
                     "type" to "gps_debug",
                     "kind" to "sent",
                     "gap_ms" to gapSincePrevSent,
+                    "gap_wall_ms" to gapWallMs,
+                    "fix_age_ms" to fixAgeMs,
                     "accuracy" to loc.accuracy,
+                    "provider" to (loc.provider ?: "unknown"),
+                    "speed" to loc.speed,
+                    "bearing" to loc.bearing,
+                    "lat" to loc.latitude,
+                    "lon" to loc.longitude,
+                    "is_mock" to loc.isFromMockProvider,
+                    "use_time" to useTime,
+                    "seconds" to seconds,
+                    "meters" to metersThreshold,
                     "sat_used" to satellitesUsed,
-                    "sat_view" to satellitesInView
+                    "sat_view" to satellitesInView,
+                    "is_device_idle" to isDeviceIdleMode()
                 )
             )
         }
+
+        maybeRecoverAfterLargeGap(gapSincePrevSent)
 
         if (debugEnabled && totalReceived % 30L == 0L) {
             emitSummary("periodic")
@@ -288,6 +322,41 @@ class TrackingService : Service() {
                 "meters" to metersThreshold
             )
         )
+    }
+
+    private fun isDeviceIdleMode(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return false
+        val pm = getSystemService(Context.POWER_SERVICE) as? PowerManager
+        return pm?.isDeviceIdleMode ?: false
+    }
+
+    private fun maybeRecoverAfterLargeGap(gapMs: Long) {
+        if (gapMs < gapRecoverMs) return
+
+        val now = System.currentTimeMillis()
+        if (now - lastAutoRecoveryWallTime < recoveryCooldownMs) return
+        lastAutoRecoveryWallTime = now
+
+        if (debugEnabled) {
+            TrackingPlugin.sendEvent(
+                mapOf(
+                    "type" to "gps_debug",
+                    "kind" to "recover",
+                    "reason" to "large_gap",
+                    "gap_ms" to gapMs,
+                    "gap_recover_ms" to gapRecoverMs,
+                    "cooldown_ms" to recoveryCooldownMs,
+                    "use_time" to useTime,
+                    "seconds" to seconds,
+                    "meters" to metersThreshold,
+                    "sat_used" to satellitesUsed,
+                    "sat_view" to satellitesInView,
+                    "is_device_idle" to isDeviceIdleMode()
+                )
+            )
+        }
+
+        startLocationUpdates()
     }
 
     private fun startForegroundServiceNotification() {

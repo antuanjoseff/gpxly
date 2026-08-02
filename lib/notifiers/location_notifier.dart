@@ -100,10 +100,16 @@ class LocationNotifier extends Notifier<UserPosition?> {
         } else if (kind == 'sent') {
           final gap = (event['gap_ms'] as num?)?.toDouble() ?? 0.0;
           if (gap >= 15000) {
+            final gapWall = (event['gap_wall_ms'] as num?)?.toDouble() ?? 0.0;
+            final fixAge = (event['fix_age_ms'] as num?)?.toDouble() ?? -1.0;
             logger.log(
-              "⏳ GPS GAP -> gap=${gap.toStringAsFixed(0)}ms acc=${event['accuracy']} sat=${event['sat_used']}/${event['sat_view']}",
+              "⏳ GPS GAP -> gapFix=${gap.toStringAsFixed(0)}ms gapWall=${gapWall.toStringAsFixed(0)}ms fixAge=${fixAge.toStringAsFixed(0)}ms acc=${event['accuracy']} sat=${event['sat_used']}/${event['sat_view']} provider=${event['provider']} idle=${event['is_device_idle']} modeTime=${event['use_time']} sec=${event['seconds']} m=${event['meters']}",
             );
           }
+        } else if (kind == 'recover') {
+          logger.log(
+            "🔁 GPS RECOVER -> reason=${event['reason']} gap=${event['gap_ms']}ms sat=${event['sat_used']}/${event['sat_view']} idle=${event['is_device_idle']} modeTime=${event['use_time']} sec=${event['seconds']} m=${event['meters']}",
+          );
         } else if (kind == 'start') {
           logger.log(
             "🛰️ GPS START -> modeTime=${event['use_time']} sec=${event['seconds']} m=${event['meters']} accThr=${event['accuracy_threshold']}",
