@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:strack_rec/notifiers/dem_bounds_notifier.dart';
@@ -211,14 +212,18 @@ class CogService {
 
   // 📐 INTERPOLACIÓ BILINEAL: Calcula l'altura exacta entre 4 píxels
   double? _interpolateElevation(CogMap map, double lat, double lon) {
-    if (map.data == null) return null;
+    if (map.data == null) {
+      debugPrint(
+        "🚨 [COG] Error: map.data està buit (null) a _interpolateElevation.",
+      );
+      return null;
+    }
 
     final double x =
         ((lon - map.minLon) / (map.maxLon - map.minLon)) * (map.width - 1);
     final double y =
         ((map.maxLat - lat) / (map.maxLat - map.minLat)) * (map.height - 1);
 
-    // 🛡️ REFACTORITZACIÓ: Deixem un píxel de marge a les vores per evitar desbordaments de fitxer
     final int x1 = x.floor().clamp(0, map.width - 2);
     final int y1 = y.floor().clamp(0, map.height - 2);
     final int x2 = x1 + 1;
@@ -227,14 +232,40 @@ class CogService {
     final double xFrac = x - x1;
     final double yFrac = y - y1;
 
+    // Bloc de diagnòstic per cada lectura de píxel
     double getV(int r, int c) {
       final int offset = (r * map.width + c) * 4;
-      if (offset < 0 || offset + 4 > map.data!.length) return -9999;
-      return ByteData.sublistView(
+
+      // Control de desbordament de memòria física
+      if (offset < 0 || offset + 4 > map.data!.length) {
+        debugPrint(
+          "❌ [COG CÀLCUL] Fora de rang a la matriu de bytes! Offset: $offset, Longitud data: ${map.data!.length}",
+        );
+        return -9999;
+      }
+
+      // Llegim els bytes bruts abans d'interpretar-los com a Float32
+      final Uint8List rawBytes = map.data!.sublist(offset, offset + 4);
+      final double valLittle = ByteData.sublistView(
         map.data!,
         offset,
         offset + 4,
       ).getFloat32(0, Endian.little);
+      final double valBig = ByteData.sublistView(
+        map.data!,
+        offset,
+        offset + 4,
+      ).getFloat32(0, Endian.big);
+
+      // Aquest print només s'executarà per al primer píxel per no col·lapsar la consola, actuant com a mostra de format
+      if (r == y1 && c == x1) {
+        debugPrint("🧬 [COG BINARI] Mostra píxel primordial [$r,$c]:");
+        debugPrint("   - Bytes bruts (Hex/Int): $rawBytes");
+        debugPrint("   - Si fos Little Endian Float32: $valLittle m");
+        debugPrint("   - Si fos Big Endian Float32: $valBig m");
+      }
+
+      return valLittle; // Mantenim la teva lògica original per defecte
     }
 
     final v11 = getV(y1, x1);
@@ -243,47 +274,93 @@ class CogService {
     final v22 = getV(y2, x2);
 
     if (v11 < -1000 || v21 < -1000 || v12 < -1000 || v22 < -1000) {
-      AltitudeLoggerService().log(
-        "⚠️ COG BIND -> Píxel fora de rang o NoData detectat a la vora del fitxer. Retornant null.",
+      debugPrint(
+        "⚠️ [COG] S'ha detectat un valor NoData (menor a -1000): [$v11, $v21, $v12, $v22]",
       );
       return null;
     }
 
-    // Fórmula Bilineal
     final double top = v11 + xFrac * (v21 - v11);
     final double bottom = v12 + xFrac * (v22 - v12);
-
     final finalElevation = top + yFrac * (bottom - top);
 
-    // 🛡️ SEGONA DEFENSA: Si la fórmula matemàtica dóna zero o negatiu (improbable a Catalunya), evitem retornar-ho
+    debugPrint(
+      "🏔️ [COG RECONSTRUCCIÓ] Posició: X=$x1, Y=$y1. Alçada final calculada: $finalElevation m",
+    );
+
     return finalElevation > 0.0 ? finalElevation : null;
   }
 
   Future<void> _downloadNewArea(double lat, double lon, dynamic ref) async {
-    // 🌀 1. Activem el ProgressIndicator unificat
     ref.read(demBoundsProvider.notifier).setDownloading(true);
 
-    // final uri = Uri.https(
-    //   'cog-tiles-euaeg7eaavbqczgf.spaincentral-01.azurewebsites.net',
-    //   '/api/getTileGrid',
-    //   {'lat': lat.toString(), 'lon': lon.toString()},
-    // );
-
-    final uri = Uri.http('213.165.93.0', '/getTileGrid', {
+    // 🌐 DEBUG DE LA URI: Validem exactament com es construeix de cara a FastAPI
+    final Map<String, String> queryParams = {
       'lat': lat.toString(),
       'lon': lon.toString(),
-    });
+    };
+
+    final uri = Uri.http('213.165.93.0', '/getTileGrid', queryParams);
+    debugPrint("📡 [COG PETICIÓ] Cridant URI: $uri");
+    debugPrint(
+      "   - Paràmetres enviats -> Latitud: ${queryParams['lat']}, Longitud: ${queryParams['lon']}",
+    );
 
     try {
       final response = await http.get(uri).timeout(const Duration(seconds: 15));
 
+      debugPrint(
+        "📥 [COG RESPOSTA] Resposta rebuda d'Arsys (FastAPI). Status: ${response.statusCode}",
+      );
+
       if (response.statusCode == 200) {
+        // Obtenir la mida del body de dues maneres per comprovar si hi ha corrupció per compressió o text
+        final int bytesLength = response.bodyBytes.length;
+        final String? contentLengthHeader = response.headers['content-length'];
+
+        debugPrint("📊 [COG DATA] Diagnòstic de mida del flux:");
+        debugPrint("   - Longitud real de bodyBytes: $bytesLength bytes");
+        debugPrint(
+          "   - Capçalera Content-Length de FastAPI: $contentLengthHeader",
+        );
+        debugPrint(
+          "   - Content-Type detectat: ${response.headers['content-type']}",
+        );
+
         final bbox = response.headers['x-bbox']!
             .split(',')
             .map(double.parse)
             .toList();
         final width = int.parse(response.headers['x-width']!);
         final height = int.parse(response.headers['x-height']!);
+
+        debugPrint(
+          "📐 [COG METADADES] Graella definida pel servidor: Mida ${width}x${height}. BBox: $bbox",
+        );
+
+        // Verificació matemàtica del format del resultat
+        final int expectedSize = width * height * 4;
+        debugPrint(
+          "🧮 [COG COHERÈNCIA] Esperat per Float32: $width * $height * 4 = $expectedSize bytes.",
+        );
+
+        if (bytesLength != expectedSize) {
+          debugPrint("🚨 [COG ALERTA] EL FORMAT DEL RESULTAT NO QUADRA!");
+          if (bytesLength == width * height * 2) {
+            debugPrint(
+              "💡 PISTA: El resultat fa exactament la meitat. FastAPI t'està enviant INT16 (2 bytes) en comptes de FLOAT32 (4 bytes)!",
+            );
+          } else if (bytesLength == width * height * 8) {
+            debugPrint(
+              "💡 PISTA: El resultat fa exactament el doble. FastAPI t'està enviant FLOAT64 o DOUBLE (8 bytes) de Python!",
+            );
+          } else {
+            debugPrint(
+              "💡 PISTA: La mida és completament asimètrica. És possible que FastAPI estigui enviant text formatat o JSON en comptes de binaris purs.",
+            );
+          }
+        }
+
         final dir = await getApplicationDocumentsDirectory();
         final path =
             "${dir.path}/elev_${DateTime.now().millisecondsSinceEpoch}.bin";
@@ -304,17 +381,23 @@ class CogService {
 
         await _managePersistentCache(newMap);
 
-        // 🟢 2. Afegim la cel·la a la llista inmutable
         ref
             .read(demBoundsProvider.notifier)
             .addCell(bbox[0], bbox[1], bbox[2], bbox[3]);
+      } else {
+        debugPrint(
+          "❌ [COG SERVIDOR] Error de resposta. Body del servidor: ${response.body}",
+        );
       }
-    } catch (e) {
+    } catch (e, stacktrace) {
       _lastFailedDownload = DateTime.now();
       AltitudeLoggerService().log("❌ COG DESCARGA -> Error: $e");
+      debugPrint(
+        "💥 [COG EXCEPCIÓ] Error crític durant la descàrrega o parseig: $e",
+      );
+      debugPrint("$stacktrace");
       rethrow;
     } finally {
-      // 🌀 3. Apaguem el ProgressIndicator de forma garantida
       ref.read(demBoundsProvider.notifier).setDownloading(false);
     }
   }
