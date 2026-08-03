@@ -263,11 +263,16 @@ class CogService {
     // 🌀 1. Activem el ProgressIndicator unificat
     ref.read(demBoundsProvider.notifier).setDownloading(true);
 
-    final uri = Uri.https(
-      'cog-tiles-euaeg7eaavbqczgf.spaincentral-01.azurewebsites.net',
-      '/api/getTileGrid',
-      {'lat': lat.toString(), 'lon': lon.toString()},
-    );
+    // final uri = Uri.https(
+    //   'cog-tiles-euaeg7eaavbqczgf.spaincentral-01.azurewebsites.net',
+    //   '/api/getTileGrid',
+    //   {'lat': lat.toString(), 'lon': lon.toString()},
+    // );
+
+    final uri = Uri.http('213.165.93.0', '/getTileGrid', {
+      'lat': lat.toString(),
+      'lon': lon.toString(),
+    });
 
     try {
       final response = await http.get(uri).timeout(const Duration(seconds: 15));
