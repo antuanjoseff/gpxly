@@ -300,7 +300,7 @@ class CogService {
       'lon': lon.toString(),
     };
 
-    final uri = Uri.http('213.165.93.0', '/getTileGrid', queryParams);
+    final uri = Uri.http('213.165.93.0', 'api/getTileGrid', queryParams);
     debugPrint("📡 [COG PETICIÓ] Cridant URI: $uri");
     debugPrint(
       "   - Paràmetres enviats -> Latitud: ${queryParams['lat']}, Longitud: ${queryParams['lon']}",
