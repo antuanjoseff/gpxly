@@ -113,7 +113,9 @@ class RecordingFlowHandler {
     final eliminar = await AppMessages.showDeleteTrackDialog(context);
     if (eliminar == true) {
       prefs.setBool("preserve_track_on_start", false);
-      ref.read(trackRecordingProvider.notifier).reset();
+      await ref.read(trackRecordingProvider.notifier).reset();
+      ref.read(waypointsProvider.notifier).clear();
+      ref.read(timerProvider.notifier).reset();
     } else {
       prefs.setBool("preserve_track_on_start", true);
     }
@@ -134,7 +136,7 @@ class RecordingFlowHandler {
 
     if (eliminar == true) {
       prefs.setBool("preserve_track_on_start", false);
-      ref.read(trackRecordingProvider.notifier).reset();
+      await ref.read(trackRecordingProvider.notifier).reset();
       ref.read(waypointsProvider.notifier).clear();
       ref.read(timerProvider.notifier).reset();
     }

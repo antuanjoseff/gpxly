@@ -380,14 +380,14 @@ class RecordingNotifier extends Notifier<Track> {
     await prefs.remove('temp_track_data');
   }
 
-  void reset() {
+  Future<void> reset() async {
     _gpsTimeoutTimer?.cancel();
     state = Track(
       points: const [],
       recordingState: RecordingState.idle,
       stats: TrackStats(),
     );
-    clearCache();
+    await clearCache();
   }
 
   List<UserPosition> _filterPointsByAccuracy(List<UserPosition> points) {
