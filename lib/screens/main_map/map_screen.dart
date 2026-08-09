@@ -1,6 +1,7 @@
 // lib/screens/map/map_screen.dart
 import 'dart:async';
 import 'dart:math';
+import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -48,6 +49,7 @@ import 'package:strack_rec/screens/main_map/helpers/recording_flow_handler.dart'
 // Serveis i utilitats
 import 'package:strack_rec/services/hgt_service.dart';
 import 'package:strack_rec/services/altitude_logger.dart';
+import 'package:strack_rec/services/gpx_import_flow.dart';
 import 'package:strack_rec/services/native_barometer_channel.dart';
 import 'package:strack_rec/services/permissions_service.dart';
 import 'package:strack_rec/services/recording_handler.dart';
@@ -98,6 +100,10 @@ class _MapScreenState extends ConsumerState<MapScreen>
   bool _isChartCollapsed = false;
   DateTime _lastMapUpdateTime = DateTime.fromMillisecondsSinceEpoch(0);
   static const int _mapThrottleMs = 32;
+  final AppLinks _appLinks = AppLinks();
+  StreamSubscription<Uri>? _gpxUriSub;
+  String? _lastHandledExternalGpxUri;
+  bool _isHandlingExternalGpx = false;
 
   late MapAnimator mapAnimator;
   final double _currentMapPadding = 0;
@@ -121,6 +127,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
     WidgetsBinding.instance.addObserver(this);
     NativeBarometerChannel.start();
     _loadLastPosition();
+    _bindExternalGpxOpen();
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final ok = await PermissionsService.ensureBasicLocation(context);
@@ -152,6 +159,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
     // 2. Atura els sensors natius si cal
     NativeBarometerChannel.stop();
     _submenuAutoHideTimer?.cancel();
+    _gpxUriSub?.cancel();
 
     // 3. 🛡️ NETEJA DEL MAPA: Avisem al motor natiu de MapLibre que es destrueixi immediatament
     // Això talla en sec qualsevol renderitzat, animació o descàrrega de tiles en segon pla.
@@ -165,6 +173,62 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
     // 4. Finalment, destrueix el giny de Flutter de forma normal
     super.dispose();
+  }
+
+  Future<void> _bindExternalGpxOpen() async {
+    try {
+      final initialUri = await _appLinks.getInitialLink();
+      if (initialUri != null) {
+        unawaited(_handleExternalGpxUri(initialUri));
+      }
+    } catch (e) {
+      debugPrint('Error llegint l\'intent inicial GPX: $e');
+    }
+
+    _gpxUriSub = _appLinks.uriLinkStream.listen(
+      (uri) {
+        unawaited(_handleExternalGpxUri(uri));
+      },
+      onError: (Object e) {
+        debugPrint('Error escoltant intents GPX: $e');
+      },
+    );
+  }
+
+  Future<void> _handleExternalGpxUri(Uri uri) async {
+    if (!mounted || _isHandlingExternalGpx) return;
+
+    final raw = uri.toString().toLowerCase();
+    final isGpx =
+        uri.path.toLowerCase().endsWith('.gpx') || raw.contains('.gpx');
+    if (!isGpx) return;
+
+    final uriKey = uri.toString();
+    if (_lastHandledExternalGpxUri == uriKey) return;
+
+    _isHandlingExternalGpx = true;
+    try {
+      for (int i = 0; i < 60; i++) {
+        if (!mounted) return;
+        if (styleInitialized && mapController != null) break;
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
+
+      if (!mounted) return;
+
+      final imported = await importGpxFromUri(
+        context: context,
+        ref: ref,
+        mapController: mapController,
+        uri: uri,
+      );
+
+      if (imported) {
+        _lastHandledExternalGpxUri = uriKey;
+      }
+    } finally {
+      _isHandlingExternalGpx = false;
+    }
   }
 
   void _cancelSubmenuAutoHideTimer() {

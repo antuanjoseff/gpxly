@@ -4,12 +4,17 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:strack_rec/l10n/app_localizations.dart';
 // ✅ ADAPTAT: Importem el proveïdor de la ruta importada de la branca
 import 'package:strack_rec/notifiers/imported_track_notifier.dart';
 import 'package:strack_rec/services/gpx_import_service.dart';
+
+const MethodChannel _gpxUriReaderChannel = MethodChannel(
+  'strack_rec/gpx_uri_reader',
+);
 
 /// Flux complet d'importació GPX + zoom al mapa.
 /// Aquesta funció és cridada tant des de la bottom bar com des de l'AppBar.
@@ -18,9 +23,6 @@ Future<void> pickGpxAndImport({
   required WidgetRef ref,
   required MapLibreMapController? mapController,
 }) async {
-  final t = AppLocalizations.of(context)!;
-
-  // 📝 MANTINGUT: La teva crida original exacta al FilePicker
   final result = await FilePicker.pickFiles(
     type: FileType.custom,
     allowedExtensions: ['gpx'],
@@ -31,23 +33,57 @@ Future<void> pickGpxAndImport({
   final path = result.files.single.path;
   if (path == null) return;
 
+  await importGpxFromPath(
+    context: context,
+    ref: ref,
+    mapController: mapController,
+    path: path,
+  );
+}
+
+Future<bool> importGpxFromPath({
+  required BuildContext context,
+  required WidgetRef ref,
+  required MapLibreMapController? mapController,
+  required String path,
+}) async {
+  final uri = Uri.file(path);
+  return importGpxFromUri(
+    context: context,
+    ref: ref,
+    mapController: mapController,
+    uri: uri,
+  );
+}
+
+Future<bool> importGpxFromUri({
+  required BuildContext context,
+  required WidgetRef ref,
+  required MapLibreMapController? mapController,
+  required Uri uri,
+}) async {
+  final t = AppLocalizations.of(context)!;
+  final raw = uri.toString().toLowerCase();
+  final hasGpxExtension =
+      uri.path.toLowerCase().endsWith('.gpx') || raw.contains('.gpx');
+
   // 1) Validar extensió
-  if (!path.toLowerCase().endsWith(".gpx")) {
+  if (!hasGpxExtension) {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(t.gpxErrorInvalidExtension)));
-    return;
+    return false;
   }
 
   // 2) Llegir contingut
   String xml;
   try {
-    xml = await File(path).readAsString();
+    xml = await _readGpxXmlFromUri(uri);
   } catch (_) {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(t.gpxErrorRead)));
-    return;
+    return false;
   }
 
   // 3) Validar XML
@@ -55,7 +91,7 @@ Future<void> pickGpxAndImport({
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(t.gpxErrorInvalidXml)));
-    return;
+    return false;
   }
 
   // 4) Validar etiqueta GPX
@@ -63,7 +99,7 @@ Future<void> pickGpxAndImport({
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(t.gpxErrorNoGpxTag)));
-    return;
+    return false;
   }
 
   // Importar el contingut del GPX al magatzem de dades
@@ -76,7 +112,7 @@ Future<void> pickGpxAndImport({
   if (importedTrack == null ||
       importedTrack.points.isEmpty ||
       mapController == null) {
-    return;
+    return true;
   }
 
   final stats = importedTrack.stats;
@@ -84,7 +120,7 @@ Future<void> pickGpxAndImport({
       stats.maxLat == null ||
       stats.minLon == null ||
       stats.maxLon == null) {
-    return;
+    return true;
   }
 
   // Reconstruïm els límits de MapLibre usant els valors que el servei ja ha processat
@@ -102,4 +138,27 @@ Future<void> pickGpxAndImport({
       bottom: 40,
     ),
   );
+
+  return true;
+}
+
+Future<String> _readGpxXmlFromUri(Uri uri) async {
+  if (uri.scheme == 'file' || uri.scheme.isEmpty) {
+    final filePath = uri.scheme == 'file' ? uri.toFilePath() : uri.path;
+    return File(filePath).readAsString();
+  }
+
+  if (uri.scheme == 'content') {
+    final xml = await _gpxUriReaderChannel.invokeMethod<String>(
+      'readTextFromUri',
+      {'uri': uri.toString()},
+    );
+
+    if (xml == null || xml.isEmpty) {
+      throw Exception('Empty content uri');
+    }
+    return xml;
+  }
+
+  throw UnsupportedError('Unsupported uri scheme: ${uri.scheme}');
 }
