@@ -198,10 +198,14 @@ class _MapScreenState extends ConsumerState<MapScreen>
   Future<void> _handleExternalGpxUri(Uri uri) async {
     if (!mounted || _isHandlingExternalGpx) return;
 
+    final isContentUri = uri.scheme == 'content';
+    final isFileUri = uri.scheme == 'file' || uri.scheme.isEmpty;
+    if (!isContentUri && !isFileUri) return;
+
     final raw = uri.toString().toLowerCase();
     final isGpx =
         uri.path.toLowerCase().endsWith('.gpx') || raw.contains('.gpx');
-    if (!isGpx) return;
+    if (isFileUri && !isGpx) return;
 
     final uriKey = uri.toString();
     if (_lastHandledExternalGpxUri == uriKey) return;

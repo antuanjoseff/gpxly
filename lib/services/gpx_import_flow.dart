@@ -64,11 +64,14 @@ Future<bool> importGpxFromUri({
 }) async {
   final t = AppLocalizations.of(context)!;
   final raw = uri.toString().toLowerCase();
+  final isContentUri = uri.scheme == 'content';
   final hasGpxExtension =
       uri.path.toLowerCase().endsWith('.gpx') || raw.contains('.gpx');
 
-  // 1) Validar extensió
-  if (!hasGpxExtension) {
+  // 1) Validar extensió només per fitxers.
+  // Amb content:// molts proveïdors no exposen l'extensió al path,
+  // així que validarem pel contingut XML i etiqueta <gpx>.
+  if (!isContentUri && !hasGpxExtension) {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(t.gpxErrorInvalidExtension)));
