@@ -19,9 +19,20 @@ import 'package:shared_preferences/shared_preferences.dart';
 class LocationNotifier extends Notifier<UserPosition?> {
   StreamSubscription? _gpsSub;
   StreamSubscription? _gpsDebugSub;
+  Timer? _gpsHeartbeatTimer;
   bool gpsActive = false;
   bool _isSimulationRunning = false;
   bool _isSimulationPaused = false;
+  DateTime? _lastGpsPointAt;
+  DateTime? _lastHeartbeatRefreshAt;
+  DateTime? _lastHardRestartAt;
+  bool _heartbeatRefreshInProgress = false;
+  int _heartbeatSoftAttempts = 0;
+
+  static const Duration _gpsSilenceThreshold = Duration(seconds: 30);
+  static const Duration _gpsHeartbeatTick = Duration(seconds: 5);
+  static const int _maxSoftAttemptsBeforeHardRestart = 3;
+  static const Duration _hardRestartCooldown = Duration(seconds: 90);
 
   // ─────────────────────────────────────────────────────────────
   // 🎮 LES DUES NOVES VARIABLES DE CLASSE REQUERIDES
@@ -40,6 +51,7 @@ class LocationNotifier extends Notifier<UserPosition?> {
     ref.onDispose(() {
       _gpsSub?.cancel();
       _gpsDebugSub?.cancel();
+      _gpsHeartbeatTimer?.cancel();
       _simulationTimer
           ?.cancel(); // Netegem també el temporitzador si es destrueix el giny [INDEX]
       _cogService.clearAllCacheFiles();
@@ -78,6 +90,7 @@ class LocationNotifier extends Notifier<UserPosition?> {
     _gpsSub = NativeGpsChannel.locationStream.listen((data) {
       _processIncomingGpsPoint(data);
     });
+    _startGpsHeartbeatWatchdog();
 
     final logger = AltitudeLoggerService();
     final debugEnabled = await logger.isDebugEnabled();
@@ -123,8 +136,74 @@ class LocationNotifier extends Notifier<UserPosition?> {
     gpsActive = true;
   }
 
+  void _startGpsHeartbeatWatchdog() {
+    _gpsHeartbeatTimer?.cancel();
+    _lastGpsPointAt = DateTime.now();
+    _lastHeartbeatRefreshAt = null;
+    _lastHardRestartAt = null;
+    _heartbeatSoftAttempts = 0;
+
+    _gpsHeartbeatTimer = Timer.periodic(_gpsHeartbeatTick, (_) async {
+      if (!gpsActive || _isSimulationRunning) return;
+
+      final gpsSettings = ref.read(gpsSettingsProvider);
+      if (gpsSettings.useTime) return;
+
+      final now = DateTime.now();
+      final lastPointAt = _lastGpsPointAt ?? now;
+      final silence = now.difference(lastPointAt);
+      if (silence < _gpsSilenceThreshold) return;
+
+      final lastRefreshAt = _lastHeartbeatRefreshAt;
+      if (lastRefreshAt != null &&
+          now.difference(lastRefreshAt) < _gpsSilenceThreshold) {
+        return;
+      }
+
+      if (_heartbeatRefreshInProgress) return;
+      _heartbeatRefreshInProgress = true;
+
+      final logger = AltitudeLoggerService();
+      try {
+        _lastHeartbeatRefreshAt = now;
+        _heartbeatSoftAttempts += 1;
+
+        if (_heartbeatSoftAttempts < _maxSoftAttemptsBeforeHardRestart) {
+          logger.log(
+            "🔄 GPS HEARTBEAT -> Sense coordenades ${silence.inSeconds}s en mode distància. Reaplicant configuració actual (intent $_heartbeatSoftAttempts).",
+          );
+          await ref.read(gpsSettingsProvider.notifier).apply();
+        } else {
+          final lastHardRestartAt = _lastHardRestartAt;
+          if (lastHardRestartAt != null &&
+              now.difference(lastHardRestartAt) < _hardRestartCooldown) {
+            logger.log(
+              "⏱️ GPS HEARTBEAT -> Cooldown actiu per reset fort. Es manté watchdog.",
+            );
+          } else {
+            logger.log(
+              "🛑 GPS HEARTBEAT -> Sense coordenades persistent. Reset fort stop/start mantenint configuració d'usuari.",
+            );
+            await NativeGpsChannel.stop();
+            await Future.delayed(const Duration(milliseconds: 350));
+            await ref.read(gpsSettingsProvider.notifier).apply();
+            _lastHardRestartAt = now;
+            _heartbeatSoftAttempts = 0;
+          }
+        }
+      } catch (_) {
+        logger.log("❌ GPS HEARTBEAT -> Error en reactivació del stream GPS.");
+      } finally {
+        _heartbeatRefreshInProgress = false;
+      }
+    });
+  }
+
   // 🎯 RECEPCIÓ, CORRECCIÓ D'ALTITUD I EMISSIÓ DEL MODEL
   void _processIncomingGpsPoint(Map<String, dynamic> data) async {
+    _lastGpsPointAt = DateTime.now();
+    _heartbeatSoftAttempts = 0;
+
     final lat = data["lat"] as double;
     final lon = data["lon"] as double;
     final accuracy = data["accuracy"] as double;
@@ -325,6 +404,13 @@ class LocationNotifier extends Notifier<UserPosition?> {
   void stopGps() {
     _simulationTimer?.cancel(); // Netegem el timer si s'atura globalment
     _simulationTimer = null;
+    _gpsHeartbeatTimer?.cancel();
+    _gpsHeartbeatTimer = null;
+    _lastGpsPointAt = null;
+    _lastHeartbeatRefreshAt = null;
+    _lastHardRestartAt = null;
+    _heartbeatSoftAttempts = 0;
+    _heartbeatRefreshInProgress = false;
     _isSimulationRunning = false;
     _isSimulationPaused = false;
 
