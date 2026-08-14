@@ -206,6 +206,8 @@ class GpxImportService {
       );
     }
 
+    importedWaypoints.sort((a, b) => a.trackIndex.compareTo(b.trackIndex));
+
     ref.read(importedWaypointsProvider.notifier).setAll(importedWaypoints);
   }
 

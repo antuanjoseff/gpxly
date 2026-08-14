@@ -78,6 +78,18 @@ class TrackSounds {
     }
   }
 
+  Future<void> playWaypointAlarm() async {
+    try {
+      await player.play(
+        AssetSource('sound/dog.mp3'),
+        volume: 1.0,
+        ctx: _alarmContext,
+      );
+    } catch (e) {
+      print("Error playing waypoint alarm: $e");
+    }
+  }
+
   Future<void> playCotaAlarm() async {
     try {
       await player.play(

@@ -36,6 +36,7 @@ class TrackThresholds {
   // Final del track
   static const int minimumDitanceToGoal = 10;
   static const int minProgressRequired = 100;
+  static const double waypointAlarmDistanceMeters = 30.0;
 
   // Nou llindar per detectar aturades
   static const double stopSpeedThreshold = 0.5; // m/s

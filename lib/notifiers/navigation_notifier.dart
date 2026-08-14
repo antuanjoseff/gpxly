@@ -7,9 +7,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 // Models immutables refactoritzats
 import 'package:strack_rec/models/navigation_state.dart';
+import 'package:strack_rec/models/track.dart';
+import 'package:strack_rec/models/waypoint.dart';
 import 'package:strack_rec/models/user_position.dart';
 import 'package:strack_rec/notifiers/gps_settings_notifier.dart';
 import 'package:strack_rec/notifiers/imported_track_notifier.dart';
+import 'package:strack_rec/notifiers/waypoints_imported_notifier.dart';
 // Proveïdors i serveis externs de la teva app
 import 'package:strack_rec/notifiers/location_notifier.dart'; // Bloc 1
 import 'package:strack_rec/services/permissions_service.dart';
@@ -63,6 +66,7 @@ class NavigationNotifier extends Notifier<NavigationState> {
   double _reverseBackwardAccumMeters = 0.0;
   int? _lastAlongTrackSegmentIndex;
   int? _lastMatchedSegmentIndex;
+  int _nextWaypointAlertIndex = 0;
 
   @override
   NavigationState build() {
@@ -117,6 +121,7 @@ class NavigationNotifier extends Notifier<NavigationState> {
     _reverseDialogShown = false;
     _reverseDetectionLocked = false;
     _offTrackSnackbarShown = false;
+    _nextWaypointAlertIndex = 0;
 
     state = NavigationState(isFollowing: true, mode: FollowMode.initializing);
 
@@ -178,6 +183,7 @@ class NavigationNotifier extends Notifier<NavigationState> {
     _reverseDialogShown = false;
     _reverseDetectionLocked = false;
     _offTrackSnackbarShown = false;
+    _nextWaypointAlertIndex = 0;
 
     state = NavigationState(mode: FollowMode.notFollowing);
   }
@@ -200,6 +206,8 @@ class NavigationNotifier extends Notifier<NavigationState> {
     // --- IMPORTED TRACK ---
     final imported = ref.read(importedTrackProvider);
     if (imported == null || imported.coordinates.isEmpty) return;
+
+    final importedWaypoints = ref.read(importedWaypointsProvider);
 
     final importedLatLng = imported.coordinates
         .map((c) => LatLng(c[1], c[0]))
@@ -254,6 +262,13 @@ class NavigationNotifier extends Notifier<NavigationState> {
       currentAlongTrackDistance: distanceAlongTrack,
       currentSegmentIndex: closest.segmentIndex,
       previousMatchedSegmentIndex: previousMatchedSegmentIndex,
+    );
+
+    _checkNextWaypointAlarm(
+      userPos: userPos,
+      imported: imported,
+      importedWaypoints: importedWaypoints,
+      currentAlongTrackDistance: distanceAlongTrack,
     );
 
     if (alongTrackPlausible) {
@@ -520,6 +535,27 @@ class NavigationNotifier extends Notifier<NavigationState> {
   void reverseImportedTrack() {
     ref.read(importedTrackProvider.notifier).reverseTrack();
 
+    final imported = ref.read(importedTrackProvider);
+    final importedWaypoints = ref.read(importedWaypointsProvider);
+    if (imported != null &&
+        imported.points.isNotEmpty &&
+        importedWaypoints.isNotEmpty) {
+      final lastIndex = imported.points.length - 1;
+      final reversedWaypoints = importedWaypoints.map((waypoint) {
+        final reversedTrackIndex = (lastIndex - waypoint.trackIndex).clamp(
+          0,
+          lastIndex,
+        );
+        final reversedPoint = imported.points[reversedTrackIndex];
+        return waypoint.copyWith(
+          trackIndex: reversedTrackIndex,
+          distanceAtPoint: reversedPoint.distanceAtPoint,
+        );
+      }).toList()..sort((a, b) => a.trackIndex.compareTo(b.trackIndex));
+
+      ref.read(importedWaypointsProvider.notifier).setAll(reversedWaypoints);
+    }
+
     _lastUserPositions.clear(); // Borra el rumb antic
     _lastSegmentIndices.clear();
     _lastProjectedPoint = null;
@@ -530,8 +566,8 @@ class NavigationNotifier extends Notifier<NavigationState> {
     _reverseBackwardAccumMeters = 0.0;
     _lastAlongTrackSegmentIndex = null;
     _lastMatchedSegmentIndex = null;
+    _nextWaypointAlertIndex = 0;
 
-    final imported = ref.read(importedTrackProvider);
     if (imported != null && imported.coordinates.length > 1) {
       final importedLatLng = imported.coordinates
           .map((c) => LatLng(c[1], c[0]))
@@ -562,6 +598,7 @@ class NavigationNotifier extends Notifier<NavigationState> {
     _reverseBackwardAccumMeters = 0.0;
     _lastAlongTrackSegmentIndex = null;
     _lastMatchedSegmentIndex = null;
+    _nextWaypointAlertIndex = 0;
 
     _reverseDialogShown = false;
     state = state.copyWith(showReverseTrackDialog: false);
@@ -593,6 +630,61 @@ class NavigationNotifier extends Notifier<NavigationState> {
 
   void unlockReverseDetection() {
     _reverseDetectionLocked = false;
+  }
+
+  void _checkNextWaypointAlarm({
+    required LatLng userPos,
+    required Track imported,
+    required List<Waypoint> importedWaypoints,
+    required double currentAlongTrackDistance,
+  }) {
+    if (importedWaypoints.isEmpty || imported.points.isEmpty) return;
+
+    if (_nextWaypointAlertIndex >= importedWaypoints.length) {
+      _nextWaypointAlertIndex = importedWaypoints.length - 1;
+    }
+
+    while (_nextWaypointAlertIndex < importedWaypoints.length) {
+      final waypoint = importedWaypoints[_nextWaypointAlertIndex];
+      final waypointTrackDistance = _waypointTrackDistance(imported, waypoint);
+      if (waypointTrackDistance == null) {
+        _nextWaypointAlertIndex++;
+        continue;
+      }
+
+      if (currentAlongTrackDistance > waypointTrackDistance + 1.0) {
+        _nextWaypointAlertIndex++;
+        continue;
+      }
+
+      final distanceToWaypoint = calculateDistanceManual(
+        userPos.latitude,
+        userPos.longitude,
+        waypoint.lat,
+        waypoint.lon,
+      );
+
+      if (distanceToWaypoint <= TrackThresholds.waypointAlarmDistanceMeters) {
+        HapticFeedback.lightImpact();
+        sounds.playWaypointAlarm();
+        _nextWaypointAlertIndex++;
+      }
+
+      return;
+    }
+  }
+
+  double? _waypointTrackDistance(Track imported, Waypoint waypoint) {
+    if (imported.points.isEmpty) return null;
+
+    final index = waypoint.trackIndex;
+    if (index < 0) return null;
+
+    if (index < imported.points.length) {
+      return imported.points[index].distanceAtPoint;
+    }
+
+    return imported.points.last.distanceAtPoint;
   }
 
   List<double> _buildTrackCumulativeDistances(List<LatLng> track) {

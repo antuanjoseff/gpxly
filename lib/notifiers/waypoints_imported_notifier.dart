@@ -16,7 +16,9 @@ class ImportedWaypointsNotifier extends Notifier<List<Waypoint>> {
   // SET (substituir tota la llista)
   // -----------------------------
   void setAll(List<Waypoint> newList) {
-    state = List.unmodifiable(newList);
+    final ordered = [...newList]
+      ..sort((a, b) => a.trackIndex.compareTo(b.trackIndex));
+    state = List.unmodifiable(ordered);
     _saveToPrefs();
   }
 
@@ -87,6 +89,7 @@ class ImportedWaypointsNotifier extends Notifier<List<Waypoint>> {
         )
         .toList();
 
+    loaded.sort((a, b) => a.trackIndex.compareTo(b.trackIndex));
     state = List.unmodifiable(loaded);
   }
 
