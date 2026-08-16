@@ -10,6 +10,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:strack_rec/notifiers/dem_bounds_notifier.dart';
 import 'package:strack_rec/notifiers/helpers/thresholds.dart';
 import 'package:strack_rec/services/altitude_logger.dart';
+import 'package:strack_rec/services/elevations_api_conf.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class CogMap {
@@ -300,7 +301,11 @@ class CogService {
       'lon': lon.toString(),
     };
 
-    final uri = Uri.http('213.165.93.0', 'api/getTileGrid', queryParams);
+    final uri = Uri.https(
+      ApiConfig.cogApiHost,
+      ApiConfig.cogApiPath,
+      queryParams,
+    );
     debugPrint("📡 [COG PETICIÓ] Cridant URI: $uri");
     debugPrint(
       "   - Paràmetres enviats -> Latitud: ${queryParams['lat']}, Longitud: ${queryParams['lon']}",
@@ -424,9 +429,11 @@ class CogService {
       // 4. Eliminem l'arxiu físic .bin del disc per alliberar espai real al telèfon
       final file = File(oldest.path);
       if (await file.exists()) {
-        await file.delete().catchError((e) {
+        try {
+          await file.delete();
+        } catch (e) {
           print("⚠️ No s'ha pogut esborrar el fitxer permanent antic: $e");
-        });
+        }
         print(
           "🗑️ [COG] S'ha eliminat del disc l'arxiu més antic per superar el límit N.",
         );
@@ -462,7 +469,9 @@ class CogService {
       map.data = null; // Allibera RAM
       final file = File(map.path);
       if (await file.exists()) {
-        await file.delete().catchError((_) {});
+        try {
+          await file.delete();
+        } catch (_) {}
       }
     }
     _cache.clear();
