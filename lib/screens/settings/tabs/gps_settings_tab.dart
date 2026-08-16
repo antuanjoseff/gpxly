@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:strack_rec/l10n/app_localizations.dart';
@@ -13,7 +14,6 @@ class GpsSettingsTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final gps = ref.watch(gpsSettingsProvider);
-    final gpsDebugEnabled = ref.watch(gpsDebugProvider);
     final isFollowing = gps.isFollowing;
     final t = AppLocalizations.of(context)!;
 
@@ -111,28 +111,29 @@ class GpsSettingsTab extends ConsumerWidget {
           ),
           const SizedBox(height: 12),
 
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.black12),
-            ),
-            child: SwitchListTile.adaptive(
-              title: const Text(
-                "Mode diagnòstic GPS",
-                style: TextStyle(fontWeight: FontWeight.w600),
+          if (kDebugMode)
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.black12),
               ),
-              subtitle: const Text(
-                "Registra telemetria detallada. Pot augmentar consum de bateria.",
+              child: SwitchListTile.adaptive(
+                title: const Text(
+                  "Mode diagnòstic GPS",
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                subtitle: const Text(
+                  "Registra telemetria detallada. Pot augmentar consum de bateria.",
+                ),
+                value: ref.watch(gpsDebugProvider),
+                onChanged: (value) async {
+                  await ref.read(gpsDebugProvider.notifier).setEnabled(value);
+                  await AltitudeLoggerService().setDebugEnabled(value);
+                  await ref.read(gpsSettingsProvider.notifier).apply();
+                },
               ),
-              value: gpsDebugEnabled,
-              onChanged: (value) async {
-                await ref.read(gpsDebugProvider.notifier).setEnabled(value);
-                await AltitudeLoggerService().setDebugEnabled(value);
-                await ref.read(gpsSettingsProvider.notifier).apply();
-              },
             ),
-          ),
           const SizedBox(height: 40),
         ],
       ),
