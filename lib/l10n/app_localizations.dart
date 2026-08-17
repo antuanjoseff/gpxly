@@ -881,6 +881,24 @@ abstract class AppLocalizations {
   /// **'Seconds'**
   String get alarmsTimeLabel;
 
+  /// No description provided for @alarmsAccSegmentLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Elevation'**
+  String get alarmsAccSegmentLabel;
+
+  /// No description provided for @alarmsCotaSegmentLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Altitude'**
+  String get alarmsCotaSegmentLabel;
+
+  /// No description provided for @alarmsCotaValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Alt. {meters} m'**
+  String alarmsCotaValue(int meters);
+
   /// No description provided for @gpsAutoConfigInfo.
   ///
   /// In en, this message translates to:
@@ -1304,7 +1322,7 @@ abstract class AppLocalizations {
   /// No description provided for @demManagerDesc.
   ///
   /// In en, this message translates to:
-  /// **'Senda automatically downloads elevation data when connected. Zoom in on the map to manually save up to 8 zones of 0.2° for offline use.'**
+  /// **'Strack Rec automatically downloads elevation data when connected. Zoom in on the map to manually save up to 8 zones of 0.2° for offline use.'**
   String get demManagerDesc;
 
   /// No description provided for @demCellDownloaded.

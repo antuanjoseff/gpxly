@@ -399,6 +399,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get alarmsTimeLabel => 'Seconds';
 
   @override
+  String get alarmsAccSegmentLabel => 'Elevation';
+
+  @override
+  String get alarmsCotaSegmentLabel => 'Altitude';
+
+  @override
+  String alarmsCotaValue(int meters) {
+    return 'Alt. $meters m';
+  }
+
+  @override
   String get gpsAutoConfigInfo => 'When following a track or enabling the distance alarm, the GPS automatically adjusts to improve accuracy.';
 
   @override
@@ -613,7 +624,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get demManagerTitle => 'DEM Cell Manager';
 
   @override
-  String get demManagerDesc => 'Senda automatically downloads elevation data when connected. Zoom in on the map to manually save up to 8 zones of 0.2° for offline use.';
+  String get demManagerDesc => 'Strack Rec automatically downloads elevation data when connected. Zoom in on the map to manually save up to 8 zones of 0.2° for offline use.';
 
   @override
   String get demCellDownloaded => 'Cell downloaded locally';

@@ -9,7 +9,7 @@ class AppLocalizationsIt extends AppLocalizations {
   AppLocalizationsIt([String locale = 'it']) : super(locale);
 
   @override
-  String get appTitle => 'Senda';
+  String get appTitle => 'Strack Rec';
 
   @override
   String get startRecording => 'Registra';
@@ -30,10 +30,10 @@ class AppLocalizationsIt extends AppLocalizations {
   String get longPressToFinish => 'Tieni premuto per terminare la registrazione';
 
   @override
-  String get gpsDisabledTitle => 'GPS disattivato';
+  String get gpsDisabledTitle => 'GPS';
 
   @override
-  String get gpsDisabledMessage => 'GPS disattivato';
+  String get gpsDisabledMessage => 'GPS';
 
   @override
   String get cancel => 'ANNULLA';
@@ -399,6 +399,17 @@ class AppLocalizationsIt extends AppLocalizations {
   String get alarmsTimeLabel => 'Secondi';
 
   @override
+  String get alarmsAccSegmentLabel => 'Dislivello';
+
+  @override
+  String get alarmsCotaSegmentLabel => 'Quote';
+
+  @override
+  String alarmsCotaValue(int meters) {
+    return 'Quota $meters m';
+  }
+
+  @override
   String get gpsAutoConfigInfo => 'Quando segui una traccia o attivi l\'allarme di distanza, il GPS si configura automaticamente per migliorare la precisione.';
 
   @override
@@ -613,7 +624,7 @@ class AppLocalizationsIt extends AppLocalizations {
   String get demManagerTitle => 'Gestore delle celle DEM';
 
   @override
-  String get demManagerDesc => 'Senda scarica automaticamente l\'altitudine quando è disponibile la copertura. Avvicinati alla mappa per salvare manualmente fino a 8 zone da 0,2° da utilizzare offline.';
+  String get demManagerDesc => 'Strack Rec scarica automaticamente l\'altitudine quando è disponibile la copertura. Avvicinati alla mappa per salvare manualmente fino a 8 zone da 0,2° da utilizzare offline.';
 
   @override
   String get demCellDownloaded => 'Cella scaricata localmente';

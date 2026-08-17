@@ -121,7 +121,7 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
 
     final valueText = isAccMode
         ? "+ ${settings.accMeters.toInt()} m"
-        : "Cota ${settings.cotaMeters.toInt()} m";
+        : t.alarmsCotaValue(settings.cotaMeters.toInt());
 
     // 🟢 DISSENY REFACTORITZAT: Vores fines clares, la línia de contorn ara utilitza fons fi en lloc de 2px forts
     return Container(
@@ -172,9 +172,12 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
                 },
               ),
               const SizedBox(width: 12),
-              const Text(
-                "Altitud",
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              Text(
+                t.alarmsAltitudeTitle,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const Spacer(),
               Switch(
@@ -208,14 +211,14 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
             segments: [
               ButtonSegment(
                 value: AltitudeViewMode.accumulated,
-                label: const Text("Desnivell"),
+                label: Text(t.alarmsAccSegmentLabel),
                 icon: settings.accEnabled
                     ? const Icon(Icons.check_circle, size: 14)
                     : const Icon(Icons.show_chart, size: 16),
               ),
               ButtonSegment(
                 value: AltitudeViewMode.absolute,
-                label: const Text("Cotes"),
+                label: Text(t.alarmsCotaSegmentLabel),
                 icon: settings.cotaEnabled
                     ? const Icon(Icons.check_circle, size: 14)
                     : const Icon(Icons.straighten, size: 16),

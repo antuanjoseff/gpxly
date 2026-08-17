@@ -8,8 +8,8 @@
   "exitWarning": "Prem enrere un altre cop per sortir",
   "longPressToFinish": "Mantén premut per finalitzar la gravació",
 
-  "gpsDisabledTitle": "GPS desactivat",
-  "gpsDisabledMessage": "GPS desactivat",
+  "gpsDisabledTitle": "GPS",
+  "gpsDisabledMessage": "GPS",
 
   "cancel": "CANCEL·LAR",
   "close": "TANCAR",
@@ -145,7 +145,7 @@
   "confirm": "CONFIRMAR",
 
   "notificationPermissionTitle": "Notificacions de seguiment",
-  "notificationPermissionMessage": "Senda necessita mostrar una notificació mentre graves la ruta. Això evita que el sistema aturi l'aplicació per estalviar bateria i garanteix que no perdis el teu track.",
+  "notificationPermissionMessage": "Strack Rec necessita mostrar una notificació mentre graves la ruta. Això evita que el sistema aturi l'aplicació per estalviar bateria i garanteix que no perdis el teu track.",
   "understood": "ENTESOS",
 
   "gpxErrorInvalidExtension": "El fitxer seleccionat no és un GPX",
@@ -160,6 +160,14 @@
   "alarmsAltitudeLabel": "Metres de desnivell (+/-)",
   "alarmsTimeTitle": "Temps",
   "alarmsTimeLabel": "Segons",
+  "alarmsAccSegmentLabel": "Desnivell",
+  "alarmsCotaSegmentLabel": "Cotes",
+  "alarmsCotaValue": "Cota {meters} m",
+  "@alarmsCotaValue": {
+    "placeholders": {
+      "meters": { "type": "int" }
+    }
+  },
   "gpsAutoConfigInfo": "Quan segueixes un track o actives l’alarma per distància, el GPS s’autoconfigura per millorar la precisió.",
 
   "gpsLockedMessage": "Configuració bloquejada: Seguiment o Alarma activa",
@@ -252,7 +260,7 @@
   "statPositionDMS": "Posició DMS",
 
   "demManagerTitle": "Gestor de Cèl·les DEM",
-  "demManagerDesc": "Senda descarrega automàticament l'altitud si hi ha cobertura. Apropa't al mapa per guardar manualment fins a 8 zones de 0.2° per utilitzar offline.",
+  "demManagerDesc": "Strack Rec descarrega automàticament l'altitud si hi ha cobertura. Apropa't al mapa per guardar manualment fins a 8 zones de 0.2° per utilitzar offline.",
   "demCellDownloaded": "Cèl·la descarregada en local",
   "demCellAvailable": "Cèl·la disponible per descarregar",
   "demDeleteConfirm": "Vols eliminar aquesta cèl·la del disc?",

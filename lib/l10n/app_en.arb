@@ -160,6 +160,14 @@
   "alarmsAltitudeLabel": "Elevation change (+/-)",
   "alarmsTimeTitle": "Time",
   "alarmsTimeLabel": "Seconds",
+  "alarmsAccSegmentLabel": "Elevation",
+  "alarmsCotaSegmentLabel": "Altitude",
+  "alarmsCotaValue": "Alt. {meters} m",
+  "@alarmsCotaValue": {
+    "placeholders": {
+      "meters": { "type": "int" }
+    }
+  },
   "gpsAutoConfigInfo": "When following a track or enabling the distance alarm, the GPS automatically adjusts to improve accuracy.",
 
   "gpsLockedMessage": "Settings locked: Tracking or Alarm active",
@@ -252,7 +260,7 @@
   "statPositionDMS": "DMS Position",
 
   "demManagerTitle": "DEM Cell Manager",
-  "demManagerDesc": "Senda automatically downloads elevation data when connected. Zoom in on the map to manually save up to 8 zones of 0.2° for offline use.",
+  "demManagerDesc": "Strack Rec automatically downloads elevation data when connected. Zoom in on the map to manually save up to 8 zones of 0.2° for offline use.",
   "demCellDownloaded": "Cell downloaded locally",
   "demCellAvailable": "Cell available to download",
   "demDeleteConfirm": "Do you want to delete this cell from disk?",

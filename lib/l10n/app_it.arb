@@ -1,5 +1,5 @@
 {
-  "appTitle": "Senda",
+  "appTitle": "Strack Rec",
   "startRecording": "Registra",
   "stopRecording": "Ferma registrazione",
   "gpsDisabled": "Il GPS è disattivato",
@@ -8,8 +8,8 @@
   "exitWarning": "Premi di nuovo indietro per uscire",
   "longPressToFinish": "Tieni premuto per terminare la registrazione",
 
-  "gpsDisabledTitle": "GPS disattivato",
-  "gpsDisabledMessage": "GPS disattivato",
+  "gpsDisabledTitle": "GPS",
+  "gpsDisabledMessage": "GPS",
 
   "cancel": "ANNULLA",
   "close": "CHIUDI",
@@ -160,6 +160,14 @@
   "alarmsAltitudeLabel": "Metri di dislivello (+/-)",
   "alarmsTimeTitle": "Tempo",
   "alarmsTimeLabel": "Secondi",
+  "alarmsAccSegmentLabel": "Dislivello",
+  "alarmsCotaSegmentLabel": "Quote",
+  "alarmsCotaValue": "Quota {meters} m",
+  "@alarmsCotaValue": {
+    "placeholders": {
+      "meters": { "type": "int" }
+    }
+  },
   "gpsAutoConfigInfo": "Quando segui una traccia o attivi l'allarme di distanza, il GPS si configura automaticamente per migliorare la precisione.",
 
   "gpsLockedMessage": "Configurazione bloccata: seguimento o allarme attivo",
@@ -252,7 +260,7 @@
   "statPositionDMS": "Posizione DMS",
 
   "demManagerTitle": "Gestore delle celle DEM",
-  "demManagerDesc": "Senda scarica automaticamente l'altitudine quando è disponibile la copertura. Avvicinati alla mappa per salvare manualmente fino a 8 zone da 0,2° da utilizzare offline.",
+  "demManagerDesc": "Strack Rec scarica automaticamente l'altitudine quando è disponibile la copertura. Avvicinati alla mappa per salvare manualmente fino a 8 zone da 0,2° da utilizzare offline.",
   "demCellDownloaded": "Cella scaricata localmente",
   "demCellAvailable": "Cella disponibile per il download",
   "demDeleteConfirm": "Vuoi eliminare questa cella dal disco?",

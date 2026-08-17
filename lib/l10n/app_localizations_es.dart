@@ -30,10 +30,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get longPressToFinish => 'Mantén pulsado para finalizar la grabación';
 
   @override
-  String get gpsDisabledTitle => 'GPS desactivado';
+  String get gpsDisabledTitle => 'GPS';
 
   @override
-  String get gpsDisabledMessage => 'GPS desactivado';
+  String get gpsDisabledMessage => 'GPS';
 
   @override
   String get cancel => 'CANCELAR';
@@ -399,6 +399,17 @@ class AppLocalizationsEs extends AppLocalizations {
   String get alarmsTimeLabel => 'Segundos';
 
   @override
+  String get alarmsAccSegmentLabel => 'Desnivel';
+
+  @override
+  String get alarmsCotaSegmentLabel => 'Cotas';
+
+  @override
+  String alarmsCotaValue(int meters) {
+    return 'Cota $meters m';
+  }
+
+  @override
   String get gpsAutoConfigInfo => 'Cuando sigues un track o activas la alarma por distancia, el GPS se autoconfigura para mejorar la precisión.';
 
   @override
@@ -613,7 +624,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get demManagerTitle => 'Gestor de Celdas DEM';
 
   @override
-  String get demManagerDesc => 'Senda descarga automáticamente la altitud si hay cobertura. Acércate al mapa para guardar manualmente hasta 8 zonas de 0.2° para usar offline.';
+  String get demManagerDesc => 'Strack Rec descarga automáticamente la altitud si hay cobertura. Acércate al mapa para guardar manualmente hasta 8 zonas de 0.2° para usar offline.';
 
   @override
   String get demCellDownloaded => 'Celda descargada en local';

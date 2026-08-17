@@ -9,8 +9,8 @@
   "exitWarning": "Appuyez à nouveau sur retour pour quitter",
   "longPressToFinish": "Maintenez appuyé pour terminer l'enregistrement",
 
-  "gpsDisabledTitle": "GPS désactivé",
-  "gpsDisabledMessage": "GPS désactivé",
+  "gpsDisabledTitle": "GPS",
+  "gpsDisabledMessage": "GPS",
 
   "cancel": "ANNULER",
   "close": "FERMER",
@@ -161,6 +161,14 @@
   "alarmsAltitudeLabel": "Mètres de dénivelé (+/-)",
   "alarmsTimeTitle": "Temps",
   "alarmsTimeLabel": "Secondes",
+  "alarmsAccSegmentLabel": "Dénivelé",
+  "alarmsCotaSegmentLabel": "Altitudes",
+  "alarmsCotaValue": "Alt. {meters} m",
+  "@alarmsCotaValue": {
+    "placeholders": {
+      "meters": { "type": "int" }
+    }
+  },
   "gpsAutoConfigInfo": "Lorsque vous suivez une trace ou activez l'alerte de distance, le GPS se configure automatiquement pour améliorer la précision.",
 
   "gpsLockedMessage": "Configuration verrouillée : suivi ou alerte active",
@@ -253,7 +261,7 @@
   "statPositionDMS": "Position DMS",
 
   "demManagerTitle": "Gestionnaire de cellules DEM",
-  "demManagerDesc": "Senda télécharge automatiquement l'altitude lorsque la couverture est disponible. Zoomez sur la carte pour enregistrer manuellement jusqu'à 8 zones de 0,2° afin de les utiliser hors ligne.",
+  "demManagerDesc": "Strack Rec télécharge automatiquement l'altitude lorsque la couverture est disponible. Zoomez sur la carte pour enregistrer manuellement jusqu'à 8 zones de 0,2° afin de les utiliser hors ligne.",
   "demCellDownloaded": "Cellule téléchargée localement",
   "demCellAvailable": "Cellule disponible au téléchargement",
   "demDeleteConfirm": "Voulez-vous supprimer cette cellule du disque ?",

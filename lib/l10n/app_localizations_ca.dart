@@ -30,10 +30,10 @@ class AppLocalizationsCa extends AppLocalizations {
   String get longPressToFinish => 'Mantén premut per finalitzar la gravació';
 
   @override
-  String get gpsDisabledTitle => 'GPS desactivat';
+  String get gpsDisabledTitle => 'GPS';
 
   @override
-  String get gpsDisabledMessage => 'GPS desactivat';
+  String get gpsDisabledMessage => 'GPS';
 
   @override
   String get cancel => 'CANCEL·LAR';
@@ -360,7 +360,7 @@ class AppLocalizationsCa extends AppLocalizations {
   String get notificationPermissionTitle => 'Notificacions de seguiment';
 
   @override
-  String get notificationPermissionMessage => 'Senda necessita mostrar una notificació mentre graves la ruta. Això evita que el sistema aturi l\'aplicació per estalviar bateria i garanteix que no perdis el teu track.';
+  String get notificationPermissionMessage => 'Strack Rec necessita mostrar una notificació mentre graves la ruta. Això evita que el sistema aturi l\'aplicació per estalviar bateria i garanteix que no perdis el teu track.';
 
   @override
   String get understood => 'ENTESOS';
@@ -397,6 +397,17 @@ class AppLocalizationsCa extends AppLocalizations {
 
   @override
   String get alarmsTimeLabel => 'Segons';
+
+  @override
+  String get alarmsAccSegmentLabel => 'Desnivell';
+
+  @override
+  String get alarmsCotaSegmentLabel => 'Cotes';
+
+  @override
+  String alarmsCotaValue(int meters) {
+    return 'Cota $meters m';
+  }
 
   @override
   String get gpsAutoConfigInfo => 'Quan segueixes un track o actives l’alarma per distància, el GPS s’autoconfigura per millorar la precisió.';
@@ -613,7 +624,7 @@ class AppLocalizationsCa extends AppLocalizations {
   String get demManagerTitle => 'Gestor de Cèl·les DEM';
 
   @override
-  String get demManagerDesc => 'Senda descarrega automàticament l\'altitud si hi ha cobertura. Apropa\'t al mapa per guardar manualment fins a 8 zones de 0.2° per utilitzar offline.';
+  String get demManagerDesc => 'Strack Rec descarrega automàticament l\'altitud si hi ha cobertura. Apropa\'t al mapa per guardar manualment fins a 8 zones de 0.2° per utilitzar offline.';
 
   @override
   String get demCellDownloaded => 'Cèl·la descarregada en local';

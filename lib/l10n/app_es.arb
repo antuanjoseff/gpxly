@@ -8,8 +8,8 @@
   "exitWarning": "Pulsa atrás otra vez para salir",
   "longPressToFinish": "Mantén pulsado para finalizar la grabación",
 
-  "gpsDisabledTitle": "GPS desactivado",
-  "gpsDisabledMessage": "GPS desactivado",
+  "gpsDisabledTitle": "GPS",
+  "gpsDisabledMessage": "GPS",
 
   "cancel": "CANCELAR",
   "close": "CERRAR",
@@ -160,6 +160,14 @@
   "alarmsAltitudeLabel": "Metros de desnivel (+/-)",
   "alarmsTimeTitle": "Tiempo",
   "alarmsTimeLabel": "Segundos",
+  "alarmsAccSegmentLabel": "Desnivel",
+  "alarmsCotaSegmentLabel": "Cotas",
+  "alarmsCotaValue": "Cota {meters} m",
+  "@alarmsCotaValue": {
+    "placeholders": {
+      "meters": { "type": "int" }
+    }
+  },
   "gpsAutoConfigInfo": "Cuando sigues un track o activas la alarma por distancia, el GPS se autoconfigura para mejorar la precisión.",
 
   "gpsLockedMessage": "Configuración bloqueada: Seguimiento o Alarma activa",
@@ -252,7 +260,7 @@
   "statPositionDMS": "Posición DMS",
 
   "demManagerTitle": "Gestor de Celdas DEM",
-  "demManagerDesc": "Senda descarga automáticamente la altitud si hay cobertura. Acércate al mapa para guardar manualmente hasta 8 zonas de 0.2° para usar offline.",
+  "demManagerDesc": "Strack Rec descarga automáticamente la altitud si hay cobertura. Acércate al mapa para guardar manualmente hasta 8 zonas de 0.2° para usar offline.",
   "demCellDownloaded": "Celda descargada en local",
   "demCellAvailable": "Celda disponible para descargar",
   "demDeleteConfirm": "¿Quieres eliminar esta celda del disco?",

@@ -68,13 +68,12 @@ class MapAppBar extends ConsumerWidget implements PreferredSizeWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               // 🗺️ A) El Nom de l'aplicació
-              const Text(
-                "SENDA",
-                style: TextStyle(
+              Text(
+                t.appTitle,
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 17,
                   fontWeight: FontWeight.bold,
-                  letterSpacing: 1.5,
                 ),
               ),
 
