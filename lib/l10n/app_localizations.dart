@@ -8,6 +8,8 @@ import 'package:intl/intl.dart' as intl;
 import 'app_localizations_ca.dart';
 import 'app_localizations_en.dart';
 import 'app_localizations_es.dart';
+import 'app_localizations_fr.dart';
+import 'app_localizations_it.dart';
 
 // ignore_for_file: type=lint
 
@@ -94,13 +96,15 @@ abstract class AppLocalizations {
   static const List<Locale> supportedLocales = <Locale>[
     Locale('ca'),
     Locale('en'),
-    Locale('es')
+    Locale('es'),
+    Locale('fr'),
+    Locale('it')
   ];
 
   /// No description provided for @appTitle.
   ///
   /// In en, this message translates to:
-  /// **'Senda'**
+  /// **'Strack Rec'**
   String get appTitle;
 
   /// No description provided for @startRecording.
@@ -1529,7 +1533,7 @@ class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> 
   }
 
   @override
-  bool isSupported(Locale locale) => <String>['ca', 'en', 'es'].contains(locale.languageCode);
+  bool isSupported(Locale locale) => <String>['ca', 'en', 'es', 'fr', 'it'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
@@ -1543,6 +1547,8 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
     case 'ca': return AppLocalizationsCa();
     case 'en': return AppLocalizationsEn();
     case 'es': return AppLocalizationsEs();
+    case 'fr': return AppLocalizationsFr();
+    case 'it': return AppLocalizationsIt();
   }
 
   throw FlutterError(

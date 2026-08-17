@@ -1,0 +1,303 @@
+
+{
+  "appTitle": "Strack Rec",
+  "startRecording": "Enregistrer",
+  "stopRecording": "Arrêter l'enregistrement",
+  "gpsDisabled": "Le GPS est désactivé",
+  "locationPermissionRequired": "L'autorisation de localisation est requise",
+
+  "exitWarning": "Appuyez à nouveau sur retour pour quitter",
+  "longPressToFinish": "Maintenez appuyé pour terminer l'enregistrement",
+
+  "gpsDisabledTitle": "GPS désactivé",
+  "gpsDisabledMessage": "GPS désactivé",
+
+  "cancel": "ANNULER",
+  "close": "FERMER",
+  "ok": "OK",
+  "settings": "Paramètres",
+
+  "recoverTrackTitle": "Itinéraire en attente",
+  "recoverTrackMessage": "Un enregistrement qui n'a pas été correctement terminé a été détecté. Voulez-vous le reprendre ou en commencer un nouveau ?",
+  "discard": "SUPPRIMER",
+  "recover": "RÉCUPÉRER",
+
+  "exportTitle": "Exporter le GPX",
+  "exportMessage": "Voulez-vous exporter la trace maintenant ?",
+  "export": "EXPORTER",
+
+  "importGpxTitle": "Importer un GPX",
+  "importGpxMessage": "Un itinéraire est déjà actif ou des données sont chargées. Voulez-vous les remplacer par le fichier GPX ?",
+  "import": "IMPORTER",
+
+  "viewModeTitle": "Mode visualisation",
+  "viewModeMessage": "Voulez-vous passer en mode visualisation ? Aucun nouveau point ne sera ajouté et l'enregistrement sera désactivé.",
+  "no": "NON",
+  "activate": "ACTIVER",
+
+  "permissionNeededTitle": "Autorisation requise",
+  "permissionNeededMessage": "Pour enregistrer correctement l'itinéraire lorsque l'écran est éteint, vous devez sélectionner : 👉 \"Toujours autoriser\".",
+  "continueLabel": "CONTINUER",
+
+  "locationPermissionTitle": "Autorisation de localisation",
+  "locationPermissionMessage": "L'application n'est pas autorisée à accéder à votre position. Voulez-vous ouvrir les paramètres pour accorder l'autorisation ?",
+
+  "offTrack": "Vous vous éloignez de l'itinéraire",
+  "backOnTrack": "Vous êtes sur la trace",
+
+  "elevationFixing": "Correction des altitudes",
+  "error": "Erreur",
+
+  "gpsRecordByTime": "Enregistrement par durée",
+  "gpsRecordByDistance": "Enregistrement par distance",
+  "gpsMaxAccuracy": "Précision maximale",
+
+  "gpxIncludeExtraData": "Inclure des données supplémentaires dans le fichier GPX",
+  "gpxAccuracyPerPoint": "Précision par point",
+  "gpxSpeed": "Vitesse",
+  "gpxHeading": "Cap",
+  "gpxSatellites": "Satellites",
+  "gpxVerticalAccuracy": "Précision verticale",
+  "switchOn": "ACTIVÉ",
+  "switchOff": "DÉSACTIVÉ",
+
+  "trackColor": "Couleur de la trace",
+  "changeTrackColor": "MODIFIER LA COULEUR DE LA TRACE",
+  "trackWidth": "Épaisseur de la trace",
+  "trackPreview": "Aperçu de la trace :",
+  "pickColor": "Choisir une couleur",
+
+  "trackStatsTitle": "Données de l'itinéraire",
+  "statTime": "Temps total",
+  "statDistance": "Distance totale",
+  "statSpeed": "Vitesse actuelle",
+  "statMaxElevation": "Altitude maximale",
+  "statMinElevation": "Altitude minimale",
+  "statAscent": "Dénivelé positif cumulé",
+  "statDescent": "Dénivelé négatif cumulé",
+
+  "elevationProfile": "Profil d'altitude",
+  "noData": "Aucune donnée",
+  "recordingTrack": "Trace",
+  "importedTrack": "Itinéraire",
+
+  "resume": "REPRENDRE",
+  "stopFollowing": "ARRÊTER",
+  "follow": "SUIVRE L'ITINÉRAIRE",
+  "pause": "PAUSE",
+
+  "apply": "APPLIQUER",
+  "pendingChangesTitle": "Modifications en attente",
+  "pendingChangesMessage": "Vous avez effectué des modifications qui n'ont pas été appliquées. Voulez-vous les appliquer avant de revenir à la carte ?",
+  "settingsApplied": "Paramètres appliqués !",
+  "gpsTab": "GPS",
+  "gpxTab": "GPX",
+  "trackTab": "Trace",
+  "applyUpper": "APPLIQUER",
+
+  "endOfTrack": "Vous êtes arrivé à la fin de la trace",
+
+  "reverseTrackTitle": "Sens inverse",
+  "reverseTrackMessage": "Il semble que vous suiviez la trace dans le sens inverse. Voulez-vous l'inverser pour améliorer la navigation ?",
+  "reverseTrackConfirm": "Oui, inverser",
+  "ignoreTrackReverse": "Continuer",
+
+  "gpxFilenameTitle": "Nom du fichier GPX",
+  "gpxFilenameLabel": "Nom du fichier",
+  "gpxFilenameHint": "Saisissez le nom du fichier",
+
+  "recording": "Enregistrement...",
+  "paused": "EN PAUSE",
+  "following": "SUIVI EN COURS",
+  "followPaused": "ITINÉRAIRE EN PAUSE",
+
+  "track": "Itinéraire",
+  "followShort": "Suivre",
+  "followingTitle": "SUIVI",
+  "recordingTitle": "ENREGISTREMENT",
+  "pauseShort": "Pause",
+  "stopShort": "Arrêter",
+
+  "stopFollowingTitle": "Arrêter le suivi",
+  "stopFollowingMessage": "Voulez-vous arrêter le suivi ? L'itinéraire sera retiré de la carte.",
+  "stopFollowingConfirm": "ARRÊTER LE SUIVI",
+
+  "waypointNameTitle": "Nom du point de passage",
+  "waypointNameHint": "Saisissez un nom",
+
+  "finishRecordingTitle": "Terminer l'enregistrement",
+  "finishRecordingMessage": "Que voulez-vous faire avec l'enregistrement actuel ?",
+  "finishRecordingConfirm": "TERMINER",
+  "shareTrack": "PARTAGER",
+  "continueRecording": "Continuer l'enregistrement",
+  "deleteTrackTitle": "Supprimer la trace",
+  "deleteTrackMessage": "Voulez-vous vraiment supprimer cet itinéraire ? Cette action est irréversible.",
+  "deleteTrackConfirm": "SUPPRIMER",
+
+  "waypointDetailsTitle": "Détails du point de passage",
+  "waypointName": "Nom",
+  "waypointAltitude": "Altitude",
+  "waypointTrackPoint": "Point de l'itinéraire",
+  "waypointDistance": "Distance cumulée",
+  "waypointTime": "Temps de passage",
+
+  "gpsOptimizationTitle": "Optimisation du GPS",
+  "gpsOptimizationMessage": "Pour un suivi précis, il est nécessaire d'activer le mode haute précision. Cela peut augmenter la consommation de batterie.",
+  "confirm": "CONFIRMER",
+
+  "notificationPermissionTitle": "Notifications de suivi",
+  "notificationPermissionMessage": "Senda doit afficher une notification pendant l'enregistrement de l'itinéraire. Cela empêche le système d'arrêter l'application pour économiser la batterie et garantit que vous ne perdrez pas votre trace.",
+  "understood": "COMPRIS",
+
+  "gpxErrorInvalidExtension": "Le fichier sélectionné n'est pas un fichier GPX",
+  "gpxErrorRead": "Impossible de lire le fichier GPX",
+  "gpxErrorInvalidXml": "Le fichier ne semble pas être un fichier XML GPX valide",
+  "gpxErrorNoGpxTag": "Le fichier ne contient pas de données GPX",
+
+  "alarms": "Alertes",
+  "alarmsDistanceTitle": "Distance",
+  "alarmsDistanceLabel": "Mètres parcourus",
+  "alarmsAltitudeTitle": "Altitude",
+  "alarmsAltitudeLabel": "Mètres de dénivelé (+/-)",
+  "alarmsTimeTitle": "Temps",
+  "alarmsTimeLabel": "Secondes",
+  "gpsAutoConfigInfo": "Lorsque vous suivez une trace ou activez l'alerte de distance, le GPS se configure automatiquement pour améliorer la précision.",
+
+  "gpsLockedMessage": "Configuration verrouillée : suivi ou alerte active",
+  "reasonAlarm": "Alerte active",
+  "reasonTrack": "Suivi en cours",
+
+  "barometerTitle": "Baromètre",
+  "fusedAltitude": "Altitude corrigée",
+  "manualCalibration": "Étalonnage manuel",
+  "recalibrateGpsDem": "Réétalonner avec GPS/DEM",
+  "currentGpsAccuracy": "Précision GPS actuelle",
+  "insufficientCoverage": "Couverture insuffisante pour effectuer un étalonnage correct.",
+  "waitingValidAltitude": "En attente d'un signal d'altitude valide...",
+  "barometerCalibratedSuccess": "Baromètre étalonné avec succès",
+  "autoCalibrationInterval": "Intervalle d'étalonnage automatique",
+  "howOften": "À quelle fréquence ?",
+  "barometerExplanation": "Le baromètre sera automatiquement réétalonné à chaque fois que cet intervalle sera écoulé, à condition que la couverture GPS soit bonne.",
+
+  "statDetailRecordingData": "Données de l'enregistrement",
+  "statDetailRealTrackSubtitle": "Trace en temps réel",
+  "statDetailReferenceData": "Données de référence",
+  "statDetailImportedTrackSubtitle": "Itinéraire",
+  "statDetailBackButton": "RETOUR AUX STATISTIQUES",
+  "statDetailChartTitle": "PROFIL DE {label}",
+  "statDetailChartProfile": "PROFIL DE {label}",
+
+  "@statDetailChartProfile": {
+    "placeholders": {
+      "label": { "type": "String" }
+    }
+  },
+
+  "waypointsRecorded": "Points de passage de la trace",
+  "waypointsImported": "Points de passage de l'itinéraire",
+
+  "noRecordedTrack": "Aucune trace disponible",
+  "usingImportedTrack": "Affichage de l'itinéraire importé",
+
+  "statTimeTotal": "Temps total",
+  "statTimeMoving": "Temps en mouvement",
+  "statTimeStopped": "Temps à l'arrêt",
+
+  "statSpeedCurrent": "Vitesse actuelle",
+  "statSpeedAverage": "Vitesse moyenne",
+  "statSpeedTotal": "Vitesse moyenne totale",
+
+  "statElevation": "Altitude",
+  "statElevationCurrent": "Altitude actuelle",
+
+  "statGps": "GPS",
+  "statHeading": "Cap",
+  "statSatellites": "Satellites",
+  "statAccuracy": "Précision",
+
+  "satelliteSkyplotTitle": "Carte du ciel",
+  "satelliteFlagsMode": "Indicateurs",
+  "satelliteGeometryMode": "Géométries",
+  "satelliteSearching": "Recherche de satellites... Assurez-vous que le GPS est activé et que vous êtes à l'extérieur.",
+  "satelliteNoVisible": "Aucun satellite visible",
+  "satelliteUtcTime": "Heure UTC",
+  "satelliteFixType": "Type de positionnement",
+  "satelliteFix3dRtk": "Positionnement 3D/RTK",
+  "satelliteNoFix": "Aucun positionnement",
+  "satelliteSatellitesInView": "Satellites visibles",
+  "satelliteSatellitesInUse": "Satellites utilisés",
+  "satelliteConstellationGps": "GPS",
+  "satelliteConstellationGlonass": "GLONASS",
+  "satelliteConstellationGalileo": "GALILEO",
+  "satelliteConstellationBeidou": "BEIDOU",
+
+  "deleteWaypoint": "Supprimer le point de passage",
+  "deleteWaypointTitle": "Supprimer le point de passage ?",
+  "deleteWaypointMessage": "Voulez-vous vraiment supprimer définitivement ce point d'intérêt ?",
+  "deleteConfirm": "SUPPRIMER",
+  "waypointDeletedSuccess": "Point de passage supprimé avec succès",
+
+  "statSpeedMax": "Vitesse maximale",
+  "statPaceAverage": "Allure moyenne",
+  "statPace": "Allure",
+
+  "statBarometerPressure": "Pression atmosphérique",
+
+  "statRangeSelectedTitle": "Intervalle sélectionné",
+  "statRangeDistance": "Distance",
+  "statRangeAscent": "Dénivelé +",
+  "statRangeDescent": "Dénivelé -",
+  "statRangeTime": "Temps du tronçon",
+
+  "statPositionDecimal": "Position DD",
+  "statPositionDMS": "Position DMS",
+
+  "demManagerTitle": "Gestionnaire de cellules DEM",
+  "demManagerDesc": "Senda télécharge automatiquement l'altitude lorsque la couverture est disponible. Zoomez sur la carte pour enregistrer manuellement jusqu'à 8 zones de 0,2° afin de les utiliser hors ligne.",
+  "demCellDownloaded": "Cellule téléchargée localement",
+  "demCellAvailable": "Cellule disponible au téléchargement",
+  "demDeleteConfirm": "Voulez-vous supprimer cette cellule du disque ?",
+  "demLimitReached": "Limite atteinte. Supprimez une ancienne cellule pour en télécharger une nouvelle.",
+
+  "record": "Enregistrer",
+  "recordPaused": "En pause",
+  "recordStart": "Démarrer l'enregistrement",
+  "recordPause": "Mettre en pause",
+  "recordResume": "Reprendre",
+  "recordStop": "Terminer",
+
+  "navigationLoadTrack": "Charger une trace",
+  "navigationFollow": "Suivre",
+  "navigationFollowing": "Suivi en cours...",
+  "navigationPaused": "En pause",
+  "navigationStart": "Démarrer",
+  "navigationCancel": "Annuler",
+  "navigationStop": "Terminer",
+
+  "menuProfile": "Profil",
+  "menuSettings": "Paramètres",
+
+  "submenuImportGpx": "Importer un GPX",
+
+  "submenuCancel": "Annuler",
+  "submenuStop": "Terminer",
+
+  "submenuPause": "Mettre en pause",
+  "submenuResume": "Reprendre",
+
+  "submenuFollowingPause": "Mettre en pause",
+  "submenuFollowingResume": "Reprendre",
+  "submenuFollowingStop": "Terminer",
+
+  "gpsDisabledAppBar": "SANS GPS",
+  "recoverTrackDialogBody": "Des données d'un itinéraire précédent non enregistré ont été détectées. Voulez-vous les récupérer ou préférez-vous repartir de zéro avec un nouvel itinéraire ?",
+  "waypointNoGps": "En attente du signal GPS...",
+  "gpsSearching": "Recherche...",
+
+  "fixStart": "Point de départ",
+  "fixEnd": "Point d'arrivée",
+
+  "deleteCurrentTrackTitle": "Supprimer les données ?",
+  "deleteCurrentTrackMessage": "Voulez-vous supprimer les données actuelles de la trace ?",
+  "deleteCurrentTrackKeep": "CONSERVER"
+}

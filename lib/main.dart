@@ -28,7 +28,13 @@ class GPXlyApp extends StatelessWidget {
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
-        supportedLocales: const [Locale('en'), Locale('ca'), Locale('es')],
+        supportedLocales: const [
+          Locale('en'),
+          Locale('ca'),
+          Locale('es'),
+          Locale('fr'), // Francès 👈 NOU
+          Locale('it'),
+        ],
         theme: appTheme,
         home: const MapScreen(),
       ),

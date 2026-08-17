@@ -271,7 +271,10 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
               styleString: "assets/osm_style.json",
               myLocationEnabled: true,
               initialCameraPosition: const CameraPosition(
-                target: LatLng(36.5, -4.5),
+                target: LatLng(
+                  MapConstants.demViewCenterLatitude,
+                  MapConstants.demViewCenterLongitude,
+                ),
                 zoom: 4.8,
               ),
 
@@ -293,8 +296,14 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
                 await _mapController!.animateCamera(
                   CameraUpdate.newLatLngBounds(
                     LatLngBounds(
-                      southwest: const LatLng(26.5, -19.5),
-                      northeast: const LatLng(44.5, 4.5),
+                      southwest: const LatLng(
+                        MapConstants.demViewMinLatitude,
+                        MapConstants.demViewMinLongitude,
+                      ),
+                      northeast: const LatLng(
+                        MapConstants.demViewMaxLatitude,
+                        MapConstants.demViewMaxLongitude,
+                      ),
                     ),
                     left: 20,
                     right: 20,
