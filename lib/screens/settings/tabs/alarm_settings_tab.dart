@@ -36,7 +36,7 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
     return Scaffold(
       backgroundColor: const Color(
         0xFFF5F5F7,
-      ), // Fons clar de la configuració de Senda
+      ), // Fons clar de la configuració de STrack Rec
       appBar: AppBar(
         backgroundColor: AppColors.primary,
         elevation: 0,

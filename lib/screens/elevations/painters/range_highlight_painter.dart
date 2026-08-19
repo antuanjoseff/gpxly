@@ -71,7 +71,7 @@ class RangeAreaPainter extends CustomPainter {
     final chartHeight = size.height - bottomReserved - topReserved;
     final xAxisY = topReserved + chartHeight;
 
-    // 2) 🎯 SINCRO COMPLETA: Copiem exactament la fórmula compacta de Senda unificada
+    // 2) 🎯 SINCRO COMPLETA: Copiem exactament la fórmula compacta de STrack Rec unificada
     final double minAlt = altitudes.reduce((a, b) => a < b ? a : b);
     final double maxAlt = altitudes.reduce((a, b) => a > b ? a : b);
     final double diff = (maxAlt - minAlt).abs();

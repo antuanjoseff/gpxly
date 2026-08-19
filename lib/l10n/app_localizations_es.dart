@@ -9,7 +9,7 @@ class AppLocalizationsEs extends AppLocalizations {
   AppLocalizationsEs([String locale = 'es']) : super(locale);
 
   @override
-  String get appTitle => 'Strack Rec';
+  String get appTitle => 'STRec';
 
   @override
   String get startRecording => 'Grabar';
@@ -352,6 +352,12 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get gpsOptimizationMessage => 'Para un seguimiento preciso, activaremos el modo de alta fidelidad. Esto puede aumentar el consumo de batería.';
+
+  @override
+  String get batteryOptimizationTitle => 'Evita que Android detenga el GPS';
+
+  @override
+  String get batteryOptimizationMessage => 'Para grabar sin cortes, sobre todo en paradas largas, hay que excluir Senda del ahorro de batería. Si no, Android puede detener el GPS cuando la pantalla esté apagada un rato.';
 
   @override
   String get confirm => 'CONFIRMAR';

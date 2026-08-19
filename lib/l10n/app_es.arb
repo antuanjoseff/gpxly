@@ -1,5 +1,5 @@
 {
-  "appTitle": "Strack Rec",
+  "appTitle": "STRec",
   "startRecording": "Grabar",
   "stopRecording": "Detener grabación",
   "gpsDisabled": "El GPS está desactivado",
@@ -142,6 +142,8 @@
 
   "gpsOptimizationTitle": "Optimización GPS",
   "gpsOptimizationMessage": "Para un seguimiento preciso, activaremos el modo de alta fidelidad. Esto puede aumentar el consumo de batería.",
+  "batteryOptimizationTitle": "Evita que Android detenga el GPS",
+  "batteryOptimizationMessage": "Para grabar sin cortes, sobre todo en paradas largas, hay que excluir Senda del ahorro de batería. Si no, Android puede detener el GPS cuando la pantalla esté apagada un rato.",
   "confirm": "CONFIRMAR",
 
   "notificationPermissionTitle": "Notificaciones de seguimiento",

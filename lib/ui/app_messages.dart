@@ -217,6 +217,16 @@ class AppMessages {
         confirmLabel: AppLocalizations.of(context)!.confirm,
         cancelLabel: AppLocalizations.of(context)!.cancel,
       );
+  static Future<bool?> showBatteryOptimizationDialog(BuildContext context) =>
+      _showBaseDialog(
+        context: context,
+        title: AppLocalizations.of(context)!.batteryOptimizationTitle,
+        message: AppLocalizations.of(context)!.batteryOptimizationMessage,
+        icon: Icons.bolt_rounded,
+        iconColor: Colors.amberAccent,
+        confirmLabel: AppLocalizations.of(context)!.confirm,
+        cancelLabel: AppLocalizations.of(context)!.cancel,
+      );
   static Future<bool?> showPendingChangesDialog(BuildContext context) =>
       _showBaseDialog(
         context: context,

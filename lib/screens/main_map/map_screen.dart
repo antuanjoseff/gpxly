@@ -16,7 +16,7 @@ import 'package:strack_rec/notifiers/gps_speed_notifier.dart';
 import 'package:strack_rec/notifiers/helpers/elevation_magnet_helper.dart';
 import 'package:strack_rec/notifiers/helpers/thresholds.dart';
 
-// Notifiers natius de Senda
+// Notifiers natius de STrack Rec
 import 'package:strack_rec/notifiers/imported_track_notifier.dart';
 import 'package:strack_rec/notifiers/imported_track_settings_notifier.dart';
 import 'package:strack_rec/notifiers/location_notifier.dart';
@@ -1218,7 +1218,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
                       if (!showReticleVisual) return const SizedBox.shrink();
 
-                      // Mantenim exactament la teva lògica de colors original de Senda
+                      // Mantenim exactament la teva lògica de colors original de STrack Rec
                       final bool isStartOrSelected =
                           sel.mapToolState ==
                               MapSelectionToolState.selectingStart ||
@@ -1253,7 +1253,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                                     child: InkWell(
                                       borderRadius: BorderRadius.circular(20),
                                       onTap: () {
-                                        // Mantenim exactament el teu codi d'onTap original intacte de Senda...
+                                        // Mantenim exactament el teu codi d'onTap original intacte de STrack Rec...
                                         final centerLat = ref.read(
                                           mapCenterLatProvider,
                                         );
@@ -1498,7 +1498,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
     );
   }
 
-  // 🏁 EXECUTOR RECEPTOR DE LA MÀQUINA D'ESTATS SEQÜENCIAL DE SENDA
+  // 🏁 EXECUTOR RECEPTOR DE LA MÀQUINA D'ESTATS SEQÜENCIAL DE STrack Rec
   void _handleSendaNavigationAction(String? action) {
     print('action $action');
     if (action == null) return;

@@ -77,7 +77,7 @@ class AltitudeLoggerService {
           ShareParams(
             files: [XFile(file.path)],
             text:
-                'Telemetry Log - Senda Altituds', // O subject: '...' si l'enviaries per Email
+                'Telemetry Log - STrack Rec Altituds', // O subject: '...' si l'enviaries per Email
           ),
         );
         return true;
@@ -86,7 +86,7 @@ class AltitudeLoggerService {
       await SharePlus.instance.share(
         ShareParams(
           files: [XFile(file.path)],
-          text: 'Telemetry Log - Senda Altituds',
+          text: 'Telemetry Log - STrack Rec Altituds',
         ),
       );
       return true;

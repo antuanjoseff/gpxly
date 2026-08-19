@@ -19,7 +19,7 @@ String buildGpxFilename() {
   final y = now.year.toString().padLeft(4, '0');
   final m = now.month.toString().padLeft(2, '0');
   final d = now.day.toString().padLeft(2, '0');
-  return "Track-senda-$y-$m-$d.gpx";
+  return "STrack Rec-$y-$m-$d.gpx";
 }
 
 double computeSpeed(
@@ -57,7 +57,9 @@ Future<void> exportGpx(
   final buffer = StringBuffer();
 
   buffer.writeln('<?xml version="1.0" encoding="UTF-8"?>');
-  buffer.writeln('<gpx version="1.1" creator="Senda">');
+  buffer.writeln(
+    '<gpx version="1.1" creator="STrack Rec" xmlns="http://www.topografix.com/GPX/1/1">',
+  );
 
   // ─────────────────────────────────────────────────
   // 1. AFEGIR WAYPOINTS ENREGISTRATS

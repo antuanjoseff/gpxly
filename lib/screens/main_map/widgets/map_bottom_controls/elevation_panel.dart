@@ -25,7 +25,7 @@ class ElevationPanel extends ConsumerWidget {
     // Si està col·lapsat, no es pinta ni consumeix espai (mesura 0)
     if (isCollapsed) return const SizedBox.shrink();
 
-    // Calculem l'alçada del 15% proporcional oficial de Senda
+    // Calculem l'alçada del 15% proporcional oficial de STrack Rec
     final double screenHeight = MediaQuery.sizeOf(context).height;
     final double officialChartHeight =
         screenHeight * AppDimensions.elevationChartHeightRatio;

@@ -793,7 +793,7 @@ class NavigationNotifier extends Notifier<NavigationState> {
 }
 
 // ─────────────────────────────────────────────────────────────
-// 🔗 EL PROVEÏDOR GLOBAL DE NAVEGACIÓ SENDA
+// 🔗 EL PROVEÏDOR GLOBAL DE NAVEGACIÓ STrack Rec
 // ─────────────────────────────────────────────────────────────
 final navigationProvider =
     NotifierProvider<NavigationNotifier, NavigationState>(() {

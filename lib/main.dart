@@ -43,7 +43,7 @@ class GPXlyApp extends StatelessWidget {
 }
 
 /// ─────────────────────────────────────────────────────────
-/// LISTENER DE CICLO DE VIDA (INTEGRACIÓ DE PERSISTÈNCIA SENDA)
+/// LISTENER DE CICLO DE VIDA (INTEGRACIÓ DE PERSISTÈNCIA STrack Rec)
 /// ─────────────────────────────────────────────────────────
 class _LifecycleWrapper extends ConsumerStatefulWidget {
   const _LifecycleWrapper({required this.child});

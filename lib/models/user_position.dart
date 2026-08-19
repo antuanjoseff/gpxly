@@ -14,7 +14,7 @@ class UserPosition {
   final double heading; // En graus (0-360)
   final int satellites;
 
-  // 🛰️ APARTAT NOU: Afegits per al diagnòstic de la targeta de satèl·lits de Senda
+  // 🛰️ APARTAT NOU: Afegits per al diagnòstic de la targeta de satèl·lits de STrack Rec
   final int satellitesUsed;
   final int satellitesInView;
 

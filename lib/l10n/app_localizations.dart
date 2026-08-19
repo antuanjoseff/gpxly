@@ -104,7 +104,7 @@ abstract class AppLocalizations {
   /// No description provided for @appTitle.
   ///
   /// In en, this message translates to:
-  /// **'Strack Rec'**
+  /// **'STRec'**
   String get appTitle;
 
   /// No description provided for @startRecording.
@@ -790,6 +790,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'For precise tracking, high-fidelity mode will be activated. This may increase battery consumption.'**
   String get gpsOptimizationMessage;
+
+  /// No description provided for @batteryOptimizationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Prevent Android from stopping GPS'**
+  String get batteryOptimizationTitle;
+
+  /// No description provided for @batteryOptimizationMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'To record without gaps, especially during long stops, Senda needs to be excluded from battery optimization. Otherwise Android may stop the GPS when the screen is off for a while.'**
+  String get batteryOptimizationMessage;
 
   /// No description provided for @confirm.
   ///

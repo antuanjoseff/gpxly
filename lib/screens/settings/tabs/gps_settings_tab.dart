@@ -37,7 +37,7 @@ class GpsSettingsTab extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // 🎯 TEXT EXPLICATIU REFACTORITZAT A L'ESTIL CORPORATIU DE SENDA
+          // 🎯 TEXT EXPLICATIU REFACTORITZAT A L'ESTIL CORPORATIU DE STrack Rec
           _buildInfoBanner(t.gpsAutoConfigInfo),
           const SizedBox(
             height: 16,

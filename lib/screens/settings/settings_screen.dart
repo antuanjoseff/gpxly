@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:strack_rec/l10n/app_localizations.dart';
 import 'package:strack_rec/notifiers/alarm_settings_notifier.dart';
-import 'package:strack_rec/notifiers/barometer_settings_notifier.dart';
 import 'package:strack_rec/notifiers/navigation_notifier.dart';
 import 'package:strack_rec/screens/settings/tabs/alarm_settings_tab.dart';
 import 'package:strack_rec/screens/settings/tabs/barometer_settings_tab.dart';
@@ -35,9 +34,6 @@ class SettingsScreen extends ConsumerWidget {
         alarms.timeEnabled;
 
     final gpsLocked = isAlarmActive || isTrackActive;
-
-    final baro = ref.watch(barometerSettingsProvider);
-    final hasBarometer = baro.hasBarometer;
 
     return Scaffold(
       backgroundColor: AppColors.white,
@@ -106,7 +102,6 @@ class SettingsScreen extends ConsumerWidget {
             _SettingsTile(
               label: t.demManagerTitle,
               t: t,
-              enabled: hasBarometer,
               // 🟢 SUPERPOSICIÓ COMPLEMENTÀRIA: Creem un bloc de mapa + graella
               customIcon: SizedBox(
                 width: 42,
@@ -119,9 +114,7 @@ class SettingsScreen extends ConsumerWidget {
                       child: Icon(
                         Icons.landscape_outlined,
                         size: 34,
-                        color: hasBarometer
-                            ? AppColors.primary
-                            : Colors.grey.shade400,
+                        color: AppColors.primary,
                       ),
                     ),
                     Positioned(
@@ -136,9 +129,7 @@ class SettingsScreen extends ConsumerWidget {
                         child: Icon(
                           Icons.grid_on_rounded,
                           size: 18,
-                          color: hasBarometer
-                              ? AppColors.skyBlue
-                              : Colors.grey.shade500,
+                          color: AppColors.skyBlue,
                         ),
                       ),
                     ),
@@ -147,7 +138,6 @@ class SettingsScreen extends ConsumerWidget {
               ),
 
               onTap: () {
-                if (!hasBarometer) return;
                 Navigator.push(
                   context,
                   MaterialPageRoute(

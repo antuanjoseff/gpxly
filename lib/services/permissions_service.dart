@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:strack_rec/services/native_gps_channel.dart';
 import 'package:strack_rec/ui/app_messages.dart';
 
 enum GpsPermissionStatus { ok, gpsOff, permissionDenied }
@@ -58,10 +59,28 @@ class PermissionsService {
 
     if (res.isGranted) {
       await _ensureNotifications(context); // Ara fa servir el diàleg explicatiu
+      await _ensureIgnoreBatteryOptimizations(context);
       return true;
     }
 
     return false;
+  }
+
+  // Evita que Android/fabricants matin el servei GPS en parades llargues amb pantalla apagada
+  static Future<void> _ensureIgnoreBatteryOptimizations(
+    BuildContext context,
+  ) async {
+    if (!Platform.isAndroid) return;
+
+    final alreadyIgnoring =
+        await NativeGpsChannel.isIgnoringBatteryOptimizations();
+    if (alreadyIgnoring) return;
+    if (!context.mounted) return;
+
+    final go = await AppMessages.showBatteryOptimizationDialog(context);
+    if (go == true) {
+      await NativeGpsChannel.requestIgnoreBatteryOptimizations();
+    }
   }
 
   static Future<bool> _ensureGpsEnabled(BuildContext context) async {

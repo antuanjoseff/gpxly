@@ -9,7 +9,7 @@ class AppLocalizationsFr extends AppLocalizations {
   AppLocalizationsFr([String locale = 'fr']) : super(locale);
 
   @override
-  String get appTitle => 'Strack Rec';
+  String get appTitle => 'STRec';
 
   @override
   String get startRecording => 'Enregistrer';
@@ -352,6 +352,12 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get gpsOptimizationMessage => 'Pour un suivi précis, il est nécessaire d\'activer le mode haute précision. Cela peut augmenter la consommation de batterie.';
+
+  @override
+  String get batteryOptimizationTitle => 'Empêcher Android d\'arrêter le GPS';
+
+  @override
+  String get batteryOptimizationMessage => 'Pour enregistrer sans coupures, surtout lors d\'arrêts prolongés, Senda doit être exclue de l\'optimisation de la batterie. Sinon, Android peut arrêter le GPS lorsque l\'écran est éteint un moment.';
 
   @override
   String get confirm => 'CONFIRMER';

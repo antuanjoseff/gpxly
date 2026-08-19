@@ -1,5 +1,5 @@
 {
-  "appTitle": "Strack Rec",
+  "appTitle": "STRec",
   "startRecording": "Registra",
   "stopRecording": "Ferma registrazione",
   "gpsDisabled": "Il GPS è disattivato",
@@ -142,6 +142,8 @@
 
   "gpsOptimizationTitle": "Ottimizzazione GPS",
   "gpsOptimizationMessage": "Per un seguimento preciso, è necessario attivare la modalità ad alta precisione. Ciò può aumentare il consumo della batteria.",
+  "batteryOptimizationTitle": "Evita che Android interrompa il GPS",
+  "batteryOptimizationMessage": "Per registrare senza interruzioni, soprattutto nelle soste lunghe, Senda deve essere esclusa dall'ottimizzazione della batteria. Altrimenti Android potrebbe fermare il GPS quando lo schermo è spento per un po'.",
   "confirm": "CONFERMA",
 
   "notificationPermissionTitle": "Notifiche del seguimento",

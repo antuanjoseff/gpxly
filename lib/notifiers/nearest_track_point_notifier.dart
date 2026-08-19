@@ -4,7 +4,7 @@ import 'package:strack_rec/models/track.dart';
 import 'package:strack_rec/notifiers/gps_speed_notifier.dart';
 import 'package:strack_rec/notifiers/imported_track_notifier.dart';
 import 'package:strack_rec/notifiers/recording_notifier.dart';
-// 🚀 Importa aquí el provider on tinguis el zoom actual del mapa de Senda, exemple:
+// 🚀 Importa aquí el provider on tinguis el zoom actual del mapa de STrack Rec, exemple:
 // import 'package:strack_rec/notifiers/map_zoom_notifier.dart';
 
 class NearestTrackPointNotifier extends Notifier<int> {

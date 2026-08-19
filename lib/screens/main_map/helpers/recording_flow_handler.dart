@@ -31,14 +31,14 @@ class RecordingFlowHandler {
     final state = ref.read(trackRecordingProvider).recordingState;
     String? finalAction = action; // Utilitzem una variable interna combinada
 
-    // 🟢 EL FLUX INTEL·LIGENT DE SENDA:
+    // 🟢 EL FLUX INTEL·LIGENT DE STrack Rec:
     // Només obrim el diàleg si no hem rebut cap acció directa forçada del submenú inferior
     if (finalAction == null) {
       if (state == RecordingState.idle) {
         // 1. Si està aturat, inicia la gravació a l'acte [INDEX]
         finalAction = "start";
       } else {
-        // 2. Si està en marxa o en pausa, obrim el diàleg de control de Senda [INDEX].
+        // 2. Si està en marxa o en pausa, obrim el diàleg de control de STrack Rec [INDEX].
         // Com que l'usuari clica des del submenú inferior de botons de "MapBottomControls",
         // si tria "Pausar" o "Reprendre", farem que s'ho salti directament als mètodes en un futur,
         // però ens assegurem que el cas "stop" obri el diàleg de guardar/compartir de sota! [INDEX]

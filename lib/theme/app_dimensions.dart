@@ -1,6 +1,6 @@
 // lib/theme/app_dimensions.dart
 
-/// Constants globals de dimensions i proporcions de la interfície de Senda.
+/// Constants globals de dimensions i proporcions de la interfície de STrack Rec.
 class AppDimensions {
   // 🎛️ Barra de Menú Inferior (MenuBar)
   /// L'alçada fixa en píxels del giny MenuBar inferior.

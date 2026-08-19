@@ -301,7 +301,7 @@ class MapScissorsButtons extends ConsumerWidget {
                         .deactivateMapSelectionTool();
                   }
                 } else {
-                  // Restauració de la lògica original d'activació de Senda
+                  // Restauració de la lògica original d'activació de STrack Rec
                   if (sel.selectionMode == MapSelectionMode.waypoint) {
                     ref
                         .read(elevationSelectionProvider.notifier)

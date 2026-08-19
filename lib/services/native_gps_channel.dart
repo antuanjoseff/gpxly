@@ -49,6 +49,20 @@ class NativeGpsChannel {
     return res ?? false;
   }
 
+  static Future<bool> isIgnoringBatteryOptimizations() async {
+    final res = await _methods.invokeMethod<bool>(
+      'isIgnoringBatteryOptimizations',
+    );
+    return res ?? true;
+  }
+
+  static Future<bool> requestIgnoreBatteryOptimizations() async {
+    final res = await _methods.invokeMethod<bool>(
+      'requestIgnoreBatteryOptimizations',
+    );
+    return res ?? false;
+  }
+
   // 2. STREAM DE UBICACIÓN (Filtra y se queda solo con los puntos del mapa)
   static Stream<Map<String, dynamic>> get locationStream {
     return _getRawStream().where((event) => !event.containsKey('type'));

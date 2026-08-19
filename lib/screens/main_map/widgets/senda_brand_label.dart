@@ -33,7 +33,7 @@ class SendaBrandLabel extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Text(
-                "SENDA",
+                "STrack Rec",
                 style: TextStyle(
                   // 🟢 Mantenim el text blanc o el teu color de marca fosc segons el contrast que prefereixis.
                   // El blanc pur brilla molt bé sobre el desfoque del glassmorphism.

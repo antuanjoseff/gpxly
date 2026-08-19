@@ -25,7 +25,7 @@ class MapSelectionToolNotifier extends Notifier<bool> {
   }
 }
 
-// El provider global que podrem consultar des dels ginys i la pantalla de Senda
+// El provider global que podrem consultar des dels ginys i la pantalla de STrack Rec
 final mapSelectionToolProvider =
     NotifierProvider<MapSelectionToolNotifier, bool>(
       MapSelectionToolNotifier.new,

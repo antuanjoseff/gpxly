@@ -9,7 +9,7 @@ class AppLocalizationsCa extends AppLocalizations {
   AppLocalizationsCa([String locale = 'ca']) : super(locale);
 
   @override
-  String get appTitle => 'Strack Rec';
+  String get appTitle => 'STRec';
 
   @override
   String get startRecording => 'Gravar';
@@ -352,6 +352,12 @@ class AppLocalizationsCa extends AppLocalizations {
 
   @override
   String get gpsOptimizationMessage => 'Per a un seguiment precís, cal activar el mode d\'alta fidelitat. Això pot augmentar el consum de bateria.';
+
+  @override
+  String get batteryOptimizationTitle => 'Evita que Android aturi el GPS';
+
+  @override
+  String get batteryOptimizationMessage => 'Per gravar sense talls, sobretot en parades llargues, cal excloure Senda de l\'estalvi de bateria. Si no, Android pot aturar el GPS quan la pantalla estigui apagada una estona.';
 
   @override
   String get confirm => 'CONFIRMAR';

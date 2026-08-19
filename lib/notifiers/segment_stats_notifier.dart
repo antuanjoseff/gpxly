@@ -34,7 +34,7 @@ class SegmentStats {
 class SegmentStatsNotifier extends Notifier<SegmentStats> {
   @override
   SegmentStats build() {
-    // 🚀 1. ESCOLTEM LES RUTES REALS DE SENDA
+    // 🚀 1. ESCOLTEM LES RUTES REALS DE STrack Rec
     final real = ref.watch(trackRecordingProvider);
     final imported = ref.watch(importedTrackProvider);
     final remaining = ref.watch(remainingTrackProvider);
@@ -95,7 +95,7 @@ class SegmentStatsNotifier extends Notifier<SegmentStats> {
       }
     }
 
-    // 📐 4. CÀLCULS DE SENDA
+    // 📐 4. CÀLCULS DE STrack Rec
     final distance = (globalDists[end] - globalDists[start]).abs();
     double ascent = 0;
     double descent = 0;
@@ -145,7 +145,7 @@ class SegmentStatsNotifier extends Notifier<SegmentStats> {
     );
   }
 
-  // 🛡️ RESTAURAT: Es manté per retrocompatibilitat amb altres crides externes de Senda
+  // 🛡️ RESTAURAT: Es manté per retrocompatibilitat amb altres crides externes de STrack Rec
   void updateStats({
     required List<double> globalDists,
     required List<double> globalAlts,

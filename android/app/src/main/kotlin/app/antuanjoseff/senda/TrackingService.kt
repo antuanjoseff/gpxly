@@ -19,6 +19,7 @@ class TrackingService : Service() {
     private lateinit var fused: FusedLocationProviderClient
     private lateinit var callback: LocationCallback
     private lateinit var locationManager: LocationManager
+    private var wakeLock: PowerManager.WakeLock? = null
 
     private var lastLocation: Location? = null
     private var lastTime: Long = 0
@@ -146,9 +147,23 @@ class TrackingService : Service() {
         }
 
         startForegroundServiceNotification()
+        acquireWakeLock()
         startLocationUpdates()
 
         return START_STICKY
+    }
+
+    // Manté la CPU desperta perquè Doze/fabricants no aturin la recepció de GPS amb pantalla apagada
+    private fun acquireWakeLock() {
+        if (wakeLock?.isHeld == true) return
+        val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
+        wakeLock = pm.newWakeLock(
+            PowerManager.PARTIAL_WAKE_LOCK,
+            "senda:TrackingServiceWakeLock"
+        ).apply {
+            setReferenceCounted(false)
+            acquire(12 * 60 * 60 * 1000L) // límit de seguretat de 12h
+        }
     }
 
     private fun startLocationUpdates() {
@@ -394,6 +409,8 @@ class TrackingService : Service() {
             locationManager.unregisterGnssStatusCallback(gnssStatusCallback)
         }
         fused.removeLocationUpdates(callback)
+        wakeLock?.let { if (it.isHeld) it.release() }
+        wakeLock = null
         super.onDestroy()
     }
 

@@ -91,27 +91,36 @@ class AlarmSettingsNotifier extends Notifier<AlarmSettings> {
 
     // Llegim l'index de l'enum (0 per desnivell, 1 per cotes)
     final viewIndex = prefs.getInt('alarm_altitude_view_mode') ?? 0;
-    final savedViewMode = AltitudeViewMode.values[viewIndex];
+    final savedViewMode = AltitudeViewMode
+        .values[viewIndex.clamp(0, AltitudeViewMode.values.length - 1)];
 
     state = AlarmSettings(
-      distanceEnabled: false,
+      distanceEnabled: prefs.getBool('alarm_distance_enabled') ?? false,
       distanceMeters: prefs.getDouble('alarm_distance_meters') ?? 100.0,
-      accEnabled: false,
+      accEnabled: prefs.getBool('alarm_acc_enabled') ?? false,
       accMeters: prefs.getDouble('alarm_acc_meters') ?? 100.0,
-      cotaEnabled: false,
+      cotaEnabled: prefs.getBool('alarm_cota_enabled') ?? false,
       cotaMeters: prefs.getDouble('alarm_cota_meters') ?? 500.0,
-      timeEnabled: false,
+      timeEnabled: prefs.getBool('alarm_time_enabled') ?? false,
       timeSeconds: prefs.getInt('alarm_time_seconds') ?? 60,
       currentViewMode: savedViewMode,
     );
+
+    if (_anyEnabled(state)) {
+      await ref.read(alarmEngineProvider).start();
+    }
   }
 
-  // 2. Guardem només quan l'usuari canvia el valor (no quan activa/desactiva)
+  // Guardem la configuració i també si cada alarma està activa.
   Future<void> _saveToPrefs() async {
     final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('alarm_distance_enabled', state.distanceEnabled);
     await prefs.setDouble('alarm_distance_meters', state.distanceMeters);
+    await prefs.setBool('alarm_acc_enabled', state.accEnabled);
     await prefs.setDouble('alarm_acc_meters', state.accMeters);
+    await prefs.setBool('alarm_cota_enabled', state.cotaEnabled);
     await prefs.setDouble('alarm_cota_meters', state.cotaMeters);
+    await prefs.setBool('alarm_time_enabled', state.timeEnabled);
     await prefs.setInt('alarm_time_seconds', state.timeSeconds);
     await prefs.setInt('alarm_altitude_view_mode', state.currentViewMode.index);
   }

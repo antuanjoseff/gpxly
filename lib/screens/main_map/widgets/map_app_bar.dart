@@ -35,6 +35,9 @@ class MapAppBar extends ConsumerWidget implements PreferredSizeWidget {
     // 📡 Escuita reactiva de les alarmes de seguretat actives
     final alarms = ref.watch(alarmSettingsProvider);
     final gpsDebugEnabled = ref.watch(gpsDebugProvider);
+    final permissions = ref.watch(permissionsProvider);
+    final isGpsDisabled =
+        !permissions.hasPermission || !permissions.serviceEnabled;
     final anyAlarmActive =
         alarms.distanceEnabled ||
         alarms.accEnabled ||
@@ -52,11 +55,6 @@ class MapAppBar extends ConsumerWidget implements PreferredSizeWidget {
         builder: (context, ref, child) {
           // 📡 1. Llegim l'estat del GPS i dels permisos/serveis simultàniament
           final userPos = ref.watch(locationProvider);
-          final permissions = ref.watch(permissionsProvider);
-
-          // 🛡️ CONTROL REAL: El GPS està desactivat si manquen permisos o l'antena està apagada
-          final bool isGpsDisabled =
-              !permissions.hasPermission || !permissions.serviceEnabled;
 
           final bool isSearchingSignal = !isGpsDisabled && userPos == null;
           final double? altitude = userPos?.altitude;
@@ -68,9 +66,15 @@ class MapAppBar extends ConsumerWidget implements PreferredSizeWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               // 🗺️ A) El Nom de l'aplicació
-              Text(
-                t.appTitle,
-                style: const TextStyle(
+              Image.asset(
+                'assets/icon/strack_rec_mini_icon.png',
+                width: 28,
+                height: 28,
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                'STRec',
+                style: TextStyle(
                   color: Colors.white,
                   fontSize: 17,
                   fontWeight: FontWeight.bold,
@@ -86,46 +90,7 @@ class MapAppBar extends ConsumerWidget implements PreferredSizeWidget {
               ),
 
               // 🏔️ B) El mòdul d'Altimetria adaptatiu estil comptador
-              if (isGpsDisabled)
-                // 🎯 CAS ERROR: Càpsula amb fons blanc i text vermell idèntica al teu cronòmetre
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withAlpha(30),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 4.0,
-                    horizontal: 10.0,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.location_off_rounded,
-                        color: AppColors.redAlert,
-                        size: 15,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        t.gpsDisabledTitle.toUpperCase(),
-                        style: const TextStyle(
-                          color: AppColors.redAlert,
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              else
+              if (!isGpsDisabled)
                 // CAS STANDARD / CERCA: Es manté integrat en línia net sobre el fons de l'AppBar
                 Row(
                   mainAxisSize: MainAxisSize.min,
@@ -201,34 +166,78 @@ class MapAppBar extends ConsumerWidget implements PreferredSizeWidget {
             ),
           ),
 
-        Padding(
-          padding: const EdgeInsets.only(right: 12),
-          child: GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const SatelliteDetailScreen(),
-                ),
-              );
-            },
-            child: const SizedBox(
-              width: 32,
-              height: 32,
-              child: Icon(
-                Icons.satellite_alt_rounded,
+        if (isGpsDisabled)
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: Container(
+              decoration: BoxDecoration(
                 color: Colors.white,
-                size: 22,
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withAlpha(30),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.symmetric(
+                vertical: 4.0,
+                horizontal: 10.0,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.location_off_rounded,
+                    color: AppColors.redAlert,
+                    size: 15,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    t.gpsDisabledTitle.toUpperCase(),
+                    style: const TextStyle(
+                      color: AppColors.redAlert,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
-        ),
+
+        if (!isGpsDisabled)
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const SatelliteDetailScreen(),
+                  ),
+                );
+              },
+              child: const SizedBox(
+                width: 32,
+                height: 32,
+                child: Icon(
+                  Icons.satellite_alt_rounded,
+                  color: Colors.white,
+                  size: 22,
+                ),
+              ),
+            ),
+          ),
 
         // GpsAccuracyBars a la dreta del tot
-        const Padding(
-          padding: EdgeInsets.only(right: 12),
-          child: GpsAccuracyBars(),
-        ),
+        if (!isGpsDisabled)
+          const Padding(
+            padding: EdgeInsets.only(right: 12),
+            child: GpsAccuracyBars(),
+          ),
 
         const SizedBox(width: 4),
       ],

@@ -146,7 +146,7 @@ Future<void> setupUserLocationLayer(MapLibreMapController controller) async {
     "selected_segment_source",
     "selected_segment_layer",
     const LineLayerProperties(
-      lineColor: "#FF9800", // 🍊 Color naranja Senda
+      lineColor: "#FF9800", // 🍊 Color naranja STrack Rec
       lineWidth: 5.0, // 🎯 Más fina para centrarse sobre el fondo blanco
       lineJoin: "round",
       lineCap: "round",
@@ -738,7 +738,7 @@ Future<void> updateSelectedSegmentGeometry(
         "selected_segment_source",
         "selected_segment_layer",
         const LineLayerProperties(
-          lineColor: "#FF9800", // 🍊 Color naranja Senda
+          lineColor: "#FF9800", // 🍊 Color naranja STrack Rec
           lineWidth: 5.0, // 🎯 Más fina para centrarse sobre el fondo blanco
           lineJoin: "round",
           lineCap: "round",
