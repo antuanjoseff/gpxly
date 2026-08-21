@@ -1,12 +1,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:strack_rec/l10n/app_localizations.dart';
 import 'package:strack_rec/notifiers/gps_debug_notifier.dart';
 import 'package:strack_rec/notifiers/gps_settings_notifier.dart';
 import 'package:strack_rec/services/altitude_logger.dart';
 import 'package:strack_rec/theme/app_colors.dart';
-import 'package:strack_rec/widgets/custom_settings_card.dart';
 
 class GpsSettingsTab extends ConsumerWidget {
   const GpsSettingsTab({super.key});
@@ -17,13 +17,14 @@ class GpsSettingsTab extends ConsumerWidget {
     final isFollowing = gps.isFollowing;
     final t = AppLocalizations.of(context)!;
 
+    // Definim l'estat d'activació global de la secció d'autonconfiguració
+    final bool canEdit = !isFollowing;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F7),
       appBar: AppBar(
         backgroundColor: AppColors.primary,
-        iconTheme: const IconThemeData(
-          color: Colors.white,
-        ), // ✅ Asegura icono volver blanco
+        iconTheme: const IconThemeData(color: Colors.white),
         title: Text(
           t.gpsTab,
           style: const TextStyle(
@@ -37,80 +38,96 @@ class GpsSettingsTab extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // 🎯 TEXT EXPLICATIU REFACTORITZAT A L'ESTIL CORPORATIU DE STrack Rec
+          // Banner d'informació corporativa
           _buildInfoBanner(t.gpsAutoConfigInfo),
-          const SizedBox(
-            height: 16,
-          ), // ✅ Incrementado a 16 para mejor aireado visual
-          const SectionTitle("Mètode de registre"),
+          const SizedBox(height: 16),
 
-          // --- BLOC TEMPS ---
-          SettingsCard(
-            isActive: !isFollowing,
-            isStyleActive: !isFollowing && gps.useTime,
+          Text(
+            t.gpsRecordingMethod,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: Colors.black54,
+            ),
+          ),
+          const SizedBox(height: 8),
+          // ⏱️ 1. FILA TEMPS
+          _buildGpsRowSetting(
+            context: context,
+            isActive: canEdit && gps.useTime,
             title: t.gpsRecordByTime,
             valueText: "${gps.seconds} s",
             value: gps.seconds.toDouble(),
             min: 2,
             max: 60,
-            divisions: 58,
+            step: 1,
             onChanged: (val) {
-              // 🔴 Mentres arrossega el dit: canvia el text a la UI a cada mil·lisegon suau
               ref.read(gpsSettingsProvider.notifier).setSeconds(val.toInt());
               ref.read(gpsSettingsProvider.notifier).setUseTime(true);
             },
-            onChangeEnd: (val) {
-              // 🎯 En aixecar el dit: Aplica la configuració a Kotlin d'un sol cop
+            onChangeEnd: (val) =>
+                ref.read(gpsSettingsProvider.notifier).apply(),
+            onToggle: () {
+              ref.read(gpsSettingsProvider.notifier).setUseTime(true);
               ref.read(gpsSettingsProvider.notifier).apply();
             },
           ),
+          const Divider(height: 1, color: Color(0xFFE5E5EA)),
 
-          const SizedBox(height: 16),
-
-          // --- BLOC DISTÀNCIA ---
-          SettingsCard(
-            isActive: !isFollowing,
-            isStyleActive: !isFollowing && !gps.useTime,
+          // 📏 2. FILA DISTÀNCIA
+          _buildGpsRowSetting(
+            context: context,
+            isActive: canEdit && !gps.useTime,
             title: t.gpsRecordByDistance,
             valueText: "${gps.meters.toInt()} m",
             value: gps.meters.toDouble(),
             min: 1,
             max: 100,
-            divisions: 99,
+            step: 1,
             onChanged: (val) {
-              // 🔴 Mentres arrossega el dit: canvia el text a la UI a cada mil·lisegon suau
               ref.read(gpsSettingsProvider.notifier).setMeters(val);
               ref.read(gpsSettingsProvider.notifier).setUseTime(false);
             },
-            onChangeEnd: (val) {
-              // 🎯 En aixecar el dit: Aplica la configuració a Kotlin d'un sol cop
+            onChangeEnd: (val) =>
+                ref.read(gpsSettingsProvider.notifier).apply(),
+            onToggle: () {
+              ref.read(gpsSettingsProvider.notifier).setUseTime(false);
               ref.read(gpsSettingsProvider.notifier).apply();
             },
           ),
 
-          const SizedBox(height: 12),
-          const SectionTitle("Qualitat del senyal"),
+          const SizedBox(height: 16),
+          Text(
+            t.gpsSignalQuality,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: Colors.black54,
+            ),
+          ),
+          const SizedBox(height: 8),
 
-          SettingsCard(
-            isActive: !isFollowing,
-            isStyleActive: !isFollowing,
+          // 🎯 3. FILA PRECISIÓ MÀXIMA
+          _buildGpsRowSetting(
+            context: context,
+            isActive: canEdit,
             title: t.gpsMaxAccuracy,
             valueText: "${gps.accuracy.toInt()} m",
             value: gps.accuracy,
             min: 5,
             max: 100,
-            divisions: 19,
+            step: 5,
             onChanged: (val) {
-              // 🔴 Mentres arrossega el dit: canvia el text a la UI a cada mil·lisegon suau
               ref.read(gpsSettingsProvider.notifier).setAccuracy(val);
             },
-            onChangeEnd: (val) {
-              // 🎯 En aixecar el dit: Aplica la configuració a Kotlin d'un sol cop
-              ref.read(gpsSettingsProvider.notifier).apply();
-            },
+            onChangeEnd: (val) =>
+                ref.read(gpsSettingsProvider.notifier).apply(),
+            onToggle: null,
+            hideSwitch: true, // Amaguem el switch mecànic per a la precisió
           ),
           const SizedBox(height: 12),
 
+          // Mode diagnòstic per a desenvolupadors (Debug Mode)
           if (kDebugMode)
             Container(
               decoration: BoxDecoration(
@@ -119,13 +136,11 @@ class GpsSettingsTab extends ConsumerWidget {
                 border: Border.all(color: Colors.black12),
               ),
               child: SwitchListTile.adaptive(
-                title: const Text(
-                  "Mode diagnòstic GPS",
-                  style: TextStyle(fontWeight: FontWeight.w600),
+                title: Text(
+                  t.gpsDiagnosticMode,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
-                subtitle: const Text(
-                  "Registra telemetria detallada. Pot augmentar consum de bateria.",
-                ),
+                subtitle: Text(t.gpsDiagnosticDescription),
                 value: ref.watch(gpsDebugProvider),
                 onChanged: (value) async {
                   await ref.read(gpsDebugProvider.notifier).setEnabled(value);
@@ -140,7 +155,213 @@ class GpsSettingsTab extends ConsumerWidget {
     );
   }
 
-  // 🎨 DISSENY UNIFICAT: Banner adaptat de forma estricta a l'estètica del mapa
+  // Giny unificat en dues línies amb el Switch mecànic i Slider optimitzat
+  Widget _buildGpsRowSetting({
+    required BuildContext context,
+    required bool isActive,
+    required String title,
+    required String valueText,
+    required double value,
+    required double min,
+    required double max,
+    required double step,
+    required ValueChanged<double> onChanged,
+    required ValueChanged<double> onChangeEnd,
+    required VoidCallback? onToggle,
+    bool hideSwitch = false,
+  }) {
+    final color = isActive ? AppColors.primary : Colors.grey.shade400;
+    final divisions = ((max - min) / step).round();
+
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Opacity(
+        opacity: isActive ? 1.0 : 0.5,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // ─── LÍNIA 1: TÍTOL, MÈTRICA I SWITCH TEXTUAL ───
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  valueText,
+                  textAlign: TextAlign.end,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: isActive ? AppColors.primary : Colors.grey.shade600,
+                  ),
+                ),
+                if (!hideSwitch) ...[
+                  const SizedBox(width: 12),
+                  GestureDetector(
+                    onTap: onToggle != null
+                        ? () {
+                            HapticFeedback.lightImpact();
+                            onToggle();
+                          }
+                        : null,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      width: 58,
+                      height: 28,
+                      padding: const EdgeInsets.all(3),
+                      decoration: BoxDecoration(
+                        color: isActive
+                            ? AppColors.primary.withAlpha(40)
+                            : Colors.grey.shade200,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: isActive
+                              ? AppColors.primary
+                              : Colors.grey.shade300,
+                          width: 1,
+                        ),
+                      ),
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Positioned(
+                            left: 6,
+                            child: Text(
+                              "ON",
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: isActive
+                                    ? AppColors.primary
+                                    : Colors.transparent,
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            right: 6,
+                            child: Text(
+                              "OFF",
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: !isActive
+                                    ? Colors.grey.shade600
+                                    : Colors.transparent,
+                              ),
+                            ),
+                          ),
+                          AnimatedAlign(
+                            duration: const Duration(milliseconds: 200),
+                            curve: Curves.easeInOut,
+                            alignment: isActive
+                                ? Alignment.centerRight
+                                : Alignment.centerLeft,
+                            child: Container(
+                              width: 22,
+                              height: 22,
+                              decoration: BoxDecoration(
+                                color: isActive
+                                    ? AppColors.primary
+                                    : Colors.grey.shade500,
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withAlpha(20),
+                                    blurRadius: 2,
+                                    offset: const Offset(0, 1),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            const SizedBox(height: 8),
+
+            // ─── LÍNIA 2: RECORREGUT DEL SLIDER AMB CONTROLS ───
+            Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.remove, size: 18),
+                  color: color,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: 32,
+                    minHeight: 32,
+                  ),
+                  onPressed: isActive && value > min
+                      ? () {
+                          HapticFeedback.lightImpact();
+                          final newVal = (value - step).clamp(min, max);
+                          onChanged(newVal);
+                          onChangeEnd(newVal);
+                        }
+                      : null,
+                ),
+                Expanded(
+                  child: SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
+                      trackHeight: 3,
+                      thumbShape: const RoundSliderThumbShape(
+                        enabledThumbRadius: 7,
+                      ),
+                      overlayShape: const RoundSliderOverlayShape(
+                        overlayRadius: 14,
+                      ),
+                    ),
+                    child: Slider(
+                      value: value.clamp(min, max),
+                      min: min,
+                      max: max,
+                      divisions: divisions > 0 ? divisions : null,
+                      activeColor: AppColors.primary,
+                      inactiveColor: AppColors.primary.withAlpha(30),
+                      onChanged: isActive ? onChanged : null,
+                      onChangeEnd: isActive ? onChangeEnd : null,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.add, size: 18),
+                  color: color,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: 32,
+                    minHeight: 32,
+                  ),
+                  onPressed: isActive && value < max
+                      ? () {
+                          HapticFeedback.lightImpact();
+                          final newVal = (value + step).clamp(min, max);
+                          onChanged(newVal);
+                          onChangeEnd(newVal);
+                        }
+                      : null,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildInfoBanner(String message) {
     return Container(
       width: double.infinity,

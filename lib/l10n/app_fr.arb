@@ -51,6 +51,10 @@
   "gpsRecordByTime": "Enregistrement par durée",
   "gpsRecordByDistance": "Enregistrement par distance",
   "gpsMaxAccuracy": "Précision maximale",
+  "gpsRecordingMethod": "Méthode d'enregistrement",
+  "gpsSignalQuality": "Qualité du signal",
+  "gpsDiagnosticMode": "Mode diagnostic GPS",
+  "gpsDiagnosticDescription": "Enregistre des données de télémétrie détaillées. Cela peut augmenter la consommation de batterie.",
 
   "gpxIncludeExtraData": "Inclure des données supplémentaires dans le fichier GPX",
   "gpxAccuracyPerPoint": "Précision par point",
@@ -58,6 +62,8 @@
   "gpxHeading": "Cap",
   "gpxSatellites": "Satellites",
   "gpxVerticalAccuracy": "Précision verticale",
+  "gpxSelectAll": "Tout sélectionner",
+  "gpxDeselectAll": "Tout désélectionner",
   "switchOn": "ACTIVÉ",
   "switchOff": "DÉSACTIVÉ",
 

@@ -25,14 +25,12 @@ class LocationNotifier extends Notifier<UserPosition?> {
   bool _isSimulationPaused = false;
   DateTime? _lastGpsPointAt;
   DateTime? _lastHeartbeatRefreshAt;
-  DateTime? _lastHardRestartAt;
   bool _heartbeatRefreshInProgress = false;
   int _heartbeatSoftAttempts = 0;
 
   static const Duration _gpsSilenceThreshold = Duration(seconds: 30);
   static const Duration _gpsHeartbeatTick = Duration(seconds: 5);
   static const int _maxSoftAttemptsBeforeHardRestart = 3;
-  static const Duration _hardRestartCooldown = Duration(seconds: 90);
 
   // ─────────────────────────────────────────────────────────────
   // 🎮 LES DUES NOVES VARIABLES DE CLASSE REQUERIDES
@@ -140,7 +138,6 @@ class LocationNotifier extends Notifier<UserPosition?> {
     _gpsHeartbeatTimer?.cancel();
     _lastGpsPointAt = DateTime.now();
     _lastHeartbeatRefreshAt = null;
-    _lastHardRestartAt = null;
     _heartbeatSoftAttempts = 0;
 
     _gpsHeartbeatTimer = Timer.periodic(_gpsHeartbeatTick, (_) async {
@@ -153,6 +150,11 @@ class LocationNotifier extends Notifier<UserPosition?> {
       final lastPointAt = _lastGpsPointAt ?? now;
       final silence = now.difference(lastPointAt);
       if (silence < _gpsSilenceThreshold) return;
+
+      // 🧍 En mode distància, estar aturat = no arriben punts = NORMAL.
+      // Si l'última velocitat coneguda és gairebé zero, no toquem el GPS.
+      final lastSpeed = state?.speed ?? 0.0;
+      if (lastSpeed < 0.5) return;
 
       final lastRefreshAt = _lastHeartbeatRefreshAt;
       if (lastRefreshAt != null &&
@@ -168,28 +170,16 @@ class LocationNotifier extends Notifier<UserPosition?> {
         _lastHeartbeatRefreshAt = now;
         _heartbeatSoftAttempts += 1;
 
-        if (_heartbeatSoftAttempts < _maxSoftAttemptsBeforeHardRestart) {
-          logger.log(
-            "🔄 GPS HEARTBEAT -> Sense coordenades ${silence.inSeconds}s en mode distància. Reaplicant configuració actual (intent $_heartbeatSoftAttempts).",
-          );
-          await ref.read(gpsSettingsProvider.notifier).apply();
-        } else {
-          final lastHardRestartAt = _lastHardRestartAt;
-          if (lastHardRestartAt != null &&
-              now.difference(lastHardRestartAt) < _hardRestartCooldown) {
-            logger.log(
-              "⏱️ GPS HEARTBEAT -> Cooldown actiu per reset fort. Es manté watchdog.",
-            );
-          } else {
-            logger.log(
-              "🛑 GPS HEARTBEAT -> Sense coordenades persistent. Reset fort stop/start mantenint configuració d'usuari.",
-            );
-            await NativeGpsChannel.stop();
-            await Future.delayed(const Duration(milliseconds: 350));
-            await ref.read(gpsSettingsProvider.notifier).apply();
-            _lastHardRestartAt = now;
-            _heartbeatSoftAttempts = 0;
-          }
+        // ⚠️ MAI fer stop()+start() aquí: amb la pantalla apagada Android 12+
+        // bloqueja reiniciar el servei (ForegroundServiceStartNotAllowedException)
+        // i el GPS quedava mort. Reaplicar sobre el servei viu és segur.
+        logger.log(
+          "🔄 GPS HEARTBEAT -> Sense coordenades ${silence.inSeconds}s en mode distància. Reaplicant configuració (intent $_heartbeatSoftAttempts).",
+        );
+        await ref.read(gpsSettingsProvider.notifier).apply();
+
+        if (_heartbeatSoftAttempts >= _maxSoftAttemptsBeforeHardRestart) {
+          _heartbeatSoftAttempts = 0;
         }
       } catch (_) {
         logger.log("❌ GPS HEARTBEAT -> Error en reactivació del stream GPS.");
@@ -408,7 +398,6 @@ class LocationNotifier extends Notifier<UserPosition?> {
     _gpsHeartbeatTimer = null;
     _lastGpsPointAt = null;
     _lastHeartbeatRefreshAt = null;
-    _lastHardRestartAt = null;
     _heartbeatSoftAttempts = 0;
     _heartbeatRefreshInProgress = false;
     _isSimulationRunning = false;

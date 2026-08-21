@@ -50,6 +50,10 @@
   "gpsRecordByTime": "Registrazione per tempo",
   "gpsRecordByDistance": "Registrazione per distanza",
   "gpsMaxAccuracy": "Precisione massima",
+  "gpsRecordingMethod": "Metodo di registrazione",
+  "gpsSignalQuality": "Qualità del segnale",
+  "gpsDiagnosticMode": "Modalità diagnostica GPS",
+  "gpsDiagnosticDescription": "Registra telemetria dettagliata. Può aumentare il consumo della batteria.",
 
   "gpxIncludeExtraData": "Includi dati aggiuntivi nel file GPX",
   "gpxAccuracyPerPoint": "Precisione per punto",
@@ -57,6 +61,8 @@
   "gpxHeading": "Direzione",
   "gpxSatellites": "Satelliti",
   "gpxVerticalAccuracy": "Precisione verticale",
+  "gpxSelectAll": "Seleziona tutto",
+  "gpxDeselectAll": "Deseleziona tutto",
   "switchOn": "ATTIVO",
   "switchOff": "DISATTIVO",
 

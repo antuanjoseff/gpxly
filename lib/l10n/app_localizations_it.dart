@@ -126,6 +126,18 @@ class AppLocalizationsIt extends AppLocalizations {
   String get gpsMaxAccuracy => 'Precisione massima';
 
   @override
+  String get gpsRecordingMethod => 'Metodo di registrazione';
+
+  @override
+  String get gpsSignalQuality => 'Qualità del segnale';
+
+  @override
+  String get gpsDiagnosticMode => 'Modalità diagnostica GPS';
+
+  @override
+  String get gpsDiagnosticDescription => 'Registra telemetria dettagliata. Può aumentare il consumo della batteria.';
+
+  @override
   String get gpxIncludeExtraData => 'Includi dati aggiuntivi nel file GPX';
 
   @override
@@ -142,6 +154,12 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get gpxVerticalAccuracy => 'Precisione verticale';
+
+  @override
+  String get gpxSelectAll => 'Seleziona tutto';
+
+  @override
+  String get gpxDeselectAll => 'Deseleziona tutto';
 
   @override
   String get switchOn => 'ATTIVO';

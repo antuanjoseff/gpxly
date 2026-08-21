@@ -50,6 +50,10 @@
   "gpsRecordByTime": "Gravació per temps",
   "gpsRecordByDistance": "Gravació per distància",
   "gpsMaxAccuracy": "Accuracy màxima",
+  "gpsRecordingMethod": "Mètode de registre",
+  "gpsSignalQuality": "Qualitat del senyal",
+  "gpsDiagnosticMode": "Mode diagnòstic GPS",
+  "gpsDiagnosticDescription": "Registra telemetria detallada. Pot augmentar el consum de bateria.",
 
   "gpxIncludeExtraData": "Incloure dades extres al fitxer GPX",
   "gpxAccuracyPerPoint": "Accuracy per punt",
@@ -57,6 +61,8 @@
   "gpxHeading": "Heading (Rumb)",
   "gpxSatellites": "Satèl·lits",
   "gpxVerticalAccuracy": "Vertical accuracy",
+  "gpxSelectAll": "Marcar-ho tot",
+  "gpxDeselectAll": "Desmarcar-ho tot",
   "switchOn": "ON",
   "switchOff": "OFF",
 

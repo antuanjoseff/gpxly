@@ -1,6 +1,5 @@
 // lib/screens/settings/tabs/gpx_settings_tab.dart (Bloc 1 de 2)
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:strack_rec/l10n/app_localizations.dart';
 import 'package:strack_rec/notifiers/gpx_settings_notifier.dart';
@@ -14,7 +13,7 @@ class GpxSettingsTab extends ConsumerWidget {
     final settings = ref.watch(gpxSettingsProvider);
     final t = AppLocalizations.of(context)!;
 
-    // Lògica de comprovació per saber si estan tots seleccionats
+    // Lògica de comprovació per saber si estan tots seleccionats [INDEX]
     final bool isAllSelected =
         settings.accuracies &&
         settings.speeds &&
@@ -48,7 +47,7 @@ class GpxSettingsTab extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // El botó minimalista de selecció global
+              // El nou botó minimalista de selecció global [INDEX]
               _buildMinimalAllSelector(
                 context: context,
                 ref: ref,
@@ -109,7 +108,7 @@ class GpxSettingsTab extends ConsumerWidget {
   }
   // lib/screens/settings/tabs/gpx_settings_tab.dart (Bloc 2 de 2)
 
-  // 🎯 SELECTOR MINIMALISTA: Integrat amb un TextButton net i discret al costat de la secció
+  // 🎯 SELECTOR MINIMALISTA: Integrat amb un TextButton net i discret al costat de la secció [INDEX]
   Widget _buildMinimalAllSelector({
     required BuildContext context,
     required WidgetRef ref,
@@ -120,8 +119,7 @@ class GpxSettingsTab extends ConsumerWidget {
     return InkWell(
       borderRadius: BorderRadius.circular(8),
       onTap: () {
-        HapticFeedback.lightImpact();
-        // Canvi massiu de tots els estats al contrari actual
+        // Canvi massiu de tots els estats al contrari actual [INDEX]
         final bool targetValue = !isAllSelected;
         final notifier = ref.read(gpxSettingsProvider.notifier);
         notifier.toggle("accuracies", targetValue);
@@ -140,7 +138,11 @@ class GpxSettingsTab extends ConsumerWidget {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
-                color: isAllSelected ? AppColors.primary : Colors.grey.shade600,
+                color: isAllSelected
+                    ? AppColors.primary
+                    : Colors
+                          .grey
+                          .shade600, // Baixa visibilitat si no està actiu [INDEX]
               ),
             ),
             const SizedBox(width: 10),
@@ -157,7 +159,6 @@ class GpxSettingsTab extends ConsumerWidget {
     );
   }
 
-  // Targeta amb disseny unificat i Switch mecànic ON/OFF de fons interactiu
   Widget _buildGpxSwitchCard({
     required WidgetRef ref,
     required bool value,
@@ -185,10 +186,8 @@ class GpxSettingsTab extends ConsumerWidget {
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        onTap: () {
-          HapticFeedback.lightImpact();
-          ref.read(gpxSettingsProvider.notifier).toggle(field, !value);
-        },
+        onTap: () =>
+            ref.read(gpxSettingsProvider.notifier).toggle(field, !value),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
@@ -205,81 +204,14 @@ class GpxSettingsTab extends ConsumerWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
-
-              // 🎛️ Switcher mecànic ON/OFF clonat de les alarmes
-              IgnorePointer(
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  width: 58,
-                  height: 28,
-                  padding: const EdgeInsets.all(3),
-                  decoration: BoxDecoration(
-                    color: value
-                        ? AppColors.primary.withAlpha(40)
-                        : Colors.grey.shade200,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: value ? AppColors.primary : Colors.grey.shade300,
-                      width: 1,
-                    ),
-                  ),
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      Positioned(
-                        left: 6,
-                        child: Text(
-                          "ON",
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: value
-                                ? AppColors.primary
-                                : Colors.transparent,
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        right: 6,
-                        child: Text(
-                          "OFF",
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: !value
-                                ? Colors.grey.shade600
-                                : Colors.transparent,
-                          ),
-                        ),
-                      ),
-                      AnimatedAlign(
-                        duration: const Duration(milliseconds: 200),
-                        curve: Curves.easeInOut,
-                        alignment: value
-                            ? Alignment.centerRight
-                            : Alignment.centerLeft,
-                        child: Container(
-                          width: 22,
-                          height: 22,
-                          decoration: BoxDecoration(
-                            color: value
-                                ? AppColors.primary
-                                : Colors.grey.shade500,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withAlpha(20),
-                                blurRadius: 2,
-                                offset: const Offset(0, 1),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              Switch.adaptive(
+                value: value,
+                activeColor: AppColors.primary,
+                onChanged: (bool newValue) {
+                  ref
+                      .read(gpxSettingsProvider.notifier)
+                      .toggle(field, newValue);
+                },
               ),
             ],
           ),

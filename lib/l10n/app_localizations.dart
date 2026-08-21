@@ -335,6 +335,30 @@ abstract class AppLocalizations {
   /// **'Maximum accuracy'**
   String get gpsMaxAccuracy;
 
+  /// No description provided for @gpsRecordingMethod.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording method'**
+  String get gpsRecordingMethod;
+
+  /// No description provided for @gpsSignalQuality.
+  ///
+  /// In en, this message translates to:
+  /// **'Signal quality'**
+  String get gpsSignalQuality;
+
+  /// No description provided for @gpsDiagnosticMode.
+  ///
+  /// In en, this message translates to:
+  /// **'GPS diagnostic mode'**
+  String get gpsDiagnosticMode;
+
+  /// No description provided for @gpsDiagnosticDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Records detailed telemetry. It may increase battery consumption.'**
+  String get gpsDiagnosticDescription;
+
   /// No description provided for @gpxIncludeExtraData.
   ///
   /// In en, this message translates to:
@@ -370,6 +394,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Vertical accuracy'**
   String get gpxVerticalAccuracy;
+
+  /// No description provided for @gpxSelectAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Select all'**
+  String get gpxSelectAll;
+
+  /// No description provided for @gpxDeselectAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Deselect all'**
+  String get gpxDeselectAll;
 
   /// No description provided for @switchOn.
   ///
