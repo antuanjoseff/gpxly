@@ -186,6 +186,11 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
         final currentMode = ref.watch(elevationSelectionProvider).mode;
         final bool showRangeArea =
             currentMode == SelectionMode.range && startIdx >= 0 && endIdx >= 0;
+        // En mode selecció de tram, l'agulla central adopta el verd de l'agulla 1
+        final Color effectiveGraphNeedleColor =
+            currentMode == SelectionMode.range
+            ? widget.sliderStartNeedleColor
+            : widget.graphNeedleColor;
 
         return GestureDetector(
           behavior: HitTestBehavior.translucent,
@@ -380,7 +385,7 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
                     endIndex: endIdx,
                     distances: globalDists,
                     altitudes: globalAlts,
-                    graphNeedleColor: widget.graphNeedleColor,
+                    graphNeedleColor: effectiveGraphNeedleColor,
                     sliderStartNeedleColor: widget.sliderStartNeedleColor,
                     sliderEndNeedleColor: widget.sliderEndNeedleColor,
                     recordedWaypointGlobalDists:
@@ -424,7 +429,7 @@ class _ElevationChartWidgetState extends ConsumerState<ElevationChartWidget> {
                   top: -18,
                   child: _buildFlutterTooltip(
                     "${(globalDists[graphIdx] / 1000.0).toStringAsFixed(2)} km | ${globalAlts[graphIdx].toStringAsFixed(0)} m",
-                    widget.graphNeedleColor,
+                    effectiveGraphNeedleColor,
                   ),
                 ),
             ],

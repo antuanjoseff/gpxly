@@ -380,6 +380,9 @@ class ElevationSelectionNotifier extends Notifier<ElevationSelectionState> {
   void userCollapsedChart() {
     if (state.mapToolState != MapSelectionToolState.off) {
       state = state.copyWith(forceHideChart: true);
+    } else {
+      // Eina apagada: en amagar el gràfic, netegem també cercles i tram del mapa
+      clearSelection();
     }
   }
 
