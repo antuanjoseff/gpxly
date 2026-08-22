@@ -19,6 +19,11 @@ class AppColors {
   static const Color routeTrackColor = Color(0xFFFF9500); // Gris fosc per text
   static const Color recordingTrackColor = Color(0xFFFF0000);
 
+  // Colors de l'eina de seleccio de trams al mapa
+  static const Color mapSelectionReticleColor = pureBlack;
+  static const Color mapSelectionStartPointColor = Color(0xFF4CAF50);
+  static const Color mapSelectionEndPointColor = Color(0xFFF44336);
+
   // 🌟 NOVES VARIABLES PER ALS TRACKS 🌟
   static const Color recordedTrackColor = recordingTrackColor;
   static const Color importedTrackColor = deepGreen;

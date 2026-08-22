@@ -293,6 +293,8 @@ class ElevationSelectionNotifier extends Notifier<ElevationSelectionState> {
     state = state.copyWith(
       startTrackIndex: startIndex,
       endTrackIndex: endIndex,
+      clearStartTrack: startIndex == null,
+      clearEndTrack: endIndex == null,
       mode: SelectionMode.range,
     );
   }

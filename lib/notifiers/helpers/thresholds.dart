@@ -51,6 +51,9 @@ class TrackThresholds {
   static const int maxPersistentFiles = 10;
 
   // Velocitat estable
-  static const int minSpeedWindowSeconds = 4; // finestra temporal mínima
+  static const int sustainedSpeedWindowSeconds =
+      8; // finestra temporal de velocitat sostinguda
+  static const int minSpeedWindowSeconds =
+      sustainedSpeedWindowSeconds; // compatibilitat amb codi existent
   static const double minSpeedWindowMeters = 12.0; // finestra espacial mínima
 }

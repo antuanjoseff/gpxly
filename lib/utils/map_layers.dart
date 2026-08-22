@@ -9,6 +9,7 @@ import 'package:strack_rec/models/waypoint.dart';
 import 'package:strack_rec/notifiers/dem_bounds_notifier.dart';
 import 'package:strack_rec/notifiers/elevation_selection_provider.dart';
 import 'package:strack_rec/theme/app_colors.dart';
+import 'package:strack_rec/utils/color_extensions.dart';
 
 Timer? _waypointPulseTimer;
 double _pulseValue = 0.0;
@@ -552,9 +553,9 @@ Future<void> setChartInteractionGeometry(
       await controller.addLayer(
         "chart_interaction_source",
         "chart_start_layer",
-        const CircleLayerProperties(
+        CircleLayerProperties(
           circleRadius: 8.0,
-          circleColor: "#4CAF50",
+          circleColor: AppColors.mapSelectionStartPointColor.toMapLibreColor(),
           circleStrokeWidth: 2.5,
           circleStrokeColor: "#FFFFFF",
           circleOpacity: 1.0,
@@ -571,9 +572,9 @@ Future<void> setChartInteractionGeometry(
       await controller.addLayer(
         "chart_interaction_source",
         "chart_end_layer",
-        const CircleLayerProperties(
+        CircleLayerProperties(
           circleRadius: 8.0,
-          circleColor: "#F44336",
+          circleColor: AppColors.mapSelectionEndPointColor.toMapLibreColor(),
           circleStrokeWidth: 2.5,
           circleStrokeColor: "#FFFFFF",
           circleOpacity: 1.0,
@@ -666,7 +667,13 @@ Future<void> updateSelectedSegmentGeometry(
     // 1. Preparar les coordenades del segment de forma segura (Definitiu o elàstic)
     List<List<double>> segmentCoords = [];
 
-    if (trackCoords.isNotEmpty && sel.startTrackIndex != null) {
+    // Mentre estem triant el primer punt, no s'ha de dibuixar cap tram.
+    final bool selectingStart =
+        sel.mapToolState == MapSelectionToolState.selectingStart;
+
+    if (!selectingStart &&
+        trackCoords.isNotEmpty &&
+        sel.startTrackIndex != null) {
       final int inicio = sel.startTrackIndex!;
       final int? fin = sel.mapToolState == MapSelectionToolState.selected
           ? sel.endTrackIndex

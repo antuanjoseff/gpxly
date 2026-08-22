@@ -160,16 +160,22 @@ class RecordingNotifier extends Notifier<Track> {
       newAvgSpeedTotal = distanceKm / timeHoursTotal;
     }
 
-    if (currentSpeedKmh > newMaxSpeed &&
-        currentSpeedKmh < 130.0 &&
-        !_isStopped) {
-      newMaxSpeed = currentSpeedKmh;
-    }
-
     // Mantenim l'objecte original de hardware intacte sense alterar la seva velocitat
     final userPositionWithDistance = newPoint.copyWith(
       distanceAtPoint: calculatedDistanceAtPoint,
     );
+
+    final gpsSettings = ref.read(gpsSettingsProvider);
+    final sustainedSpeedKmh = _computeSpeedWithTimeWindow([
+      ...state.points,
+      userPositionWithDistance,
+    ], gpsSettings);
+
+    if (sustainedSpeedKmh > newMaxSpeed &&
+        sustainedSpeedKmh < 130.0 &&
+        !_isStopped) {
+      newMaxSpeed = sustainedSpeedKmh;
+    }
 
     final updatedStats = state.stats.copyWith(
       distance: newDistance,

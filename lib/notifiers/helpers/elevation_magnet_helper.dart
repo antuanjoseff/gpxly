@@ -71,9 +71,11 @@ class ElevationMagnetHelper {
       notifier.updateProvisionalEnd(nearestIndex);
 
       final liveState = ref.read(elevationSelectionProvider);
+      final bool selectingStart =
+          liveState.mapToolState == MapSelectionToolState.selectingStart;
       notifier.updateTemporaryRange(
-        startIndex: liveState.startTrackIndex,
-        endIndex: nearestIndex,
+        startIndex: selectingStart ? nearestIndex : liveState.startTrackIndex,
+        endIndex: selectingStart ? null : nearestIndex,
       );
 
       // 🟢 MODIFICACIÓ DE SEGURETAT: Li passem explícitament el selectionMode actual

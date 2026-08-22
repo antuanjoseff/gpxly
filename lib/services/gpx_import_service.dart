@@ -6,6 +6,7 @@ import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:strack_rec/models/track.dart';
 import 'package:strack_rec/models/user_position.dart';
 import 'package:strack_rec/models/waypoint.dart';
+import 'package:strack_rec/notifiers/helpers/thresholds.dart';
 import 'package:strack_rec/notifiers/imported_track_notifier.dart';
 import 'package:strack_rec/notifiers/waypoints_imported_notifier.dart';
 import 'package:strack_rec/utils/calculations.dart';
@@ -16,6 +17,35 @@ DateTime truncateSeconds(DateTime t) {
 }
 
 class GpxImportService {
+  static double _computeSustainedSpeedMsAtIndex(
+    List<UserPosition> points,
+    int endIndex,
+    int windowSeconds,
+  ) {
+    if (endIndex <= 0 || points.length < 2) return 0.0;
+
+    final UserPosition last = points[endIndex];
+    int startIndex = endIndex;
+
+    for (int i = endIndex - 1; i >= 0; i--) {
+      final int dt = last.timestamp.difference(points[i].timestamp).inSeconds;
+      startIndex = i;
+      if (dt >= windowSeconds) break;
+    }
+
+    if (startIndex == endIndex) return 0.0;
+
+    final UserPosition first = points[startIndex];
+    final double dtSeconds =
+        last.timestamp.difference(first.timestamp).inMilliseconds / 1000.0;
+    if (dtSeconds <= 0.0) return 0.0;
+
+    final double distanceMeters = last.distanceAtPoint - first.distanceAtPoint;
+    if (distanceMeters <= 0.0) return 0.0;
+
+    return distanceMeters / dtSeconds;
+  }
+
   static Future<void> importGpx(WidgetRef ref, String xmlString) async {
     final gpx = GpxReader().fromString(xmlString);
 
@@ -70,9 +100,6 @@ class GpxImportService {
 
         if (timeDeltaSeconds > 0) {
           segmentSpeed = distanceDelta / timeDeltaSeconds;
-          if (segmentSpeed > maxSpeed) {
-            maxSpeed = segmentSpeed;
-          }
         }
       }
 
@@ -94,6 +121,15 @@ class GpxImportService {
           distanceAtPoint: accumulatedDistance,
         ),
       );
+
+      final double sustainedSpeedMs = _computeSustainedSpeedMsAtIndex(
+        loadedPoints,
+        loadedPoints.length - 1,
+        TrackThresholds.sustainedSpeedWindowSeconds,
+      );
+      if (sustainedSpeedMs > maxSpeed) {
+        maxSpeed = sustainedSpeedMs;
+      }
     }
 
     if (loadedPoints.isEmpty) return;

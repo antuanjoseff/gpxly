@@ -486,6 +486,61 @@ class _MapScreenState extends ConsumerState<MapScreen>
     }
   }
 
+  Future<bool> _snapCenterToNearestTrackPointIfNeeded() async {
+    final controller = mapController;
+    if (!mounted || controller == null) return false;
+
+    final sel = ref.read(elevationSelectionProvider);
+    final bool toolActive =
+        sel.mapToolState == MapSelectionToolState.selectingStart ||
+        sel.mapToolState == MapSelectionToolState.selectingEnd ||
+        sel.mapToolState == MapSelectionToolState.selected;
+    if (!toolActive) return false;
+
+    final imported = ref.read(importedTrackProvider);
+    final real = ref.read(trackRecordingProvider);
+    final coords = (real.recordingState == RecordingState.recording)
+        ? real.coordinates
+        : imported?.coordinates ?? [];
+
+    if (coords.isEmpty) return false;
+
+    final LatLng currentTarget =
+        controller.cameraPosition?.target ??
+        LatLng(ref.read(mapCenterLatProvider), ref.read(mapCenterLonProvider));
+
+    int nearestIndex = 0;
+    double minDist = double.infinity;
+    final double cosLat = cos(currentTarget.latitude * pi / 180.0);
+
+    for (int i = 0; i < coords.length; i++) {
+      final dLat = coords[i][1] - currentTarget.latitude;
+      final dLon = (coords[i][0] - currentTarget.longitude) * cosLat;
+      final dist = dLat * dLat + dLon * dLon;
+      if (dist < minDist) {
+        minDist = dist;
+        nearestIndex = i;
+      }
+    }
+
+    final LatLng snappedTarget = LatLng(
+      coords[nearestIndex][1],
+      coords[nearestIndex][0],
+    );
+
+    final double snappedDLat = snappedTarget.latitude - currentTarget.latitude;
+    final double snappedDLon =
+        (snappedTarget.longitude - currentTarget.longitude) * cosLat;
+    final double deltaSq =
+        snappedDLat * snappedDLat + snappedDLon * snappedDLon;
+
+    // Evitem micro-animacions quan el mapa ja està pràcticament clavat al snap.
+    if (deltaSq <= 1e-10) return false;
+
+    await controller.animateCamera(CameraUpdate.newLatLng(snappedTarget));
+    return true;
+  }
+
   @override
   Widget build(BuildContext context) {
     final double systemBottomPadding = MediaQuery.of(context).padding.bottom;
@@ -1083,7 +1138,13 @@ class _MapScreenState extends ConsumerState<MapScreen>
                       _mapStopTimer?.cancel();
                       _mapStopTimer = Timer(
                         const Duration(milliseconds: 180),
-                        () {
+                        () async {
+                          if (!mounted) return;
+
+                          final bool recentered =
+                              await _snapCenterToNearestTrackPointIfNeeded();
+                          if (!mounted || recentered) return;
+
                           if (mounted) {
                             ref
                                 .read(elevationSelectionProvider.notifier)
@@ -1177,9 +1238,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
                               MapSelectionToolState.selectingStart ||
                           sel.mapToolState == MapSelectionToolState.selected;
 
-                      final Color reticleColor = isStartOrSelected
-                          ? const Color(0xFF4CAF50) // 🟢 Verd per a l'Inici
-                          : const Color(0xFFF44336); // 🔴 Vermell per al Final
+                      final Color actionColor = isStartOrSelected
+                          ? AppColors.mapSelectionStartPointColor
+                          : AppColors.mapSelectionEndPointColor;
 
                       return Positioned.fill(
                         child: Stack(
@@ -1189,7 +1250,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                               ignoring: true,
                               child: Positioned.fill(
                                 child: MapFullScreenReticle(
-                                  color: reticleColor,
+                                  color: AppColors.mapSelectionReticleColor,
                                 ),
                               ),
                             ),
@@ -1204,7 +1265,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                                     elevation: 6,
                                     shadowColor: Colors.black38,
                                     borderRadius: BorderRadius.circular(20),
-                                    color: reticleColor,
+                                    color: actionColor,
                                     child: InkWell(
                                       borderRadius: BorderRadius.circular(20),
                                       onTap: () {
@@ -1473,10 +1534,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
         break;
 
       case "toggle_pause":
-        final currentNavState = ref.read(navigationProvider);
-        ref.read(navigationProvider.notifier).state = currentNavState.copyWith(
-          isPaused: !currentNavState.isPaused,
-        );
+        ref.read(navigationProvider.notifier).togglePause();
         break;
 
       case "stop_follow":
