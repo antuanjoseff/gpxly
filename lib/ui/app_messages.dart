@@ -4,6 +4,7 @@ import 'package:strack_rec/l10n/app_localizations.dart';
 import 'package:strack_rec/models/track.dart';
 import 'package:strack_rec/models/waypoint.dart';
 import 'package:strack_rec/notifiers/navigation_notifier.dart';
+import 'package:strack_rec/notifiers/waypoints_imported_notifier.dart';
 import 'package:strack_rec/notifiers/waypoints_recorded_notifier.dart';
 import 'package:strack_rec/theme/app_colors.dart';
 
@@ -289,6 +290,7 @@ class AppMessages {
     }
 
     final bool isDeletable = wp.id.startsWith('rec_');
+    final nameKey = GlobalKey<_EditableWaypointNameState>();
 
     return _showBaseDialog(
       context: context,
@@ -299,7 +301,12 @@ class AppMessages {
       confirmLabel:
           null, // 🎯 ANUL·LEM el botó automàtic per defecte que es trencava
       extraContent: [
-        _buildDetailItem(t.waypointName, wp.name, Icons.label_outline),
+        _EditableWaypointName(
+          key: nameKey,
+          wp: wp,
+          ref: ref,
+          label: t.waypointName,
+        ),
         _buildDetailItem(
           t.waypointAltitude,
           "${wp.ele?.toStringAsFixed(0) ?? '---'} m",
@@ -381,7 +388,10 @@ class AppMessages {
               // 2. Botó d'Acceptar (A la dreta de tot)
               ElevatedButton(
                 style: _buttonStyle(AppColors.skyBlue),
-                onPressed: () => Navigator.pop(context, true),
+                onPressed: () {
+                  nameKey.currentState?.saveIfEditing();
+                  Navigator.pop(context, true);
+                },
                 child: Text(AppLocalizations.of(context)!.ok),
               ),
             ],
@@ -883,5 +893,135 @@ class AppMessages {
     );
 
     return selectedAction;
+  }
+}
+
+/// Nom del waypoint amb edició inline: mostra el text i, en tocar l'icona de
+/// llapis, el converteix en un camp editable que desa el canvi al notifier corresponent.
+class _EditableWaypointName extends StatefulWidget {
+  final Waypoint wp;
+  final WidgetRef ref;
+  final String label;
+
+  const _EditableWaypointName({
+    super.key,
+    required this.wp,
+    required this.ref,
+    required this.label,
+  });
+
+  @override
+  State<_EditableWaypointName> createState() => _EditableWaypointNameState();
+}
+
+class _EditableWaypointNameState extends State<_EditableWaypointName> {
+  bool _isEditing = false;
+  late String _displayName = widget.wp.name;
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.wp.name,
+  );
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  /// Desa el nom només si l'usuari estava editant (cridat des del botó OK del diàleg).
+  void saveIfEditing() {
+    if (_isEditing) _save();
+  }
+
+  void _save() {
+    final newName = _controller.text.trim();
+    if (newName.isNotEmpty && newName != widget.wp.name) {
+      if (widget.wp.id.startsWith('rec_')) {
+        widget.ref
+            .read(waypointsProvider.notifier)
+            .rename(widget.wp.id, newName);
+      } else {
+        widget.ref
+            .read(importedWaypointsProvider.notifier)
+            .rename(widget.wp.id, newName);
+      }
+    }
+    setState(() {
+      _isEditing = false;
+      _displayName = newName.isNotEmpty ? newName : widget.wp.name;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.label_outline,
+            size: 20,
+            color: AppColors.skyBlue.withAlpha(180),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.label.toUpperCase(),
+                  style: TextStyle(
+                    color: Colors.white.withAlpha(100),
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.1,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                _isEditing
+                    ? TextField(
+                        controller: _controller,
+                        autofocus: true,
+                        onSubmitted: (_) => _save(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        decoration: const InputDecoration(
+                          isDense: true,
+                          contentPadding: EdgeInsets.symmetric(vertical: 4),
+                          border: UnderlineInputBorder(),
+                        ),
+                      )
+                    : Text(
+                        _displayName,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        softWrap: true,
+                      ),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: Icon(
+              _isEditing ? Icons.check : Icons.edit,
+              size: 18,
+              color: Colors.white.withAlpha(180),
+            ),
+            onPressed: () {
+              if (_isEditing) {
+                _save();
+              } else {
+                setState(() => _isEditing = true);
+              }
+            },
+          ),
+        ],
+      ),
+    );
   }
 }

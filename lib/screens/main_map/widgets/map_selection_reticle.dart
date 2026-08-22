@@ -1,6 +1,65 @@
 // lib/screens/main_map/widgets/map_selection_reticle.dart
 import 'package:flutter/material.dart';
 
+/// Creu que travessa tota la pantalla (vertical i horitzontal) amb un quadrat
+/// buit de 5x5 px al punt d'intersecció central. S'usa com a mira real sobre el mapa.
+class MapFullScreenReticle extends StatelessWidget {
+  final Color color;
+
+  const MapFullScreenReticle({super.key, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return CustomPaint(
+          size: Size(constraints.maxWidth, constraints.maxHeight),
+          painter: _FullScreenReticlePainter(color: color),
+        );
+      },
+    );
+  }
+}
+
+class _FullScreenReticlePainter extends CustomPainter {
+  final Color color;
+  static const double squareSize = 5.0;
+
+  _FullScreenReticlePainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final double cx = size.width / 2;
+    final double cy = size.height / 2;
+
+    final linePaint = Paint()
+      ..color = color
+      ..strokeWidth = 1.0;
+
+    canvas.drawLine(Offset(cx, 0), Offset(cx, size.height), linePaint);
+    canvas.drawLine(Offset(0, cy), Offset(size.width, cy), linePaint);
+
+    final squarePaint = Paint()
+      ..color = color
+      ..strokeWidth = 1.0
+      ..style = PaintingStyle.stroke;
+
+    canvas.drawRect(
+      Rect.fromCenter(
+        center: Offset(cx, cy),
+        width: squareSize,
+        height: squareSize,
+      ),
+      squarePaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _FullScreenReticlePainter oldDelegate) {
+    return oldDelegate.color != color;
+  }
+}
+
 class MapSelectionReticle extends StatelessWidget {
   final Color color;
 

@@ -37,6 +37,16 @@ class RecordedWaypointsNotifier extends Notifier<List<Waypoint>> {
   }
 
   // -----------------------------
+  // RENAME
+  // -----------------------------
+  void rename(String id, String newName) {
+    state = state
+        .map((w) => w.id == id ? w.copyWith(name: newName) : w)
+        .toList();
+    _saveToPrefs();
+  }
+
+  // -----------------------------
   // CLEAR
   // -----------------------------
   void clear() {

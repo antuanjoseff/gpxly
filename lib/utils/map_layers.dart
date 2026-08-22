@@ -29,11 +29,11 @@ void stopWaypointPulse(MapLibreMapController controller) {
     // 🟢 RESTAURACIÓ BLINDADA: Retornem el radi (8.0) i l'opacitat completa (1.0) natius
     controller.setLayerProperties(
       "waypoints_recorded_layer",
-      const CircleLayerProperties(circleRadius: 8.0, circleOpacity: 1.0),
+      const CircleLayerProperties(circleRadius: 11.0, circleOpacity: 1.0),
     );
     controller.setLayerProperties(
       "waypoints_imported_layer",
-      const CircleLayerProperties(circleRadius: 8.0, circleOpacity: 1.0),
+      const CircleLayerProperties(circleRadius: 11.0, circleOpacity: 1.0),
     );
   } catch (e) {
     debugPrint("⚠️ No s'ha pogut restaurar el radi base al aturar el pols: $e");
@@ -45,7 +45,7 @@ void stopWaypointPulse(MapLibreMapController controller) {
 
 void _updateWaypointPulse(MapLibreMapController controller) {
   try {
-    const double baseRadius = 8.0;
+    const double baseRadius = 11.0;
 
     // 🚀 MILLORA 1: Augmentem l'amplitud del pols (abans arribava a 10.0, ara creixerà fins a 14.0)
     final double radius = baseRadius + _pulseValue;
@@ -307,7 +307,7 @@ Future<void> setupWaypointLayers(MapLibreMapController controller) async {
       'waypoints_recorded_source',
       'waypoints_recorded_layer',
       const CircleLayerProperties(
-        circleRadius: 8.0,
+        circleRadius: 11.0,
         circleColor: "#4CAF50",
         circleStrokeWidth: 2.0,
         circleStrokeColor: "#FFFFFF",
@@ -321,7 +321,7 @@ Future<void> setupWaypointLayers(MapLibreMapController controller) async {
       'waypoints_imported_source',
       'waypoints_imported_layer',
       const CircleLayerProperties(
-        circleRadius: 8.0,
+        circleRadius: 11.0,
         circleColor: "#00A8E8",
         circleStrokeWidth: 2.0,
         circleStrokeColor: "#FFFFFF",

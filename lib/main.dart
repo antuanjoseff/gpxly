@@ -32,7 +32,7 @@ class GPXlyApp extends StatelessWidget {
           Locale('en'),
           Locale('ca'),
           Locale('es'),
-          Locale('fr'), // Francès 👈 NOU
+          Locale('fr'),
           Locale('it'),
         ],
         theme: appTheme,

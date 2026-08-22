@@ -5,7 +5,7 @@ import 'package:strack_rec/notifiers/nearest_track_point_notifier.dart';
 
 enum SelectionMode { none, single, range }
 
-enum MapSelectionMode { none, reticle, waypoint }
+enum MapSelectionMode { none, reticle }
 
 enum MapSelectionToolState { off, selectingStart, selectingEnd, selected }
 
@@ -88,18 +88,10 @@ class ElevationSelectionState {
 }
 
 class ElevationSelectionNotifier extends Notifier<ElevationSelectionState> {
-  int? _prevWpIndex;
-  int? _lastWpIndex;
-  int? _darrerWpClicat;
-  bool _isJustSelectedFromMap = false;
-
   @override
   ElevationSelectionState build() => ElevationSelectionState.initial();
 
   void startSelectionWithLongPress(int startIdx, int endIdx) {
-    _prevWpIndex = startIdx;
-    _lastWpIndex = endIdx;
-    _darrerWpClicat = endIdx;
     state = ElevationSelectionState(
       mode: SelectionMode.range,
       startTrackIndex: startIdx,
@@ -109,9 +101,6 @@ class ElevationSelectionNotifier extends Notifier<ElevationSelectionState> {
   }
 
   void setManualRange(int start, int end) {
-    _prevWpIndex = start;
-    _lastWpIndex = end;
-    _darrerWpClicat = null;
     state = ElevationSelectionState(
       mode: SelectionMode.range,
       startTrackIndex: start,
@@ -121,19 +110,11 @@ class ElevationSelectionNotifier extends Notifier<ElevationSelectionState> {
   }
 
   void clearSelection() {
-    _prevWpIndex = null;
-    _lastWpIndex = null;
-    _darrerWpClicat = null;
-    _isJustSelectedFromMap = false;
     state = ElevationSelectionState.initial();
   }
 
   // 1. Modifica la funció setSinglePoint per poder passar-li el mapToolState
   void setSinglePoint(int index, {MapSelectionToolState? toolState}) {
-    _prevWpIndex = null;
-    _lastWpIndex = null;
-    _darrerWpClicat = null;
-
     state = ElevationSelectionState(
       mode: SelectionMode.single,
       singlePointIndex: index,
@@ -145,106 +126,12 @@ class ElevationSelectionNotifier extends Notifier<ElevationSelectionState> {
     );
   }
 
-  // 2. Substitueix completament el mètode toggleWaypoint
-  void toggleWaypoint(int idx, Set<int> allWpIndexes) {
-    if (state.selectionMode != MapSelectionMode.waypoint) {
-      return;
-    }
-
-    // 🚀 MODIFICACIÓ CLAU (Primer Waypoint Clicat):
-    // Si encara no hi ha un tram (mode no és range), fixem el primer punt com a singlePointIndex,
-    // però mantenim l'eina encesa avançant l'estat cap a 'selectingEnd' (esperant el segon punt).
-    if (state.mode != SelectionMode.range) {
-      setSinglePoint(idx, toolState: MapSelectionToolState.selectingEnd);
-      return;
-    }
-
-    // A partir d'aquí és el segon clic (ja estem avaluant un rang de dades):
-    final start =
-        state.startTrackIndex ??
-        state.singlePointIndex; // Considerem el primer clic com a inici
-    final end = state.endTrackIndex;
-
-    final bool startIsOnWaypoint =
-        start != null && allWpIndexes.contains(start);
-    final bool endIsOnWaypoint = end != null && allWpIndexes.contains(end);
-
-    int? nouPrev;
-    int? nouLast;
-
-    if (startIsOnWaypoint && endIsOnWaypoint) {
-      if (_darrerWpClicat == start) {
-        nouPrev = start;
-        nouLast = idx;
-      } else if (_darrerWpClicat == end) {
-        nouPrev = end;
-        nouLast = idx;
-      } else {
-        final int distToStart = (start - idx).abs();
-        final int distToEnd = (end - idx).abs();
-        nouPrev = (distToStart > distToEnd) ? start : end;
-        nouLast = idx;
-      }
-    } else if (startIsOnWaypoint || endIsOnWaypoint) {
-      if (startIsOnWaypoint) {
-        nouPrev = start;
-        nouLast = idx;
-      } else {
-        nouPrev = end;
-        nouLast = idx;
-      }
-    } else {
-      if (start != null && end != null) {
-        final int distToStart = (start - idx).abs();
-        final int distToEnd = (end - idx).abs();
-
-        if (distToStart <= distToEnd) {
-          nouPrev = end;
-          nouLast = idx;
-        } else {
-          nouPrev = start;
-          nouLast = idx;
-        }
-      } else {
-        nouPrev = start ?? idx;
-        nouLast = idx;
-      }
-    }
-
-    _prevWpIndex = nouPrev;
-    _lastWpIndex = nouLast;
-    _darrerWpClicat = idx;
-
-    if (_prevWpIndex != null && _lastWpIndex != null) {
-      final int menor = _prevWpIndex! <= _lastWpIndex!
-          ? _prevWpIndex!
-          : _lastWpIndex!;
-      final int major = _prevWpIndex! > _lastWpIndex!
-          ? _prevWpIndex!
-          : _lastWpIndex!;
-
-      state = ElevationSelectionState(
-        mode: SelectionMode.range,
-        startTrackIndex: menor,
-        endTrackIndex: major,
-        singlePointIndex: null,
-        selectionMode: MapSelectionMode.waypoint,
-        // 🚀 Segon Waypoint Clicat: El tram s'ha tancat del tot, passem a 'selected'
-        // i això activarà l'Oient 2 de la UI per aixecar el gràfic.
-        mapToolState: MapSelectionToolState.selected,
-      );
-    }
-  }
-
   void setPointFromMapSelectionTool(int indexMesProper) {
     if (state.mode == SelectionMode.range) {
       final int? inici = state.startTrackIndex;
       final int? finalTram = state.endTrackIndex;
 
       if (inici != null && finalTram != null) {
-        _prevWpIndex = null;
-        _lastWpIndex = null;
-        _darrerWpClicat = null;
         state = state.copyWith(
           mode: SelectionMode.single,
           singlePointIndex: indexMesProper,
@@ -254,8 +141,6 @@ class ElevationSelectionNotifier extends Notifier<ElevationSelectionState> {
       } else if (inici != null && finalTram == null) {
         final int menor = indexMesProper <= inici ? indexMesProper : inici;
         final int major = indexMesProper > inici ? indexMesProper : inici;
-        _prevWpIndex = menor;
-        _lastWpIndex = major;
         state = state.copyWith(
           mode: SelectionMode.range,
           startTrackIndex: menor,
@@ -272,8 +157,6 @@ class ElevationSelectionNotifier extends Notifier<ElevationSelectionState> {
             ? indexMesProper
             : puntUnic;
         final int major = indexMesProper > puntUnic ? indexMesProper : puntUnic;
-        _prevWpIndex = menor;
-        _lastWpIndex = major;
         state = state.copyWith(
           mode: SelectionMode.range,
           startTrackIndex: menor,
@@ -287,7 +170,6 @@ class ElevationSelectionNotifier extends Notifier<ElevationSelectionState> {
   }
 
   void activateMapSelectionTool() {
-    _isJustSelectedFromMap = false;
     final int? immediateNearest = ref.read(nearestTrackPointProvider);
     state = state.copyWith(
       mode: SelectionMode.single,
@@ -300,12 +182,10 @@ class ElevationSelectionNotifier extends Notifier<ElevationSelectionState> {
   }
 
   void deactivateMapSelectionTool() {
-    _isJustSelectedFromMap = false;
     state = ElevationSelectionState.initial();
   }
 
   void fixStartFromMap(int index) {
-    _isJustSelectedFromMap = false;
     state = state.copyWith(
       startTrackIndex: index,
       endTrackIndex: null,
@@ -322,7 +202,6 @@ class ElevationSelectionNotifier extends Notifier<ElevationSelectionState> {
     if (start == null) return;
     final menor = index < start ? index : start;
     final major = index > start ? index : start;
-    _isJustSelectedFromMap = true;
 
     state = state.copyWith(
       startTrackIndex: menor,
@@ -342,7 +221,6 @@ class ElevationSelectionNotifier extends Notifier<ElevationSelectionState> {
   }
 
   void iniciarNouTramDesDeSelected(int indexNouInici) {
-    _isJustSelectedFromMap = false;
     state = state.copyWith(
       mode: SelectionMode.range,
       startTrackIndex: indexNouInici,
@@ -356,7 +234,6 @@ class ElevationSelectionNotifier extends Notifier<ElevationSelectionState> {
   }
 
   void resetMapSelection() {
-    _isJustSelectedFromMap = false;
     final int? currentNearest = ref.read(nearestTrackPointProvider);
     state = state.copyWith(
       mapToolState: MapSelectionToolState.selectingStart,
@@ -422,10 +299,6 @@ class ElevationSelectionNotifier extends Notifier<ElevationSelectionState> {
 
   // 🟢 FIX: Atòmiques nets que assignen correctament el mode inicial sense trencar estats residuals
   void activateReticleMode() {
-    _prevWpIndex = null;
-    _lastWpIndex = null;
-    _darrerWpClicat = null;
-    _isJustSelectedFromMap = false;
     state = const ElevationSelectionState(
       mode: SelectionMode.single,
       mapToolState: MapSelectionToolState.selectingStart,
@@ -433,21 +306,6 @@ class ElevationSelectionNotifier extends Notifier<ElevationSelectionState> {
       forceHideChart: true,
       showCenterButton: false,
       selectionMode: MapSelectionMode.reticle,
-    );
-  }
-
-  void activateWaypointMode() {
-    _prevWpIndex = null;
-    _lastWpIndex = null;
-    _darrerWpClicat = null;
-    _isJustSelectedFromMap = false;
-    state = const ElevationSelectionState(
-      mode: SelectionMode.single,
-      mapToolState: MapSelectionToolState.selectingStart,
-      source: SelectionSource.chart,
-      forceHideChart: false,
-      showCenterButton: false,
-      selectionMode: MapSelectionMode.waypoint,
     );
   }
 }

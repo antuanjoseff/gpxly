@@ -153,7 +153,7 @@ class EmbeddedElevationProfile extends ConsumerWidget {
             futureAlts: futureAlts,
             realColor: Colors.red,
             importedColor: Colors.orange,
-            graphNeedleColor: Colors.blue,
+            graphNeedleColor: Colors.green,
             sliderStartNeedleColor: Colors.green,
             sliderEndNeedleColor: Colors.red,
             recordedWaypointGlobalDists: recordedWaypointDists,

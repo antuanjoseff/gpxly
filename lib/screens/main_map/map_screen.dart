@@ -58,8 +58,6 @@ import 'package:strack_rec/ui/app_messages.dart';
 import 'package:strack_rec/utils/color_extensions.dart';
 import 'package:strack_rec/utils/map_animator.dart';
 import 'package:strack_rec/utils/map_layers.dart';
-import 'package:strack_rec/widgets/reticle_mode_selector.dart';
-import 'package:strack_rec/widgets/waypoint_mode_selector.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:strack_rec/utils/distance_utils.dart';
 
@@ -474,27 +472,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final imported = ref.read(importedWaypointsProvider);
     final waypoint = [...recorded, ...imported].firstWhere((w) => w.id == wpId);
 
-    final int wpTrackIndex = waypoint.trackIndex;
-
-    // 🔍 LLEGIM L'ESTAT ACTUAL DE LA SELECCIÓ
-    final currentSelection = ref.read(elevationSelectionProvider);
-
-    // 🛡️ REGLA DE NEGOCI: Si l'eina de les tisores està activa (en qualsevol estat), mana la selecció de tram
-    if (currentSelection.mapToolState != MapSelectionToolState.off) {
-      final Set<int> allWpIndexes = [
-        ...recorded,
-        ...imported,
-      ].map((w) => w.trackIndex).toSet();
-
-      // Utilitzem la lògica unificada dels 2 últims clics que hem preparat al teu notifier
-      ref
-          .read(elevationSelectionProvider.notifier)
-          .toggleWaypoint(wpTrackIndex, allWpIndexes);
-
-      return; // 🛑 Sortim immediatament per evitar obrir els detalls i protegir el botó verd
-    }
-
-    // 🔵 ESCENARI PER DEFECTE (Tisores apagades): Es mostren les propietats del waypoint de forma normal
     Duration? elapsed;
     final track = wpId.startsWith('rec_')
         ? ref.read(trackRecordingProvider)
@@ -523,14 +500,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
     // OIENT 1 RECEPTOR DE SELECCIÓ DE TRAM
     ref.listen(elevationSelectionProvider, (previous, next) async {
       if (!styleInitialized || mapController == null || !mounted) return;
-
-      // 🔵 Mode waypoint → activar pulse
-      if (next.selectionMode == MapSelectionMode.waypoint) {
-        startWaypointPulse(mapController!);
-      } else {
-        // 🔴 Mode reticle o none → desactivar pulse
-        stopWaypointPulse(mapController!);
-      }
 
       // --- la resta del teu codi de l’oient 1 ---
       final geom = MapGeometryHelper(ref: ref, mapController: mapController);
@@ -911,13 +880,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
             lineJoin: "round",
           ),
         );
-
-        if (!mounted) return; // Seguretat abans de la segona modificació
-
-        mapController?.setLayerProperties(
-          "waypoints_recorded_layer",
-          CircleLayerProperties(circleColor: next.color.toMapLibreColor()),
-        );
       } on PlatformException catch (e) {
         print(
           "MapLibre: Evitat error al canviar els ajustos de capa (pantalla tancada): ${e.message}",
@@ -942,15 +904,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
             lineCap: "round",
             lineJoin: "round",
           ),
-        );
-
-        if (!mounted) {
-          return; // Re-comprovació de seguretat abans de la segona capa
-        }
-
-        mapController?.setLayerProperties(
-          "waypoints_imported_layer",
-          CircleLayerProperties(circleColor: next.color.toMapLibreColor()),
         );
       } on PlatformException catch (e) {
         print(
@@ -1234,8 +1187,10 @@ class _MapScreenState extends ConsumerState<MapScreen>
                             // 1. EL VISOR CENTRAL PERSONALITZAT (S'immunitza contra el moviment del mapa)
                             IgnorePointer(
                               ignoring: true,
-                              child: Center(
-                                child: MapSelectionReticle(color: reticleColor),
+                              child: Positioned.fill(
+                                child: MapFullScreenReticle(
+                                  color: reticleColor,
+                                ),
                               ),
                             ),
 

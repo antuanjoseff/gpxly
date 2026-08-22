@@ -41,7 +41,7 @@ class _ElevationProfileScreenState
     });
     ref
         .read(elevationSelectionProvider.notifier)
-        .toggleWaypoint(wp.trackIndex, allWpIndexes);
+        .setPointFromMapSelectionTool(wp.trackIndex);
   }
 
   @override

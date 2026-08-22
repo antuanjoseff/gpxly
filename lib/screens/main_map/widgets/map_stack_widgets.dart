@@ -8,14 +8,10 @@ import 'package:strack_rec/notifiers/helpers/elevation_magnet_helper.dart';
 import 'package:strack_rec/notifiers/imported_track_notifier.dart';
 import 'package:strack_rec/notifiers/recording_notifier.dart';
 import 'package:strack_rec/notifiers/segment_stats_notifier.dart';
-import 'package:strack_rec/notifiers/waypoints_imported_notifier.dart';
-import 'package:strack_rec/notifiers/waypoints_recorded_notifier.dart';
 import 'package:strack_rec/screens/elevations/widgets/segment_stats_widget.dart';
 import 'package:strack_rec/screens/main_map/widgets/map_bottom_controls/elevation_panel.dart';
 import 'package:strack_rec/theme/app_colors.dart';
 import 'package:strack_rec/theme/app_dimensions.dart';
-import 'package:strack_rec/widgets/reticle_mode_selector.dart';
-import 'package:strack_rec/widgets/waypoint_mode_selector.dart';
 
 /// 🚀 WIDGET MODULAR 1: EL CONTROL DE GRÀFICS I ESTADÍSTIQUES FIXES
 class MapElevationHud extends ConsumerWidget {
@@ -143,21 +139,6 @@ class MapScissorsButtons extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final recordedWps = ref.watch(waypointsProvider);
-    final importedWps = ref.watch(importedWaypointsProvider);
-
-    final recTrack = ref.read(trackRecordingProvider);
-    final bool isRecording =
-        recTrack.recordingState == RecordingState.recording;
-
-    // Si estem gravant → waypoints del track gravat
-    // Si NO estem gravant → waypoints del track importat
-    final int activeWaypointCount = isRecording
-        ? recordedWps.length
-        : importedWps.length;
-
-    final bool hasEnoughWaypoints = activeWaypointCount >= 2;
-
     final sel = ref.watch(elevationSelectionProvider);
     final importedTrack = ref.watch(importedTrackProvider);
     final recordingTrack = ref.watch(trackRecordingProvider);
@@ -181,15 +162,10 @@ class MapScissorsButtons extends ConsumerWidget {
     final bool hasImportedTrack = importedTrack != null;
     final bool hasRecordingTrack = recordingTrack.coordinates.isNotEmpty;
 
-    // 🔍 1. Mirem si l'eina de les tisores està oberta en qualsevol estat
+    // 🔍 Mirem si l'eina de les tisores està oberta en qualsevol estat
     final bool isToolActive = sel.mapToolState != MapSelectionToolState.off;
 
-    // 🚀 2. CONDICIÓ DE SUBBOTONS: Els botons auxiliars només són visibles a l'inici (selectingStart).
-    // S'amagaran de forma automàtica en triar un dels dos modes (selectingEnd o selected).
-    final bool showAuxiliaryButtons =
-        sel.mapToolState == MapSelectionToolState.selectingStart;
-
-    // 🟢 3. SINCRONIA D'ALÇADA LLIURE: Traiem qualsevol bloqueig fix de fons.
+    // 🟢 SINCRONIA D'ALÇADA LLIURE: Traiem qualsevol bloqueig fix de fons.
     // Tot el grup horitzontal de botons es mourà de manera coordinada segons com estigui el gràfic realment a la pantalla.
     final bool isChartVisibleReal =
         !isChartCollapsed && (hasImportedTrack || hasRecordingTrack);
@@ -237,45 +213,7 @@ class MapScissorsButtons extends ConsumerWidget {
         crossAxisAlignment:
             CrossAxisAlignment.center, // Alineació central horitzontal perfecta
         children: [
-          // 🟢 Si l'eina de les tisores està a l'inici, s'injecten els submodes a l'ESQUERRA
-          if (showAuxiliaryButtons) ...[
-            ReticleModeSelector(
-              isActive: sel.selectionMode == MapSelectionMode.reticle,
-              onPressed: () {
-                ref
-                    .read(elevationSelectionProvider.notifier)
-                    .activateReticleMode();
-                if (mapController != null) {
-                  ElevationMagnetHelper.recalcularIActualitzar(
-                    ref: ref,
-                    mapController: mapController!,
-                  );
-                }
-              },
-            ),
-            const SizedBox(width: 10), // Espaiat constant simètric
-            if (hasEnoughWaypoints)
-              WaypointModeSelector(
-                isActive: sel.selectionMode == MapSelectionMode.waypoint,
-                onPressed: () {
-                  ref
-                      .read(elevationSelectionProvider.notifier)
-                      .activateWaypointMode();
-                  if (mapController != null) {
-                    ElevationMagnetHelper.recalcularIActualitzar(
-                      ref: ref,
-                      mapController: mapController!,
-                    );
-                  }
-                },
-              ),
-
-            const SizedBox(
-              width: 14,
-            ), // Marge d'enllaç constant amb el botó mestre
-          ],
-
-          // 🔵 BOTÓ PRINCIPAL MESTRE (TISORES / CANCEL·LAR / RESET)
+          //  BOTÓ PRINCIPAL MESTRE (TISORES / CANCEL·LAR / RESET)
           SizedBox(
             width: 56,
             height: 56,
@@ -301,16 +239,9 @@ class MapScissorsButtons extends ConsumerWidget {
                         .deactivateMapSelectionTool();
                   }
                 } else {
-                  // Restauració de la lògica original d'activació de STrack Rec
-                  if (sel.selectionMode == MapSelectionMode.waypoint) {
-                    ref
-                        .read(elevationSelectionProvider.notifier)
-                        .activateWaypointMode();
-                  } else {
-                    ref
-                        .read(elevationSelectionProvider.notifier)
-                        .activateReticleMode();
-                  }
+                  ref
+                      .read(elevationSelectionProvider.notifier)
+                      .activateReticleMode();
 
                   if (mapController != null) {
                     ElevationMagnetHelper.recalcularIActualitzar(
