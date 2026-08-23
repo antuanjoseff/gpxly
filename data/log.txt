@@ -1,0 +1,2904 @@
+[16:08:53] [SESSION] Nova gravacio iniciada
+[16:08:55] 🚀 PROVIDER SORTIDA -> Valor publicat: 79.0m | isHgtFixed: true
+
+29.9m | Acc: 3.3m
+[16:08:57] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.3m)
+[16:08:57] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.7m)
+[16:08:57] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.2m)
+[16:08:58] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.0m)
+[16:09:02] 🚀 PROVIDER SORTIDA -> Valor publicat: 79.1m | isHgtFixed: true
+)
+9.9m | Acc: 3.5m
+[16:09:06] 🚀 PROVIDER SORTIDA -> Valor publicat: 79.3m | isHgtFixed: true
+
+29.8m | Acc: 3.5m
+[16:09:10] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+30.0m | Acc: 3.2m
+[16:09:13] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.1m)
+[16:09:15] 🚀 PROVIDER SORTIDA -> Valor publicat: 79.6m | isHgtFixed: true
+)
+0.0m | Acc: 3.0m
+[16:09:18] 🚀 PROVIDER SORTIDA -> Valor publicat: 80.0m | isHgtFixed: true
+
+29.8m | Acc: 3.1m
+[16:09:21] 🚀 PROVIDER SORTIDA -> Valor publicat: 80.4m | isHgtFixed: true
+
+29.8m | Acc: 3.2m
+[16:09:30] 🚀 PROVIDER SORTIDA -> Valor publicat: 80.5m | isHgtFixed: true
+
+29.8m | Acc: 3.3m
+[16:09:37] 🚀 PROVIDER SORTIDA -> Valor publicat: 80.7m | isHgtFixed: true
+
+29.8m | Acc: 3.0m
+[16:09:41] 🚀 PROVIDER SORTIDA -> Valor publicat: 80.8m | isHgtFixed: true
+
+29.8m | Acc: 3.1m
+[16:09:45] 🚀 PROVIDER SORTIDA -> Valor publicat: 80.9m | isHgtFixed: true
+
+29.9m | Acc: 3.1m
+[16:09:48] 🚀 PROVIDER SORTIDA -> Valor publicat: 81.0m | isHgtFixed: true
+
+.0m | Acc: 3.1m
+[16:09:53] 🚀 PROVIDER SORTIDA -> Valor publicat: 80.9m | isHgtFixed: true
+
+30.0m | Acc: 3.0m
+[16:09:57] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 3.0m)
+[16:09:58] 🚀 PROVIDER SORTIDA -> Valor publicat: 80.9m | isHgtFixed: true
+)
+9.6m | Acc: 3.1m
+[16:09:58] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 4.2m)
+[16:10:01] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.4m)
+[16:10:02] 🚀 PROVIDER SORTIDA -> Valor publicat: 80.9m | isHgtFixed: true
+)
+9.6m | Acc: 3.0m
+[16:10:07] 🚀 PROVIDER SORTIDA -> Valor publicat: 80.9m | isHgtFixed: true
+
+29.6m | Acc: 3.1m
+[16:10:11] 🚀 PROVIDER SORTIDA -> Valor publicat: 80.9m | isHgtFixed: true
+
+9.5m | Acc: 3.1m
+[16:10:15] 🚀 PROVIDER SORTIDA -> Valor publicat: 80.9m | isHgtFixed: true
+
+29.2m | Acc: 3.0m
+[16:10:19] 🚀 PROVIDER SORTIDA -> Valor publicat: 80.9m | isHgtFixed: true
+
+29.2m | Acc: 3.0m
+[16:10:22] 🚀 PROVIDER SORTIDA -> Valor publicat: 80.8m | isHgtFixed: true
+
+29.2m | Acc: 3.0m
+[16:10:26] 🚀 PROVIDER SORTIDA -> Valor publicat: 81.0m | isHgtFixed: true
+
+29.2m | Acc: 3.1m
+[16:10:29] 🚀 PROVIDER SORTIDA -> Valor publicat: 81.3m | isHgtFixed: true
+
+9.2m | Acc: 3.2m
+[16:10:34] 🚀 PROVIDER SORTIDA -> Valor publicat: 81.6m | isHgtFixed: true
+
+29.2m | Acc: 3.1m
+[16:10:38] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.6m)
+[16:10:38] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+
+9.1m | Acc: 3.0m
+[16:10:38] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 3.0m)
+[16:10:42] 🎯 CALIBRATGE -> Nou offset: 21.5m (GPS: 82.0m | BaroPuru: 60.5m)
+9.1m | Acc: 3.0m
+[16:10:46] 🚀 PROVIDER SORTIDA -> Valor publicat: 81.7m | isHgtFixed: true
+
+29.1m | Acc: 3.0m
+[16:10:49] 🚀 PROVIDER SORTIDA -> Valor publicat: 81.3m | isHgtFixed: true
+
+29.0m | Acc: 3.0m
+[16:10:54] 🚀 PROVIDER SORTIDA -> Valor publicat: 80.8m | isHgtFixed: true
+
+29.0m | Acc: 3.1m
+[16:10:59] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+29.0m | Acc: 3.0m
+[16:11:04] 🚀 PROVIDER SORTIDA -> Valor publicat: 80.4m | isHgtFixed: true
+
+29.0m | Acc: 3.0m
+[16:11:08] 🚀 PROVIDER SORTIDA -> Valor publicat: 80.5m | isHgtFixed: true
+
+9.0m | Acc: 3.3m
+[16:11:12] 🚀 PROVIDER SORTIDA -> Valor publicat: 80.6m | isHgtFixed: true
+
+29.0m | Acc: 3.1m
+[16:11:15] 🚀 PROVIDER SORTIDA -> Valor publicat: 80.7m | isHgtFixed: true
+
+29.1m | Acc: 3.0m
+[16:11:19] 🚀 PROVIDER SORTIDA -> Valor publicat: 80.9m | isHgtFixed: true
+
+29.1m | Acc: 3.0m
+[16:11:23] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+29.1m | Acc: 3.0m
+[16:11:27] 🚀 PROVIDER SORTIDA -> Valor publicat: 81.3m | isHgtFixed: true
+
+29.0m | Acc: 3.0m
+[16:11:31] 🚀 PROVIDER SORTIDA -> Valor publicat: 81.4m | isHgtFixed: true
+
+9.0m | Acc: 3.0m
+[16:11:35] 🚀 PROVIDER SORTIDA -> Valor publicat: 81.5m | isHgtFixed: true
+
+29.0m | Acc: 3.0m
+[16:11:39] 🚀 PROVIDER SORTIDA -> Valor publicat: 81.6m | isHgtFixed: true
+
+29.0m | Acc: 3.2m
+[16:11:43] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+29.1m | Acc: 3.0m
+[16:11:47] 🚀 PROVIDER SORTIDA -> Valor publicat: 81.7m | isHgtFixed: true
+
+29.0m | Acc: 3.1m
+[16:11:51] 🚀 PROVIDER SORTIDA -> Valor publicat: 81.7m | isHgtFixed: true
+
+9.0m | Acc: 3.1m
+[16:11:55] 🚀 PROVIDER SORTIDA -> Valor publicat: 81.6m | isHgtFixed: true
+
+29.0m | Acc: 3.1m
+[16:11:59] 🚀 PROVIDER SORTIDA -> Valor publicat: 81.5m | isHgtFixed: true
+
+29.0m | Acc: 3.2m
+[16:12:03] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+29.0m | Acc: 3.2m
+[16:12:07] 🚀 PROVIDER SORTIDA -> Valor publicat: 81.3m | isHgtFixed: true
+
+29.0m | Acc: 3.3m
+[16:12:11] 🚀 PROVIDER SORTIDA -> Valor publicat: 82.1m | isHgtFixed: true
+
+29.0m | Acc: 3.3m
+[16:12:15] 🚀 PROVIDER SORTIDA -> Valor publicat: 83.0m | isHgtFixed: true
+
+29.0m | Acc: 3.1m
+[16:12:20] 🚀 PROVIDER SORTIDA -> Valor publicat: 83.8m | isHgtFixed: true
+
+29.0m | Acc: 3.0m
+[16:12:25] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+29.0m | Acc: 3.0m
+[16:12:29] 🚀 PROVIDER SORTIDA -> Valor publicat: 85.0m | isHgtFixed: true
+
+28.9m | Acc: 3.0m
+[16:12:33] 🚀 PROVIDER SORTIDA -> Valor publicat: 84.4m | isHgtFixed: true
+
+.9m | Acc: 3.0m
+[16:12:38] 🗺️ DEM RESPOSTA -> Rebut: 83.6m | isFixed: true
+tFixed: true
+
+8.9m | Acc: 3.0m
+[16:12:42] 🚀 PROVIDER SORTIDA -> Valor publicat: 82.7m | isHgtFixed: true
+
+28.9m | Acc: 3.1m
+[16:12:42] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.6m)
+[16:12:43] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.5m)
+[16:12:46] 🎯 CALIBRATGE -> Nou offset: 22.5m (GPS: 81.9m | BaroPuru: 59.4m)
+.9m | Acc: 3.3m
+[16:12:50] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+28.9m | Acc: 3.2m
+[16:12:54] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+28.8m | Acc: 3.0m
+[16:12:59] 🚀 PROVIDER SORTIDA -> Valor publicat: 80.1m | isHgtFixed: true
+
+28.8m | Acc: 3.0m
+[16:13:04] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+28.8m | Acc: 3.0m
+[16:13:09] 🚀 PROVIDER SORTIDA -> Valor publicat: 78.8m | isHgtFixed: true
+
+28.8m | Acc: 3.0m
+[16:13:13] 🚀 PROVIDER SORTIDA -> Valor publicat: 78.5m | isHgtFixed: true
+
+28.8m | Acc: 3.0m
+[16:13:17] 🚀 PROVIDER SORTIDA -> Valor publicat: 78.2m | isHgtFixed: true
+
+8m | Acc: 3.0m
+[16:13:21] 🚀 PROVIDER SORTIDA -> Valor publicat: 77.9m | isHgtFixed: true
+
+28.6m | Acc: 3.0m
+[16:13:25] 🚀 PROVIDER SORTIDA -> Valor publicat: 77.7m | isHgtFixed: true
+
+8.6m | Acc: 3.1m
+[16:13:29] 🗺️ DEM RESPOSTA -> Rebut: 77.9m | isFixed: true
+tFixed: true
+
+28.5m | Acc: 3.3m
+[16:13:34] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+28.6m | Acc: 3.2m
+[16:13:37] 🚀 PROVIDER SORTIDA -> Valor publicat: 78.9m | isHgtFixed: true
+
+28.6m | Acc: 3.0m
+[16:13:41] 🚀 PROVIDER SORTIDA -> Valor publicat: 79.4m | isHgtFixed: true
+
+28.5m | Acc: 3.1m
+[16:13:45] 🚀 PROVIDER SORTIDA -> Valor publicat: 79.7m | isHgtFixed: true
+
+28.5m | Acc: 3.2m
+[16:13:49] 🚀 PROVIDER SORTIDA -> Valor publicat: 79.8m | isHgtFixed: true
+
+28.5m | Acc: 3.1m
+[16:13:52] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+28.5m | Acc: 3.1m
+[16:13:57] 🚀 PROVIDER SORTIDA -> Valor publicat: 79.9m | isHgtFixed: true
+
+28.5m | Acc: 3.1m
+[16:14:01] 🚀 PROVIDER SORTIDA -> Valor publicat: 80.0m | isHgtFixed: true
+
+28.5m | Acc: 3.1m
+[16:14:05] 🚀 PROVIDER SORTIDA -> Valor publicat: 81.3m | isHgtFixed: true
+
+28.5m | Acc: 3.0m
+[16:14:08] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+28.6m | Acc: 3.0m
+[16:14:12] 🚀 PROVIDER SORTIDA -> Valor publicat: 83.8m | isHgtFixed: true
+
+28.5m | Acc: 3.1m
+[16:14:17] 🚀 PROVIDER SORTIDA -> Valor publicat: 84.9m | isHgtFixed: true
+
+28.5m | Acc: 3.1m
+[16:14:21] 🚀 PROVIDER SORTIDA -> Valor publicat: 85.7m | isHgtFixed: true
+
+.6m | Acc: 3.0m
+[16:14:25] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+28.8m | Acc: 3.0m
+[16:14:29] 🚀 PROVIDER SORTIDA -> Valor publicat: 86.5m | isHgtFixed: true
+
+28.8m | Acc: 3.0m
+[16:14:33] 🚀 PROVIDER SORTIDA -> Valor publicat: 86.9m | isHgtFixed: true
+
+28.8m | Acc: 3.0m
+[16:14:37] 🚀 PROVIDER SORTIDA -> Valor publicat: 87.1m | isHgtFixed: true
+
+28.8m | Acc: 3.0m
+[16:14:42] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+28.8m | Acc: 3.0m
+[16:14:46] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+.9m | Acc: 3.1m
+[16:14:51] 🚀 PROVIDER SORTIDA -> Valor publicat: 85.7m | isHgtFixed: true
+
+29.0m | Acc: 3.0m
+[16:14:55] 🚀 PROVIDER SORTIDA -> Valor publicat: 85.5m | isHgtFixed: true
+
+29.0m | Acc: 3.2m
+[16:14:59] 🚀 PROVIDER SORTIDA -> Valor publicat: 84.8m | isHgtFixed: true
+
+29.0m | Acc: 3.1m
+[16:15:03] 🚀 PROVIDER SORTIDA -> Valor publicat: 83.8m | isHgtFixed: true
+
+29.0m | Acc: 3.0m
+[16:15:08] 🚀 PROVIDER SORTIDA -> Valor publicat: 82.9m | isHgtFixed: true
+
+29.0m | Acc: 3.2m
+[16:15:12] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+28.9m | Acc: 3.3m
+[16:15:16] 🚀 PROVIDER SORTIDA -> Valor publicat: 81.5m | isHgtFixed: true
+
+28.9m | Acc: 3.1m
+[16:15:21] 🚀 PROVIDER SORTIDA -> Valor publicat: 82.2m | isHgtFixed: true
+
+28.9m | Acc: 3.0m
+[16:15:25] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+28.9m | Acc: 3.0m
+[16:15:29] 🚀 PROVIDER SORTIDA -> Valor publicat: 84.0m | isHgtFixed: true
+
+28.8m | Acc: 3.1m
+[16:15:34] 🚀 PROVIDER SORTIDA -> Valor publicat: 84.9m | isHgtFixed: true
+
+28.8m | Acc: 3.0m
+[16:15:39] 🚀 PROVIDER SORTIDA -> Valor publicat: 84.7m | isHgtFixed: true
+
+8.8m | Acc: 3.0m
+[16:15:43] 🚀 PROVIDER SORTIDA -> Valor publicat: 84.6m | isHgtFixed: true
+
+28.8m | Acc: 3.1m
+[16:15:48] 🚀 PROVIDER SORTIDA -> Valor publicat: 84.3m | isHgtFixed: true
+
+28.8m | Acc: 3.0m
+[16:15:53] 🚀 PROVIDER SORTIDA -> Valor publicat: 84.2m | isHgtFixed: true
+
+8.8m | Acc: 3.1m
+[16:15:57] 🚀 PROVIDER SORTIDA -> Valor publicat: 84.4m | isHgtFixed: true
+
+28.8m | Acc: 3.2m
+[16:16:01] 🚀 PROVIDER SORTIDA -> Valor publicat: 84.7m | isHgtFixed: true
+
+28.9m | Acc: 3.2m
+[16:16:06] 🚀 PROVIDER SORTIDA -> Valor publicat: 84.9m | isHgtFixed: true
+
+28.9m | Acc: 3.0m
+[16:16:10] 🚀 PROVIDER SORTIDA -> Valor publicat: 85.1m | isHgtFixed: true
+
+28.9m | Acc: 3.2m
+[16:16:14] 🚀 PROVIDER SORTIDA -> Valor publicat: 84.8m | isHgtFixed: true
+
+28.9m | Acc: 3.0m
+[16:16:19] 🚀 PROVIDER SORTIDA -> Valor publicat: 84.4m | isHgtFixed: true
+
+8.9m | Acc: 3.0m
+[16:16:23] 🚀 PROVIDER SORTIDA -> Valor publicat: 84.1m | isHgtFixed: true
+
+8.9m | Acc: 3.0m
+[16:16:29] 🚀 PROVIDER SORTIDA -> Valor publicat: 83.7m | isHgtFixed: true
+
+28.9m | Acc: 3.0m
+[16:16:34] 🚀 PROVIDER SORTIDA -> Valor publicat: 83.3m | isHgtFixed: true
+
+28.9m | Acc: 3.1m
+[16:16:38] 🚀 PROVIDER SORTIDA -> Valor publicat: 82.8m | isHgtFixed: true
+
+28.9m | Acc: 3.1m
+[16:16:43] 🚀 PROVIDER SORTIDA -> Valor publicat: 82.4m | isHgtFixed: true
+
+28.9m | Acc: 3.0m
+[16:16:47] 🚀 PROVIDER SORTIDA -> Valor publicat: 81.9m | isHgtFixed: true
+
+28.9m | Acc: 3.1m
+[16:16:53] 🚀 PROVIDER SORTIDA -> Valor publicat: 81.5m | isHgtFixed: true
+
+28.9m | Acc: 3.0m
+[16:16:57] 🚀 PROVIDER SORTIDA -> Valor publicat: 81.8m | isHgtFixed: true
+
+28.8m | Acc: 3.0m
+[16:17:02] 🚀 PROVIDER SORTIDA -> Valor publicat: 82.2m | isHgtFixed: true
+
+28.8m | Acc: 3.0m
+[16:17:07] 🚀 PROVIDER SORTIDA -> Valor publicat: 82.6m | isHgtFixed: true
+
+28.8m | Acc: 3.0m
+[16:17:12] 🚀 PROVIDER SORTIDA -> Valor publicat: 83.0m | isHgtFixed: true
+
+28.7m | Acc: 3.1m
+[16:17:17] 🚀 PROVIDER SORTIDA -> Valor publicat: 83.5m | isHgtFixed: true
+
+28.7m | Acc: 3.0m
+[16:17:25] 🚀 PROVIDER SORTIDA -> Valor publicat: 84.0m | isHgtFixed: true
+
+28.8m | Acc: 3.0m
+[16:19:09] 🎯 CALIBRATGE -> Nou offset: 23.0m (GPS: 83.5m | BaroPuru: 60.5m)
+8.8m | Acc: 3.0m
+[16:19:26] 🚀 PROVIDER SORTIDA -> Valor publicat: 83.9m | isHgtFixed: true
+
+28.8m | Acc: 4.8m
+[16:20:15] 🚀 PROVIDER SORTIDA -> Valor publicat: 84.4m | isHgtFixed: true
+
+28.8m | Acc: 3.0m
+[16:21:02] 🚀 PROVIDER SORTIDA -> Valor publicat: 84.9m | isHgtFixed: true
+
+28.8m | Acc: 3.0m
+[16:21:20] 🚀 PROVIDER SORTIDA -> Valor publicat: 85.4m | isHgtFixed: true
+
+8.8m | Acc: 6.5m
+[16:21:24] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+28.9m | Acc: 4.8m
+[16:21:31] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+.9m | Acc: 3.3m
+[16:21:38] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+29.0m | Acc: 3.2m
+[16:21:43] 🚀 PROVIDER SORTIDA -> Valor publicat: 80.9m | isHgtFixed: true
+
+29.0m | Acc: 3.3m
+[16:21:49] 🚀 PROVIDER SORTIDA -> Valor publicat: 80.6m | isHgtFixed: true
+
+29.0m | Acc: 3.0m
+[16:21:59] 🗺️ DEM RESPOSTA -> Rebut: 80.9m | isFixed: true
+tFixed: true
+
+29.0m | Acc: 3.9m
+[16:22:09] 🚀 PROVIDER SORTIDA -> Valor publicat: 81.0m | isHgtFixed: true
+
+29.1m | Acc: 3.1m
+[16:22:13] 🚀 PROVIDER SORTIDA -> Valor publicat: 80.5m | isHgtFixed: true
+
+29.0m | Acc: 4.0m
+[16:22:15] 🚀 PROVIDER SORTIDA -> Valor publicat: 80.3m | isHgtFixed: true
+
+29.0m | Acc: 4.8m
+[16:22:19] 🚀 PROVIDER SORTIDA -> Valor publicat: 80.3m | isHgtFixed: true
+
+9.1m | Acc: 4.5m
+[16:22:20] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+9.1m | Acc: 4.3m
+[16:22:21] 🚀 PROVIDER SORTIDA -> Valor publicat: 84.3m | isHgtFixed: true
+
+29.1m | Acc: 4.1m
+[16:22:22] 🚀 PROVIDER SORTIDA -> Valor publicat: 84.2m | isHgtFixed: true
+
+9.2m | Acc: 4.3m
+[16:22:27] 🚀 PROVIDER SORTIDA -> Valor publicat: 83.9m | isHgtFixed: true
+
+29.2m | Acc: 4.9m
+[16:22:31] 🚀 PROVIDER SORTIDA -> Valor publicat: 83.6m | isHgtFixed: true
+
+9.2m | Acc: 3.6m
+[16:22:36] 🗺️ DEM RESPOSTA -> Rebut: 83.0m | isFixed: true
+tFixed: true
+
+29.2m | Acc: 3.2m
+[16:22:41] 🚀 PROVIDER SORTIDA -> Valor publicat: 82.9m | isHgtFixed: true
+
+29.2m | Acc: 3.4m
+[16:22:45] 🚀 PROVIDER SORTIDA -> Valor publicat: 82.9m | isHgtFixed: true
+
+29.0m | Acc: 3.2m
+[16:22:50] 🚀 PROVIDER SORTIDA -> Valor publicat: 82.7m | isHgtFixed: true
+
+29.2m | Acc: 3.0m
+[16:22:56] 🚀 PROVIDER SORTIDA -> Valor publicat: 82.5m | isHgtFixed: true
+
+29.2m | Acc: 3.1m
+[16:23:09] 🗺️ DEM RESPOSTA -> Rebut: 81.8m | isFixed: true
+tFixed: true
+
+9.2m | Acc: 4.2m
+[16:23:16] 🚀 PROVIDER SORTIDA -> Valor publicat: 81.3m | isHgtFixed: true
+
+28.9m | Acc: 3.4m
+[16:23:19] 🚀 PROVIDER SORTIDA -> Valor publicat: 80.9m | isHgtFixed: true
+
+8.9m | Acc: 4.6m
+[16:23:22] 🚀 PROVIDER SORTIDA -> Valor publicat: 80.6m | isHgtFixed: true
+
+28.7m | Acc: 5.7m
+[16:23:28] 🚀 PROVIDER SORTIDA -> Valor publicat: 81.9m | isHgtFixed: true
+
+28.6m | Acc: 7.5m
+[16:23:29] 🚀 PROVIDER SORTIDA -> Valor publicat: 81.5m | isHgtFixed: true
+
+28.6m | Acc: 7.2m
+[16:23:32] 🚀 PROVIDER SORTIDA -> Valor publicat: 81.6m | isHgtFixed: true
+
+28.6m | Acc: 6.9m
+[16:23:35] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+28.4m | Acc: 5.6m
+[16:23:38] 🚀 PROVIDER SORTIDA -> Valor publicat: 81.2m | isHgtFixed: true
+
+28.4m | Acc: 5.6m
+[16:23:41] 🚀 PROVIDER SORTIDA -> Valor publicat: 81.5m | isHgtFixed: true
+
+28.4m | Acc: 5.4m
+[16:23:48] 🚀 PROVIDER SORTIDA -> Valor publicat: 82.1m | isHgtFixed: true
+
+28.4m | Acc: 3.1m
+[16:23:55] 🚀 PROVIDER SORTIDA -> Valor publicat: 82.5m | isHgtFixed: true
+
+8.2m | Acc: 4.1m
+[16:24:00] 🚀 PROVIDER SORTIDA -> Valor publicat: 82.9m | isHgtFixed: true
+
+28.3m | Acc: 4.7m
+[16:24:04] 🚀 PROVIDER SORTIDA -> Valor publicat: 83.1m | isHgtFixed: true
+
+28.3m | Acc: 4.3m
+[16:24:08] 🚀 PROVIDER SORTIDA -> Valor publicat: 83.2m | isHgtFixed: true
+
+28.0m | Acc: 3.8m
+[16:24:15] 🚀 PROVIDER SORTIDA -> Valor publicat: 83.1m | isHgtFixed: true
+)
+7.9m | Acc: 3.1m
+[16:24:23] 🚀 PROVIDER SORTIDA -> Valor publicat: 82.5m | isHgtFixed: true
+
+27.4m | Acc: 4.1m
+[16:24:25] 🚀 PROVIDER SORTIDA -> Valor publicat: 81.7m | isHgtFixed: true
+
+27.2m | Acc: 5.4m
+[16:24:28] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+27.2m | Acc: 9.3m
+[16:24:29] 🚀 PROVIDER SORTIDA -> Valor publicat: 80.8m | isHgtFixed: true
+
+27.2m | Acc: 8.8m
+[16:24:31] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+7.6m | Acc: 7.3m
+[16:24:36] 🚀 PROVIDER SORTIDA -> Valor publicat: 80.0m | isHgtFixed: true
+
+27.6m | Acc: 3.1m
+[16:24:42] 🚀 PROVIDER SORTIDA -> Valor publicat: 79.6m | isHgtFixed: true
+
+6.8m | Acc: 3.0m
+[16:24:44] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.4m)
+[16:24:50] 🎯 CALIBRATGE -> Nou offset: 21.5m (GPS: 79.0m | BaroPuru: 57.5m)
+6.8m | Acc: 3.1m
+[16:25:03] 🚀 PROVIDER SORTIDA -> Valor publicat: 78.8m | isHgtFixed: true
+
+27.0m | Acc: 3.0m
+[16:26:22] 🗺️ DEM RESPOSTA -> Rebut: 78.1m | isFixed: true
+tFixed: true
+
+27.1m | Acc: 3.3m
+[16:28:27] 🚀 PROVIDER SORTIDA -> Valor publicat: 77.7m | isHgtFixed: true
+
+27.2m | Acc: 3.0m
+[16:28:48] 🚀 PROVIDER SORTIDA -> Valor publicat: 78.4m | isHgtFixed: true
+
+7.3m | Acc: 4.1m
+[16:28:53] 🚀 PROVIDER SORTIDA -> Valor publicat: 77.9m | isHgtFixed: true
+
+26.8m | Acc: 4.5m
+[16:31:25] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.5m)
+[16:31:26] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.9m)
+[16:31:56] 🎯 CALIBRATGE -> Nou offset: 19.7m (GPS: 77.4m | BaroPuru: 57.8m)
+7.3m | Acc: 3.5m
+[16:32:18] 🚀 PROVIDER SORTIDA -> Valor publicat: 78.0m | isHgtFixed: true
+
+27.3m | Acc: 3.0m
+[16:33:23] 🚀 PROVIDER SORTIDA -> Valor publicat: 77.6m | isHgtFixed: true
+
+27.1m | Acc: 3.5m
+[16:33:26] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.3m)
+[16:33:26] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.1m)
+[16:33:28] 🎯 CALIBRATGE -> Nou offset: 18.9m (GPS: 77.4m | BaroPuru: 58.5m)
+6.8m | Acc: 3.7m
+[16:33:31] 🚀 PROVIDER SORTIDA -> Valor publicat: 77.6m | isHgtFixed: true
+
+26.8m | Acc: 3.3m
+[16:33:35] 🚀 PROVIDER SORTIDA -> Valor publicat: 77.8m | isHgtFixed: true
+
+26.7m | Acc: 3.1m
+[16:33:39] 🚀 PROVIDER SORTIDA -> Valor publicat: 78.0m | isHgtFixed: true
+
+6.7m | Acc: 3.0m
+[16:33:43] 🚀 PROVIDER SORTIDA -> Valor publicat: 78.2m | isHgtFixed: true
+
+6.7m | Acc: 3.0m
+[16:33:47] 🚀 PROVIDER SORTIDA -> Valor publicat: 78.5m | isHgtFixed: true
+
+26.7m | Acc: 3.0m
+[16:33:51] 🚀 PROVIDER SORTIDA -> Valor publicat: 78.5m | isHgtFixed: true
+
+6.7m | Acc: 3.2m
+[16:33:54] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+26.6m | Acc: 3.5m
+[16:33:58] 🚀 PROVIDER SORTIDA -> Valor publicat: 78.5m | isHgtFixed: true
+
+26.6m | Acc: 3.6m
+[16:34:05] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+26.7m | Acc: 3.0m
+[16:34:08] 🚀 PROVIDER SORTIDA -> Valor publicat: 78.6m | isHgtFixed: true
+
+6.7m | Acc: 3.2m
+[16:34:08] 🚀 PROVIDER SORTIDA -> Valor publicat: 78.6m | isHgtFixed: true
+
+6.7m | Acc: 3.2m
+[16:34:10] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+26.7m | Acc: 3.8m
+[16:34:11] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.0m)
+[16:34:12] 🚀 PROVIDER SORTIDA -> Valor publicat: 78.6m | isHgtFixed: true
+)
+6.7m | Acc: 5.9m
+[16:34:14] 🚀 PROVIDER SORTIDA -> Valor publicat: 78.1m | isHgtFixed: true
+
+26.8m | Acc: 7.7m
+[16:34:16] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+26.8m | Acc: 8.1m
+[16:34:18] 🚀 PROVIDER SORTIDA -> Valor publicat: 76.9m | isHgtFixed: true
+
+26.8m | Acc: 6.4m
+[16:34:19] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.4m)
+[16:34:19] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.1m)
+[16:34:19] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 3.3m)
+[16:34:20] 🚀 PROVIDER SORTIDA -> Valor publicat: 76.6m | isHgtFixed: true
+)
+6.8m | Acc: 5.2m
+[16:34:22] 🚀 PROVIDER SORTIDA -> Valor publicat: 76.2m | isHgtFixed: true
+
+26.8m | Acc: 5.3m
+[16:34:24] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+26.8m | Acc: 5.7m
+[16:34:26] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.7m | isHgtFixed: true
+
+26.7m | Acc: 5.6m
+[16:34:28] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.6m | isHgtFixed: true
+
+26.7m | Acc: 5.2m
+[16:34:30] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.5m | isHgtFixed: true
+
+6.7m | Acc: 5.0m
+[16:34:32] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+26.7m | Acc: 4.8m
+[16:34:34] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.4m | isHgtFixed: true
+126.6m | Acc: 4.7m
+[16:34:36] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.0m)
+[16:34:36] 🎯 CALIBRATGE -> Nou offset: 14.9m (GPS: 75.4m | BaroPuru: 60.5m)
+6.6m | Acc: 4.5m
+[16:34:38] 🗺️ DEM RESPOSTA -> Rebut: 75.5m | isFixed: true
+tFixed: true
+
+6.6m | Acc: 4.5m
+[16:34:40] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.5m | isHgtFixed: true
+
+26.6m | Acc: 4.4m
+[16:34:42] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.6m | isHgtFixed: true
+
+6.6m | Acc: 4.4m
+[16:34:44] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.8m | isHgtFixed: true
+
+6.6m | Acc: 4.5m
+[16:34:46] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.8m | isHgtFixed: true
+
+26.7m | Acc: 4.0m
+[16:34:48] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.9m | isHgtFixed: true
+
+26.7m | Acc: 3.4m
+[16:34:50] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.9m | isHgtFixed: true
+
+26.7m | Acc: 3.0m
+[16:34:50] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.4m)
+[16:34:50] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.1m)
+[16:34:50] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.3m)
+[16:34:51] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.4m)
+[16:34:51] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.3m)
+[16:34:52] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.8m)
+[16:34:52] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.9m | isHgtFixed: true
+)
+6.7m | Acc: 3.0m
+[16:34:54] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.9m | isHgtFixed: true
+
+26.7m | Acc: 3.0m
+[16:34:56] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.9m | isHgtFixed: true
+
+6.7m | Acc: 3.1m
+[16:34:58] 🗺️ DEM RESPOSTA -> Rebut: 75.9m | isFixed: true
+tFixed: true
+
+26.7m | Acc: 3.1m
+[16:35:00] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.8m | isHgtFixed: true
+
+26.7m | Acc: 3.1m
+[16:35:02] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.8m | isHgtFixed: true
+
+26.7m | Acc: 3.1m
+[16:35:03] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.5m)
+[16:35:04] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.4m)
+[16:35:04] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.7m | isHgtFixed: true
+)
+7.3m | Acc: 3.2m
+[16:35:06] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.9m | isHgtFixed: true
+
+27.3m | Acc: 3.4m
+[16:35:08] 🚀 PROVIDER SORTIDA -> Valor publicat: 76.8m | isHgtFixed: true
+
+7.3m | Acc: 3.7m
+[16:35:10] 🚀 PROVIDER SORTIDA -> Valor publicat: 77.6m | isHgtFixed: true
+
+26.8m | Acc: 3.7m
+[16:35:12] 🚀 PROVIDER SORTIDA -> Valor publicat: 78.4m | isHgtFixed: true
+
+26.8m | Acc: 3.8m
+[16:35:14] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.0m)
+[16:35:14] 🎯 CALIBRATGE -> Nou offset: 24.2m (GPS: 78.7m | BaroPuru: 54.6m)
+6.8m | Acc: 3.8m
+[16:35:15] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.3m)
+[16:35:16] 🚀 PROVIDER SORTIDA -> Valor publicat: 78.7m | isHgtFixed: true
+)
+6.7m | Acc: 3.9m
+[16:35:17] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.0m)
+[16:35:18] 🚀 PROVIDER SORTIDA -> Valor publicat: 78.6m | isHgtFixed: true
+)
+6.7m | Acc: 4.2m
+[16:35:20] 🚀 PROVIDER SORTIDA -> Valor publicat: 78.7m | isHgtFixed: true
+
+26.7m | Acc: 4.4m
+[16:35:22] 🚀 PROVIDER SORTIDA -> Valor publicat: 79.0m | isHgtFixed: true
+
+26.3m | Acc: 4.5m
+[16:35:22] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.7m)
+[16:35:22] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.5m)
+[16:35:24] 🎯 CALIBRATGE -> Nou offset: 22.6m (GPS: 79.1m | BaroPuru: 56.5m)
+6.3m | Acc: 4.5m
+[16:35:26] 🚀 PROVIDER SORTIDA -> Valor publicat: 79.0m | isHgtFixed: true
+
+26.3m | Acc: 4.5m
+[16:35:28] 🚀 PROVIDER SORTIDA -> Valor publicat: 78.8m | isHgtFixed: true
+
+26.3m | Acc: 4.5m
+[16:35:30] 🚀 PROVIDER SORTIDA -> Valor publicat: 78.4m | isHgtFixed: true
+
+26.4m | Acc: 4.5m
+[16:35:32] 🚀 PROVIDER SORTIDA -> Valor publicat: 77.9m | isHgtFixed: true
+
+26.4m | Acc: 4.5m
+[16:35:34] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+26.4m | Acc: 4.4m
+[16:35:36] 🚀 PROVIDER SORTIDA -> Valor publicat: 76.4m | isHgtFixed: true
+
+26.4m | Acc: 4.2m
+[16:35:38] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.7m | isHgtFixed: true
+
+26.4m | Acc: 4.2m
+[16:35:40] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.0m | isHgtFixed: true
+
+6.4m | Acc: 4.2m
+[16:35:42] 🚀 PROVIDER SORTIDA -> Valor publicat: 74.4m | isHgtFixed: true
+
+26.7m | Acc: 4.3m
+[16:35:44] 🗺️ DEM RESPOSTA -> Rebut: 74.0m | isFixed: true
+tFixed: true
+
+26.7m | Acc: 4.5m
+[16:35:46] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.5m | isHgtFixed: true
+
+25.9m | Acc: 4.6m
+[16:35:48] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.1m | isHgtFixed: true
+
+25.8m | Acc: 4.6m
+[16:35:49] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.6m)
+[16:35:49] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.9m)
+[16:35:50] 🚀 PROVIDER SORTIDA -> Valor publicat: 72.7m | isHgtFixed: true
+)
+.8m | Acc: 4.5m
+[16:35:50] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.9m)
+[16:35:51] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.1m)
+[16:35:51] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.3m)
+[16:35:52] 🚀 PROVIDER SORTIDA -> Valor publicat: 72.6m | isHgtFixed: true
+)
+5.8m | Acc: 4.4m
+[16:35:54] 🚀 PROVIDER SORTIDA -> Valor publicat: 72.6m | isHgtFixed: true
+
+25.8m | Acc: 4.2m
+[16:35:56] 🚀 PROVIDER SORTIDA -> Valor publicat: 72.7m | isHgtFixed: true
+
+25.8m | Acc: 4.2m
+[16:35:58] 🚀 PROVIDER SORTIDA -> Valor publicat: 72.8m | isHgtFixed: true
+
+25.8m | Acc: 4.6m
+[16:36:00] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.0m | isHgtFixed: true
+
+25.8m | Acc: 4.9m
+[16:36:01] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.3m)
+[16:36:02] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.3m | isHgtFixed: true
+)
+5.8m | Acc: 4.9m
+[16:36:03] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.4m)
+[16:36:04] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.5m | isHgtFixed: true
+)
+5.8m | Acc: 4.8m
+[16:36:05] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.7m)
+[16:36:06] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.8m | isHgtFixed: true
+)
+.8m | Acc: 4.5m
+[16:36:08] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+26.2m | Acc: 4.3m
+[16:36:09] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.5m)
+[16:36:09] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.9m)
+[16:36:10] 🚀 PROVIDER SORTIDA -> Valor publicat: 74.4m | isHgtFixed: true
+)
+6.2m | Acc: 4.2m
+[16:36:12] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.0m)
+[16:36:12] 🚀 PROVIDER SORTIDA -> Valor publicat: 74.7m | isHgtFixed: true
+)
+6.2m | Acc: 4.1m
+[16:36:12] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.7m)
+[16:36:13] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.2m)
+[16:36:13] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.5m)
+[16:36:14] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.0m | isHgtFixed: true
+
+
+6.2m | Acc: 4.0m
+[16:36:15] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.3m)
+[16:36:15] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.6m)
+[16:36:16] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.2m)
+[16:36:16] 🎯 CALIBRATGE -> Nou offset: 19.9m (GPS: 75.3m | BaroPuru: 55.3m)
+6.2m | Acc: 4.1m
+[16:36:18] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.0m)
+[16:36:18] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.5m | isHgtFixed: true
+)
+6.2m | Acc: 4.3m
+[16:36:18] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.3m)
+[16:36:20] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.7m | isHgtFixed: true
+
+
+6.4m | Acc: 4.5m
+[16:36:22] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.6m)
+[16:36:22] 🎯 CALIBRATGE -> Nou offset: 20.5m (GPS: 75.8m | BaroPuru: 55.2m)
+6.4m | Acc: 4.8m
+[16:36:22] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.9m)
+[16:36:24] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.8m | isHgtFixed: true
+)
+6.4m | Acc: 5.0m
+[16:36:24] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.1m)
+[16:36:26] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.7m | isHgtFixed: true
+)
+7.3m | Acc: 5.2m
+[16:36:28] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.5m | isHgtFixed: true
+
+27.3m | Acc: 5.2m
+[16:36:30] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.3m | isHgtFixed: true
+
+27.3m | Acc: 5.1m
+[16:36:32] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.0m | isHgtFixed: true
+
+26.8m | Acc: 4.7m
+[16:36:34] 🚀 PROVIDER SORTIDA -> Valor publicat: 74.8m | isHgtFixed: true
+
+6.8m | Acc: 4.4m
+[16:36:36] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+6.8m | Acc: 4.2m
+[16:36:37] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.4m)
+[16:36:38] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+
+5.8m | Acc: 4.0m
+[16:36:39] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.2m)
+[16:36:40] 🎯 CALIBRATGE -> Nou offset: 17.6m (GPS: 73.9m | BaroPuru: 56.3m)
+5.8m | Acc: 4.0m
+[16:36:41] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.1m)
+[16:36:42] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.7m | isHgtFixed: true
+)
+.8m | Acc: 4.1m
+[16:36:42] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.5m)
+[16:36:44] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.5m | isHgtFixed: true
+)
+5.8m | Acc: 4.1m
+[16:36:46] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.4m | isHgtFixed: true
+
+25.8m | Acc: 3.7m
+[16:36:48] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.4m | isHgtFixed: true
+
+25.8m | Acc: 3.3m
+[16:36:50] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.4m | isHgtFixed: true
+
+5.8m | Acc: 3.0m
+[16:36:51] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.4m)
+[16:36:52] 🎯 CALIBRATGE -> Nou offset: 18.2m (GPS: 73.5m | BaroPuru: 55.2m)
+5.8m | Acc: 3.1m
+[16:36:54] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.5m | isHgtFixed: true
+
+7.3m | Acc: 3.5m
+[16:36:55] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.0m)
+[16:36:55] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.1m)
+[16:36:56] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.6m | isHgtFixed: true
+)
+7.3m | Acc: 4.1m
+[16:36:58] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.1m)
+[16:36:58] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.8m | isHgtFixed: true
+)
+7.3m | Acc: 4.2m
+[16:36:58] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+[16:36:58] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.2m)
+[16:37:00] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.9m | isHgtFixed: true
+)
+7.3m | Acc: 4.1m
+[16:37:02] 🚀 PROVIDER SORTIDA -> Valor publicat: 74.0m | isHgtFixed: true
+
+27.3m | Acc: 4.0m
+[16:37:03] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.2m)
+[16:37:03] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.5m)
+[16:37:04] 🎯 CALIBRATGE -> Nou offset: 15.6m (GPS: 74.0m | BaroPuru: 58.4m)
+7.3m | Acc: 4.1m
+[16:37:04] 🚀 PROVIDER SORTIDA -> Valor publicat: 74.0m | isHgtFixed: true
+[16:37:06] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+27.1m | Acc: 4.4m
+[16:37:08] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+27.1m | Acc: 4.5m
+[16:37:10] 🚀 PROVIDER SORTIDA -> Valor publicat: 74.0m | isHgtFixed: true
+
+27.1m | Acc: 4.6m
+[16:37:12] 🚀 PROVIDER SORTIDA -> Valor publicat: 74.0m | isHgtFixed: true
+
+27.1m | Acc: 4.4m
+[16:37:14] 🚀 PROVIDER SORTIDA -> Valor publicat: 74.0m | isHgtFixed: true
+
+27.1m | Acc: 4.2m
+[16:37:16] 🚀 PROVIDER SORTIDA -> Valor publicat: 74.0m | isHgtFixed: true
+
+7.1m | Acc: 4.0m
+[16:37:18] 🚀 PROVIDER SORTIDA -> Valor publicat: 74.0m | isHgtFixed: true
+127.1m | Acc: 4.0m
+[16:37:18] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+[16:37:20] 🚀 PROVIDER SORTIDA -> Valor publicat: 74.0m | isHgtFixed: true
+
+27.6m | Acc: 3.9m
+[16:37:22] 🚀 PROVIDER SORTIDA -> Valor publicat: 74.0m | isHgtFixed: true
+
+27.6m | Acc: 3.6m
+[16:37:24] 🚀 PROVIDER SORTIDA -> Valor publicat: 74.0m | isHgtFixed: true
+
+27.6m | Acc: 3.2m
+[16:37:26] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.8m | isHgtFixed: true
+
+25.8m | Acc: 3.0m
+[16:37:28] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.6m | isHgtFixed: true
+
+25.8m | Acc: 3.1m
+[16:37:30] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.4m | isHgtFixed: true
+
+25.8m | Acc: 3.3m
+[16:37:32] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.2m | isHgtFixed: true
+
+25.8m | Acc: 3.6m
+[16:37:34] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.0m | isHgtFixed: true
+
+25.8m | Acc: 3.7m
+[16:37:36] 🚀 PROVIDER SORTIDA -> Valor publicat: 72.8m | isHgtFixed: true
+
+.8m | Acc: 3.8m
+[16:37:38] 🚀 PROVIDER SORTIDA -> Valor publicat: 72.6m | isHgtFixed: true
+
+25.8m | Acc: 3.7m
+[16:37:40] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+24.9m | Acc: 3.8m
+[16:37:42] 🚀 PROVIDER SORTIDA -> Valor publicat: 72.2m | isHgtFixed: true
+
+24.9m | Acc: 3.8m
+[16:37:44] 🚀 PROVIDER SORTIDA -> Valor publicat: 72.0m | isHgtFixed: true
+
+24.9m | Acc: 3.8m
+[16:37:46] 🚀 PROVIDER SORTIDA -> Valor publicat: 72.0m | isHgtFixed: true
+
+25.0m | Acc: 3.8m
+[16:37:48] 🚀 PROVIDER SORTIDA -> Valor publicat: 72.1m | isHgtFixed: true
+
+5.0m | Acc: 3.8m
+[16:37:50] 🚀 PROVIDER SORTIDA -> Valor publicat: 72.2m | isHgtFixed: true
+
+25.0m | Acc: 3.8m
+[16:37:52] 🚀 PROVIDER SORTIDA -> Valor publicat: 72.3m | isHgtFixed: true
+
+24.7m | Acc: 3.9m
+[16:37:53] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.1m)
+[16:37:53] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.6m)
+[16:37:53] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.3m)
+[16:37:54] 🚀 PROVIDER SORTIDA -> Valor publicat: 72.5m | isHgtFixed: true
+)
+.7m | Acc: 4.0m
+[16:37:56] 🚀 PROVIDER SORTIDA -> Valor publicat: 72.7m | isHgtFixed: true
+
+4.7m | Acc: 4.2m
+[16:37:58] 🛰️ GPS ENTRADA -> Lat: 41.9809956 | Lon: 2.8089391 | AltGPS: 125.5m | Acc: 4.3m
+[16:38:00] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.1m | isHgtFixed: true
+
+5.5m | Acc: 4.6m
+[16:38:00] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.1m)
+[16:38:01] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.0m)
+[16:38:02] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.2m | isHgtFixed: true
+)
+.5m | Acc: 4.5m
+[16:38:03] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.9m)
+[16:38:04] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.3m | isHgtFixed: true
+)
+5.7m | Acc: 4.4m
+[16:38:06] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+25.7m | Acc: 3.9m
+[16:38:07] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.1m)
+[16:38:08] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.3m | isHgtFixed: true
+)
+5.7m | Acc: 3.4m
+[16:38:10] 🗺️ DEM RESPOSTA -> Rebut: 73.3m | isFixed: true
+tFixed: true
+
+25.1m | Acc: 3.0m
+[16:38:11] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.2m)
+[16:38:12] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.4m | isHgtFixed: true
+)
+.2m | Acc: 3.0m
+[16:38:14] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.6m | isHgtFixed: true
+
+24.2m | Acc: 3.0m
+[16:38:16] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.7m | isHgtFixed: true
+
+24.2m | Acc: 3.0m
+[16:38:18] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+24.2m | Acc: 3.1m
+[16:38:19] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.1m)
+[16:38:20] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.9m | isHgtFixed: true
+
+
+4.3m | Acc: 3.4m
+[16:38:20] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.4m)
+[16:38:21] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.3m)
+[16:38:22] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.9m | isHgtFixed: true
+)
+4.3m | Acc: 3.8m
+[16:38:24] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.8m | isHgtFixed: true
+
+24.3m | Acc: 4.2m
+[16:38:24] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.2m)
+[16:38:25] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.4m)
+[16:38:26] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+
+4.9m | Acc: 4.3m
+[16:38:28] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.6m | isHgtFixed: true
+
+24.9m | Acc: 4.6m
+[16:38:30] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+24.8m | Acc: 4.7m
+[16:38:31] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.5m | isHgtFixed: true
+
+24.8m | Acc: 4.9m
+[16:38:33] 🗺️ DEM RESPOSTA -> Rebut: 73.3m | isFixed: true
+tFixed: true
+
+.8m | Acc: 5.1m
+[16:38:35] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.2m | isHgtFixed: true
+
+24.8m | Acc: 5.0m
+[16:38:37] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.1m | isHgtFixed: true
+
+4.7m | Acc: 4.8m
+[16:38:39] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.0m | isHgtFixed: true
+
+4.7m | Acc: 4.5m
+[16:38:41] 🚀 PROVIDER SORTIDA -> Valor publicat: 72.9m | isHgtFixed: true
+
+24.7m | Acc: 4.1m
+[16:38:42] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.1m)
+[16:38:43] 🚀 PROVIDER SORTIDA -> Valor publicat: 72.7m | isHgtFixed: true
+)
+4.7m | Acc: 3.8m
+[16:38:45] 🚀 PROVIDER SORTIDA -> Valor publicat: 72.6m | isHgtFixed: true
+
+24.7m | Acc: 3.6m
+[16:38:47] 🚀 PROVIDER SORTIDA -> Valor publicat: 72.5m | isHgtFixed: true
+
+24.7m | Acc: 3.7m
+[16:38:47] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.0m)
+[16:38:49] 🚀 PROVIDER SORTIDA -> Valor publicat: 72.3m | isHgtFixed: true
+
+
+4.7m | Acc: 3.8m
+[16:38:51] 🗺️ DEM RESPOSTA -> Rebut: 72.2m | isFixed: true
+tFixed: true
+
+25.7m | Acc: 3.9m
+[16:38:53] 🚀 PROVIDER SORTIDA -> Valor publicat: 72.1m | isHgtFixed: true
+
+5.7m | Acc: 3.9m
+[16:38:55] 🚀 PROVIDER SORTIDA -> Valor publicat: 72.1m | isHgtFixed: true
+
+25.7m | Acc: 4.0m
+[16:38:57] 🚀 PROVIDER SORTIDA -> Valor publicat: 72.0m | isHgtFixed: true
+
+24.8m | Acc: 4.1m
+[16:38:59] 🚀 PROVIDER SORTIDA -> Valor publicat: 72.0m | isHgtFixed: true
+
+25.2m | Acc: 4.0m
+[16:39:01] 🚀 PROVIDER SORTIDA -> Valor publicat: 72.0m | isHgtFixed: true
+
+25.2m | Acc: 4.0m
+[16:39:03] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.9m | isHgtFixed: true
+
+25.2m | Acc: 4.0m
+[16:39:05] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+24.7m | Acc: 4.0m
+[16:39:07] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.8m | isHgtFixed: true
+
+24.7m | Acc: 3.9m
+[16:39:09] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.8m | isHgtFixed: true
+
+24.7m | Acc: 3.9m
+[16:39:09] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.2m)
+[16:39:11] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+
+4.7m | Acc: 3.9m
+[16:39:13] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.7m | isHgtFixed: true
+
+4.7m | Acc: 3.9m
+[16:39:15] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.6m | isHgtFixed: true
+
+24.7m | Acc: 4.0m
+[16:39:17] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.5m | isHgtFixed: true
+
+24.7m | Acc: 4.1m
+[16:39:19] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.5m | isHgtFixed: true
+
+24.7m | Acc: 4.3m
+[16:39:21] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.4m | isHgtFixed: true
+
+24.7m | Acc: 4.4m
+[16:39:22] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.4m | isHgtFixed: true
+
+23.7m | Acc: 4.5m
+[16:39:24] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+23.7m | Acc: 4.4m
+[16:39:26] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.3m | isHgtFixed: true
+
+23.7m | Acc: 4.2m
+[16:39:28] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.2m | isHgtFixed: true
+
+23.7m | Acc: 4.0m
+[16:39:30] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.1m | isHgtFixed: true
+
+23.7m | Acc: 3.8m
+[16:39:32] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+3.7m | Acc: 3.9m
+[16:39:34] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.2m | isHgtFixed: true
+
+23.7m | Acc: 3.9m
+[16:39:36] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.2m | isHgtFixed: true
+
+25.7m | Acc: 4.0m
+[16:39:38] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.2m | isHgtFixed: true
+
+25.7m | Acc: 4.0m
+[16:39:40] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.2m | isHgtFixed: true
+
+24.4m | Acc: 4.0m
+[16:39:42] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.2m | isHgtFixed: true
+
+.3m | Acc: 4.0m
+[16:39:44] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.2m | isHgtFixed: true
+
+23.6m | Acc: 3.9m
+[16:39:46] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.2m | isHgtFixed: true
+
+23.6m | Acc: 3.9m
+[16:39:48] 🗺️ DEM RESPOSTA -> Rebut: 71.2m | isFixed: true
+tFixed: true
+
+23.6m | Acc: 3.8m
+[16:39:50] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.3m | isHgtFixed: true
+
+3.6m | Acc: 3.8m
+[16:39:52] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.3m | isHgtFixed: true
+
+23.6m | Acc: 3.8m
+[16:39:54] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.4m | isHgtFixed: true
+
+23.6m | Acc: 3.8m
+[16:39:56] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+23.6m | Acc: 3.7m
+[16:39:58] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.5m | isHgtFixed: true
+
+3.6m | Acc: 3.6m
+[16:40:00] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.6m | isHgtFixed: true
+
+23.6m | Acc: 3.6m
+[16:40:02] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.6m | isHgtFixed: true
+
+23.6m | Acc: 3.7m
+[16:40:02] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.1m)
+[16:40:02] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.1m)
+[16:40:04] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.7m | isHgtFixed: true
+)
+3.6m | Acc: 3.8m
+[16:40:06] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+23.6m | Acc: 3.9m
+[16:40:08] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+23.7m | Acc: 4.1m
+[16:40:10] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.8m | isHgtFixed: true
+
+23.7m | Acc: 4.3m
+[16:40:12] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.8m | isHgtFixed: true
+
+23.6m | Acc: 4.0m
+[16:40:14] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.8m | isHgtFixed: true
+
+23.6m | Acc: 4.0m
+[16:40:14] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.4m)
+[16:40:16] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+
+3.6m | Acc: 4.0m
+[16:40:18] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.8m | isHgtFixed: true
+
+23.7m | Acc: 3.9m
+[16:40:20] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.8m | isHgtFixed: true
+
+23.7m | Acc: 3.9m
+[16:40:22] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.8m | isHgtFixed: true
+
+23.7m | Acc: 4.0m
+[16:40:23] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.2m)
+[16:40:23] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.8m)
+[16:40:24] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.8m | isHgtFixed: true
+)
+3.7m | Acc: 3.8m
+[16:40:24] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.5m)
+[16:40:26] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.8m | isHgtFixed: true
+)
+7m | Acc: 3.6m
+[16:40:28] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.8m | isHgtFixed: true
+
+25.2m | Acc: 3.4m
+[16:40:30] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.9m | isHgtFixed: true
+
+23.6m | Acc: 3.3m
+[16:40:32] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+24.2m | Acc: 3.4m
+[16:40:34] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+24.2m | Acc: 3.6m
+[16:40:34] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.0m)
+[16:40:35] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.9m | isHgtFixed: true
+)
+.2m | Acc: 3.6m
+[16:40:37] 🗺️ DEM RESPOSTA -> Rebut: 71.9m | isFixed: true
+tFixed: true
+
+23.6m | Acc: 3.6m
+[16:40:39] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.2m)
+[16:40:39] 🗺️ DEM RESPOSTA -> Rebut: 71.9m | isFixed: true
+tFixed: true
+
+
+3.6m | Acc: 3.5m
+[16:40:39] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.3m)
+[16:40:41] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.9m | isHgtFixed: true
+
+
+6m | Acc: 3.5m
+[16:40:41] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.3m)
+[16:40:43] 🚀 PROVIDER SORTIDA -> Valor publicat: 72.0m | isHgtFixed: true
+)
+3.6m | Acc: 3.4m
+[16:40:45] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+23.6m | Acc: 3.3m
+[16:40:47] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.9m | isHgtFixed: true
+
+23.6m | Acc: 3.1m
+[16:40:49] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.9m | isHgtFixed: true
+
+23.6m | Acc: 3.0m
+[16:40:51] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+23.6m | Acc: 3.0m
+[16:40:53] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.5m | isHgtFixed: true
+
+.7m | Acc: 3.0m
+[16:40:55] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.3m | isHgtFixed: true
+
+23.7m | Acc: 3.0m
+[16:40:57] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.2m | isHgtFixed: true
+
+23.6m | Acc: 3.0m
+[16:40:59] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+23.6m | Acc: 3.0m
+[16:41:01] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+23.7m | Acc: 3.0m
+[16:41:03] 🚀 PROVIDER SORTIDA -> Valor publicat: 70.5m | isHgtFixed: true
+
+23.7m | Acc: 3.0m
+[16:41:05] 🚀 PROVIDER SORTIDA -> Valor publicat: 70.3m | isHgtFixed: true
+
+23.7m | Acc: 3.2m
+[16:41:07] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+24.3m | Acc: 3.5m
+[16:41:09] 🚀 PROVIDER SORTIDA -> Valor publicat: 69.9m | isHgtFixed: true
+
+24.1m | Acc: 3.9m
+[16:41:11] 🚀 PROVIDER SORTIDA -> Valor publicat: 69.9m | isHgtFixed: true
+
+23.6m | Acc: 4.1m
+[16:41:12] 🚀 PROVIDER SORTIDA -> Valor publicat: 69.9m | isHgtFixed: true
+
+23.6m | Acc: 4.0m
+[16:41:13] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.3m)
+[16:41:15] 🚀 PROVIDER SORTIDA -> Valor publicat: 70.0m | isHgtFixed: true
+
+
+4.0m | Acc: 3.8m
+[16:41:17] 🚀 PROVIDER SORTIDA -> Valor publicat: 70.2m | isHgtFixed: true
+
+24.0m | Acc: 3.7m
+[16:41:19] 🚀 PROVIDER SORTIDA -> Valor publicat: 70.2m | isHgtFixed: true
+
+4.0m | Acc: 3.7m
+[16:41:21] 🚀 PROVIDER SORTIDA -> Valor publicat: 70.3m | isHgtFixed: true
+
+24.0m | Acc: 3.7m
+[16:41:23] 🚀 PROVIDER SORTIDA -> Valor publicat: 70.4m | isHgtFixed: true
+
+23.6m | Acc: 3.8m
+[16:41:25] 🚀 PROVIDER SORTIDA -> Valor publicat: 70.4m | isHgtFixed: true
+
+23.6m | Acc: 3.9m
+[16:41:25] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.0m)
+[16:41:26] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.0m)
+[16:41:26] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.0m)
+[16:41:27] 🚀 PROVIDER SORTIDA -> Valor publicat: 70.4m | isHgtFixed: true
+)
+3.6m | Acc: 4.1m
+[16:41:29] 🚀 PROVIDER SORTIDA -> Valor publicat: 70.5m | isHgtFixed: true
+
+24.2m | Acc: 4.2m
+[16:41:31] 🚀 PROVIDER SORTIDA -> Valor publicat: 70.5m | isHgtFixed: true
+
+24.2m | Acc: 4.4m
+[16:41:33] 🚀 PROVIDER SORTIDA -> Valor publicat: 70.6m | isHgtFixed: true
+
+24.2m | Acc: 4.5m
+[16:41:35] 🚀 PROVIDER SORTIDA -> Valor publicat: 70.8m | isHgtFixed: true
+
+3.4m | Acc: 4.7m
+[16:41:37] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.0m | isHgtFixed: true
+
+3.4m | Acc: 4.6m
+[16:41:39] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.1m | isHgtFixed: true
+
+23.4m | Acc: 4.3m
+[16:41:41] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+24.2m | Acc: 4.1m
+[16:41:43] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.2m | isHgtFixed: true
+
+24.2m | Acc: 3.8m
+[16:41:45] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+4.2m | Acc: 3.4m
+[16:41:47] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+24.2m | Acc: 3.1m
+[16:41:48] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.3m | isHgtFixed: true
+
+24.2m | Acc: 3.0m
+[16:41:50] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+24.2m | Acc: 3.0m
+[16:41:52] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+4.2m | Acc: 3.0m
+[16:41:54] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.3m | isHgtFixed: true
+
+3.4m | Acc: 3.0m
+[16:41:56] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.3m | isHgtFixed: true
+
+23.4m | Acc: 3.1m
+[16:41:58] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+23.4m | Acc: 3.4m
+[16:42:00] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.4m | isHgtFixed: true
+
+23.5m | Acc: 3.9m
+[16:42:02] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+23.5m | Acc: 4.1m
+[16:42:04] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.6m | isHgtFixed: true
+
+.5m | Acc: 4.3m
+[16:42:06] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.7m | isHgtFixed: true
+
+23.5m | Acc: 4.3m
+[16:42:08] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.7m | isHgtFixed: true
+
+23.6m | Acc: 4.1m
+[16:42:12] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.8m | isHgtFixed: true
+
+24.2m | Acc: 3.3m
+[16:42:15] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.8m | isHgtFixed: true
+
+3.4m | Acc: 3.1m
+[16:42:17] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+23.4m | Acc: 3.4m
+[16:42:19] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.6m | isHgtFixed: true
+
+23.4m | Acc: 3.2m
+[16:42:21] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+24.2m | Acc: 3.0m
+[16:42:21] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.3m | isHgtFixed: true
+[16:42:23] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+24.2m | Acc: 3.0m
+[16:42:25] 🚀 PROVIDER SORTIDA -> Valor publicat: 70.4m | isHgtFixed: true
+
+.2m | Acc: 3.0m
+[16:42:27] 🗺️ DEM RESPOSTA -> Rebut: 69.9m | isFixed: true
+tFixed: true
+
+24.2m | Acc: 3.0m
+[16:42:29] 🚀 PROVIDER SORTIDA -> Valor publicat: 69.5m | isHgtFixed: true
+
+24.2m | Acc: 3.0m
+[16:42:31] 🚀 PROVIDER SORTIDA -> Valor publicat: 69.3m | isHgtFixed: true
+
+4.2m | Acc: 3.0m
+[16:42:34] 🚀 PROVIDER SORTIDA -> Valor publicat: 69.4m | isHgtFixed: true
+
+24.2m | Acc: 3.1m
+[16:42:36] 🚀 PROVIDER SORTIDA -> Valor publicat: 69.3m | isHgtFixed: true
+
+23.4m | Acc: 3.1m
+[16:42:38] 🛰️ GPS ENTRADA -> Lat: 41.9845036 | Lon: 2.8100124 | AltGPS: 123.4m | Acc: 3.0m
+[16:42:40] 🚀 PROVIDER SORTIDA -> Valor publicat: 69.3m | isHgtFixed: true
+
+23.4m | Acc: 3.0m
+[16:42:42] 🚀 PROVIDER SORTIDA -> Valor publicat: 69.3m | isHgtFixed: true
+
+23.4m | Acc: 3.0m
+[16:42:44] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+23.5m | Acc: 3.0m
+[16:42:46] 🗺️ DEM RESPOSTA -> Rebut: 69.3m | isFixed: true
+tFixed: true
+
+23.5m | Acc: 3.0m
+[16:42:48] 🚀 PROVIDER SORTIDA -> Valor publicat: 69.3m | isHgtFixed: true
+
+3.5m | Acc: 3.0m
+[16:42:50] 🚀 PROVIDER SORTIDA -> Valor publicat: 69.3m | isHgtFixed: true
+
+24.1m | Acc: 3.0m
+[16:42:52] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+24.2m | Acc: 3.0m
+[16:42:54] 🚀 PROVIDER SORTIDA -> Valor publicat: 69.3m | isHgtFixed: true
+
+24.2m | Acc: 3.0m
+[16:42:56] 🚀 PROVIDER SORTIDA -> Valor publicat: 69.3m | isHgtFixed: true
+
+23.4m | Acc: 3.0m
+[16:42:58] 🚀 PROVIDER SORTIDA -> Valor publicat: 69.3m | isHgtFixed: true
+
+23.4m | Acc: 3.0m
+[16:43:00] 🚀 PROVIDER SORTIDA -> Valor publicat: 69.2m | isHgtFixed: true
+
+3.4m | Acc: 3.3m
+[16:43:02] 🚀 PROVIDER SORTIDA -> Valor publicat: 69.3m | isHgtFixed: true
+
+3.4m | Acc: 4.4m
+[16:43:04] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+23.4m | Acc: 5.3m
+[16:43:06] 🗺️ DEM RESPOSTA -> Rebut: 69.3m | isFixed: true
+tFixed: true
+
+3.4m | Acc: 5.4m
+[16:43:08] 🚀 PROVIDER SORTIDA -> Valor publicat: 69.4m | isHgtFixed: true
+
+23.4m | Acc: 5.4m
+[16:43:10] 🚀 PROVIDER SORTIDA -> Valor publicat: 69.4m | isHgtFixed: true
+
+3.4m | Acc: 5.4m
+[16:43:12] 🚀 PROVIDER SORTIDA -> Valor publicat: 69.3m | isHgtFixed: true
+
+23.4m | Acc: 5.3m
+[16:43:14] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+23.4m | Acc: 5.2m
+[16:43:16] 🚀 PROVIDER SORTIDA -> Valor publicat: 69.3m | isHgtFixed: true
+
+23.4m | Acc: 5.1m
+[16:43:18] 🚀 PROVIDER SORTIDA -> Valor publicat: 69.4m | isHgtFixed: true
+
+.4m | Acc: 5.0m
+[16:43:20] 🚀 PROVIDER SORTIDA -> Valor publicat: 69.7m | isHgtFixed: true
+
+.4m | Acc: 4.9m
+[16:43:22] 🚀 PROVIDER SORTIDA -> Valor publicat: 69.8m | isHgtFixed: true
+
+23.4m | Acc: 4.9m
+[16:43:23] 🚀 PROVIDER SORTIDA -> Valor publicat: 70.0m | isHgtFixed: true
+
+3.4m | Acc: 4.8m
+[16:43:25] 🚀 PROVIDER SORTIDA -> Valor publicat: 70.0m | isHgtFixed: true
+
+23.4m | Acc: 4.8m
+[16:43:27] 🚀 PROVIDER SORTIDA -> Valor publicat: 70.1m | isHgtFixed: true
+
+23.4m | Acc: 4.7m
+[16:43:29] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+23.4m | Acc: 4.7m
+[16:43:31] 🚀 PROVIDER SORTIDA -> Valor publicat: 70.4m | isHgtFixed: true
+
+23.4m | Acc: 4.6m
+[16:43:33] 🚀 PROVIDER SORTIDA -> Valor publicat: 70.5m | isHgtFixed: true
+
+23.4m | Acc: 4.5m
+[16:43:35] 🚀 PROVIDER SORTIDA -> Valor publicat: 70.6m | isHgtFixed: true
+
+23.4m | Acc: 4.5m
+[16:43:37] 🚀 PROVIDER SORTIDA -> Valor publicat: 70.6m | isHgtFixed: true
+
+23.4m | Acc: 4.4m
+[16:43:39] 🚀 PROVIDER SORTIDA -> Valor publicat: 70.7m | isHgtFixed: true
+
+23.4m | Acc: 4.1m
+[16:43:41] 🚀 PROVIDER SORTIDA -> Valor publicat: 70.8m | isHgtFixed: true
+
+3.4m | Acc: 4.0m
+[16:43:43] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+23.4m | Acc: 4.3m
+[16:43:45] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.0m | isHgtFixed: true
+
+23.4m | Acc: 4.7m
+[16:43:47] 🛰️ GPS ENTRADA -> Lat: 41.9849284 | Lon: 2.8104727 | AltGPS: 123.4m | Acc: 5.2m
+[16:43:49] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+23.4m | Acc: 5.4m
+[16:43:51] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.2m | isHgtFixed: true
+
+23.4m | Acc: 5.3m
+[16:43:51] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.2m)
+[16:43:53] 🎯 CALIBRATGE -> Nou offset: 14.3m (GPS: 71.3m | BaroPuru: 57.0m)
+3.4m | Acc: 5.1m
+[16:43:55] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.4m | isHgtFixed: true
+
+23.4m | Acc: 4.9m
+[16:43:56] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.4m | isHgtFixed: true
+
+23.4m | Acc: 4.8m
+[16:43:58] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.5m | isHgtFixed: true
+
+22.6m | Acc: 4.8m
+[16:44:00] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+22.6m | Acc: 4.7m
+[16:44:02] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.6m | isHgtFixed: true
+
+22.6m | Acc: 4.7m
+[16:44:04] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.8m | isHgtFixed: true
+
+22.6m | Acc: 4.6m
+[16:44:06] 🚀 PROVIDER SORTIDA -> Valor publicat: 72.0m | isHgtFixed: true
+
+22.6m | Acc: 4.6m
+[16:44:08] 🚀 PROVIDER SORTIDA -> Valor publicat: 72.2m | isHgtFixed: true
+
+22.6m | Acc: 4.5m
+[16:44:10] 🛰️ GPS ENTRADA -> Lat: 41.98525 | Lon: 2.8106432 | AltGPS: 122.6m | Acc: 4.3m
+[16:44:12] 🚀 PROVIDER SORTIDA -> Valor publicat: 72.7m | isHgtFixed: true
+
+23.4m | Acc: 4.4m
+[16:44:14] 🚀 PROVIDER SORTIDA -> Valor publicat: 72.8m | isHgtFixed: true
+
+23.4m | Acc: 4.4m
+[16:44:16] 🚀 PROVIDER SORTIDA -> Valor publicat: 72.9m | isHgtFixed: true
+
+3.4m | Acc: 4.6m
+[16:44:18] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.3m | isHgtFixed: true
+
+23.4m | Acc: 4.7m
+[16:44:19] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.8m)
+[16:44:19] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.6m)
+[16:44:20] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+
+3.4m | Acc: 4.9m
+[16:44:22] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.2m)
+[16:44:22] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+
+3.4m | Acc: 4.8m
+[16:44:22] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.1m)
+[16:44:23] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.0m)
+[16:44:24] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+
+3.4m | Acc: 4.6m
+[16:44:26] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.3m | isHgtFixed: true
+
+23.4m | Acc: 4.5m
+[16:44:28] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.7m | isHgtFixed: true
+
+23.4m | Acc: 4.8m
+[16:44:30] 🚀 PROVIDER SORTIDA -> Valor publicat: 76.1m | isHgtFixed: true
+
+23.4m | Acc: 5.1m
+[16:44:32] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+24.2m | Acc: 5.1m
+[16:44:34] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+24.2m | Acc: 5.0m
+[16:44:36] 🚀 PROVIDER SORTIDA -> Valor publicat: 76.9m | isHgtFixed: true
+
+4.2m | Acc: 4.1m
+[16:44:38] 🚀 PROVIDER SORTIDA -> Valor publicat: 76.8m | isHgtFixed: true
+
+.6m | Acc: 3.7m
+[16:44:40] 🚀 PROVIDER SORTIDA -> Valor publicat: 77.1m | isHgtFixed: true
+
+22.6m | Acc: 3.4m
+[16:44:42] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+22.6m | Acc: 3.2m
+[16:44:42] 🚀 PROVIDER SORTIDA -> Valor publicat: 77.8m | isHgtFixed: true
+[16:44:44] 🚀 PROVIDER SORTIDA -> Valor publicat: 78.4m | isHgtFixed: true
+
+22.6m | Acc: 3.2m
+[16:44:46] 🚀 PROVIDER SORTIDA -> Valor publicat: 79.0m | isHgtFixed: true
+
+22.6m | Acc: 3.3m
+[16:44:48] 🚀 PROVIDER SORTIDA -> Valor publicat: 79.7m | isHgtFixed: true
+
+22.6m | Acc: 3.7m
+[16:44:50] 🚀 PROVIDER SORTIDA -> Valor publicat: 80.6m | isHgtFixed: true
+
+22.6m | Acc: 3.9m
+[16:44:52] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+22.6m | Acc: 4.1m
+[16:44:54] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+22.6m | Acc: 4.3m
+[16:44:56] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+22.6m | Acc: 4.3m
+[16:44:58] 🚀 PROVIDER SORTIDA -> Valor publicat: 82.7m | isHgtFixed: true
+
+22.6m | Acc: 3.9m
+[16:45:00] 🚀 PROVIDER SORTIDA -> Valor publicat: 82.4m | isHgtFixed: true
+
+2.6m | Acc: 3.3m
+[16:45:02] 🚀 PROVIDER SORTIDA -> Valor publicat: 82.1m | isHgtFixed: true
+
+22.6m | Acc: 3.0m
+[16:45:04] 🚀 PROVIDER SORTIDA -> Valor publicat: 81.9m | isHgtFixed: true
+
+22.6m | Acc: 3.0m
+[16:45:06] 🚀 PROVIDER SORTIDA -> Valor publicat: 81.8m | isHgtFixed: true
+
+2.6m | Acc: 3.3m
+[16:45:08] 🚀 PROVIDER SORTIDA -> Valor publicat: 81.6m | isHgtFixed: true
+
+2.6m | Acc: 3.9m
+[16:45:10] 🚀 PROVIDER SORTIDA -> Valor publicat: 81.5m | isHgtFixed: true
+
+2.6m | Acc: 4.3m
+[16:45:12] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+2.6m | Acc: 4.6m
+[16:45:12] 🚀 PROVIDER SORTIDA -> Valor publicat: 81.5m | isHgtFixed: true
+[16:45:14] 🚀 PROVIDER SORTIDA -> Valor publicat: 81.5m | isHgtFixed: true
+
+22.6m | Acc: 4.7m
+[16:45:16] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+22.6m | Acc: 4.8m
+[16:45:18] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+22.6m | Acc: 4.4m
+[16:45:19] 🚀 PROVIDER SORTIDA -> Valor publicat: 81.5m | isHgtFixed: true
+
+22.6m | Acc: 3.8m
+[16:45:21] 🚀 PROVIDER SORTIDA -> Valor publicat: 81.5m | isHgtFixed: true
+
+22.6m | Acc: 3.2m
+[16:45:23] 🚀 PROVIDER SORTIDA -> Valor publicat: 81.4m | isHgtFixed: true
+
+2.6m | Acc: 3.1m
+[16:45:25] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+22.6m | Acc: 3.2m
+[16:45:27] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+22.6m | Acc: 3.7m
+[16:45:29] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+22.6m | Acc: 4.1m
+[16:45:31] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+22.6m | Acc: 4.2m
+[16:45:33] 🚀 PROVIDER SORTIDA -> Valor publicat: 78.8m | isHgtFixed: true
+
+22.6m | Acc: 4.4m
+[16:45:35] 🚀 PROVIDER SORTIDA -> Valor publicat: 78.2m | isHgtFixed: true
+
+22.6m | Acc: 4.5m
+[16:45:37] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+22.6m | Acc: 4.6m
+[16:45:39] 🚀 PROVIDER SORTIDA -> Valor publicat: 77.1m | isHgtFixed: true
+
+22.6m | Acc: 4.7m
+[16:45:40] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.0m)
+[16:45:40] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.1m)
+[16:45:40] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 3.0m)
+[16:45:41] 🚀 PROVIDER SORTIDA -> Valor publicat: 76.8m | isHgtFixed: true
+)
+2.6m | Acc: 4.9m
+[16:45:42] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 4.8m)
+[16:45:42] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 4.5m)
+[16:45:43] 🎯 CALIBRATGE -> Nou offset: 22.1m (GPS: 76.9m | BaroPuru: 54.8m)
+.5m | Acc: 4.8m
+[16:45:45] 🚀 PROVIDER SORTIDA -> Valor publicat: 76.9m | isHgtFixed: true
+
+22.5m | Acc: 4.8m
+[16:45:47] 🚀 PROVIDER SORTIDA -> Valor publicat: 76.6m | isHgtFixed: true
+
+22.5m | Acc: 4.7m
+[16:45:49] 🚀 PROVIDER SORTIDA -> Valor publicat: 76.5m | isHgtFixed: true
+
+22.5m | Acc: 4.7m
+[16:45:51] 🚀 PROVIDER SORTIDA -> Valor publicat: 76.3m | isHgtFixed: true
+
+22.5m | Acc: 4.5m
+[16:45:53] 🚀 PROVIDER SORTIDA -> Valor publicat: 76.2m | isHgtFixed: true
+
+2.5m | Acc: 4.4m
+[16:45:53] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.1m)
+[16:45:55] 🚀 PROVIDER SORTIDA -> Valor publicat: 76.1m | isHgtFixed: true
+)
+2.5m | Acc: 4.4m
+[16:45:57] 🗺️ DEM RESPOSTA -> Rebut: 76.0m | isFixed: true
+el baròmetre
+22.6m | Acc: 4.5m
+[16:45:58] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.8m | isHgtFixed: true
+
+22.6m | Acc: 4.5m
+[16:46:00] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.6m | isHgtFixed: true
+
+22.6m | Acc: 4.6m
+[16:46:02] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.4m | isHgtFixed: true
+
+22.6m | Acc: 4.5m
+[16:46:04] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+21.8m | Acc: 4.5m
+[16:46:06] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+21.8m | Acc: 4.4m
+[16:46:08] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+21.8m | Acc: 4.5m
+[16:46:10] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.3m | isHgtFixed: true
+
+22.6m | Acc: 4.5m
+[16:46:12] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.4m | isHgtFixed: true
+
+22.6m | Acc: 4.6m
+[16:46:14] 🗺️ DEM RESPOSTA -> Rebut: 75.6m | isFixed: true
+tFixed: true
+
+22.6m | Acc: 4.6m
+[16:46:16] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.0m | isHgtFixed: true
+
+2.6m | Acc: 4.6m
+[16:46:18] 🗺️ DEM RESPOSTA -> Rebut: 74.2m | isFixed: true
+tFixed: true
+
+22.6m | Acc: 4.0m
+[16:46:20] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.5m | isHgtFixed: true
+
+22.6m | Acc: 3.4m
+[16:46:22] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.1m | isHgtFixed: true
+
+22.6m | Acc: 3.0m
+[16:46:24] 🚀 PROVIDER SORTIDA -> Valor publicat: 72.8m | isHgtFixed: true
+
+21.4m | Acc: 3.0m
+[16:46:26] 🚀 PROVIDER SORTIDA -> Valor publicat: 72.5m | isHgtFixed: true
+
+21.4m | Acc: 3.1m
+[16:46:28] 🚀 PROVIDER SORTIDA -> Valor publicat: 72.5m | isHgtFixed: true
+
+21.4m | Acc: 3.0m
+[16:46:30] 🚀 PROVIDER SORTIDA -> Valor publicat: 72.6m | isHgtFixed: true
+
+21.7m | Acc: 3.0m
+[16:46:32] 🚀 PROVIDER SORTIDA -> Valor publicat: 72.8m | isHgtFixed: true
+
+21.7m | Acc: 3.1m
+[16:46:34] 🚀 PROVIDER SORTIDA -> Valor publicat: 72.9m | isHgtFixed: true
+
+21.7m | Acc: 3.4m
+[16:46:36] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.1m | isHgtFixed: true
+
+22.6m | Acc: 3.8m
+[16:46:38] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.3m | isHgtFixed: true
+
+22.6m | Acc: 4.0m
+[16:46:39] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.6m | isHgtFixed: true
+
+22.6m | Acc: 4.3m
+[16:46:41] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+22.6m | Acc: 4.4m
+[16:46:43] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+2.6m | Acc: 4.2m
+[16:46:45] 🚀 PROVIDER SORTIDA -> Valor publicat: 74.3m | isHgtFixed: true
+
+22.6m | Acc: 3.6m
+[16:46:47] 🚀 PROVIDER SORTIDA -> Valor publicat: 74.4m | isHgtFixed: true
+
+2.6m | Acc: 3.1m
+[16:46:49] 🚀 PROVIDER SORTIDA -> Valor publicat: 74.4m | isHgtFixed: true
+
+2.6m | Acc: 3.1m
+[16:46:51] 🚀 PROVIDER SORTIDA -> Valor publicat: 74.4m | isHgtFixed: true
+
+22.6m | Acc: 3.0m
+[16:46:53] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+2.6m | Acc: 3.0m
+[16:46:56] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+22.6m | Acc: 3.1m
+[16:46:57] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.1m | isHgtFixed: true
+
+20.8m | Acc: 3.1m
+[16:46:59] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.3m | isHgtFixed: true
+
+20.8m | Acc: 3.1m
+[16:47:01] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.5m | isHgtFixed: true
+
+20.8m | Acc: 3.0m
+[16:47:03] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.7m | isHgtFixed: true
+
+22.6m | Acc: 3.0m
+[16:47:05] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+22.6m | Acc: 3.0m
+[16:47:08] 🚀 PROVIDER SORTIDA -> Valor publicat: 76.0m | isHgtFixed: true
+
+21.7m | Acc: 3.0m
+[16:47:10] 🗺️ DEM RESPOSTA -> Rebut: 76.2m | isFixed: true
+1 | AltGPS: 121.7m | Acc: 3.0m
+[16:47:10] 🚀 PROVIDER SORTIDA -> Valor publicat: 76.2m | isHgtFixed: true
+
+[16:47:12] 🚀 PROVIDER SORTIDA -> Valor publicat: 76.3m | isHgtFixed: true
+
+22.6m | Acc: 3.0m
+[16:47:14] 🚀 PROVIDER SORTIDA -> Valor publicat: 76.4m | isHgtFixed: true
+
+22.6m | Acc: 3.0m
+[16:47:16] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+22.6m | Acc: 3.0m
+[16:47:18] 🚀 PROVIDER SORTIDA -> Valor publicat: 76.5m | isHgtFixed: true
+
+22.6m | Acc: 3.0m
+[16:47:19] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+22.6m | Acc: 3.0m
+[16:47:21] 🚀 PROVIDER SORTIDA -> Valor publicat: 76.6m | isHgtFixed: true
+
+22.6m | Acc: 3.0m
+[16:47:23] 🗺️ DEM RESPOSTA -> Rebut: 76.4m | isFixed: true
+tFixed: true
+
+22.6m | Acc: 3.0m
+[16:47:25] 🚀 PROVIDER SORTIDA -> Valor publicat: 76.2m | isHgtFixed: true
+
+22.6m | Acc: 3.0m
+[16:47:27] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+22.6m | Acc: 3.0m
+[16:47:29] 🚀 PROVIDER SORTIDA -> Valor publicat: 76.0m | isHgtFixed: true
+
+22.6m | Acc: 3.0m
+[16:47:31] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.8m | isHgtFixed: true
+
+22.6m | Acc: 3.0m
+[16:47:33] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.7m | isHgtFixed: true
+
+22.6m | Acc: 3.0m
+[16:47:35] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+20.8m | Acc: 3.0m
+[16:47:35] 🗺️ DEM RESPOSTA -> Rebut: 75.6m | isFixed: true
+[16:47:38] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.5m | isHgtFixed: true
+
+20.8m | Acc: 3.0m
+[16:47:40] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.5m | isHgtFixed: true
+
+20.8m | Acc: 3.0m
+[16:47:42] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.6m | isHgtFixed: true
+
+20.8m | Acc: 3.0m
+[16:47:44] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+22.6m | Acc: 3.0m
+[16:47:46] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.8m | isHgtFixed: true
+
+22.6m | Acc: 3.0m
+[16:47:48] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.9m | isHgtFixed: true
+
+22.6m | Acc: 3.0m
+[16:47:50] 🚀 PROVIDER SORTIDA -> Valor publicat: 76.1m | isHgtFixed: true
+
+21.7m | Acc: 3.0m
+[16:47:52] 🗺️ DEM RESPOSTA -> Rebut: 76.1m | isFixed: true
+el baròmetre
+21.7m | Acc: 3.0m
+[16:47:54] 🚀 PROVIDER SORTIDA -> Valor publicat: 76.6m | isHgtFixed: true
+
+.6m | Acc: 3.0m
+[16:47:56] 🚀 PROVIDER SORTIDA -> Valor publicat: 76.8m | isHgtFixed: true
+
+22.6m | Acc: 3.0m
+[16:47:58] 🚀 PROVIDER SORTIDA -> Valor publicat: 76.8m | isHgtFixed: true
+
+21.6m | Acc: 3.0m
+[16:48:00] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+22.6m | Acc: 3.0m
+[16:48:02] 🚀 PROVIDER SORTIDA -> Valor publicat: 76.0m | isHgtFixed: true
+
+22.6m | Acc: 3.0m
+[16:48:04] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.6m | isHgtFixed: true
+
+2.6m | Acc: 3.0m
+[16:48:06] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.2m | isHgtFixed: true
+
+1.6m | Acc: 3.0m
+[16:48:08] 🚀 PROVIDER SORTIDA -> Valor publicat: 74.9m | isHgtFixed: true
+
+21.6m | Acc: 3.0m
+[16:48:10] 🚀 PROVIDER SORTIDA -> Valor publicat: 74.7m | isHgtFixed: true
+
+22.6m | Acc: 3.0m
+[16:48:12] 🚀 PROVIDER SORTIDA -> Valor publicat: 74.8m | isHgtFixed: true
+
+21.7m | Acc: 3.0m
+[16:48:14] 🚀 PROVIDER SORTIDA -> Valor publicat: 74.7m | isHgtFixed: true
+
+21.8m | Acc: 3.0m
+[16:48:16] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+20.8m | Acc: 3.0m
+[16:48:18] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+20.8m | Acc: 3.0m
+[16:48:18] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.5m)
+[16:48:18] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.2m)
+[16:48:18] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 3.7m)
+[16:48:19] 🚀 PROVIDER SORTIDA -> Valor publicat: 74.6m | isHgtFixed: true
+)
+0.8m | Acc: 3.0m
+[16:48:21] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+20.8m | Acc: 3.0m
+[16:48:23] 🚀 PROVIDER SORTIDA -> Valor publicat: 74.4m | isHgtFixed: true
+
+2.6m | Acc: 3.0m
+[16:48:25] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+2.6m | Acc: 3.0m
+[16:48:27] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.1m | isHgtFixed: true
+
+22.6m | Acc: 3.0m
+[16:48:29] 🗺️ DEM RESPOSTA -> Rebut: 75.3m | isFixed: true
+tFixed: true
+
+22.6m | Acc: 3.0m
+[16:48:30] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.2m)
+[16:48:31] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.5m | isHgtFixed: true
+)
+1.4m | Acc: 3.1m
+[16:48:33] 🚀 PROVIDER SORTIDA -> Valor publicat: 74.9m | isHgtFixed: true
+
+21.2m | Acc: 3.3m
+[16:48:35] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.0m | isHgtFixed: true
+
+21.3m | Acc: 3.7m
+[16:48:37] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.3m | isHgtFixed: true
+
+21.6m | Acc: 3.8m
+[16:48:39] 🚀 PROVIDER SORTIDA -> Valor publicat: 75.5m | isHgtFixed: true
+
+21.3m | Acc: 3.5m
+[16:48:41] 🗺️ DEM RESPOSTA -> Rebut: 75.8m | isFixed: true
+tFixed: true
+
+1.5m | Acc: 3.2m
+[16:48:43] 🚀 PROVIDER SORTIDA -> Valor publicat: 76.0m | isHgtFixed: true
+
+21.9m | Acc: 3.1m
+[16:48:45] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+21.6m | Acc: 3.0m
+[16:48:47] 🗺️ DEM RESPOSTA -> Rebut: 76.5m | isFixed: true
+tFixed: true
+
+21.6m | Acc: 3.0m
+[16:48:49] 🚀 PROVIDER SORTIDA -> Valor publicat: 77.0m | isHgtFixed: true
+
+21.6m | Acc: 3.0m
+[16:48:50] 🚀 PROVIDER SORTIDA -> Valor publicat: 77.4m | isHgtFixed: true
+
+21.6m | Acc: 3.0m
+[16:48:52] 🚀 PROVIDER SORTIDA -> Valor publicat: 77.8m | isHgtFixed: true
+
+21.6m | Acc: 3.0m
+[16:48:53] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.2m)
+[16:48:54] 🚀 PROVIDER SORTIDA -> Valor publicat: 78.3m | isHgtFixed: true
+)
+1.7m | Acc: 3.0m
+[16:48:56] 🚀 PROVIDER SORTIDA -> Valor publicat: 78.8m | isHgtFixed: true
+
+1.7m | Acc: 3.0m
+[16:48:58] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+21.7m | Acc: 3.1m
+[16:49:00] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+.0m | Acc: 3.1m
+[16:49:02] 🚀 PROVIDER SORTIDA -> Valor publicat: 79.7m | isHgtFixed: true
+
+21.9m | Acc: 3.1m
+[16:49:04] 🚀 PROVIDER SORTIDA -> Valor publicat: 79.9m | isHgtFixed: true
+
+22.2m | Acc: 3.1m
+[16:49:06] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+1.9m | Acc: 3.0m
+[16:49:08] 🚀 PROVIDER SORTIDA -> Valor publicat: 80.1m | isHgtFixed: true
+
+22.0m | Acc: 3.0m
+[16:49:10] 🚀 PROVIDER SORTIDA -> Valor publicat: 80.3m | isHgtFixed: true
+
+1.9m | Acc: 3.0m
+[16:49:10] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.0m)
+[16:49:10] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.1m)
+[16:49:12] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+
+1.9m | Acc: 3.0m
+[16:49:14] 🚀 PROVIDER SORTIDA -> Valor publicat: 80.4m | isHgtFixed: true
+
+22.0m | Acc: 3.0m
+[16:49:16] 🚀 PROVIDER SORTIDA -> Valor publicat: 80.4m | isHgtFixed: true
+
+21.6m | Acc: 3.0m
+[16:49:18] 🚀 PROVIDER SORTIDA -> Valor publicat: 80.4m | isHgtFixed: true
+
+21.9m | Acc: 3.0m
+[16:49:20] 🚀 PROVIDER SORTIDA -> Valor publicat: 81.3m | isHgtFixed: true
+
+1.9m | Acc: 3.0m
+[16:49:22] 🚀 PROVIDER SORTIDA -> Valor publicat: 82.0m | isHgtFixed: true
+
+21.9m | Acc: 3.0m
+[16:49:24] 🚀 PROVIDER SORTIDA -> Valor publicat: 82.8m | isHgtFixed: true
+
+21.8m | Acc: 3.0m
+[16:49:26] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+22.0m | Acc: 3.0m
+[16:49:28] 🚀 PROVIDER SORTIDA -> Valor publicat: 84.5m | isHgtFixed: true
+
+21.6m | Acc: 3.0m
+[16:49:30] 🚀 PROVIDER SORTIDA -> Valor publicat: 85.3m | isHgtFixed: true
+
+21.6m | Acc: 3.0m
+[16:49:32] 🚀 PROVIDER SORTIDA -> Valor publicat: 86.0m | isHgtFixed: true
+
+21.6m | Acc: 3.0m
+[16:49:34] 🚀 PROVIDER SORTIDA -> Valor publicat: 86.9m | isHgtFixed: true
+
+20.9m | Acc: 3.0m
+[16:49:36] 🗺️ DEM RESPOSTA -> Rebut: 87.7m | isFixed: true
+el baròmetre
+20.9m | Acc: 3.0m
+[16:49:38] 🚀 PROVIDER SORTIDA -> Valor publicat: 88.6m | isHgtFixed: true
+
+20.9m | Acc: 3.0m
+[16:49:39] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.6m)
+[16:49:40] 🚀 PROVIDER SORTIDA -> Valor publicat: 89.2m | isHgtFixed: true
+)
+.9m | Acc: 3.0m
+[16:49:42] 🚀 PROVIDER SORTIDA -> Valor publicat: 89.8m | isHgtFixed: true
+
+20.9m | Acc: 3.1m
+[16:49:42] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 4.5m)
+[16:49:42] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.4m)
+[16:49:43] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 4.3m)
+[16:49:43] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 3.6m)
+[16:49:44] 🚀 PROVIDER SORTIDA -> Valor publicat: 90.6m | isHgtFixed: true
+)
+0.9m | Acc: 3.1m
+[16:49:46] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.1m)
+[16:49:46] 🚀 PROVIDER SORTIDA -> Valor publicat: 91.4m | isHgtFixed: true
+)
+0.9m | Acc: 3.1m
+[16:49:48] 🚀 PROVIDER SORTIDA -> Valor publicat: 92.1m | isHgtFixed: true
+
+20.9m | Acc: 3.1m
+[16:49:48] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.1m)
+[16:49:49] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.4m)
+[16:49:50] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.2m)
+[16:49:50] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+
+0.9m | Acc: 3.1m
+[16:49:51] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.3m)
+[16:49:52] 🚀 PROVIDER SORTIDA -> Valor publicat: 93.3m | isHgtFixed: true
+)
+0.9m | Acc: 3.0m
+[16:49:54] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+0.9m | Acc: 3.0m
+[16:49:54] 🚀 PROVIDER SORTIDA -> Valor publicat: 94.0m | isHgtFixed: true
+[16:49:55] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.1m)
+[16:49:55] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.2m)
+[16:49:56] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.4m)
+[16:49:56] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.7m)
+[16:49:56] 🎯 CALIBRATGE -> Nou offset: 42.9m (GPS: 94.4m | BaroPuru: 51.4m)
+0.9m | Acc: 3.0m
+[16:49:58] 🚀 PROVIDER SORTIDA -> Valor publicat: 94.8m | isHgtFixed: true
+
+20.9m | Acc: 3.0m
+[16:49:59] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.1m)
+[16:50:00] 🎯 CALIBRATGE -> Nou offset: 41.4m (GPS: 95.2m | BaroPuru: 53.8m)
+.9m | Acc: 3.0m
+[16:50:02] 🚀 PROVIDER SORTIDA -> Valor publicat: 95.6m | isHgtFixed: true
+
+20.9m | Acc: 3.0m
+[16:50:04] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+21.1m | Acc: 3.0m
+[16:50:06] 🚀 PROVIDER SORTIDA -> Valor publicat: 95.9m | isHgtFixed: true
+
+20.9m | Acc: 3.0m
+[16:50:08] 🗺️ DEM RESPOSTA -> Rebut: 96.0m | isFixed: true
+tFixed: true
+
+21.0m | Acc: 3.0m
+[16:50:08] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.8m)
+[16:50:10] 🗺️ DEM RESPOSTA -> Rebut: 96.1m | isFixed: true
+tFixed: true
+)
+.9m | Acc: 3.0m
+[16:50:11] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.1m)
+[16:50:12] 🚀 PROVIDER SORTIDA -> Valor publicat: 96.2m | isHgtFixed: true
+)
+0.5m | Acc: 3.0m
+[16:50:14] 🚀 PROVIDER SORTIDA -> Valor publicat: 96.2m | isHgtFixed: true
+
+.4m | Acc: 3.0m
+[16:50:14] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.1m)
+[16:50:16] 🚀 PROVIDER SORTIDA -> Valor publicat: 96.2m | isHgtFixed: true
+)
+0.4m | Acc: 3.0m
+[16:50:17] 🚀 PROVIDER SORTIDA -> Valor publicat: 96.3m | isHgtFixed: true
+
+20.9m | Acc: 3.0m
+[16:50:19] 🚀 PROVIDER SORTIDA -> Valor publicat: 96.4m | isHgtFixed: true
+
+20.9m | Acc: 3.0m
+[16:50:21] 🚀 PROVIDER SORTIDA -> Valor publicat: 96.6m | isHgtFixed: true
+
+20.9m | Acc: 3.0m
+[16:50:23] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.5m)
+[16:50:24] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.0m)
+[16:50:24] 🚀 PROVIDER SORTIDA -> Valor publicat: 96.9m | isHgtFixed: true
+)
+0.9m | Acc: 3.0m
+[16:50:26] 🚀 PROVIDER SORTIDA -> Valor publicat: 97.2m | isHgtFixed: true
+
+20.9m | Acc: 3.0m
+[16:50:28] 🚀 PROVIDER SORTIDA -> Valor publicat: 97.4m | isHgtFixed: true
+
+20.9m | Acc: 3.0m
+[16:50:30] 🗺️ DEM RESPOSTA -> Rebut: 97.8m | isFixed: true
+tFixed: true
+
+0.9m | Acc: 3.0m
+[16:50:32] 🚀 PROVIDER SORTIDA -> Valor publicat: 98.1m | isHgtFixed: true
+
+20.9m | Acc: 3.0m
+[16:50:34] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.2m)
+[16:50:34] 🚀 PROVIDER SORTIDA -> Valor publicat: 98.0m | isHgtFixed: true
+)
+0.9m | Acc: 3.0m
+[16:50:34] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.5m)
+[16:50:35] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.0m)
+[16:50:35] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.3m)
+[16:50:35] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.3m)
+[16:50:36] 🎯 CALIBRATGE -> Nou offset: 43.5m (GPS: 97.8m | BaroPuru: 54.3m)
+0.9m | Acc: 3.0m
+[16:50:38] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+20.9m | Acc: 3.1m
+[16:50:38] 🚀 PROVIDER SORTIDA -> Valor publicat: 97.7m | isHgtFixed: true
+[16:50:40] 🚀 PROVIDER SORTIDA -> Valor publicat: 97.4m | isHgtFixed: true
+
+20.6m | Acc: 3.3m
+[16:50:42] 🚀 PROVIDER SORTIDA -> Valor publicat: 97.1m | isHgtFixed: true
+
+20.6m | Acc: 3.3m
+[16:50:44] 🚀 PROVIDER SORTIDA -> Valor publicat: 96.7m | isHgtFixed: true
+
+20.6m | Acc: 3.1m
+[16:50:46] 🚀 PROVIDER SORTIDA -> Valor publicat: 96.4m | isHgtFixed: true
+
+20.8m | Acc: 3.0m
+[16:50:48] 🚀 PROVIDER SORTIDA -> Valor publicat: 96.3m | isHgtFixed: true
+
+20.7m | Acc: 3.0m
+[16:50:50] 🚀 PROVIDER SORTIDA -> Valor publicat: 96.1m | isHgtFixed: true
+
+20.7m | Acc: 3.0m
+[16:50:52] 🚀 PROVIDER SORTIDA -> Valor publicat: 96.0m | isHgtFixed: true
+
+20.5m | Acc: 3.0m
+[16:50:54] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+20.9m | Acc: 3.0m
+[16:50:56] 🚀 PROVIDER SORTIDA -> Valor publicat: 95.9m | isHgtFixed: true
+
+20.9m | Acc: 3.0m
+[16:50:58] 🚀 PROVIDER SORTIDA -> Valor publicat: 96.0m | isHgtFixed: true
+
+20.7m | Acc: 3.0m
+[16:51:00] 🚀 PROVIDER SORTIDA -> Valor publicat: 96.0m | isHgtFixed: true
+
+20.7m | Acc: 3.0m
+[16:51:02] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+20.9m | Acc: 3.0m
+[16:51:04] 🚀 PROVIDER SORTIDA -> Valor publicat: 95.6m | isHgtFixed: true
+
+20.9m | Acc: 3.0m
+[16:51:06] 🚀 PROVIDER SORTIDA -> Valor publicat: 95.6m | isHgtFixed: true
+
+0.9m | Acc: 3.0m
+[16:51:08] 🗺️ DEM RESPOSTA -> Rebut: 95.4m | isFixed: true
+tFixed: true
+
+20.7m | Acc: 3.0m
+[16:51:10] 🚀 PROVIDER SORTIDA -> Valor publicat: 95.2m | isHgtFixed: true
+
+20.9m | Acc: 3.0m
+[16:51:12] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+20.9m | Acc: 3.0m
+[16:51:14] 🗺️ DEM RESPOSTA -> Rebut: 95.3m | isFixed: true
+tFixed: true
+
+20.9m | Acc: 3.0m
+[16:51:16] 🚀 PROVIDER SORTIDA -> Valor publicat: 95.5m | isHgtFixed: true
+
+20.5m | Acc: 3.0m
+[16:51:18] 🗺️ DEM RESPOSTA -> Rebut: 95.6m | isFixed: true
+tFixed: true
+
+20.6m | Acc: 3.0m
+[16:51:20] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+20.7m | Acc: 3.0m
+[16:51:22] 🚀 PROVIDER SORTIDA -> Valor publicat: 95.6m | isHgtFixed: true
+
+20.7m | Acc: 3.0m
+[16:51:24] 🚀 PROVIDER SORTIDA -> Valor publicat: 95.6m | isHgtFixed: true
+
+20.7m | Acc: 3.0m
+[16:51:26] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+20.7m | Acc: 3.0m
+[16:51:28] 🚀 PROVIDER SORTIDA -> Valor publicat: 95.4m | isHgtFixed: true
+
+20.5m | Acc: 3.0m
+[16:51:30] 🚀 PROVIDER SORTIDA -> Valor publicat: 95.3m | isHgtFixed: true
+
+20.5m | Acc: 3.0m
+[16:51:31] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.8m)
+[16:51:31] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 3.5m)
+[16:51:32] 🚀 PROVIDER SORTIDA -> Valor publicat: 95.2m | isHgtFixed: true
+)
+.7m | Acc: 3.0m
+[16:51:34] 🚀 PROVIDER SORTIDA -> Valor publicat: 95.5m | isHgtFixed: true
+
+20.7m | Acc: 3.0m
+[16:51:36] 🚀 PROVIDER SORTIDA -> Valor publicat: 95.8m | isHgtFixed: true
+
+20.7m | Acc: 3.0m
+[16:51:38] 🗺️ DEM RESPOSTA -> Rebut: 95.9m | isFixed: true
+tFixed: true
+
+0.7m | Acc: 3.0m
+[16:51:40] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+20.7m | Acc: 3.0m
+[16:51:42] 🚀 PROVIDER SORTIDA -> Valor publicat: 96.8m | isHgtFixed: true
+
+20.7m | Acc: 3.0m
+[16:51:44] 🚀 PROVIDER SORTIDA -> Valor publicat: 97.3m | isHgtFixed: true
+
+20.6m | Acc: 3.0m
+[16:51:46] 🚀 PROVIDER SORTIDA -> Valor publicat: 97.9m | isHgtFixed: true
+
+20.6m | Acc: 3.0m
+[16:51:48] 🚀 PROVIDER SORTIDA -> Valor publicat: 98.6m | isHgtFixed: true
+
+0.6m | Acc: 3.0m
+[16:51:50] 🗺️ DEM RESPOSTA -> Rebut: 99.1m | isFixed: true
+tFixed: true
+
+1.4m | Acc: 3.0m
+[16:51:52] 🚀 PROVIDER SORTIDA -> Valor publicat: 99.2m | isHgtFixed: true
+
+21.4m | Acc: 3.0m
+[16:51:54] 🚀 PROVIDER SORTIDA -> Valor publicat: 99.4m | isHgtFixed: true
+
+1.4m | Acc: 3.0m
+[16:51:56] 🚀 PROVIDER SORTIDA -> Valor publicat: 99.7m | isHgtFixed: true
+
+21.4m | Acc: 3.0m
+[16:51:58] 🚀 PROVIDER SORTIDA -> Valor publicat: 99.9m | isHgtFixed: true
+
+1.4m | Acc: 3.0m
+[16:52:00] 🚀 PROVIDER SORTIDA -> Valor publicat: 100.1m | isHgtFixed: true
+21.4m | Acc: 3.0m
+[16:52:02] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+20.8m | Acc: 3.0m
+[16:52:04] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+0.7m | Acc: 3.0m
+[16:52:06] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+20.7m | Acc: 3.0m
+[16:52:08] 🚀 PROVIDER SORTIDA -> Valor publicat: 100.8m | isHgtFixed: true
+20.7m | Acc: 3.0m
+[16:52:10] 🗺️ DEM RESPOSTA -> Rebut: 100.8m | isFixed: true
+tFixed: true
+20.7m | Acc: 3.0m
+[16:52:12] 🚀 PROVIDER SORTIDA -> Valor publicat: 100.8m | isHgtFixed: true
+0.9m | Acc: 3.0m
+[16:52:14] 🚀 PROVIDER SORTIDA -> Valor publicat: 100.8m | isHgtFixed: true
+1.0m | Acc: 3.0m
+[16:52:16] 🚀 PROVIDER SORTIDA -> Valor publicat: 100.8m | isHgtFixed: true
+20.9m | Acc: 3.0m
+[16:52:18] 🚀 PROVIDER SORTIDA -> Valor publicat: 100.7m | isHgtFixed: true
+20.8m | Acc: 3.0m
+[16:52:20] 🚀 PROVIDER SORTIDA -> Valor publicat: 100.7m | isHgtFixed: true
+.9m | Acc: 3.0m
+[16:52:22] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+21.0m | Acc: 3.0m
+[16:52:24] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+21.4m | Acc: 3.0m
+[16:52:24] 🚀 PROVIDER SORTIDA -> Valor publicat: 100.8m | isHgtFixed: true
+[16:52:26] 🚀 PROVIDER SORTIDA -> Valor publicat: 101.0m | isHgtFixed: true
+21.4m | Acc: 3.0m
+[16:52:28] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+21.4m | Acc: 3.0m
+[16:52:30] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+21.4m | Acc: 3.0m
+[16:52:32] 🚀 PROVIDER SORTIDA -> Valor publicat: 101.4m | isHgtFixed: true
+21.4m | Acc: 3.0m
+[16:52:34] 🚀 PROVIDER SORTIDA -> Valor publicat: 101.5m | isHgtFixed: true
+21.4m | Acc: 3.0m
+[16:52:36] 🚀 PROVIDER SORTIDA -> Valor publicat: 101.6m | isHgtFixed: true
+21.0m | Acc: 3.0m
+[16:52:38] 🚀 PROVIDER SORTIDA -> Valor publicat: 101.8m | isHgtFixed: true
+21.2m | Acc: 3.0m
+[16:52:40] 🚀 PROVIDER SORTIDA -> Valor publicat: 102.6m | isHgtFixed: true
+21.3m | Acc: 3.0m
+[16:52:42] 🚀 PROVIDER SORTIDA -> Valor publicat: 103.5m | isHgtFixed: true
+21.4m | Acc: 3.0m
+[16:52:44] 🚀 PROVIDER SORTIDA -> Valor publicat: 104.4m | isHgtFixed: true
+21.4m | Acc: 3.0m
+[16:52:46] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+21.2m | Acc: 3.0m
+[16:52:48] 🚀 PROVIDER SORTIDA -> Valor publicat: 105.9m | isHgtFixed: true
+21.2m | Acc: 3.0m
+[16:52:50] 🚀 PROVIDER SORTIDA -> Valor publicat: 106.5m | isHgtFixed: true
+21.2m | Acc: 3.0m
+[16:52:52] 🛰️ GPS ENTRADA -> Lat: 41.9886434 | Lon: 2.818877 | AltGPS: 121.1m | Acc: 3.0m
+[16:52:54] 🛰️ GPS ENTRADA -> Lat: 41.9886514 | Lon: 2.8189113 | AltGPS: 121.1m | Acc: 3.0m
+[16:52:56] 🚀 PROVIDER SORTIDA -> Valor publicat: 107.9m | isHgtFixed: true
+21.1m | Acc: 3.0m
+[16:52:58] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+21.4m | Acc: 3.0m
+[16:53:00] 🚀 PROVIDER SORTIDA -> Valor publicat: 108.1m | isHgtFixed: true
+21.4m | Acc: 3.0m
+[16:53:02] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+21.4m | Acc: 3.0m
+[16:53:04] 🚀 PROVIDER SORTIDA -> Valor publicat: 108.4m | isHgtFixed: true
+21.4m | Acc: 3.0m
+[16:53:06] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+21.4m | Acc: 3.0m
+[16:53:08] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+21.1m | Acc: 3.0m
+[16:53:10] 🚀 PROVIDER SORTIDA -> Valor publicat: 108.8m | isHgtFixed: true
+1.0m | Acc: 3.0m
+[16:53:12] 🚀 PROVIDER SORTIDA -> Valor publicat: 108.6m | isHgtFixed: true
+21.0m | Acc: 3.0m
+[16:53:14] 🚀 PROVIDER SORTIDA -> Valor publicat: 108.5m | isHgtFixed: true
+21.1m | Acc: 3.0m
+[16:53:16] 🚀 PROVIDER SORTIDA -> Valor publicat: 108.4m | isHgtFixed: true
+21.3m | Acc: 3.0m
+[16:53:18] 🛰️ GPS ENTRADA -> Lat: 41.9887032 | Lon: 2.8193429 | AltGPS: 121.4m | Acc: 3.0m
+[16:53:20] 🚀 PROVIDER SORTIDA -> Valor publicat: 108.4m | isHgtFixed: true
+1.2m | Acc: 3.0m
+[16:53:22] 🗺️ DEM RESPOSTA -> Rebut: 108.3m | isFixed: true
+tFixed: true
+21.3m | Acc: 3.0m
+[16:53:24] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+21.5m | Acc: 3.0m
+[16:53:26] 🗺️ DEM RESPOSTA -> Rebut: 108.5m | isFixed: true
+tFixed: true
+21.5m | Acc: 3.0m
+[16:53:28] 🚀 PROVIDER SORTIDA -> Valor publicat: 108.3m | isHgtFixed: true
+21.5m | Acc: 3.0m
+[16:53:30] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+21.3m | Acc: 3.0m
+[16:53:30] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.5m)
+[16:53:32] 🚀 PROVIDER SORTIDA -> Valor publicat: 107.9m | isHgtFixed: true
+)
+.5m | Acc: 3.0m
+[16:53:34] 🚀 PROVIDER SORTIDA -> Valor publicat: 107.9m | isHgtFixed: true
+21.5m | Acc: 3.0m
+[16:53:36] 🚀 PROVIDER SORTIDA -> Valor publicat: 107.8m | isHgtFixed: true
+1.4m | Acc: 3.0m
+[16:53:38] 🚀 PROVIDER SORTIDA -> Valor publicat: 107.5m | isHgtFixed: true
+21.4m | Acc: 3.0m
+[16:53:40] 🚀 PROVIDER SORTIDA -> Valor publicat: 107.3m | isHgtFixed: true
+21.5m | Acc: 3.0m
+[16:53:40] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.5m)
+[16:53:42] 🎯 CALIBRATGE -> Nou offset: 55.6m (GPS: 106.9m | BaroPuru: 51.3m)
+.5m | Acc: 3.0m
+[16:53:44] 🚀 PROVIDER SORTIDA -> Valor publicat: 106.4m | isHgtFixed: true
+21.3m | Acc: 3.0m
+[16:53:46] 🚀 PROVIDER SORTIDA -> Valor publicat: 105.9m | isHgtFixed: true
+21.1m | Acc: 3.0m
+[16:53:48] 🚀 PROVIDER SORTIDA -> Valor publicat: 105.3m | isHgtFixed: true
+21.1m | Acc: 3.0m
+[16:53:50] 🚀 PROVIDER SORTIDA -> Valor publicat: 104.7m | isHgtFixed: true
+21.1m | Acc: 3.0m
+[16:53:51] 🚀 PROVIDER SORTIDA -> Valor publicat: 104.2m | isHgtFixed: true
+1.3m | Acc: 3.0m
+[16:53:53] 🚀 PROVIDER SORTIDA -> Valor publicat: 103.7m | isHgtFixed: true
+21.4m | Acc: 3.0m
+[16:53:55] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.4m)
+[16:53:55] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+)
+.4m | Acc: 3.0m
+[16:53:56] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.6m)
+[16:53:56] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.9m)
+[16:53:57] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+)
+.3m | Acc: 3.0m
+[16:53:57] 🚀 PROVIDER SORTIDA -> Valor publicat: 102.2m | isHgtFixed: true
+[16:53:59] 🚀 PROVIDER SORTIDA -> Valor publicat: 101.2m | isHgtFixed: true
+21.3m | Acc: 3.0m
+[16:54:01] 🚀 PROVIDER SORTIDA -> Valor publicat: 100.0m | isHgtFixed: true
+21.4m | Acc: 3.0m
+[16:54:03] 🚀 PROVIDER SORTIDA -> Valor publicat: 98.8m | isHgtFixed: true
+
+1.3m | Acc: 3.0m
+[16:54:05] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+21.3m | Acc: 3.0m
+[16:54:07] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+21.3m | Acc: 3.0m
+[16:54:09] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+21.4m | Acc: 3.0m
+[16:54:11] 🚀 PROVIDER SORTIDA -> Valor publicat: 94.3m | isHgtFixed: true
+
+3.2m | Acc: 3.0m
+[16:54:13] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.0m)
+[16:54:13] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.2m)
+[16:54:13] 🚀 PROVIDER SORTIDA -> Valor publicat: 93.0m | isHgtFixed: true
+
+
+3.3m | Acc: 3.0m
+[16:54:15] 🚀 PROVIDER SORTIDA -> Valor publicat: 91.9m | isHgtFixed: true
+
+23.3m | Acc: 3.0m
+[16:54:16] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 4.3m)
+[16:54:17] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.8m)
+[16:54:17] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 5.9m)
+[16:54:17] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.1m)
+[16:54:17] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.8m)
+[16:54:18] 🗺️ DEM RESPOSTA -> Rebut: 90.7m | isFixed: true
+tFixed: true
+)
+.3m | Acc: 3.0m
+[16:54:20] 🚀 PROVIDER SORTIDA -> Valor publicat: 89.4m | isHgtFixed: true
+
+23.3m | Acc: 3.1m
+[16:54:22] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+3.3m | Acc: 3.2m
+[16:54:24] 🚀 PROVIDER SORTIDA -> Valor publicat: 87.1m | isHgtFixed: true
+
+23.3m | Acc: 3.1m
+[16:54:26] 🚀 PROVIDER SORTIDA -> Valor publicat: 85.9m | isHgtFixed: true
+
+23.3m | Acc: 3.0m
+[16:54:28] 🗺️ DEM RESPOSTA -> Rebut: 84.7m | isFixed: true
+tFixed: true
+
+23.3m | Acc: 3.0m
+[16:54:30] 🚀 PROVIDER SORTIDA -> Valor publicat: 83.4m | isHgtFixed: true
+
+23.3m | Acc: 3.1m
+[16:54:32] 🚀 PROVIDER SORTIDA -> Valor publicat: 82.0m | isHgtFixed: true
+
+23.2m | Acc: 3.0m
+[16:54:34] 🚀 PROVIDER SORTIDA -> Valor publicat: 80.8m | isHgtFixed: true
+
+24.0m | Acc: 3.0m
+[16:54:36] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+24.0m | Acc: 3.0m
+[16:54:37] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+24.0m | Acc: 3.0m
+[16:54:39] 🚀 PROVIDER SORTIDA -> Valor publicat: 76.9m | isHgtFixed: true
+
+.1m | Acc: 3.0m
+[16:54:41] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+3.2m | Acc: 3.0m
+[16:54:43] 🚀 PROVIDER SORTIDA -> Valor publicat: 74.7m | isHgtFixed: true
+
+3.2m | Acc: 3.0m
+[16:54:44] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.3m)
+[16:54:45] 🎯 CALIBRATGE -> Nou offset: 20.4m (GPS: 73.9m | BaroPuru: 53.5m)
+3.9m | Acc: 3.0m
+[16:54:47] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.2m | isHgtFixed: true
+
+23.9m | Acc: 3.0m
+[16:54:49] 🚀 PROVIDER SORTIDA -> Valor publicat: 72.7m | isHgtFixed: true
+
+3.9m | Acc: 3.0m
+[16:54:51] 🚀 PROVIDER SORTIDA -> Valor publicat: 72.2m | isHgtFixed: true
+
+23.3m | Acc: 3.0m
+[16:54:53] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.9m | isHgtFixed: true
+
+23.3m | Acc: 3.0m
+[16:54:55] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.3m | isHgtFixed: true
+
+3.3m | Acc: 3.0m
+[16:54:56] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.5m)
+[16:54:57] 🎯 CALIBRATGE -> Nou offset: 17.3m (GPS: 70.8m | BaroPuru: 53.5m)
+3.3m | Acc: 3.0m
+[16:54:59] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.2m | isHgtFixed: true
+
+23.3m | Acc: 3.0m
+[16:55:01] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.4m | isHgtFixed: true
+
+23.3m | Acc: 3.0m
+[16:55:03] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+22.8m | Acc: 3.0m
+[16:55:03] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.4m)
+[16:55:03] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.1m)
+[16:55:04] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.3m)
+[16:55:04] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 3.5m)
+[16:55:05] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.9m | isHgtFixed: true
+)
+2.8m | Acc: 3.0m
+[16:55:05] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 3.3m)
+[16:55:07] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+
+.8m | Acc: 3.0m
+[16:55:07] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.3m)
+[16:55:08] 🚀 PROVIDER SORTIDA -> Valor publicat: 72.2m | isHgtFixed: true
+)
+2.7m | Acc: 3.0m
+[16:55:10] 🚀 PROVIDER SORTIDA -> Valor publicat: 72.2m | isHgtFixed: true
+
+23.2m | Acc: 3.1m
+[16:55:12] 🚀 PROVIDER SORTIDA -> Valor publicat: 72.2m | isHgtFixed: true
+
+3.2m | Acc: 3.2m
+[16:55:14] 🚀 PROVIDER SORTIDA -> Valor publicat: 72.1m | isHgtFixed: true
+
+23.9m | Acc: 3.3m
+[16:55:16] 🚀 PROVIDER SORTIDA -> Valor publicat: 72.0m | isHgtFixed: true
+
+23.3m | Acc: 3.3m
+[16:55:18] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.9m | isHgtFixed: true
+
+3m | Acc: 3.2m
+[16:55:20] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.7m | isHgtFixed: true
+
+23.3m | Acc: 3.5m
+[16:55:22] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.5m | isHgtFixed: true
+
+23.3m | Acc: 3.8m
+[16:55:24] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.4m | isHgtFixed: true
+
+23.3m | Acc: 4.1m
+[16:55:26] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.2m | isHgtFixed: true
+
+23.1m | Acc: 3.7m
+[16:55:28] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+23.1m | Acc: 3.2m
+[16:55:30] 🚀 PROVIDER SORTIDA -> Valor publicat: 70.8m | isHgtFixed: true
+
+22.9m | Acc: 3.0m
+[16:55:32] 🚀 PROVIDER SORTIDA -> Valor publicat: 70.6m | isHgtFixed: true
+
+22.9m | Acc: 3.0m
+[16:55:33] 🛰️ GPS ENTRADA -> Lat: 41.9895946 | Lon: 2.8216894 | AltGPS: 123.1m | Acc: 3.0m
+[16:55:35] 🚀 PROVIDER SORTIDA -> Valor publicat: 70.3m | isHgtFixed: true
+
+23.1m | Acc: 3.0m
+[16:55:37] 🚀 PROVIDER SORTIDA -> Valor publicat: 70.2m | isHgtFixed: true
+
+23.9m | Acc: 3.0m
+[16:55:39] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+23.9m | Acc: 3.0m
+[16:55:41] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+23.4m | Acc: 3.0m
+[16:55:43] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+23.5m | Acc: 3.0m
+[16:55:45] 🚀 PROVIDER SORTIDA -> Valor publicat: 69.9m | isHgtFixed: true
+
+23.5m | Acc: 3.0m
+[16:55:47] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+3.4m | Acc: 3.0m
+[16:55:49] 🚀 PROVIDER SORTIDA -> Valor publicat: 69.7m | isHgtFixed: true
+
+23.7m | Acc: 3.0m
+[16:55:51] 🚀 PROVIDER SORTIDA -> Valor publicat: 69.6m | isHgtFixed: true
+
+24.0m | Acc: 3.0m
+[16:55:52] 🚀 PROVIDER SORTIDA -> Valor publicat: 69.5m | isHgtFixed: true
+
+24.0m | Acc: 3.0m
+[16:55:54] 🚀 PROVIDER SORTIDA -> Valor publicat: 69.3m | isHgtFixed: true
+
+24.0m | Acc: 3.0m
+[16:55:56] 🚀 PROVIDER SORTIDA -> Valor publicat: 69.2m | isHgtFixed: true
+
+24.2m | Acc: 3.0m
+[16:55:58] 🚀 PROVIDER SORTIDA -> Valor publicat: 69.1m | isHgtFixed: true
+
+4.2m | Acc: 3.0m
+[16:56:00] 🚀 PROVIDER SORTIDA -> Valor publicat: 69.0m | isHgtFixed: true
+
+24.1m | Acc: 3.0m
+[16:56:02] 🚀 PROVIDER SORTIDA -> Valor publicat: 68.8m | isHgtFixed: true
+
+23.6m | Acc: 3.0m
+[16:56:04] 🗺️ DEM RESPOSTA -> Rebut: 68.5m | isFixed: true
+tFixed: true
+
+3.5m | Acc: 3.0m
+[16:56:06] 🚀 PROVIDER SORTIDA -> Valor publicat: 68.3m | isHgtFixed: true
+
+23.4m | Acc: 3.0m
+[16:56:08] 🚀 PROVIDER SORTIDA -> Valor publicat: 68.0m | isHgtFixed: true
+
+3.2m | Acc: 3.0m
+[16:56:09] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+23.1m | Acc: 3.0m
+[16:56:11] 🚀 PROVIDER SORTIDA -> Valor publicat: 67.6m | isHgtFixed: true
+
+23.1m | Acc: 3.0m
+[16:56:13] 🚀 PROVIDER SORTIDA -> Valor publicat: 67.3m | isHgtFixed: true
+
+23.1m | Acc: 3.0m
+[16:56:15] 🚀 PROVIDER SORTIDA -> Valor publicat: 67.1m | isHgtFixed: true
+
+23.0m | Acc: 3.0m
+[16:56:17] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+22.9m | Acc: 3.0m
+[16:56:19] 🚀 PROVIDER SORTIDA -> Valor publicat: 66.2m | isHgtFixed: true
+
+23.0m | Acc: 3.1m
+[16:56:21] 🚀 PROVIDER SORTIDA -> Valor publicat: 65.7m | isHgtFixed: true
+
+23.0m | Acc: 3.0m
+[16:56:23] 🚀 PROVIDER SORTIDA -> Valor publicat: 65.3m | isHgtFixed: true
+
+23.0m | Acc: 3.0m
+[16:56:25] 🚀 PROVIDER SORTIDA -> Valor publicat: 64.8m | isHgtFixed: true
+
+23.0m | Acc: 3.0m
+[16:56:27] 🚀 PROVIDER SORTIDA -> Valor publicat: 64.3m | isHgtFixed: true
+
+22.9m | Acc: 3.0m
+[16:56:28] 🚀 PROVIDER SORTIDA -> Valor publicat: 63.8m | isHgtFixed: true
+
+23.3m | Acc: 3.0m
+[16:56:30] 🚀 PROVIDER SORTIDA -> Valor publicat: 63.5m | isHgtFixed: true
+
+23.2m | Acc: 3.0m
+[16:56:32] 🚀 PROVIDER SORTIDA -> Valor publicat: 63.5m | isHgtFixed: true
+
+23.1m | Acc: 3.0m
+[16:56:34] 🚀 PROVIDER SORTIDA -> Valor publicat: 63.5m | isHgtFixed: true
+
+3.5m | Acc: 3.0m
+[16:56:36] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+23.5m | Acc: 3.0m
+[16:56:38] 🚀 PROVIDER SORTIDA -> Valor publicat: 63.5m | isHgtFixed: true
+
+3.4m | Acc: 3.0m
+[16:56:40] 🚀 PROVIDER SORTIDA -> Valor publicat: 63.5m | isHgtFixed: true
+
+23.3m | Acc: 3.0m
+[16:56:42] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+3.2m | Acc: 3.0m
+[16:56:43] 🚀 PROVIDER SORTIDA -> Valor publicat: 63.6m | isHgtFixed: true
+
+.5m | Acc: 3.0m
+[16:56:45] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+23.2m | Acc: 3.0m
+[16:56:47] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+23.3m | Acc: 3.0m
+[16:56:49] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+23.1m | Acc: 3.0m
+[16:56:51] 🚀 PROVIDER SORTIDA -> Valor publicat: 63.8m | isHgtFixed: true
+
+23.1m | Acc: 3.0m
+[16:56:53] 🗺️ DEM RESPOSTA -> Rebut: 63.9m | isFixed: true
+tFixed: true
+
+23.1m | Acc: 3.0m
+[16:56:55] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+22.7m | Acc: 3.0m
+[16:56:57] 🚀 PROVIDER SORTIDA -> Valor publicat: 64.6m | isHgtFixed: true
+
+2.6m | Acc: 3.0m
+[16:56:59] 🚀 PROVIDER SORTIDA -> Valor publicat: 65.2m | isHgtFixed: true
+
+22.4m | Acc: 3.0m
+[16:57:01] 🗺️ DEM RESPOSTA -> Rebut: 65.7m | isFixed: true
+tFixed: true
+
+22.1m | Acc: 3.1m
+[16:57:02] 🚀 PROVIDER SORTIDA -> Valor publicat: 66.2m | isHgtFixed: true
+
+22.1m | Acc: 3.1m
+[16:57:03] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.0m)
+[16:57:04] 🎯 CALIBRATGE -> Nou offset: 13.6m (GPS: 66.7m | BaroPuru: 53.0m)
+1.9m | Acc: 3.1m
+[16:57:06] 🚀 PROVIDER SORTIDA -> Valor publicat: 66.9m | isHgtFixed: true
+
+21.9m | Acc: 3.1m
+[16:57:08] 🚀 PROVIDER SORTIDA -> Valor publicat: 67.1m | isHgtFixed: true
+
+1.9m | Acc: 3.1m
+[16:57:10] 🚀 PROVIDER SORTIDA -> Valor publicat: 67.2m | isHgtFixed: true
+
+22.0m | Acc: 3.0m
+[16:57:12] 🚀 PROVIDER SORTIDA -> Valor publicat: 67.2m | isHgtFixed: true
+
+22.2m | Acc: 3.0m
+[16:57:14] 🚀 PROVIDER SORTIDA -> Valor publicat: 67.4m | isHgtFixed: true
+
+22.1m | Acc: 3.0m
+[16:57:16] 🚀 PROVIDER SORTIDA -> Valor publicat: 67.6m | isHgtFixed: true
+
+2.1m | Acc: 3.0m
+[16:57:18] 🚀 PROVIDER SORTIDA -> Valor publicat: 67.9m | isHgtFixed: true
+
+21.9m | Acc: 3.0m
+[16:57:20] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+21.7m | Acc: 3.1m
+[16:57:21] 🚀 PROVIDER SORTIDA -> Valor publicat: 68.5m | isHgtFixed: true
+
+21.6m | Acc: 3.1m
+[16:57:23] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+21.7m | Acc: 3.0m
+[16:57:23] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.5m)
+[16:57:24] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.9m)
+[16:57:24] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.4m)
+[16:57:24] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.4m)
+[16:57:25] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.5m)
+[16:57:25] 🚀 PROVIDER SORTIDA -> Valor publicat: 68.9m | isHgtFixed: true
+)
+1.9m | Acc: 3.0m
+[16:57:27] 🚀 PROVIDER SORTIDA -> Valor publicat: 69.1m | isHgtFixed: true
+
+22.0m | Acc: 3.1m
+[16:57:28] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.3m)
+[16:57:28] 🚨 BARÒMETRE -> Descalibrat per salt de pressió! (Salt de 2.1m)
+[16:57:29] 🎯 CALIBRATGE -> Nou offset: 16.2m (GPS: 69.2m | BaroPuru: 53.0m)
+2.0m | Acc: 3.1m
+[16:57:31] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+22.1m | Acc: 3.1m
+[16:57:33] 🗺️ DEM RESPOSTA -> Rebut: 69.4m | isFixed: true
+tFixed: true
+
+22.2m | Acc: 3.0m
+[16:57:35] 🚀 PROVIDER SORTIDA -> Valor publicat: 69.6m | isHgtFixed: true
+
+22.4m | Acc: 3.0m
+[16:57:37] 🚀 PROVIDER SORTIDA -> Valor publicat: 69.8m | isHgtFixed: true
+
+2.4m | Acc: 3.0m
+[16:57:39] 🚀 PROVIDER SORTIDA -> Valor publicat: 70.0m | isHgtFixed: true
+
+22.4m | Acc: 3.2m
+[16:57:41] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+22.6m | Acc: 3.6m
+[16:57:43] 🚀 PROVIDER SORTIDA -> Valor publicat: 70.4m | isHgtFixed: true
+
+22.9m | Acc: 3.9m
+[16:57:44] 🚀 PROVIDER SORTIDA -> Valor publicat: 70.6m | isHgtFixed: true
+
+22.8m | Acc: 4.1m
+[16:57:46] 🚀 PROVIDER SORTIDA -> Valor publicat: 70.8m | isHgtFixed: true
+
+22.7m | Acc: 4.1m
+[16:57:48] 🚀 PROVIDER SORTIDA -> Valor publicat: 70.9m | isHgtFixed: true
+
+22.4m | Acc: 4.1m
+[16:57:50] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.1m | isHgtFixed: true
+
+22.6m | Acc: 3.6m
+[16:57:52] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.3m | isHgtFixed: true
+
+22.2m | Acc: 3.2m
+[16:57:54] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.4m | isHgtFixed: true
+
+22.2m | Acc: 3.0m
+[16:57:56] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.6m | isHgtFixed: true
+
+22.2m | Acc: 3.1m
+[16:57:58] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.7m | isHgtFixed: true
+
+2.1m | Acc: 3.3m
+[16:58:00] 🚀 PROVIDER SORTIDA -> Valor publicat: 71.9m | isHgtFixed: true
+
+2.1m | Acc: 3.5m
+[16:58:02] 🚀 PROVIDER SORTIDA -> Valor publicat: 72.1m | isHgtFixed: true
+
+22.0m | Acc: 3.5m
+[16:58:04] 🚀 PROVIDER SORTIDA -> Valor publicat: 72.3m | isHgtFixed: true
+
+.0m | Acc: 3.3m
+[16:58:06] 🗺️ DEM RESPOSTA -> Rebut: 72.4m | isFixed: true
+el baròmetre
+22.0m | Acc: 3.3m
+[16:58:07] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+22.1m | Acc: 3.4m
+[16:58:09] 🚀 PROVIDER SORTIDA -> Valor publicat: 72.8m | isHgtFixed: true
+
+22.1m | Acc: 3.7m
+[16:58:11] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+22.2m | Acc: 3.9m
+[16:58:13] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.0m | isHgtFixed: true
+
+1.8m | Acc: 4.1m
+[16:58:15] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.1m | isHgtFixed: true
+
+.8m | Acc: 4.3m
+[16:58:17] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.2m | isHgtFixed: true
+
+21.8m | Acc: 4.3m
+[16:58:19] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+1.4m | Acc: 4.4m
+[16:58:21] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+21.6m | Acc: 4.5m
+[16:58:23] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.4m | isHgtFixed: true
+
+21.6m | Acc: 4.7m
+[16:58:25] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.4m | isHgtFixed: true
+
+21.7m | Acc: 4.9m
+[16:58:27] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.4m | isHgtFixed: true
+
+1.8m | Acc: 5.0m
+[16:58:29] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.5m | isHgtFixed: true
+
+22.0m | Acc: 4.8m
+[16:58:31] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.4m | isHgtFixed: true
+
+22.0m | Acc: 4.7m
+[16:58:33] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.4m | isHgtFixed: true
+
+22.1m | Acc: 4.3m
+[16:58:35] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.4m | isHgtFixed: true
+
+2.1m | Acc: 4.2m
+[16:58:37] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.4m | isHgtFixed: true
+
+21.8m | Acc: 4.1m
+[16:58:39] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.3m | isHgtFixed: true
+
+22.2m | Acc: 4.4m
+[16:58:41] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.3m | isHgtFixed: true
+
+22.0m | Acc: 5.3m
+[16:58:42] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.3m | isHgtFixed: true
+
+21.9m | Acc: 6.4m
+[16:58:45] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.2m | isHgtFixed: true
+
+22.3m | Acc: 7.6m
+[16:58:47] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+22.8m | Acc: 8.3m
+[16:58:49] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.4m | isHgtFixed: true
+
+23.2m | Acc: 7.5m
+[16:58:51] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.4m | isHgtFixed: true
+
+3.7m | Acc: 6.8m
+[16:58:54] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.4m | isHgtFixed: true
+
+5.0m | Acc: 7.0m
+[16:58:56] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.4m | isHgtFixed: true
+
+25.3m | Acc: 7.6m
+[16:58:58] 🗺️ DEM RESPOSTA -> Rebut: 73.4m | isFixed: true
+tFixed: true
+
+25.4m | Acc: 7.8m
+[16:59:00] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+6.3m | Acc: 7.9m
+[16:59:02] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.4m | isHgtFixed: true
+
+26.8m | Acc: 7.6m
+[16:59:04] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.4m | isHgtFixed: true
+
+27.3m | Acc: 7.3m
+[16:59:04] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.4m | isHgtFixed: true
+
+27.3m | Acc: 7.3m
+[16:59:06] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.4m | isHgtFixed: true
+
+27.6m | Acc: 7.8m
+[16:59:09] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.4m | isHgtFixed: true
+
+8.3m | Acc: 8.4m
+[16:59:11] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.3m | isHgtFixed: true
+
+28.6m | Acc: 9.5m
+[16:59:13] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.4m | isHgtFixed: true
+
+28.9m | Acc: 10.6m
+[16:59:15] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+9.4m | Acc: 10.2m
+[16:59:17] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.4m | isHgtFixed: true
+
+9.9m | Acc: 9.3m
+[16:59:19] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.4m | isHgtFixed: true
+
+31.0m | Acc: 9.1m
+[16:59:21] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.3m | isHgtFixed: true
+
+31.1m | Acc: 9.4m
+[16:59:23] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.4m | isHgtFixed: true
+
+31.7m | Acc: 9.0m
+[16:59:25] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.4m | isHgtFixed: true
+
+31.9m | Acc: 8.3m
+[16:59:27] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+32.2m | Acc: 7.7m
+[16:59:29] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.4m | isHgtFixed: true
+
+2.8m | Acc: 7.8m
+[16:59:31] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.4m | isHgtFixed: true
+
+3.6m | Acc: 8.1m
+[16:59:33] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.4m | isHgtFixed: true
+
+4.0m | Acc: 8.2m
+[16:59:35] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+34.1m | Acc: 7.6m
+[16:59:37] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.4m | isHgtFixed: true
+
+34.2m | Acc: 7.3m
+[16:59:39] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.4m | isHgtFixed: true
+
+34.2m | Acc: 7.5m
+[16:59:41] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.4m | isHgtFixed: true
+
+33.8m | Acc: 7.9m
+[16:59:43] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+3.8m | Acc: 8.2m
+[16:59:45] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.4m | isHgtFixed: true
+
+3.9m | Acc: 8.2m
+[16:59:47] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+33.7m | Acc: 8.0m
+[16:59:49] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.4m | isHgtFixed: true
+
+3.5m | Acc: 7.6m
+[16:59:51] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.4m | isHgtFixed: true
+
+33.5m | Acc: 7.2m
+[16:59:53] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.4m | isHgtFixed: true
+
+33.2m | Acc: 6.5m
+[16:59:55] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.4m | isHgtFixed: true
+
+33.0m | Acc: 5.8m
+[16:59:57] ✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre
+33.2m | Acc: 5.0m
+[16:59:59] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.4m | isHgtFixed: true
+
+33.6m | Acc: 4.4m
+[17:00:01] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.4m | isHgtFixed: true
+
+33.1m | Acc: 4.4m
+[17:00:03] 🚀 PROVIDER SORTIDA -> Valor publicat: 73.4m | isHgtFixed: true
+
+33.1m | Acc: 4.3m

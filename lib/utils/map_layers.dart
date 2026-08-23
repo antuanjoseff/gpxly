@@ -309,9 +309,9 @@ Future<void> setupWaypointLayers(MapLibreMapController controller) async {
       'waypoints_recorded_layer',
       const CircleLayerProperties(
         circleRadius: 11.0,
-        circleColor: "#4CAF50",
+        circleColor: "#FFEB3B",
         circleStrokeWidth: 2.0,
-        circleStrokeColor: "#FFFFFF",
+        circleStrokeColor: "#F44336",
         circleOpacity: 0.0,
         circleStrokeOpacity: 0.0,
         circleBlur: 0.0,
@@ -323,9 +323,9 @@ Future<void> setupWaypointLayers(MapLibreMapController controller) async {
       'waypoints_imported_layer',
       const CircleLayerProperties(
         circleRadius: 11.0,
-        circleColor: "#00A8E8",
+        circleColor: "#FFEB3B",
         circleStrokeWidth: 2.0,
-        circleStrokeColor: "#FFFFFF",
+        circleStrokeColor: "#F44336",
         circleOpacity: 0.0,
         circleStrokeOpacity: 0.0,
         circleBlur: 0.0,
@@ -465,6 +465,18 @@ void setUserLocationGeometry(
 }
 
 bool _isChartGeometryProcessing = false;
+
+Future<void> clearSelectionGeometry(MapLibreMapController controller) async {
+  const emptyGeojson = {"type": "FeatureCollection", "features": []};
+
+  try {
+    await controller.setGeoJsonSource("chart_interaction_source", emptyGeojson);
+  } catch (_) {}
+
+  try {
+    await controller.setGeoJsonSource("selected_segment_source", emptyGeojson);
+  } catch (_) {}
+}
 
 Future<void> setChartInteractionGeometry(
   MapLibreMapController controller, {
@@ -608,10 +620,6 @@ Future<void> updateSelectionCircles(
   if (sel.startTrackIndex == null && sel.endTrackIndex == null) {
     // 🚀 NOVETAT: En estat 'selected' NO netegem els cercles
     if (sel.mapToolState == MapSelectionToolState.selected) {
-      return;
-    }
-
-    if (sel.mode == SelectionMode.none) {
       return;
     }
 

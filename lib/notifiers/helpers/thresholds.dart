@@ -56,4 +56,12 @@ class TrackThresholds {
   static const int minSpeedWindowSeconds =
       sustainedSpeedWindowSeconds; // compatibilitat amb codi existent
   static const double minSpeedWindowMeters = 12.0; // finestra espacial mínima
+
+  // Velocitat corregida per punt: mitjana mòbil de 5 punts vàlids
+  static const int speedSmoothingWindow = 5;
+  static const double speedMinAccuracyMeters = 5.0;
+  static const double speedEstablishedMinAccuracyMeters = 10.0;
+
+  // Rebuig de salts GPS puntuals: acceleració física màxima plausible (km/h per segon)
+  static const double speedMaxAccelerationKmhPerSecond = 10.8;
 }

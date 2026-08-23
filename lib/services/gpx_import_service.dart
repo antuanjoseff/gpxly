@@ -6,7 +6,6 @@ import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:strack_rec/models/track.dart';
 import 'package:strack_rec/models/user_position.dart';
 import 'package:strack_rec/models/waypoint.dart';
-import 'package:strack_rec/notifiers/helpers/thresholds.dart';
 import 'package:strack_rec/notifiers/imported_track_notifier.dart';
 import 'package:strack_rec/notifiers/waypoints_imported_notifier.dart';
 import 'package:strack_rec/utils/calculations.dart';
@@ -17,7 +16,7 @@ DateTime truncateSeconds(DateTime t) {
 }
 
 class GpxImportService {
-  static double _computeSustainedSpeedMsAtIndex(
+  static double computeSustainedSpeedKmhAtIndex(
     List<UserPosition> points,
     int endIndex,
     int windowSeconds,
@@ -43,7 +42,7 @@ class GpxImportService {
     final double distanceMeters = last.distanceAtPoint - first.distanceAtPoint;
     if (distanceMeters <= 0.0) return 0.0;
 
-    return distanceMeters / dtSeconds;
+    return (distanceMeters / dtSeconds) * 3.6;
   }
 
   static Future<void> importGpx(WidgetRef ref, String xmlString) async {
@@ -122,20 +121,30 @@ class GpxImportService {
         ),
       );
 
-      final double sustainedSpeedMs = _computeSustainedSpeedMsAtIndex(
+      final List<double> smoothedSpeeds = Track.computeSmoothedSpeeds(
         loadedPoints,
-        loadedPoints.length - 1,
-        TrackThresholds.sustainedSpeedWindowSeconds,
       );
-      if (sustainedSpeedMs > maxSpeed) {
-        maxSpeed = sustainedSpeedMs;
+      if (smoothedSpeeds.isNotEmpty) {
+        final double currentSmoothedSpeed = smoothedSpeeds.last;
+        if (currentSmoothedSpeed > maxSpeed) {
+          maxSpeed = currentSmoothedSpeed;
+        }
       }
     }
 
     if (loadedPoints.isEmpty) return;
 
-    // Sense simplificació: preservem tots els punts originals del GPX.
-    final importedPoints = loadedPoints;
+    final smoothedSpeeds = Track.computeSmoothedSpeeds(loadedPoints);
+    final importedPoints = loadedPoints
+        .asMap()
+        .entries
+        .map((entry) => entry.value.copyWith(speed: smoothedSpeeds[entry.key]))
+        .toList();
+
+    maxSpeed = smoothedSpeeds.fold<double>(
+      0.0,
+      (acc, value) => value > acc ? value : acc,
+    );
 
     // Bounds recalculats sobre el track complet importat
     minLat = importedPoints
@@ -170,10 +179,10 @@ class GpxImportService {
       );
     }
 
-    double averageSpeed = 0.0;
-    if (totalDuration.inSeconds > 0) {
-      averageSpeed = accumulatedDistance / totalDuration.inSeconds;
-    }
+    final averageSpeed = Track.averageSmoothedSpeed(
+      smoothedSpeeds,
+      includeZero: false,
+    );
 
     final importedAlts = importedPoints
         .map((p) => p.altitude)

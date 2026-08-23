@@ -31,14 +31,7 @@ class _SpeedChartState extends State<SpeedChart> {
   }
 
   List<double> _calcSpeeds(Track t) {
-    if (t.distances.isEmpty) return [];
-    final s = <double>[0.0];
-    for (int i = 1; i < t.distances.length; i++) {
-      final dDist = t.distances[i] - t.distances[i - 1];
-      final dTime = t.timestamps[i].difference(t.timestamps[i - 1]).inSeconds;
-      s.add(dTime > 0 ? (dDist / dTime) * 3.6 : 0.0);
-    }
-    return s;
+    return t.speeds;
   }
 
   @override

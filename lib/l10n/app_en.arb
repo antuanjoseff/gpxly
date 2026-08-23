@@ -217,6 +217,7 @@
   "statTimeTotal": "Total time",
   "statTimeMoving": "Moving time",
   "statTimeStopped": "Stopped time",
+  "statTimeToWaypoint": "Time to next waypoint",
 
   "statSpeedCurrent": "Current speed",
   "statSpeedAverage": "Average speed",

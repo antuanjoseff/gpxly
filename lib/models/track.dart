@@ -1,4 +1,6 @@
 import 'package:maplibre_gl/maplibre_gl.dart';
+import 'package:strack_rec/notifiers/helpers/thresholds.dart';
+import 'package:strack_rec/utils/geo_utils.dart';
 
 import 'user_position.dart';
 
@@ -9,6 +11,10 @@ enum RecordingState {
 }
 
 class Track {
+  static const int smoothedSpeedWindow = TrackThresholds.speedSmoothingWindow;
+  static const double smoothedSpeedMinAccuracy =
+      TrackThresholds.speedMinAccuracyMeters;
+
   final List<UserPosition> points; // Llista compacta de punts
   final TrackStats stats; // Mètriques globals precalculades
   final RecordingState recordingState;
@@ -73,6 +79,9 @@ class Track {
   double get averageSpeed => stats.averageSpeed;
   double get maxSpeed => stats.maxSpeed;
 
+  double get effectiveCurrentSpeedKmh =>
+      points.isNotEmpty ? points.last.speed : 0.0;
+
   double? get minLat => stats.minLat;
   double? get maxLat => stats.maxLat;
   double? get minLon => stats.minLon;
@@ -91,8 +100,90 @@ class Track {
     return "$h:$m:$s";
   }
 
-  double get currentSpeedKmH => currentSpeed;
+  double get currentSpeedKmH => effectiveCurrentSpeedKmh;
   int get currentSatellites => points.isNotEmpty ? points.last.satellites : 0;
+
+  static double averageSmoothedSpeed(
+    List<double> speeds, {
+    required bool includeZero,
+  }) {
+    final validSpeeds = speeds.where(
+      (speed) => speed.isFinite && (includeZero ? speed >= 0.0 : speed > 0.0),
+    );
+    if (validSpeeds.isEmpty) return 0.0;
+    return validSpeeds.reduce((a, b) => a + b) / validSpeeds.length;
+  }
+
+  static List<double> computeSmoothedSpeeds(
+    List<UserPosition> points, {
+    int windowSize = smoothedSpeedWindow,
+    double minAccuracy = smoothedSpeedMinAccuracy,
+  }) {
+    if (points.isEmpty) return const [];
+    final List<double> smoothed = List<double>.filled(points.length, 0.0);
+
+    final List<double> segmentSpeeds = List<double>.filled(points.length, 0.0);
+    // Última velocitat de segment acceptada com a vàlida, per detectar salts GPS puntuals
+    double? lastValidSpeedKmh;
+    for (int i = 1; i < points.length; i++) {
+      final prev = points[i - 1];
+      final curr = points[i];
+
+      final accuracyLimit = i + 1 < windowSize
+          ? minAccuracy
+          : TrackThresholds.speedEstablishedMinAccuracyMeters;
+      if (prev.accuracy >= accuracyLimit || curr.accuracy >= accuracyLimit) {
+        continue;
+      }
+
+      final dtSeconds =
+          curr.timestamp.difference(prev.timestamp).inMilliseconds / 1000.0;
+      if (dtSeconds <= 0.0 || !dtSeconds.isFinite) continue;
+
+      final meters = distanceBetween(
+        prev.position.latitude,
+        prev.position.longitude,
+        curr.position.latitude,
+        curr.position.longitude,
+      );
+      if (!meters.isFinite || meters <= 0.0) continue;
+
+      final double speedKmh = (meters / dtSeconds) * 3.6;
+
+      // 🛡️ Rebutgem salts de posició físicament impossibles (teletransports GPS):
+      // si l'acceleració implícita supera el límit humà plausible, ignorem el segment.
+      if (lastValidSpeedKmh != null) {
+        final double maxPlausibleSpeed =
+            lastValidSpeedKmh +
+            TrackThresholds.speedMaxAccelerationKmhPerSecond * dtSeconds;
+        if (speedKmh > maxPlausibleSpeed) {
+          continue;
+        }
+      }
+
+      segmentSpeeds[i] = speedKmh;
+      lastValidSpeedKmh = speedKmh;
+    }
+
+    final List<double> validRecent = <double>[];
+    for (int i = 1; i < points.length; i++) {
+      final speed = segmentSpeeds[i];
+      if (speed > 0.0 && speed.isFinite) {
+        validRecent.add(speed);
+      }
+
+      while (validRecent.length > windowSize) {
+        validRecent.removeAt(0);
+      }
+
+      if (validRecent.isNotEmpty) {
+        final avg = validRecent.reduce((a, b) => a + b) / validRecent.length;
+        smoothed[i] = avg;
+      }
+    }
+
+    return smoothed;
+  }
 
   String get formattedDuration {
     final h = duration.inHours.toString().padLeft(2, '0');
@@ -112,13 +203,8 @@ class Track {
 
   // 🏃‍♂️ RITMO MEDIO EN MOVIMIENTO (Minutos por Kilómetro -> min/km)
   double get averagePace {
-    if (distance <= 0) return 0.0;
-
-    // Tiempo en movimiento en minutos dividido por la distancia en kilómetros
-    final double movingMinutes = (duration - stoppedDuration).inSeconds / 60.0;
-    final double distanceKm = distance / 1000.0;
-
-    return movingMinutes / distanceKm;
+    if (averageSpeed <= 0.0 || !averageSpeed.isFinite) return 0.0;
+    return 60.0 / averageSpeed;
   }
 
   // ⚙️ FORMATO TEXTO COMPACTO (Devuelve string formateado "MM:SS min/km")

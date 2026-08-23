@@ -225,19 +225,10 @@ class MapScissorsButtons extends ConsumerWidget {
               foregroundColor: Colors.white,
               onPressed: () {
                 if (isToolActive) {
-                  // 🚀 REVERSIBILITAT DEL BOTÓ MESTRE: Si l'usuari ja té punts o el tram fixat (selected) i prem la creu (X),
-                  // en lloc de tancar l'eina directament, fa un reset per tornar a l'inici de la tria i mostrar els subbotons.
-                  if (sel.mapToolState == MapSelectionToolState.selected ||
-                      sel.mapToolState == MapSelectionToolState.selectingEnd) {
-                    ref
-                        .read(elevationSelectionProvider.notifier)
-                        .resetMapSelection();
-                  } else {
-                    // Si ja estava a l'estat inicial d'espera (selectingStart), llavors sí que es tanca l'eina completament
-                    ref
-                        .read(elevationSelectionProvider.notifier)
-                        .deactivateMapSelectionTool();
-                  }
+                  // La X sempre tanca del tot l'eina: netegem retícula, cercles i tram en un sol clic.
+                  ref
+                      .read(elevationSelectionProvider.notifier)
+                      .deactivateMapSelectionTool();
                 } else {
                   ref
                       .read(elevationSelectionProvider.notifier)

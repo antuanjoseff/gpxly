@@ -568,14 +568,19 @@ class _MapScreenState extends ConsumerState<MapScreen>
           : ref.read(importedTrackProvider.notifier).visibleCoordinates;
 
       try {
+        if (next.mode == SelectionMode.none) {
+          await clearSelectionGeometry(mapController!);
+          return;
+        }
+
         await updateSelectionCircles(mapController!, next, coordsActuales);
         if (!mounted) return;
 
-        updateSelectedSegmentGeometry(mapController!, next, coordsActuales);
-
-        if (next.mapToolState == MapSelectionToolState.selected) {
-          updateSelectedSegmentGeometry(mapController!, next, coordsActuales);
-        }
+        await updateSelectedSegmentGeometry(
+          mapController!,
+          next,
+          coordsActuales,
+        );
 
         if (!mounted) return;
         await setChartInteractionGeometry(
@@ -1477,7 +1482,17 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     _openNavigationControl(context, ref, hasTrack),
                 onHandleNavigationAction: _handleSendaNavigationAction,
                 onToggleChart: () {
-                  setState(() => _isChartCollapsed = !_isChartCollapsed);
+                  final collapsed = !_isChartCollapsed;
+                  setState(() => _isChartCollapsed = collapsed);
+                  if (collapsed) {
+                    ref
+                        .read(elevationSelectionProvider.notifier)
+                        .userCollapsedChart();
+                  } else {
+                    ref
+                        .read(elevationSelectionProvider.notifier)
+                        .userOpenedChart();
+                  }
                 },
 
                 // 🔥 NOU

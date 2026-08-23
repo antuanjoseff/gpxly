@@ -138,43 +138,40 @@ class RecordingNotifier extends Notifier<Track> {
       newMin = newPoint.altitude;
     }
 
+    final processedPoints = [...state.points, newPoint];
+    final smoothedSpeeds = Track.computeSmoothedSpeeds(processedPoints);
+    currentSpeedKmh = smoothedSpeeds.isNotEmpty ? smoothedSpeeds.last : 0.0;
+
+    if (currentSpeedKmh > newMaxSpeed &&
+        currentSpeedKmh < 130.0 &&
+        !_isStopped) {
+      newMaxSpeed = currentSpeedKmh;
+    }
+
     // Filtre protector per a salts geomètrics absurds o rebots de satèl·lits
     if (currentSpeedKmh.isNegative || currentSpeedKmh > 130.0 || _isStopped) {
       currentSpeedKmh = 0.0;
     }
 
     final Duration totalDuration = ref.read(timerProvider);
-    final Duration movingDuration = totalDuration - stoppedDuration;
-    double newAvgSpeed = 0.0;
-    double newAvgSpeedTotal = 0.0;
-
-    final double distanceKm = newDistance / 1000.0;
-
-    if (movingDuration.inSeconds > 5 && newDistance > 0) {
-      final double timeHours = movingDuration.inSeconds / 3600.0;
-      newAvgSpeed = distanceKm / timeHours;
-    }
-
-    if (totalDuration.inSeconds > 5 && newDistance > 0) {
-      final double timeHoursTotal = totalDuration.inSeconds / 3600.0;
-      newAvgSpeedTotal = distanceKm / timeHoursTotal;
-    }
-
-    // Mantenim l'objecte original de hardware intacte sense alterar la seva velocitat
-    final userPositionWithDistance = newPoint.copyWith(
-      distanceAtPoint: calculatedDistanceAtPoint,
+    final double newAvgSpeed = Track.averageSmoothedSpeed(
+      smoothedSpeeds,
+      includeZero: false,
+    );
+    final double newAvgSpeedTotal = Track.averageSmoothedSpeed(
+      smoothedSpeeds,
+      includeZero: true,
     );
 
-    final gpsSettings = ref.read(gpsSettingsProvider);
-    final sustainedSpeedKmh = _computeSpeedWithTimeWindow([
-      ...state.points,
-      userPositionWithDistance,
-    ], gpsSettings);
+    final userPositionWithDistance = newPoint.copyWith(
+      distanceAtPoint: calculatedDistanceAtPoint,
+      speed: currentSpeedKmh,
+    );
 
-    if (sustainedSpeedKmh > newMaxSpeed &&
-        sustainedSpeedKmh < 130.0 &&
+    if (currentSpeedKmh > newMaxSpeed &&
+        currentSpeedKmh < 130.0 &&
         !_isStopped) {
-      newMaxSpeed = sustainedSpeedKmh;
+      newMaxSpeed = currentSpeedKmh;
     }
 
     final updatedStats = state.stats.copyWith(

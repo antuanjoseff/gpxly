@@ -525,6 +525,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get statTimeStopped => 'Temps à l\'arrêt';
 
   @override
+  String get statTimeToWaypoint => 'Temps jusqu\'au prochain point';
+
+  @override
   String get statSpeedCurrent => 'Vitesse actuelle';
 
   @override

@@ -1121,6 +1121,12 @@ abstract class AppLocalizations {
   /// **'Stopped time'**
   String get statTimeStopped;
 
+  /// No description provided for @statTimeToWaypoint.
+  ///
+  /// In en, this message translates to:
+  /// **'Time to next waypoint'**
+  String get statTimeToWaypoint;
+
   /// No description provided for @statSpeedCurrent.
   ///
   /// In en, this message translates to:

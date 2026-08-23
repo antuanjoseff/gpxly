@@ -1,17 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:reorderable_grid_view/reorderable_grid_view.dart';
 import 'package:strack_rec/l10n/app_localizations.dart';
 import 'package:strack_rec/models/track.dart';
+import 'package:strack_rec/models/waypoint.dart';
 import 'package:strack_rec/notifiers/imported_track_notifier.dart';
 import 'package:strack_rec/notifiers/recording_notifier.dart';
 import 'package:strack_rec/notifiers/location_notifier.dart';
+import 'package:strack_rec/notifiers/navigation_notifier.dart';
+import 'package:strack_rec/notifiers/waypoints_imported_notifier.dart';
 import 'package:strack_rec/notifiers/barometer_settings_notifier.dart'; // 🆕 El teu notifier de pressió
 import 'package:strack_rec/screens/stats/notifiers/stats_prefs_notifier.dart';
 import 'package:strack_rec/screens/stats/satellites/screens/satellite_detail_screen.dart';
 import 'package:strack_rec/theme/app_colors.dart';
 import 'package:strack_rec/providers/barometer_provider.dart';
 import 'package:strack_rec/utils/calculations.dart';
+import 'package:strack_rec/utils/distance_utils.dart';
 
 class TrackStatsScreen extends ConsumerStatefulWidget {
   const TrackStatsScreen({super.key});
@@ -67,6 +72,66 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
     return "${minutes.toString().padLeft(2, '0')}:${displaySeconds.toString().padLeft(2, '0')}";
   }
 
+  String _formatRemainingToWaypoint(Duration? remaining) {
+    if (remaining == null) return "--:--";
+    final totalSeconds = remaining.inSeconds;
+    final hours = totalSeconds ~/ 3600;
+    final minutes = (totalSeconds % 3600) ~/ 60;
+    final seconds = totalSeconds % 60;
+    if (hours > 0) {
+      return "$hours:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}";
+    }
+    return "${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}";
+  }
+
+  Duration? _estimateNextWaypointTime({
+    required Track? track,
+    required LatLng? position,
+    required List<Waypoint> waypoints,
+    required double speedKmh,
+    required bool isFollowing,
+  }) {
+    if (!isFollowing || track == null || position == null || speedKmh <= 0.3) {
+      return null;
+    }
+    if (track.points.isEmpty || waypoints.isEmpty) return null;
+
+    var nearestTrackIndex = 0;
+    var nearestDistance = double.infinity;
+    for (var index = 0; index < track.points.length; index++) {
+      final point = track.points[index].position;
+      final distance = calculateDistanceManual(
+        position.latitude,
+        position.longitude,
+        point.latitude,
+        point.longitude,
+      );
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        nearestTrackIndex = index;
+      }
+    }
+
+    Waypoint? nextWaypoint;
+    for (final waypoint in waypoints) {
+      if (waypoint.trackIndex >= nearestTrackIndex) {
+        nextWaypoint = waypoint;
+        break;
+      }
+    }
+    if (nextWaypoint == null) return null;
+
+    final distanceToWaypoint = calculateDistanceManual(
+      position.latitude,
+      position.longitude,
+      nextWaypoint.lat,
+      nextWaypoint.lon,
+    );
+    final seconds = distanceToWaypoint / (speedKmh / 3.6);
+    if (!seconds.isFinite || seconds < 0) return null;
+    return Duration(seconds: seconds.round());
+  }
+
   String _formatLatLngToDMS(dynamic position) {
     if (position == null) return "--";
     return "${_convertToDMS(position.latitude, true)}\n${_convertToDMS(position.longitude, false)}";
@@ -109,6 +174,8 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
 
     final realTrack = ref.watch(trackRecordingProvider);
     final importedTrack = ref.watch(importedTrackProvider);
+    final importedWaypoints = ref.watch(importedWaypointsProvider);
+    final isFollowing = ref.watch(navigationProvider).isFollowing;
     final bool isRecording =
         realTrack.recordingState == RecordingState.recording;
 
@@ -134,8 +201,16 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
 
     final pressure = ref.watch(barometerProvider).value;
     final hasBarometer = ref.watch(barometerSettingsProvider).hasBarometer;
-    final double currentSpeed = track?.currentSpeedKmH ?? 0.0;
+    final speedTrack = realTrack.points.isNotEmpty ? realTrack : track;
+    final double currentSpeed = speedTrack?.currentSpeedKmH ?? 0.0;
     final double displaySpeed = currentSpeed < 0.4 ? 0.0 : currentSpeed;
+    final remainingToWaypoint = _estimateNextWaypointTime(
+      track: track,
+      position: activePosition,
+      waypoints: importedWaypoints,
+      speedKmh: displaySpeed,
+      isFollowing: isFollowing,
+    );
 
     final Map<String, List<Widget>> cardPages = {
       'dist': [
@@ -169,6 +244,13 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
           "",
           t.statTimeStopped,
           customValue: _formatDuration(stoppedDuration),
+        ),
+        _StatPage(
+          Icons.flag,
+          null,
+          "",
+          t.statTimeToWaypoint,
+          customValue: _formatRemainingToWaypoint(remainingToWaypoint),
         ),
       ],
       'speed': [

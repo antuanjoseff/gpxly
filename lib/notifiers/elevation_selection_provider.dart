@@ -2,6 +2,7 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:strack_rec/notifiers/nearest_track_point_notifier.dart';
+import 'package:strack_rec/notifiers/map_selection_tool_notifier.dart';
 
 enum SelectionMode { none, single, range }
 
@@ -255,7 +256,9 @@ class ElevationSelectionNotifier extends Notifier<ElevationSelectionState> {
   }
 
   void userCollapsedChart() {
-    if (state.mapToolState != MapSelectionToolState.off) {
+    final mapSelectionToolActive = ref.read(mapSelectionToolProvider);
+    if (mapSelectionToolActive ||
+        state.mapToolState != MapSelectionToolState.off) {
       state = state.copyWith(forceHideChart: true);
     } else {
       // Eina apagada: en amagar el gràfic, netegem també cercles i tram del mapa

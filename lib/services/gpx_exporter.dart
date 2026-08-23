@@ -3,10 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:path_provider/path_provider.dart';
-// Models immutables refactoritzats
-import 'package:strack_rec/models/user_position.dart';
 // Proveïdors existents de la teva aplicació
 import 'package:strack_rec/notifiers/gpx_settings_notifier.dart'
     show gpxSettingsProvider;
@@ -20,20 +17,6 @@ String buildGpxFilename() {
   final m = now.month.toString().padLeft(2, '0');
   final d = now.day.toString().padLeft(2, '0');
   return "STrack Rec-$y-$m-$d.gpx";
-}
-
-double computeSpeed(
-  double lat1,
-  double lon1,
-  DateTime t1,
-  double lat2,
-  double lon2,
-  DateTime t2,
-) {
-  final distance = Geolocator.distanceBetween(lat1, lon1, lat2, lon2);
-  final dt = t2.difference(t1).inMilliseconds / 1000.0;
-  if (dt <= 0) return 0;
-  return distance / dt;
 }
 
 Future<void> exportGpx(
@@ -89,9 +72,7 @@ Future<void> exportGpx(
   // ─────────────────────────────────────────────────
   // 3. RECÓRRER LA LLISTA DE PUNTS SENSE RISC D'ÍNDEXS
   // ─────────────────────────────────────────────────
-  for (int i = 0; i < track.points.length; i++) {
-    final UserPosition currentPoint = track.points[i];
-
+  for (final currentPoint in track.points) {
     final lat = currentPoint.position.latitude;
     final lon = currentPoint.position.longitude;
     final ele = currentPoint.altitude;
@@ -103,19 +84,8 @@ Future<void> exportGpx(
     final sat = currentPoint.satellites;
     final vAcc = currentPoint.vAccuracy;
 
-    // Càlcul de velocitat dinàmica (Speed) només si està activat per l'usuari
-    double speed = 0;
-    if (settings.speeds && i > 0) {
-      final UserPosition prevPoint = track.points[i - 1];
-      speed = computeSpeed(
-        prevPoint.position.latitude,
-        prevPoint.position.longitude,
-        prevPoint.timestamp,
-        lat,
-        lon,
-        currentPoint.timestamp,
-      );
-    }
+    // La velocitat del punt ja és la mitjana suavitzada en km/h.
+    final speed = currentPoint.speed / 3.6;
 
     buffer.writeln('<trkpt lat="$lat" lon="$lon">');
 

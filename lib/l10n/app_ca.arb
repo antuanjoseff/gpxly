@@ -217,6 +217,7 @@
   "statTimeTotal": "Temps total",
   "statTimeMoving": "Temps en moviment",
   "statTimeStopped": "Temps aturat",
+  "statTimeToWaypoint": "Temps fins al waypoint",
 
   "statSpeedCurrent": "Velocitat actual",
   "statSpeedAverage": "Velocitat mitjana",

@@ -525,6 +525,9 @@ class AppLocalizationsCa extends AppLocalizations {
   String get statTimeStopped => 'Temps aturat';
 
   @override
+  String get statTimeToWaypoint => 'Temps fins al waypoint';
+
+  @override
   String get statSpeedCurrent => 'Velocitat actual';
 
   @override
