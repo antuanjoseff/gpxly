@@ -6,6 +6,9 @@
   "locationPermissionRequired": "Se requieren permisos de ubicación",
 
   "exitWarning": "Pulsa atrás otra vez para salir",
+  "exitWhileRecording": "Para salir, primero debes finalizar la grabación",
+  "exitWhileFollowing": "Para salir, primero debes finalizar el seguimiento",
+  "exitWhileRecordingAndFollowing": "Para salir, primero debes finalizar la grabación y el seguimiento",
   "longPressToFinish": "Mantén pulsado para finalizar la grabación",
 
   "gpsDisabledTitle": "GPS",
@@ -149,11 +152,11 @@
   "gpsOptimizationTitle": "Optimización GPS",
   "gpsOptimizationMessage": "Para un seguimiento preciso, activaremos el modo de alta fidelidad. Esto puede aumentar el consumo de batería.",
   "batteryOptimizationTitle": "Evita que Android detenga el GPS",
-  "batteryOptimizationMessage": "Para grabar sin cortes, sobre todo en paradas largas, hay que excluir Senda del ahorro de batería. Si no, Android puede detener el GPS cuando la pantalla esté apagada un rato.",
+  "batteryOptimizationMessage": "Para grabar sin cortes, sobre todo en paradas largas, hay que excluir sTrack Rec del ahorro de batería. Si no, Android puede detener el GPS cuando la pantalla esté apagada un rato.",
   "confirm": "CONFIRMAR",
 
   "notificationPermissionTitle": "Notificaciones de seguimiento",
-  "notificationPermissionMessage": "Senda necesita mostrar una notificación mientras grabas la ruta. Esto evita que el sistema detenga la aplicación para ahorrar batería y garantiza que no pierdas tu track.",
+  "notificationPermissionMessage": "sTrack Rec necesita mostrar una notificación mientras grabas la ruta. Esto evita que el sistema detenga la aplicación para ahorrar batería y garantiza que no pierdas tu track.",
   "understood": "ENTENDIDO",
 
   "gpxErrorInvalidExtension": "El archivo seleccionado no es un GPX",

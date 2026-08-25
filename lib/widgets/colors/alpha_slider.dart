@@ -85,7 +85,7 @@ class _AlphaTrackShape extends SliderTrackShape {
       RRect.fromRectAndRadius(rect, Radius.circular(rect.height / 2)),
     );
 
-    CheckerboardPainter().paint(canvas, rect.size);
+    const CheckerboardPainter().paint(canvas, rect.size);
 
     canvas.restore();
 

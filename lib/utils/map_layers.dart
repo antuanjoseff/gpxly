@@ -71,8 +71,9 @@ void _updateWaypointPulse(MapLibreMapController controller) {
     // 🚀 MILLORA 3: Increments lleugerament més alts per donar un batec més viu i dinàmic
     if (_pulseIncreasing) {
       _pulseValue += 0.5; // Abans era 0.25
-      if (_pulseValue >= 6.0)
+      if (_pulseValue >= 6.0) {
         _pulseIncreasing = false; // Pic de radi màxim a 14.0
+      }
     } else {
       _pulseValue -= 0.5;
       if (_pulseValue <= 0.0) _pulseIncreasing = true;

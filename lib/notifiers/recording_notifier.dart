@@ -142,16 +142,16 @@ class RecordingNotifier extends Notifier<Track> {
     final smoothedSpeeds = Track.computeSmoothedSpeeds(processedPoints);
     currentSpeedKmh = smoothedSpeeds.isNotEmpty ? smoothedSpeeds.last : 0.0;
 
-    if (currentSpeedKmh > newMaxSpeed &&
-        currentSpeedKmh < 130.0 &&
-        !_isStopped) {
-      newMaxSpeed = currentSpeedKmh;
-    }
-
     // Filtre protector per a salts geomètrics absurds o rebots de satèl·lits
     if (currentSpeedKmh.isNegative || currentSpeedKmh > 130.0 || _isStopped) {
       currentSpeedKmh = 0.0;
     }
+
+    // Velocitat màxima sostinguda (15s) - només actualitzem si el track és prou llarg
+    newMaxSpeed = Track.computeMaxSustainedSpeed(
+      processedPoints,
+      smoothedSpeeds,
+    );
 
     final Duration totalDuration = ref.read(timerProvider);
     final double newAvgSpeed = Track.averageSmoothedSpeed(
@@ -167,12 +167,6 @@ class RecordingNotifier extends Notifier<Track> {
       distanceAtPoint: calculatedDistanceAtPoint,
       speed: currentSpeedKmh,
     );
-
-    if (currentSpeedKmh > newMaxSpeed &&
-        currentSpeedKmh < 130.0 &&
-        !_isStopped) {
-      newMaxSpeed = currentSpeedKmh;
-    }
 
     final updatedStats = state.stats.copyWith(
       distance: newDistance,

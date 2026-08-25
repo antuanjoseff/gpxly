@@ -60,8 +60,6 @@ class GpxImportService {
     double minLon = 180.0, maxLon = -180.0;
     double minEle = double.infinity, maxEle = -double.infinity;
 
-    double maxSpeed = 0.0;
-
     double? lastLat;
     double? lastLon;
     DateTime? lastTime;
@@ -120,16 +118,6 @@ class GpxImportService {
           distanceAtPoint: accumulatedDistance,
         ),
       );
-
-      final List<double> smoothedSpeeds = Track.computeSmoothedSpeeds(
-        loadedPoints,
-      );
-      if (smoothedSpeeds.isNotEmpty) {
-        final double currentSmoothedSpeed = smoothedSpeeds.last;
-        if (currentSmoothedSpeed > maxSpeed) {
-          maxSpeed = currentSmoothedSpeed;
-        }
-      }
     }
 
     if (loadedPoints.isEmpty) return;
@@ -141,9 +129,10 @@ class GpxImportService {
         .map((entry) => entry.value.copyWith(speed: smoothedSpeeds[entry.key]))
         .toList();
 
-    maxSpeed = smoothedSpeeds.fold<double>(
-      0.0,
-      (acc, value) => value > acc ? value : acc,
+    // Velocitat màxima sostinguda (15s) - més robusta que un pic instantani
+    final double maxSpeed = Track.computeMaxSustainedSpeed(
+      importedPoints,
+      smoothedSpeeds,
     );
 
     // Bounds recalculats sobre el track complet importat

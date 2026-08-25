@@ -185,6 +185,58 @@ class Track {
     return smoothed;
   }
 
+  /// Retorna la velocitat màxima sostinguda durant almenys [minSeconds] segons.
+  ///
+  /// Fa servir una finestra lliscant sobre [smoothedSpeeds] i troba el valor més alt
+  /// de velocitat mitjana que es manté durant tota la finestra temporal.
+  static double computeMaxSustainedSpeed(
+    List<UserPosition> points,
+    List<double> smoothedSpeeds, {
+    int minSeconds = TrackThresholds.maxSustainedSpeedWindowSeconds,
+  }) {
+    if (points.length < 2 || smoothedSpeeds.length != points.length) return 0.0;
+
+    double maxSustained = 0.0;
+
+    for (int endIndex = 1; endIndex < points.length; endIndex++) {
+      final DateTime endTime = points[endIndex].timestamp;
+
+      // Retrocedim fins trobar el punt que fa almenys minSeconds segons
+      int startIndex = endIndex;
+      for (int i = endIndex - 1; i >= 0; i--) {
+        final int dt = endTime.difference(points[i].timestamp).inSeconds;
+        if (dt >= minSeconds) {
+          startIndex = i;
+          break;
+        }
+      }
+
+      // Si no hem pogut anar prou enrere, saltem aquest punt
+      if (endTime.difference(points[startIndex].timestamp).inSeconds <
+          minSeconds) {
+        continue;
+      }
+
+      // Calculem la mitjana de velocitats suavitzades en aquesta finestra
+      final windowSpeeds = <double>[];
+      for (int i = startIndex; i <= endIndex; i++) {
+        if (smoothedSpeeds[i] > 0.0 && smoothedSpeeds[i].isFinite) {
+          windowSpeeds.add(smoothedSpeeds[i]);
+        }
+      }
+
+      if (windowSpeeds.isEmpty) continue;
+
+      final double avgInWindow =
+          windowSpeeds.reduce((a, b) => a + b) / windowSpeeds.length;
+      if (avgInWindow > maxSustained) {
+        maxSustained = avgInWindow;
+      }
+    }
+
+    return maxSustained;
+  }
+
   String get formattedDuration {
     final h = duration.inHours.toString().padLeft(2, '0');
     final m = (duration.inMinutes % 60).toString().padLeft(2, '0');

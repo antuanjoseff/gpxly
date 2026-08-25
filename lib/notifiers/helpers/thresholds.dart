@@ -64,4 +64,7 @@ class TrackThresholds {
 
   // Rebuig de salts GPS puntuals: acceleració física màxima plausible (km/h per segon)
   static const double speedMaxAccelerationKmhPerSecond = 10.8;
+
+  // Finestra temporal mínima per considerar una velocitat màxima sostinguda (segons)
+  static const int maxSustainedSpeedWindowSeconds = 15;
 }

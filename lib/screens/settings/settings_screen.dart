@@ -108,7 +108,7 @@ class SettingsScreen extends ConsumerWidget {
                 height: 42,
                 child: Stack(
                   children: [
-                    Positioned(
+                    const Positioned(
                       left: 0,
                       top: 0,
                       child: Icon(
@@ -126,7 +126,7 @@ class SettingsScreen extends ConsumerWidget {
                           color: Colors.white,
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(
+                        child: const Icon(
                           Icons.grid_on_rounded,
                           size: 18,
                           color: AppColors.skyBlue,

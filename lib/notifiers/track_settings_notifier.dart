@@ -7,7 +7,7 @@ import '../models/track_settings.dart';
 class TrackSettingsNotifier extends Notifier<TrackSettings> {
   @override
   TrackSettings build() {
-    final initial = TrackSettings(color: AppColors.recordedTrackColor);
+    const initial = TrackSettings(color: AppColors.recordedTrackColor);
 
     _loadFromPrefs();
     return initial;

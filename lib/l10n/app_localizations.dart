@@ -65,7 +65,8 @@ import 'app_localizations_it.dart';
 /// be consistent with the languages listed in the AppLocalizations.supportedLocales
 /// property.
 abstract class AppLocalizations {
-  AppLocalizations(String locale) : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+  AppLocalizations(String locale)
+    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -73,7 +74,8 @@ abstract class AppLocalizations {
     return Localizations.of<AppLocalizations>(context, AppLocalizations);
   }
 
-  static const LocalizationsDelegate<AppLocalizations> delegate = _AppLocalizationsDelegate();
+  static const LocalizationsDelegate<AppLocalizations> delegate =
+      _AppLocalizationsDelegate();
 
   /// A list of this localizations delegate along with the default localizations
   /// delegates.
@@ -85,12 +87,13 @@ abstract class AppLocalizations {
   /// Additional delegates can be added by appending to this list in
   /// MaterialApp. This list does not have to be used at all if a custom list
   /// of delegates is preferred or required.
-  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates = <LocalizationsDelegate<dynamic>>[
-    delegate,
-    GlobalMaterialLocalizations.delegate,
-    GlobalCupertinoLocalizations.delegate,
-    GlobalWidgetsLocalizations.delegate,
-  ];
+  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
+      <LocalizationsDelegate<dynamic>>[
+        delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ];
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
@@ -98,7 +101,7 @@ abstract class AppLocalizations {
     Locale('en'),
     Locale('es'),
     Locale('fr'),
-    Locale('it')
+    Locale('it'),
   ];
 
   /// No description provided for @appTitle.
@@ -136,6 +139,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Press back again to exit'**
   String get exitWarning;
+
+  /// No description provided for @exitWhileRecording.
+  ///
+  /// In en, this message translates to:
+  /// **'To exit, you must first finish the recording'**
+  String get exitWhileRecording;
+
+  /// No description provided for @exitWhileFollowing.
+  ///
+  /// In en, this message translates to:
+  /// **'To exit, you must first finish following the track'**
+  String get exitWhileFollowing;
+
+  /// No description provided for @exitWhileRecordingAndFollowing.
+  ///
+  /// In en, this message translates to:
+  /// **'To exit, you must first finish the recording and following the track'**
+  String get exitWhileRecordingAndFollowing;
 
   /// No description provided for @longPressToFinish.
   ///
@@ -836,7 +857,7 @@ abstract class AppLocalizations {
   /// No description provided for @batteryOptimizationMessage.
   ///
   /// In en, this message translates to:
-  /// **'To record without gaps, especially during long stops, Senda needs to be excluded from battery optimization. Otherwise Android may stop the GPS when the screen is off for a while.'**
+  /// **'To record without gaps, especially during long stops, sTrack Rec needs to be excluded from battery optimization. Otherwise Android may stop the GPS when the screen is off for a while.'**
   String get batteryOptimizationMessage;
 
   /// No description provided for @confirm.
@@ -854,7 +875,7 @@ abstract class AppLocalizations {
   /// No description provided for @notificationPermissionMessage.
   ///
   /// In en, this message translates to:
-  /// **'Senda needs to show a notification while recording your route. This prevents the system from stopping the app to save battery and ensures you don\'t lose your track.'**
+  /// **'sTrack Rec needs to show a notification while recording your route. This prevents the system from stopping the app to save battery and ensures you don\'t lose your track.'**
   String get notificationPermissionMessage;
 
   /// No description provided for @understood.
@@ -1596,7 +1617,8 @@ abstract class AppLocalizations {
   String get deleteCurrentTrackKeep;
 }
 
-class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
+class _AppLocalizationsDelegate
+    extends LocalizationsDelegate<AppLocalizations> {
   const _AppLocalizationsDelegate();
 
   @override
@@ -1605,28 +1627,32 @@ class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> 
   }
 
   @override
-  bool isSupported(Locale locale) => <String>['ca', 'en', 'es', 'fr', 'it'].contains(locale.languageCode);
+  bool isSupported(Locale locale) =>
+      <String>['ca', 'en', 'es', 'fr', 'it'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
 }
 
 AppLocalizations lookupAppLocalizations(Locale locale) {
-
-
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
-    case 'ca': return AppLocalizationsCa();
-    case 'en': return AppLocalizationsEn();
-    case 'es': return AppLocalizationsEs();
-    case 'fr': return AppLocalizationsFr();
-    case 'it': return AppLocalizationsIt();
+    case 'ca':
+      return AppLocalizationsCa();
+    case 'en':
+      return AppLocalizationsEn();
+    case 'es':
+      return AppLocalizationsEs();
+    case 'fr':
+      return AppLocalizationsFr();
+    case 'it':
+      return AppLocalizationsIt();
   }
 
   throw FlutterError(
     'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
     'an issue with the localizations generation tool. Please file an issue '
     'on GitHub with a reproducible sample app and the gen-l10n configuration '
-    'that was used.'
+    'that was used.',
   );
 }

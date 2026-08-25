@@ -7,6 +7,9 @@
   "locationPermissionRequired": "L'autorisation de localisation est requise",
 
   "exitWarning": "Appuyez à nouveau sur retour pour quitter",
+  "exitWhileRecording": "Pour quitter, vous devez d'abord terminer l'enregistrement",
+  "exitWhileFollowing": "Pour quitter, vous devez d'abord terminer le suivi de la trace",
+  "exitWhileRecordingAndFollowing": "Pour quitter, vous devez d'abord terminer l'enregistrement et le suivi de la trace",
   "longPressToFinish": "Maintenez appuyé pour terminer l'enregistrement",
 
   "gpsDisabledTitle": "GPS",
@@ -150,11 +153,11 @@
   "gpsOptimizationTitle": "Optimisation du GPS",
   "gpsOptimizationMessage": "Pour un suivi précis, il est nécessaire d'activer le mode haute précision. Cela peut augmenter la consommation de batterie.",
   "batteryOptimizationTitle": "Empêcher Android d'arrêter le GPS",
-  "batteryOptimizationMessage": "Pour enregistrer sans coupures, surtout lors d'arrêts prolongés, Senda doit être exclue de l'optimisation de la batterie. Sinon, Android peut arrêter le GPS lorsque l'écran est éteint un moment.",
+  "batteryOptimizationMessage": "Pour enregistrer sans coupures, surtout lors d'arrêts prolongés, sTrack Rec doit être exclue de l'optimisation de la batterie. Sinon, Android peut arrêter le GPS lorsque l'écran est éteint un moment.",
   "confirm": "CONFIRMER",
 
   "notificationPermissionTitle": "Notifications de suivi",
-  "notificationPermissionMessage": "Senda doit afficher une notification pendant l'enregistrement de l'itinéraire. Cela empêche le système d'arrêter l'application pour économiser la batterie et garantit que vous ne perdrez pas votre trace.",
+  "notificationPermissionMessage": "sTrack Rec doit afficher une notification pendant l'enregistrement de l'itinéraire. Cela empêche le système d'arrêter l'application pour économiser la batterie et garantit que vous ne perdrez pas votre trace.",
   "understood": "COMPRIS",
 
   "gpxErrorInvalidExtension": "Le fichier sélectionné n'est pas un fichier GPX",

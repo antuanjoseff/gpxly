@@ -629,6 +629,26 @@ class AppMessages {
     backgroundColor: Colors.green.shade700,
     icon: Icons.exit_to_app,
   );
+
+  static void showActiveSessionExitWarning(
+    BuildContext context, {
+    required bool isRecording,
+    required bool isFollowing,
+  }) {
+    final localizations = AppLocalizations.of(context)!;
+    final message = isRecording && isFollowing
+        ? localizations.exitWhileRecordingAndFollowing
+        : isRecording
+        ? localizations.exitWhileRecording
+        : localizations.exitWhileFollowing;
+    _showCustomSnackBar(
+      context,
+      message: message,
+      backgroundColor: Colors.orange.shade800,
+      icon: Icons.warning_amber_rounded,
+    );
+  }
+
   static void showLongPressHint(BuildContext context) => _showCustomSnackBar(
     context,
     message: AppLocalizations.of(context)!.longPressToFinish,

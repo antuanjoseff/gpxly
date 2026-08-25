@@ -27,6 +27,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get exitWarning => 'Press back again to exit';
 
   @override
+  String get exitWhileRecording => 'To exit, you must first finish the recording';
+
+  @override
+  String get exitWhileFollowing => 'To exit, you must first finish following the track';
+
+  @override
+  String get exitWhileRecordingAndFollowing => 'To exit, you must first finish the recording and following the track';
+
+  @override
   String get longPressToFinish => 'Long press to finish recording';
 
   @override
@@ -375,7 +384,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get batteryOptimizationTitle => 'Prevent Android from stopping GPS';
 
   @override
-  String get batteryOptimizationMessage => 'To record without gaps, especially during long stops, Senda needs to be excluded from battery optimization. Otherwise Android may stop the GPS when the screen is off for a while.';
+  String get batteryOptimizationMessage => 'To record without gaps, especially during long stops, sTrack Rec needs to be excluded from battery optimization. Otherwise Android may stop the GPS when the screen is off for a while.';
 
   @override
   String get confirm => 'CONFIRM';
@@ -384,7 +393,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notificationPermissionTitle => 'Tracking Notifications';
 
   @override
-  String get notificationPermissionMessage => 'Senda needs to show a notification while recording your route. This prevents the system from stopping the app to save battery and ensures you don\'t lose your track.';
+  String get notificationPermissionMessage => 'sTrack Rec needs to show a notification while recording your route. This prevents the system from stopping the app to save battery and ensures you don\'t lose your track.';
 
   @override
   String get understood => 'UNDERSTOOD';

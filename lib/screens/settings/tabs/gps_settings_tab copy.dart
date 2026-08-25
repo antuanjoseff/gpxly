@@ -121,7 +121,7 @@ class GpsSettingsTab extends ConsumerWidget {
               child: SwitchListTile.adaptive(
                 title: Text(
                   t.gpsDiagnosticMode,
-                  style: TextStyle(fontWeight: FontWeight.w600),
+                  style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
                 subtitle: Text(t.gpsDiagnosticDescription),
                 value: ref.watch(gpsDebugProvider),

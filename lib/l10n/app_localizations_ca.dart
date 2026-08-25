@@ -27,6 +27,15 @@ class AppLocalizationsCa extends AppLocalizations {
   String get exitWarning => 'Prem enrere un altre cop per sortir';
 
   @override
+  String get exitWhileRecording => 'Per sortir, primer cal finalitzar la gravació';
+
+  @override
+  String get exitWhileFollowing => 'Per sortir, primer cal finalitzar el seguiment';
+
+  @override
+  String get exitWhileRecordingAndFollowing => 'Per sortir, primer cal finalitzar la gravació i el seguiment';
+
+  @override
   String get longPressToFinish => 'Mantén premut per finalitzar la gravació';
 
   @override
@@ -375,7 +384,7 @@ class AppLocalizationsCa extends AppLocalizations {
   String get batteryOptimizationTitle => 'Evita que Android aturi el GPS';
 
   @override
-  String get batteryOptimizationMessage => 'Per gravar sense talls, sobretot en parades llargues, cal excloure Senda de l\'estalvi de bateria. Si no, Android pot aturar el GPS quan la pantalla estigui apagada una estona.';
+  String get batteryOptimizationMessage => 'Per gravar sense talls, sobretot en parades llargues, cal excloure sTrack Rec de l\'estalvi de bateria. Si no, Android pot aturar el GPS quan la pantalla estigui apagada una estona.';
 
   @override
   String get confirm => 'CONFIRMAR';

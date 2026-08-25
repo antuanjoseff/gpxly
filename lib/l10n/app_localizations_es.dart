@@ -27,6 +27,15 @@ class AppLocalizationsEs extends AppLocalizations {
   String get exitWarning => 'Pulsa atrás otra vez para salir';
 
   @override
+  String get exitWhileRecording => 'Para salir, primero debes finalizar la grabación';
+
+  @override
+  String get exitWhileFollowing => 'Para salir, primero debes finalizar el seguimiento';
+
+  @override
+  String get exitWhileRecordingAndFollowing => 'Para salir, primero debes finalizar la grabación y el seguimiento';
+
+  @override
   String get longPressToFinish => 'Mantén pulsado para finalizar la grabación';
 
   @override
@@ -375,7 +384,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get batteryOptimizationTitle => 'Evita que Android detenga el GPS';
 
   @override
-  String get batteryOptimizationMessage => 'Para grabar sin cortes, sobre todo en paradas largas, hay que excluir Senda del ahorro de batería. Si no, Android puede detener el GPS cuando la pantalla esté apagada un rato.';
+  String get batteryOptimizationMessage => 'Para grabar sin cortes, sobre todo en paradas largas, hay que excluir sTrack Rec del ahorro de batería. Si no, Android puede detener el GPS cuando la pantalla esté apagada un rato.';
 
   @override
   String get confirm => 'CONFIRMAR';
@@ -384,7 +393,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get notificationPermissionTitle => 'Notificaciones de seguimiento';
 
   @override
-  String get notificationPermissionMessage => 'Senda necesita mostrar una notificación mientras grabas la ruta. Esto evita que el sistema detenga la aplicación para ahorrar batería y garantiza que no pierdas tu track.';
+  String get notificationPermissionMessage => 'sTrack Rec necesita mostrar una notificación mientras grabas la ruta. Esto evita que el sistema detenga la aplicación para ahorrar batería y garantiza que no pierdas tu track.';
 
   @override
   String get understood => 'ENTENDIDO';

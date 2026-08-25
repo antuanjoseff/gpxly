@@ -2,7 +2,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:strack_rec/models/track.dart';
 import 'package:strack_rec/models/user_position.dart';
-import 'package:strack_rec/services/gpx_import_service.dart';
 
 void main() {
   group('speed metrics', () {

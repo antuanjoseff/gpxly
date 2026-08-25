@@ -6,6 +6,9 @@
   "locationPermissionRequired": "Cal acceptar permisos de localització",
 
   "exitWarning": "Prem enrere un altre cop per sortir",
+  "exitWhileRecording": "Per sortir, primer cal finalitzar la gravació",
+  "exitWhileFollowing": "Per sortir, primer cal finalitzar el seguiment",
+  "exitWhileRecordingAndFollowing": "Per sortir, primer cal finalitzar la gravació i el seguiment",
   "longPressToFinish": "Mantén premut per finalitzar la gravació",
 
   "gpsDisabledTitle": "GPS",
@@ -149,7 +152,7 @@
   "gpsOptimizationTitle": "Optimització GPS",
   "gpsOptimizationMessage": "Per a un seguiment precís, cal activar el mode d'alta fidelitat. Això pot augmentar el consum de bateria.",
   "batteryOptimizationTitle": "Evita que Android aturi el GPS",
-  "batteryOptimizationMessage": "Per gravar sense talls, sobretot en parades llargues, cal excloure Senda de l'estalvi de bateria. Si no, Android pot aturar el GPS quan la pantalla estigui apagada una estona.",
+  "batteryOptimizationMessage": "Per gravar sense talls, sobretot en parades llargues, cal excloure sTrack Rec de l'estalvi de bateria. Si no, Android pot aturar el GPS quan la pantalla estigui apagada una estona.",
   "confirm": "CONFIRMAR",
 
   "notificationPermissionTitle": "Notificacions de seguiment",

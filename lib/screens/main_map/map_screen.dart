@@ -1063,6 +1063,19 @@ class _MapScreenState extends ConsumerState<MapScreen>
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
+        final isRecording =
+            ref.read(trackRecordingProvider).recordingState ==
+            RecordingState.recording;
+        final isFollowing = ref.read(navigationProvider).isFollowing;
+        if (isRecording || isFollowing) {
+          AppMessages.showActiveSessionExitWarning(
+            context,
+            isRecording: isRecording,
+            isFollowing: isFollowing,
+          );
+          return;
+        }
+
         final now = DateTime.now();
         if (_lastBackPress == null ||
             now.difference(_lastBackPress!) > const Duration(seconds: 2)) {
@@ -1251,7 +1264,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                         child: Stack(
                           children: [
                             // 1. EL VISOR CENTRAL PERSONALITZAT (S'immunitza contra el moviment del mapa)
-                            IgnorePointer(
+                            const IgnorePointer(
                               ignoring: true,
                               child: Positioned.fill(
                                 child: MapFullScreenReticle(

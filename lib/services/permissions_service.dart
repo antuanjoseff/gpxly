@@ -91,16 +91,6 @@ class PermissionsService {
     return false;
   }
 
-  static Future<bool> _ensureBackgroundLocation(BuildContext context) async {
-    if (!Platform.isAndroid) return true;
-
-    final status = await Permission.locationAlways.status;
-    if (status.isGranted) return true;
-
-    final res = await Permission.locationAlways.request();
-    return res.isGranted;
-  }
-
   static Future<bool> _ensureNotifications(BuildContext context) async {
     if (!Platform.isAndroid) return true;
 
@@ -125,8 +115,9 @@ class PermissionsService {
     final gpsOn = await _ensureGpsEnabled(context);
     if (!gpsOn) return false;
 
-    // 3) Background
-    final bg = await _ensureBackgroundLocation(context);
+    // 3) Background — amb diàleg explicatiu propi ABANS de la petició del
+    //    sistema, perquè l'usuari entengui per què cal el permís "sempre".
+    final bg = await ensureBackgroundLocationWithDialog(context);
     if (!bg) return false;
 
     // 4) Notificacions (Android 13+)
@@ -156,20 +147,15 @@ class PermissionsService {
       return false;
     }
 
-    // 3) Permís de background (Android)
+    // 3) Permís de background (Android): el seguiment ha de funcionar amb
+    //    la pantalla apagada o l'app en segon pla, igual que la gravació.
+    final bg = await ensureBackgroundLocationWithDialog(context);
+    if (!bg) return false;
+
     // 4) Permís de notificacions (Android 13+)
     if (Platform.isAndroid) {
       final notifGranted = await _ensureNotifications(context);
       if (!notifGranted) return false;
-    }
-
-    // 4) Permís de notificacions (Android 13+)
-    if (Platform.isAndroid) {
-      final notif = await Permission.notification.status;
-      if (!notif.isGranted) {
-        final res = await Permission.notification.request();
-        if (!res.isGranted) return false;
-      }
     }
 
     return true;

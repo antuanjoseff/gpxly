@@ -15,6 +15,7 @@ import 'package:strack_rec/notifiers/imported_track_notifier.dart';
 import 'package:strack_rec/notifiers/waypoints_imported_notifier.dart';
 // Proveïdors i serveis externs de la teva app
 import 'package:strack_rec/notifiers/location_notifier.dart'; // Bloc 1
+import 'package:strack_rec/notifiers/waypoint_eta_notifier.dart';
 import 'package:strack_rec/services/permissions_service.dart';
 import 'package:strack_rec/utils/distance_utils.dart'; // Per al teu mètode calculateDistanceManual / distanceBetween
 
@@ -579,6 +580,10 @@ class NavigationNotifier extends Notifier<NavigationState> {
 
     _reverseDialogShown = false;
 
+    // Reiniciem el filtre de velocitat del motor d'ETA (els waypoints ja
+    // s'han reindexat; la reconfiguració és automàtica via fingerprint).
+    ref.read(waypointEtaProvider.notifier).reverse();
+
     // 🔥 Reprenem el motor després d’un petit delay
     Future.delayed(const Duration(seconds: 3), () {
       _reverseDetectionLocked = false;
@@ -640,9 +645,8 @@ class NavigationNotifier extends Notifier<NavigationState> {
   }) {
     if (importedWaypoints.isEmpty || imported.points.isEmpty) return;
 
-    if (_nextWaypointAlertIndex >= importedWaypoints.length) {
-      _nextWaypointAlertIndex = importedWaypoints.length - 1;
-    }
+    // Si ja hem passat l'últim waypoint, no fem res més
+    if (_nextWaypointAlertIndex >= importedWaypoints.length) return;
 
     while (_nextWaypointAlertIndex < importedWaypoints.length) {
       final waypoint = importedWaypoints[_nextWaypointAlertIndex];

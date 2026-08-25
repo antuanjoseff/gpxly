@@ -6,6 +6,9 @@
   "locationPermissionRequired": "Location permission is required",
 
   "exitWarning": "Press back again to exit",
+  "exitWhileRecording": "To exit, you must first finish the recording",
+  "exitWhileFollowing": "To exit, you must first finish following the track",
+  "exitWhileRecordingAndFollowing": "To exit, you must first finish the recording and following the track",
   "longPressToFinish": "Long press to finish recording",
 
   "gpsDisabledTitle": "GPS disabled",
@@ -149,11 +152,11 @@
   "gpsOptimizationTitle": "GPS Optimization",
   "gpsOptimizationMessage": "For precise tracking, high-fidelity mode will be activated. This may increase battery consumption.",
   "batteryOptimizationTitle": "Prevent Android from stopping GPS",
-  "batteryOptimizationMessage": "To record without gaps, especially during long stops, Senda needs to be excluded from battery optimization. Otherwise Android may stop the GPS when the screen is off for a while.",
+  "batteryOptimizationMessage": "To record without gaps, especially during long stops, sTrack Rec needs to be excluded from battery optimization. Otherwise Android may stop the GPS when the screen is off for a while.",
   "confirm": "CONFIRM",
 
   "notificationPermissionTitle": "Tracking Notifications",
-  "notificationPermissionMessage": "Senda needs to show a notification while recording your route. This prevents the system from stopping the app to save battery and ensures you don't lose your track.",
+  "notificationPermissionMessage": "sTrack Rec needs to show a notification while recording your route. This prevents the system from stopping the app to save battery and ensures you don't lose your track.",
   "understood": "UNDERSTOOD",
 
   "gpxErrorInvalidExtension": "The selected file is not a GPX file",

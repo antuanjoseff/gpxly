@@ -27,6 +27,15 @@ class AppLocalizationsFr extends AppLocalizations {
   String get exitWarning => 'Appuyez à nouveau sur retour pour quitter';
 
   @override
+  String get exitWhileRecording => 'Pour quitter, vous devez d\'abord terminer l\'enregistrement';
+
+  @override
+  String get exitWhileFollowing => 'Pour quitter, vous devez d\'abord terminer le suivi de la trace';
+
+  @override
+  String get exitWhileRecordingAndFollowing => 'Pour quitter, vous devez d\'abord terminer l\'enregistrement et le suivi de la trace';
+
+  @override
   String get longPressToFinish => 'Maintenez appuyé pour terminer l\'enregistrement';
 
   @override
@@ -375,7 +384,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get batteryOptimizationTitle => 'Empêcher Android d\'arrêter le GPS';
 
   @override
-  String get batteryOptimizationMessage => 'Pour enregistrer sans coupures, surtout lors d\'arrêts prolongés, Senda doit être exclue de l\'optimisation de la batterie. Sinon, Android peut arrêter le GPS lorsque l\'écran est éteint un moment.';
+  String get batteryOptimizationMessage => 'Pour enregistrer sans coupures, surtout lors d\'arrêts prolongés, sTrack Rec doit être exclue de l\'optimisation de la batterie. Sinon, Android peut arrêter le GPS lorsque l\'écran est éteint un moment.';
 
   @override
   String get confirm => 'CONFIRMER';
@@ -384,7 +393,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get notificationPermissionTitle => 'Notifications de suivi';
 
   @override
-  String get notificationPermissionMessage => 'Senda doit afficher une notification pendant l\'enregistrement de l\'itinéraire. Cela empêche le système d\'arrêter l\'application pour économiser la batterie et garantit que vous ne perdrez pas votre trace.';
+  String get notificationPermissionMessage => 'sTrack Rec doit afficher une notification pendant l\'enregistrement de l\'itinéraire. Cela empêche le système d\'arrêter l\'application pour économiser la batterie et garantit que vous ne perdrez pas votre trace.';
 
   @override
   String get understood => 'COMPRIS';

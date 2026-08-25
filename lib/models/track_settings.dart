@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:strack_rec/theme/app_colors.dart';
 
 class TrackSettings {
   final Color color;

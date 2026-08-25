@@ -6,6 +6,9 @@
   "locationPermissionRequired": "È necessario concedere l'autorizzazione alla posizione",
 
   "exitWarning": "Premi di nuovo indietro per uscire",
+  "exitWhileRecording": "Per uscire, devi prima terminare la registrazione",
+  "exitWhileFollowing": "Per uscire, devi prima terminare il tracciamento",
+  "exitWhileRecordingAndFollowing": "Per uscire, devi prima terminare la registrazione e il tracciamento",
   "longPressToFinish": "Tieni premuto per terminare la registrazione",
 
   "gpsDisabledTitle": "GPS",
@@ -149,11 +152,11 @@
   "gpsOptimizationTitle": "Ottimizzazione GPS",
   "gpsOptimizationMessage": "Per un seguimento preciso, è necessario attivare la modalità ad alta precisione. Ciò può aumentare il consumo della batteria.",
   "batteryOptimizationTitle": "Evita che Android interrompa il GPS",
-  "batteryOptimizationMessage": "Per registrare senza interruzioni, soprattutto nelle soste lunghe, Senda deve essere esclusa dall'ottimizzazione della batteria. Altrimenti Android potrebbe fermare il GPS quando lo schermo è spento per un po'.",
+  "batteryOptimizationMessage": "Per registrare senza interruzioni, soprattutto nelle soste lunghe, sTrack Rec deve essere esclusa dall'ottimizzazione della batteria. Altrimenti Android potrebbe fermare il GPS quando lo schermo è spento per un po'.",
   "confirm": "CONFERMA",
 
   "notificationPermissionTitle": "Notifiche del seguimento",
-  "notificationPermissionMessage": "Senda deve mostrare una notifica durante la registrazione del percorso. Questo impedisce al sistema di arrestare l'app per risparmiare batteria e garantisce che la tua traccia non venga persa.",
+  "notificationPermissionMessage": "sTrack Rec deve mostrare una notifica durante la registrazione del percorso. Questo impedisce al sistema di arrestare l'app per risparmiare batteria e garantisce che la tua traccia non venga persa.",
   "understood": "HO CAPITO",
 
   "gpxErrorInvalidExtension": "Il file selezionato non è un file GPX",

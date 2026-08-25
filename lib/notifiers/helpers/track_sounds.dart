@@ -81,7 +81,7 @@ class TrackSounds {
   Future<void> playWaypointAlarm() async {
     try {
       await player.play(
-        AssetSource('sound/dog.mp3'),
+        AssetSource('sound/success_wpt.mp3'),
         volume: 1.0,
         ctx: _alarmContext,
       );

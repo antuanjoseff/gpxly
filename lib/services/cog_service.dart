@@ -2,7 +2,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -340,7 +339,7 @@ class CogService {
         final height = int.parse(response.headers['x-height']!);
 
         debugPrint(
-          "📐 [COG METADADES] Graella definida pel servidor: Mida ${width}x${height}. BBox: $bbox",
+          "📐 [COG METADADES] Graella definida pel servidor: Mida ${width}x$height. BBox: $bbox",
         );
 
         // Verificació matemàtica del format del resultat

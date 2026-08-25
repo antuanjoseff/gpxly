@@ -1,6 +1,6 @@
 name: strack_rec
 description: App Flutter para grabar y exportar tracks GPX
-version: 0.1.0+10
+version: 0.1.0+11
 environment:
   sdk: ^3.9.2
 
@@ -100,7 +100,7 @@ flutter:
     - assets/sound/owl_sound.mp3
     - assets/sound/cardinal_sound.mp3
     - assets/sound/beep_sound.mp3
-    - assets/sound/dog.mp3
+    - assets/sound/success_wpt.mp3
     - assets/icon/waypoint.png
     - assets/icon/waypoint_imported.png
     - assets/icon/strack_rec_mini_icon.png
