@@ -4,6 +4,8 @@ import 'package:reorderable_grid_view/reorderable_grid_view.dart';
 import 'package:strack_rec/l10n/app_localizations.dart';
 import 'package:strack_rec/models/track.dart';
 import 'package:strack_rec/notifiers/imported_track_notifier.dart';
+import 'package:strack_rec/notifiers/live_follow_stats_notifier.dart';
+import 'package:strack_rec/notifiers/navigation_notifier.dart';
 import 'package:strack_rec/notifiers/recording_notifier.dart';
 import 'package:strack_rec/notifiers/location_notifier.dart';
 import 'package:strack_rec/notifiers/barometer_settings_notifier.dart'; // 🆕 El teu notifier de pressió
@@ -135,24 +137,60 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
               ? importedTrack
               : (realTrack.points.isNotEmpty ? realTrack : null));
 
-    final (ascent, descent) = _computeElevationGain(track);
+    // Quan se segueix un track sense gravar, les estadístiques de velocitat i
+    // desnivell provenen del GPS en viu (liveFollowStatsProvider) en lloc del
+    // track importat estàtic. Gravant, o sense seguiment actiu, el
+    // comportament original es manté intacte.
+    final bool isFollowing = ref.watch(navigationProvider).isFollowing;
+    final liveStats = ref.watch(liveFollowStatsProvider);
+    final bool useLiveStats = isFollowing && !isRecording && liveStats.hasData;
 
-    final duration = track?.stats.duration ?? Duration.zero;
+    final (ascent, descent) = useLiveStats
+        ? (liveStats.ascent, liveStats.descent)
+        : _computeElevationGain(track);
+
+    final duration = useLiveStats
+        ? liveStats.duration
+        : (track?.stats.duration ?? Duration.zero);
     final liveLocation = ref.watch(locationProvider);
     final activePosition = track?.currentPosition ?? liveLocation?.position;
 
-    final double? distanceKm = track != null ? (track.distance / 1000.0) : null;
-    final stoppedDuration = track?.stats.stoppedDuration ?? Duration.zero;
+    final double? distanceKm = useLiveStats
+        ? liveStats.distanceMeters / 1000.0
+        : (track != null ? (track.distance / 1000.0) : null);
+    final stoppedDuration = useLiveStats
+        ? liveStats.stoppedDuration
+        : (track?.stats.stoppedDuration ?? Duration.zero);
     final movingDuration = duration - stoppedDuration;
 
-    final double? currentAltitude = track != null && track.altitudes.isNotEmpty
-        ? track.altitudes.last
-        : null;
+    final double? currentAltitude = useLiveStats
+        ? liveStats.currentAltitude
+        : (track != null && track.altitudes.isNotEmpty
+              ? track.altitudes.last
+              : null);
+
+    final double? averageSpeed = useLiveStats
+        ? liveStats.averageSpeedKmh
+        : track?.stats.averageSpeed;
+    final double? averageSpeedTotal = useLiveStats
+        ? liveStats.averageSpeedTotalKmh
+        : track?.stats.averageSpeedTotal;
+    final double? maxSpeed = useLiveStats
+        ? liveStats.maxSpeedKmh
+        : track?.stats.maxSpeed;
+    final double? maxElevation = useLiveStats
+        ? liveStats.maxElevation
+        : track?.stats.maxElevation;
+    final double? minElevation = useLiveStats
+        ? liveStats.minElevation
+        : track?.stats.minElevation;
 
     final pressure = ref.watch(barometerProvider).value;
     final hasBarometer = ref.watch(barometerSettingsProvider).hasBarometer;
     final speedTrack = realTrack.points.isNotEmpty ? realTrack : track;
-    final double currentSpeed = speedTrack?.currentSpeedKmH ?? 0.0;
+    final double currentSpeed = useLiveStats
+        ? liveStats.currentSpeedKmh
+        : (speedTrack?.currentSpeedKmH ?? 0.0);
     final double displaySpeed = currentSpeed < 0.4 ? 0.0 : currentSpeed;
     // ETA al següent waypoint: calculat pel motor de navegació sobre la guia.
     final remainingToWaypoint = ref.watch(waypointEtaProvider).eta;
@@ -208,21 +246,21 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
         ),
         _StatPage(
           Icons.trending_up,
-          track?.stats.averageSpeed,
+          averageSpeed,
           "km/h",
           t.statSpeedAverage,
           unitBelow: true,
         ),
         _StatPage(
           Icons.equalizer,
-          track?.stats.averageSpeedTotal,
+          averageSpeedTotal,
           "km/h",
           t.statSpeedTotal,
           unitBelow: true,
         ),
         _StatPage(
           Icons.bolt,
-          track?.stats.maxSpeed,
+          maxSpeed,
           "km/h",
           t.statSpeedMax,
           unitBelow: true,
@@ -240,11 +278,13 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
           null,
           "min/km",
           t.statPaceAverage,
-          customValue: track != null
-              ? (track.formattedAveragePace.isNotEmpty
-                    ? track.formattedAveragePace.replaceAll(" min/km", "")
-                    : _formatCurrentPace(track.stats.averageSpeed))
-              : "--:--",
+          customValue: useLiveStats
+              ? _formatCurrentPace(averageSpeed ?? 0.0)
+              : (track != null
+                    ? (track.formattedAveragePace.isNotEmpty
+                          ? track.formattedAveragePace.replaceAll(" min/km", "")
+                          : _formatCurrentPace(track.stats.averageSpeed))
+                    : "--:--"),
           unitBelow: true,
         ),
       ],
@@ -258,14 +298,14 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
         ),
         _StatPage(
           Icons.landscape,
-          track?.stats.maxElevation,
+          maxElevation,
           "m",
           t.statMaxElevation,
           unitBelow: true,
         ),
         _StatPage(
           Icons.terrain,
-          track?.stats.minElevation,
+          minElevation,
           "m",
           t.statMinElevation,
           unitBelow: true,
