@@ -10,9 +10,12 @@
 //    notifier només hi connecta els providers i conserva l'últim resultat.
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:strack_rec/models/track.dart';
 import 'package:strack_rec/notifiers/imported_track_notifier.dart';
+import 'package:strack_rec/notifiers/live_follow_stats_notifier.dart';
 import 'package:strack_rec/notifiers/location_notifier.dart';
 import 'package:strack_rec/notifiers/navigation_notifier.dart';
+import 'package:strack_rec/notifiers/recording_notifier.dart';
 import 'package:strack_rec/notifiers/waypoints_imported_notifier.dart';
 import 'package:strack_rec/services/track_navigation_engine.dart';
 
@@ -51,8 +54,24 @@ class WaypointEtaNotifier extends Notifier<TrackNavigationResult> {
       return TrackNavigationResult.empty;
     }
 
+    final isRecording = ref.watch(
+      trackRecordingProvider.select(
+        (t) => t.recordingState == RecordingState.recording,
+      ),
+    );
+
+    final double avgSpeedKmh = isRecording
+        ? ref.watch(trackRecordingProvider.select((t) => t.stats.averageSpeed))
+        : ref.watch(liveFollowStatsProvider.select((s) => s.averageSpeedKmh));
+
+    final double averageSpeedMps = avgSpeedKmh / 3.6;
+
     // Cada rebuild causat per una nova posició GPS recalcula l'estat.
-    return _engine.updatePosition(position.position, time: position.timestamp);
+    return _engine.updatePosition(
+      position.position,
+      time: position.timestamp,
+      averageSpeedMps: averageSpeedMps,
+    );
   }
 
   /// Inverteix el sentit de la navegació a nivell d'ETA (cridat quan

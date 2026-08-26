@@ -12,9 +12,9 @@
 //     d'índexs de punts.
 //  3. El sentit de navegació (forward/reverse) NO modifica mai els
 //     `distanceAtPoint`: només canvia la direcció de comparació.
-//  4. La velocitat per a l'ETA es deriva del progrés real sobre el track
-//     (delta distància sobre guia / delta temps), suavitzada amb EMA, amb el
-//     valor absolut per funcionar igual en forward i reverse.
+//  4. La velocitat per a l'ETA es basa en la velocitat mitjana (o en la
+//     velocitat filtrada sobre el track si la mitjana no està disponible), amb
+//     el valor absolut per funcionar igual en forward i reverse.
 //  5. `nextWaypointIndex` és monòton dins del sentit actiu: mai retrocedeix
 //     per soroll GPS. Els salts de GPS que superen diversos waypoints es
 //     gestionen amb un `while`.
@@ -195,7 +195,14 @@ class TrackNavigationEngine {
   // ─────────────────────────────────────────────────────────────
 
   /// Actualitza el motor amb una nova posició GPS i retorna l'estat calculat.
-  TrackNavigationResult updatePosition(LatLng gpsPosition, {DateTime? time}) {
+  ///
+  /// Opceionalment accepta [averageSpeedMps] (m/s) per a fer servir la velocitat
+  /// mitjana en el càlcul de l'ETA.
+  TrackNavigationResult updatePosition(
+    LatLng gpsPosition, {
+    DateTime? time,
+    double? averageSpeedMps,
+  }) {
     if (!_hasTrack) return TrackNavigationResult.empty;
 
     final now = time ?? DateTime.now();
@@ -230,9 +237,16 @@ class TrackNavigationEngine {
     // mantenim l'últim vàlid durant [etaHoldDuration]. Si no hi ha waypoint
     // (next == null), l'ETA es neteja immediatament: no té sentit mantenir
     // una estimació cap a un waypoint que ja hem superat.
+    // Fem servir la velocitat mitjana si s'indica i és vàlida (> minSpeedMps);
+    // si no, utilitzem la velocitat filtrada (EMA).
+    final speedForEta =
+        (averageSpeedMps != null && averageSpeedMps > minSpeedMps)
+        ? averageSpeedMps
+        : filteredSpeedMps;
+
     Duration? eta;
-    if (remaining != null && filteredSpeedMps > minSpeedMps) {
-      final seconds = remaining / filteredSpeedMps;
+    if (remaining != null && speedForEta > minSpeedMps) {
+      final seconds = remaining / speedForEta;
       if (seconds.isFinite && seconds >= 0) {
         eta = Duration(seconds: seconds.round());
       }
