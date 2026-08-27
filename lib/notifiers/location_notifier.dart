@@ -27,6 +27,8 @@ class LocationNotifier extends Notifier<UserPosition?> {
   DateTime? _lastHeartbeatRefreshAt;
   bool _heartbeatRefreshInProgress = false;
   int _heartbeatSoftAttempts = 0;
+  int _processedGpsPointCount = 0;
+  int _gpsProcessingInFlight = 0;
 
   static const Duration _gpsSilenceThreshold = Duration(seconds: 30);
   static const Duration _gpsHeartbeatTick = Duration(seconds: 5);
@@ -191,8 +193,13 @@ class LocationNotifier extends Notifier<UserPosition?> {
 
   // 🎯 RECEPCIÓ, CORRECCIÓ D'ALTITUD I EMISSIÓ DEL MODEL
   void _processIncomingGpsPoint(Map<String, dynamic> data) async {
+    final processingStopwatch = Stopwatch()..start();
+    _gpsProcessingInFlight += 1;
+    _processedGpsPointCount += 1;
+    final pointNumber = _processedGpsPointCount;
     _lastGpsPointAt = DateTime.now();
     _heartbeatSoftAttempts = 0;
+    int? demElapsedMilliseconds;
 
     final lat = data["lat"] as double;
     final lon = data["lon"] as double;
@@ -230,12 +237,15 @@ class LocationNotifier extends Notifier<UserPosition?> {
       );
 
       // 1. Demanem la cota al servei cartogràfic
+      final demStopwatch = Stopwatch()..start();
       final (correctedAlt, isFixed) = await _cogService.getCorrectedElevation(
         lat,
         lon,
         altitude,
         ref,
       );
+      demStopwatch.stop();
+      demElapsedMilliseconds = demStopwatch.elapsedMilliseconds;
 
       logger.log(
         "🗺️ DEM RESPOSTA -> Rebut: ${correctedAlt.toStringAsFixed(1)}m | isFixed: $isFixed",
@@ -243,16 +253,18 @@ class LocationNotifier extends Notifier<UserPosition?> {
 
       // 🛡️ CONTROL DE SEGURETAT DE LA CORRECCIÓ DEM
       if (isFixed && correctedAlt > 0.0) {
-        finalAlt = correctedAlt;
+        final processor = ref.read(altitudeProcessorProvider.notifier);
+
+        // 1. Enviem TOTS els inputs necessaris al motor de fusió (GPS i DEM)
+        processor.updateGps(altitude);
+        processor.updateDem(correctedAlt);
+
+        // 2. Executem el filtre de fusió i en capturem el resultat real
+        finalAlt = processor.process();
         finalIsFixed = true;
 
-        // Si la dada DEM és real i bona, actualitzem el motor analític del baròmetre
-        final processor = ref.read(altitudeProcessorProvider.notifier);
-        processor.updateDem(correctedAlt);
-        processor.process();
-
         logger.log(
-          "✅ FUSIÓ ÉXIT -> Enviada cota DEM al processador del baròmetre",
+          "✅ FUSIÓ ÈXIT -> Altitud fusionada calculada (Baròmetre + DEM): ${finalAlt.toStringAsFixed(1)}m",
         );
       } else {
         // 🚑 PLA DE RESCAT INTEGRAL:
@@ -298,6 +310,18 @@ class LocationNotifier extends Notifier<UserPosition?> {
       satellitesInView: satView, // 🛰️ Nou camp per al diagnòstic
       distanceAtPoint: 0.0,
     );
+
+    processingStopwatch.stop();
+    _gpsProcessingInFlight -= 1;
+    if (pointNumber % 10 == 0 ||
+        processingStopwatch.elapsedMilliseconds >= 200) {
+      logger.log(
+        'GPS PROCESS -> point=$pointNumber total=${processingStopwatch.elapsedMilliseconds}ms '
+        'dem=${demElapsedMilliseconds ?? '-'}ms '
+        'inFlight=$_gpsProcessingInFlight acc=${accuracy.toStringAsFixed(1)}m '
+        'speed=${speed.toStringAsFixed(1)}m/s sat=$satUsed/$satView fixed=$finalIsFixed',
+      );
+    }
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -410,6 +434,9 @@ class LocationNotifier extends Notifier<UserPosition?> {
     _gpsDebugSub = null;
     gpsActive = false;
     state = null;
+
+    // Netegem el processador d'altitud per forçar una nova calibració a la propera ruta
+    ref.read(altitudeProcessorProvider.notifier).reset();
   }
 
   // ─── 💾 PERSISTÈNCIA A DISC: GUARDAR COORDENADES AL SORTIR ───

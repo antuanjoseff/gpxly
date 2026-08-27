@@ -11,6 +11,8 @@ class AltitudeLoggerService {
 
   static const String _prefDebugKey = 'gps_debug_enabled';
   bool? _debugEnabledCache;
+  Future<void> _writeQueue = Future<void>.value();
+  int _pendingWrites = 0;
 
   Future<File> get _logFile async {
     final directory = await getApplicationDocumentsDirectory();
@@ -32,22 +34,25 @@ class AltitudeLoggerService {
 
   /// 📝 Afegeix una línia de text al log amb la marca de temps actual
   Future<void> log(String message) async {
-    try {
-      if (!await isDebugEnabled()) return;
-      final file = await _logFile;
-      final timestamp = DateTime.now()
-          .toIso8601String()
-          .split('T')
-          .last
-          .substring(0, 8);
-      await file.writeAsString(
-        '[$timestamp] $message\n',
-        mode: FileMode.append,
-        flush: true,
-      );
-    } catch (e) {
-      print("❌ Error escrivint al log d'altitud: $e");
-    }
+    if (!await isDebugEnabled()) return;
+
+    _pendingWrites += 1;
+    _writeQueue = _writeQueue.then((_) async {
+      try {
+        final file = await _logFile;
+        final now = DateTime.now();
+        final timestamp = now.toIso8601String().split('T').last;
+        await file.writeAsString(
+          '[$timestamp] $message | logQueue=$_pendingWrites\n',
+          mode: FileMode.append,
+        );
+      } catch (e) {
+        print("❌ Error escrivint al log d'altitud: $e");
+      } finally {
+        _pendingWrites -= 1;
+      }
+    });
+    await _writeQueue;
   }
 
   /// 🧹 Esborra el contingut de l'arxiu (Reset)

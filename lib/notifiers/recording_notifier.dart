@@ -7,12 +7,9 @@ import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:strack_rec/models/track.dart';
 import 'package:strack_rec/models/user_position.dart';
 import 'package:strack_rec/notifiers/elevation_range_notifier.dart';
-import 'package:strack_rec/notifiers/gps_settings_notifier.dart';
-import 'package:strack_rec/notifiers/helpers/thresholds.dart';
 import 'package:strack_rec/notifiers/location_notifier.dart'; // Bloc 1 [INDEX]
 import 'package:strack_rec/notifiers/timer_notifier.dart';
-import 'package:strack_rec/utils/calculations.dart';
-import 'package:strack_rec/utils/geo_utils.dart';
+import 'package:strack_rec/services/altitude_logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class RecordingNotifier extends Notifier<Track> {
@@ -21,6 +18,13 @@ class RecordingNotifier extends Notifier<Track> {
   DateTime? _stopStart;
   bool _isStopped = false;
   Timer? _gpsTimeoutTimer;
+  final List<_SpeedSample> _recentSpeedSamples = <_SpeedSample>[];
+  final List<_SpeedSample> _sustainedSpeedSamples = <_SpeedSample>[];
+  double _speedSum = 0.0;
+  int _speedCount = 0;
+  double _movingSpeedSum = 0.0;
+  int _movingSpeedCount = 0;
+  double? _lastElevationForGain;
 
   Duration get stoppedDuration {
     if (_isStopped && _stopStart != null) {
@@ -59,6 +63,7 @@ class RecordingNotifier extends Notifier<Track> {
   }
 
   void _addProcessedPoint(UserPosition newPoint) {
+    final processingStopwatch = Stopwatch()..start();
     _gpsTimeoutTimer?.cancel();
     _updateStopTime(newPoint.speed, newPoint.timestamp);
 
@@ -98,37 +103,43 @@ class RecordingNotifier extends Notifier<Track> {
         calculatedDistanceAtPoint = newDistance;
       }
 
-      // =======================================================================
-      // 📐 COMPUTE SEGMENT TELEMETRY: (Metres / Segons) * 3.6 -> Km/h
-      // =======================================================================
       final int timeDiffMs = newPoint.timestamp
           .difference(lastPoint.timestamp)
           .inMilliseconds;
       final double timeDiffSeconds = timeDiffMs / 1000.0;
 
-      // Si el segment té un temps vàlid i ens hem mogut un mínim per filtrar el soroll residual (0.2m)
       if (timeDiffSeconds > 0.0 && step.isFinite && step > 0.2) {
-        currentSpeedKmh = (step / timeDiffSeconds) * 3.6;
-      } else {
-        currentSpeedKmh = 0.0;
+        final rawSpeedKmh = (step / timeDiffSeconds) * 3.6;
+        _recentSpeedSamples.add(
+          _SpeedSample(timestamp: newPoint.timestamp, speed: rawSpeedKmh),
+        );
+        if (_recentSpeedSamples.length > Track.smoothedSpeedWindow) {
+          _recentSpeedSamples.removeAt(0);
+        }
       }
-      // =======================================================================
 
-      // 1️⃣ Construïm la llista d'altituds completa (incloent el nou punt)
-      final List<double> alts = [
-        ...state.points.map((p) => p.altitude),
-        newPoint.altitude,
-      ];
+      if (_recentSpeedSamples.isNotEmpty) {
+        currentSpeedKmh =
+            _recentSpeedSamples
+                .map((sample) => sample.speed)
+                .reduce((sum, speed) => sum + speed) /
+            _recentSpeedSamples.length;
+      }
+    }
 
-      // 2️⃣ Suavitzat centralitzat (mitjana mòbil)
-      final List<double> smooth = ElevationUtils.smooth(alts);
-
-      // 3️⃣ Càlcul robust centralitzat (threshold 3.5m)
-      final Map<String, double> result = ElevationUtils.robustGain(smooth);
-
-      // 4️⃣ Assignem els valors acumulats
-      newAscent = result["ascent"]!;
-      newDescent = result["descent"]!;
+    final lastElevation = _lastElevationForGain;
+    if (lastElevation != null) {
+      final elevationDelta = newPoint.altitude - lastElevation;
+      if (elevationDelta.abs() >= 3.5) {
+        if (elevationDelta > 0.0) {
+          newAscent += elevationDelta;
+        } else {
+          newDescent += elevationDelta.abs();
+        }
+        _lastElevationForGain = newPoint.altitude;
+      }
+    } else {
+      _lastElevationForGain = newPoint.altitude;
     }
 
     if (state.points.isEmpty || newPoint.altitude > newMax) {
@@ -138,30 +149,49 @@ class RecordingNotifier extends Notifier<Track> {
       newMin = newPoint.altitude;
     }
 
-    final processedPoints = [...state.points, newPoint];
-    final smoothedSpeeds = Track.computeSmoothedSpeeds(processedPoints);
-    currentSpeedKmh = smoothedSpeeds.isNotEmpty ? smoothedSpeeds.last : 0.0;
-
     // Filtre protector per a salts geomètrics absurds o rebots de satèl·lits
     if (currentSpeedKmh.isNegative || currentSpeedKmh > 130.0 || _isStopped) {
       currentSpeedKmh = 0.0;
     }
 
-    // Velocitat màxima sostinguda (15s) - només actualitzem si el track és prou llarg
-    newMaxSpeed = Track.computeMaxSustainedSpeed(
-      processedPoints,
-      smoothedSpeeds,
+    final currentSpeedSample = _SpeedSample(
+      timestamp: newPoint.timestamp,
+      speed: currentSpeedKmh,
     );
+    _sustainedSpeedSamples.add(currentSpeedSample);
+    while (_sustainedSpeedSamples.length > 1 &&
+        newPoint.timestamp
+                .difference(_sustainedSpeedSamples.first.timestamp)
+                .inSeconds >
+            10) {
+      _sustainedSpeedSamples.removeAt(0);
+    }
+    if (_sustainedSpeedSamples.length > 1 &&
+        newPoint.timestamp
+                .difference(_sustainedSpeedSamples.first.timestamp)
+                .inSeconds >=
+            10) {
+      final sustainedSpeed =
+          _sustainedSpeedSamples
+              .map((sample) => sample.speed)
+              .reduce((sum, speed) => sum + speed) /
+          _sustainedSpeedSamples.length;
+      if (sustainedSpeed > newMaxSpeed) newMaxSpeed = sustainedSpeed;
+    }
 
     final Duration totalDuration = ref.read(timerProvider);
-    final double newAvgSpeed = Track.averageSmoothedSpeed(
-      smoothedSpeeds,
-      includeZero: false,
-    );
-    final double newAvgSpeedTotal = Track.averageSmoothedSpeed(
-      smoothedSpeeds,
-      includeZero: true,
-    );
+    _speedSum += currentSpeedKmh;
+    _speedCount += 1;
+    if (currentSpeedKmh > 0.0) {
+      _movingSpeedSum += currentSpeedKmh;
+      _movingSpeedCount += 1;
+    }
+    final double newAvgSpeed = _movingSpeedCount == 0
+        ? 0.0
+        : _movingSpeedSum / _movingSpeedCount;
+    final double newAvgSpeedTotal = _speedCount == 0
+        ? 0.0
+        : _speedSum / _speedCount;
 
     final userPositionWithDistance = newPoint.copyWith(
       distanceAtPoint: calculatedDistanceAtPoint,
@@ -194,6 +224,21 @@ class RecordingNotifier extends Notifier<Track> {
 
     if (state.points.length % 10 == 0) {
       _autoSaveToPrefs();
+
+      processingStopwatch.stop();
+      AltitudeLoggerService().log(
+        'TRACK PROCESS -> points=${state.points.length} '
+        'elapsed=${processingStopwatch.elapsedMilliseconds}ms '
+        'distance=${state.stats.distance.toStringAsFixed(1)}m '
+        'ascent=${state.stats.ascent.toStringAsFixed(1)}m '
+        'speed=${state.currentSpeed.toStringAsFixed(1)}km/h',
+      );
+    } else if (processingStopwatch.elapsedMilliseconds >= 200) {
+      processingStopwatch.stop();
+      AltitudeLoggerService().log(
+        'TRACK SLOW PROCESS -> points=${state.points.length} '
+        'elapsed=${processingStopwatch.elapsedMilliseconds}ms',
+      );
     }
   }
 
@@ -254,6 +299,7 @@ class RecordingNotifier extends Notifier<Track> {
 
       // Si la app se cerró estando en modo parado, asumimos que sigue parada al levantarla
       _isStopped = currentRecordingState == RecordingState.paused;
+      _rebuildIncrementalState(loadedPoints);
 
       // 2️⃣ Sincronizamos el cronómetro general flotante (TimerNotifier)
       ref.read(timerProvider.notifier).setInitialValue(recuperadaDuration);
@@ -332,6 +378,7 @@ class RecordingNotifier extends Notifier<Track> {
     _stoppedDuration = Duration.zero;
     _stopStart = null;
     _isStopped = false;
+    _resetIncrementalState();
 
     ref.read(timerProvider.notifier).reset();
     ref.read(timerProvider.notifier).start();
@@ -379,6 +426,7 @@ class RecordingNotifier extends Notifier<Track> {
 
   Future<void> reset() async {
     _gpsTimeoutTimer?.cancel();
+    _resetIncrementalState();
     state = Track(
       points: const [],
       recordingState: RecordingState.idle,
@@ -387,137 +435,52 @@ class RecordingNotifier extends Notifier<Track> {
     await clearCache();
   }
 
-  List<UserPosition> _filterPointsByAccuracy(List<UserPosition> points) {
-    if (points.length < 2) return points;
-
-    final filtered = <UserPosition>[];
-
-    for (int i = 0; i < points.length; i++) {
-      final p = points[i];
-
-      // Punt massa imprecís
-      if (p.accuracy > 15.0) continue;
-
-      // Segment massa sorollós
-      if (i > 0) {
-        final prev = points[i - 1];
-
-        final step = distanceBetween(
-          prev.position.latitude,
-          prev.position.longitude,
-          p.position.latitude,
-          p.position.longitude,
-        );
-
-        final acc = prev.accuracy + p.accuracy;
-        if (step < acc) continue;
-      }
-
-      filtered.add(p);
-    }
-
-    return filtered;
+  void _resetIncrementalState() {
+    _recentSpeedSamples.clear();
+    _sustainedSpeedSamples.clear();
+    _speedSum = 0.0;
+    _speedCount = 0;
+    _movingSpeedSum = 0.0;
+    _movingSpeedCount = 0;
+    _lastElevationForGain = null;
   }
 
-  double _computeSpeedWithTimeWindow(
-    List<UserPosition> points,
-    GpsSettings gps,
-  ) {
-    if (points.length < 2) return 0.0;
-
-    final filtered = _filterPointsByAccuracy(points);
-    if (filtered.length < 2) return 0.0;
-
-    const windowSeconds = TrackThresholds.minSpeedWindowSeconds;
-
-    final List<UserPosition> window = [];
-    final last = filtered.last;
-    window.add(last);
-
-    for (int i = filtered.length - 2; i >= 0; i--) {
-      final p = filtered[i];
-      final dt = last.timestamp.difference(p.timestamp).inSeconds;
-
-      if (dt >= windowSeconds) {
-        window.add(p);
-        break;
+  void _rebuildIncrementalState(List<UserPosition> points) {
+    _resetIncrementalState();
+    for (final point in points) {
+      _lastElevationForGain = point.altitude;
+      _speedSum += point.speed;
+      _speedCount += 1;
+      if (point.speed > 0.0) {
+        _movingSpeedSum += point.speed;
+        _movingSpeedCount += 1;
       }
-
-      window.add(p);
     }
 
-    if (window.length < 2) return 0.0;
-
-    final first = window.last;
-
-    final dist = distanceBetween(
-      first.position.latitude,
-      first.position.longitude,
-      last.position.latitude,
-      last.position.longitude,
-    );
-
-    final dt =
-        last.timestamp.difference(first.timestamp).inMilliseconds / 1000.0;
-
-    if (dt <= 0.0) return 0.0;
-
-    final speedMs = dist / dt;
-    return speedMs * 3.6;
-  }
-
-  double _computeSpeedWithDistanceWindow(
-    List<UserPosition> points,
-    GpsSettings gps,
-  ) {
-    if (points.length < 2) return 0.0;
-
-    final filtered = _filterPointsByAccuracy(points);
-    if (filtered.length < 2) return 0.0;
-
-    const minMeters = TrackThresholds.minSpeedWindowMeters;
-
-    final List<UserPosition> window = [];
-    final last = filtered.last;
-    window.add(last);
-
-    double accumulated = 0.0;
-
-    for (int i = filtered.length - 2; i >= 0; i--) {
-      final p = filtered[i];
-
-      final step = distanceBetween(
-        p.position.latitude,
-        p.position.longitude,
-        window.last.position.latitude,
-        window.last.position.longitude,
+    for (final point
+        in points.reversed.take(Track.smoothedSpeedWindow).toList().reversed) {
+      _recentSpeedSamples.add(
+        _SpeedSample(timestamp: point.timestamp, speed: point.speed),
       );
-
-      accumulated += step;
-      window.add(p);
-
-      if (accumulated >= minMeters) break;
     }
 
-    if (window.length < 2) return 0.0;
-
-    final first = window.last;
-
-    final dist = distanceBetween(
-      first.position.latitude,
-      first.position.longitude,
-      last.position.latitude,
-      last.position.longitude,
-    );
-
-    final dt =
-        last.timestamp.difference(first.timestamp).inMilliseconds / 1000.0;
-
-    if (dt <= 0.0) return 0.0;
-
-    final speedMs = dist / dt;
-    return speedMs * 3.6;
+    final latestTimestamp = points.isEmpty ? null : points.last.timestamp;
+    if (latestTimestamp == null) return;
+    for (final point in points.reversed) {
+      if (latestTimestamp.difference(point.timestamp).inSeconds > 10) break;
+      _sustainedSpeedSamples.insert(
+        0,
+        _SpeedSample(timestamp: point.timestamp, speed: point.speed),
+      );
+    }
   }
+}
+
+class _SpeedSample {
+  const _SpeedSample({required this.timestamp, required this.speed});
+
+  final DateTime timestamp;
+  final double speed;
 }
 
 // Proveïdor centralitzat de la gravació
