@@ -5,6 +5,11 @@ import 'package:audioplayers/audioplayers.dart';
 class TrackSounds {
   final AudioPlayer player = AudioPlayer();
   final Random _random = Random();
+  double _volume = 1.0;
+
+  void setVolume(double volume) {
+    _volume = volume.clamp(0.0, 1.0);
+  }
 
   static final _alarmContext = AudioContext(
     android: const AudioContextAndroid(
@@ -22,7 +27,7 @@ class TrackSounds {
     try {
       await player.play(
         AssetSource('sound/off_track.mp3'),
-        volume: 1.0,
+        volume: _volume,
         ctx: _alarmContext,
       );
     } catch (e) {
@@ -34,7 +39,7 @@ class TrackSounds {
     try {
       await player.play(
         AssetSource('sound/back_on_track.mp3'),
-        volume: 1.0,
+        volume: _volume,
         ctx: _alarmContext,
       );
     } catch (e) {
@@ -48,7 +53,11 @@ class TrackSounds {
           ? 'sound/five_door_knocks.mp3'
           : 'sound/metal_hammer.mp3';
 
-      await player.play(AssetSource(fileName), volume: 1.0, ctx: _alarmContext);
+      await player.play(
+        AssetSource(fileName),
+        volume: _volume,
+        ctx: _alarmContext,
+      );
     } catch (e) {
       print("Error playing reversed-track sound: $e");
     }
@@ -60,7 +69,11 @@ class TrackSounds {
           ? 'sound/fireworks.mp3'
           : 'sound/fireworks2.mp3';
 
-      await player.play(AssetSource(fileName), volume: 1.0, ctx: _alarmContext);
+      await player.play(
+        AssetSource(fileName),
+        volume: _volume,
+        ctx: _alarmContext,
+      );
     } catch (e) {
       print("Error playing end-track sound: $e");
     }
@@ -70,7 +83,7 @@ class TrackSounds {
     try {
       await player.play(
         AssetSource('sound/sonar_sound.mp3'),
-        volume: 1.0,
+        volume: _volume,
         ctx: _alarmContext,
       );
     } catch (e) {
@@ -82,7 +95,7 @@ class TrackSounds {
     try {
       await player.play(
         AssetSource('sound/success_wpt.mp3'),
-        volume: 1.0,
+        volume: _volume,
         ctx: _alarmContext,
       );
     } catch (e) {
@@ -94,7 +107,7 @@ class TrackSounds {
     try {
       await player.play(
         AssetSource('sound/owl_sound.mp3'),
-        volume: 1.0,
+        volume: _volume,
         ctx: _alarmContext,
       );
     } catch (e) {
@@ -106,7 +119,7 @@ class TrackSounds {
     try {
       await player.play(
         AssetSource('sound/cardinal_sound.mp3'),
-        volume: 1.0,
+        volume: _volume,
         ctx: _alarmContext,
       );
     } catch (e) {
@@ -118,7 +131,7 @@ class TrackSounds {
     try {
       await player.play(
         AssetSource('sound/beep_sound.mp3'),
-        volume: 1.0,
+        volume: _volume,
         ctx: _alarmContext,
       );
     } catch (e) {

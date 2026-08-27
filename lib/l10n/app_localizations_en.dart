@@ -443,6 +443,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get alarmsVolume => 'Alarm volume';
+
+  @override
   String get gpsAutoConfigInfo => 'When following a track or enabling the distance alarm, the GPS automatically adjusts to improve accuracy.';
 
   @override

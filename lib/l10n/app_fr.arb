@@ -175,6 +175,7 @@
   "alarmsAccSegmentLabel": "Dénivelé",
   "alarmsCotaSegmentLabel": "Altitudes",
   "alarmsCotaValue": "Alt. {meters} m",
+  "alarmsVolume": "Volume des alarmes",
   "@alarmsCotaValue": {
     "placeholders": {
       "meters": { "type": "int" }

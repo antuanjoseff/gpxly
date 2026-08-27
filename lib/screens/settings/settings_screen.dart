@@ -52,7 +52,8 @@ class SettingsScreen extends ConsumerWidget {
             _SettingsTile(
               icon: Icons.gps_fixed,
               label: t.gpsTab,
-              enabled: !gpsLocked,
+              enabled: true,
+              locked: gpsLocked,
               isAlarmActive: isAlarmActive,
               isTrackActive: isTrackActive,
               t: t,
@@ -160,6 +161,7 @@ class _SettingsTile extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
   final bool enabled;
+  final bool locked;
   final bool isAlarmActive;
   final bool isTrackActive;
   final AppLocalizations t;
@@ -171,13 +173,16 @@ class _SettingsTile extends StatelessWidget {
     required this.onTap,
     required this.t,
     this.enabled = true,
+    this.locked = false,
     this.isAlarmActive = false,
     this.isTrackActive = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final colorElements = enabled ? AppColors.primary : Colors.grey.shade400;
+    final colorElements = enabled && !locked
+        ? AppColors.primary
+        : Colors.grey.shade400;
 
     return Container(
       decoration: BoxDecoration(
@@ -194,7 +199,7 @@ class _SettingsTile extends StatelessWidget {
         elevation: enabled ? 2 : 0,
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
-          onTap: enabled
+            onTap: enabled
               ? onTap
               : () {
                   String message = t.gpsLockedMessage;
@@ -249,7 +254,7 @@ class _SettingsTile extends StatelessWidget {
                   ),
                 ),
               ),
-              if (!enabled)
+              if (locked)
                 Positioned(
                   top: 12,
                   right: 12,

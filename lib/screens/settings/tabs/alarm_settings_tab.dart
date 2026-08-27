@@ -55,6 +55,9 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
           child: Column(
             mainAxisSize: MainAxisSize.min, // Força a ocupar el mínim espai
             children: [
+              _buildVolumeControl(context, ref, t, settings.volume),
+              const Divider(height: 1, color: Color(0xFFE5E5EA)),
+
               // 📊 1. FILA DE DISTÀNCIA
               _buildRowAlarm(
                 isActive: settings.distanceEnabled,
@@ -167,6 +170,64 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildVolumeControl(
+    BuildContext context,
+    WidgetRef ref,
+    AppLocalizations t,
+    double volume,
+  ) {
+    final percentage = (volume * 100).round();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Icon(Icons.volume_up, color: AppColors.primary),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  t.alarmsVolume,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                ),
+              ),
+              Text(
+                '$percentage%',
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary,
+                ),
+              ),
+            ],
+          ),
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              trackHeight: 3,
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
+              overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
+            ),
+            child: Slider(
+              value: volume,
+              min: 0.0,
+              max: 1.0,
+              divisions: 20,
+              activeColor: AppColors.primary,
+              inactiveColor: AppColors.primary.withAlpha(30),
+              onChanged: (value) =>
+                  ref.read(alarmSettingsProvider.notifier).setVolume(value),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -39,8 +39,9 @@ class GpsSettings {
 }
 
 class GpsSettingsNotifier extends Notifier<GpsSettings> {
-  static const int minSeconds = 1;
-  static const double minMeters = 1.0;
+  static const int minSeconds = 2;
+  static const double minMeters = 5.0;
+  int? _lastBarometerPeriodUs;
 
   // 🎯 El "pany" per saber quan hem acabat de llegir del disc
   final Completer<void> _initialized = Completer<void>();
@@ -91,7 +92,10 @@ class GpsSettingsNotifier extends Notifier<GpsSettings> {
     final meters = prefs.getDouble('gps_meters');
     final accuracy = prefs.getDouble('gps_accuracy');
 
-    double metersFiltrat = meters ?? 5.0;
+    double metersFiltrat = (meters ?? minMeters).clamp(
+      minMeters,
+      double.infinity,
+    );
     bool useTimeFiltrat = useTime ?? false;
 
     if (meters == 10.0) {
@@ -105,7 +109,7 @@ class GpsSettingsNotifier extends Notifier<GpsSettings> {
 
     state = state.copyWith(
       useTime: useTimeFiltrat,
-      seconds: seconds ?? state.seconds,
+      seconds: (seconds ?? state.seconds).clamp(minSeconds, 60),
       meters: metersFiltrat,
       accuracy: accuracy ?? state.accuracy,
     );
@@ -173,7 +177,8 @@ class GpsSettingsNotifier extends Notifier<GpsSettings> {
       periodUs = 2000000;
     }
 
-    await NativeBarometerChannel.setSamplingPeriod(periodUs);
+    _lastBarometerPeriodUs = null;
+    await _applyBarometerPeriod(periodUs);
 
     // Eliminem qualsevol actualització dinàmica per velocitat
     print("📡 Baròmetre fixat a: ${periodUs / 1000000}s");
@@ -210,7 +215,14 @@ class GpsSettingsNotifier extends Notifier<GpsSettings> {
       periodUs = 5000000;
     }
 
-    NativeBarometerChannel.setSamplingPeriod(periodUs);
+    _applyBarometerPeriod(periodUs);
+  }
+
+  Future<void> _applyBarometerPeriod(int periodUs) async {
+    if (_lastBarometerPeriodUs == periodUs) return;
+
+    _lastBarometerPeriodUs = periodUs;
+    await NativeBarometerChannel.setSamplingPeriod(periodUs);
   }
 }
 

@@ -73,6 +73,8 @@ class BarometerPlugin :
     }
 
     fun updateSamplingPeriod(newPeriodMicroseconds: Int) {
+        if (newPeriodMicroseconds == currentSamplingPeriod) return
+
         currentSamplingPeriod = newPeriodMicroseconds
         if (isRunning) {
             stopTracking()

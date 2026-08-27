@@ -20,6 +20,7 @@ class AlarmSettings {
 
   final bool timeEnabled;
   final int timeSeconds;
+  final double volume;
 
   final AltitudeViewMode currentViewMode;
 
@@ -32,6 +33,7 @@ class AlarmSettings {
     this.cotaMeters = 500.0,
     this.timeEnabled = false,
     this.timeSeconds = 60,
+    this.volume = 1.0,
     // Per defecte obrim desnivell
     this.currentViewMode = AltitudeViewMode.accumulated,
   });
@@ -45,6 +47,7 @@ class AlarmSettings {
     double? cotaMeters,
     bool? timeEnabled,
     int? timeSeconds,
+    double? volume,
     AltitudeViewMode? currentViewMode, // 🔥 Afegit al copyWith
   }) {
     return AlarmSettings(
@@ -56,6 +59,7 @@ class AlarmSettings {
       cotaMeters: cotaMeters ?? this.cotaMeters,
       timeEnabled: timeEnabled ?? this.timeEnabled,
       timeSeconds: timeSeconds ?? this.timeSeconds,
+      volume: volume ?? this.volume,
       currentViewMode:
           currentViewMode ?? this.currentViewMode, // 🔥 Afegit aquí
     );
@@ -103,8 +107,11 @@ class AlarmSettingsNotifier extends Notifier<AlarmSettings> {
       cotaMeters: prefs.getDouble('alarm_cota_meters') ?? 500.0,
       timeEnabled: prefs.getBool('alarm_time_enabled') ?? false,
       timeSeconds: prefs.getInt('alarm_time_seconds') ?? 60,
+      volume: (prefs.getDouble('alarm_volume') ?? 1.0).clamp(0.0, 1.0),
       currentViewMode: savedViewMode,
     );
+
+    ref.read(alarmEngineProvider).sounds.setVolume(state.volume);
 
     if (_anyEnabled(state)) {
       await ref.read(alarmEngineProvider).start();
@@ -122,6 +129,7 @@ class AlarmSettingsNotifier extends Notifier<AlarmSettings> {
     await prefs.setDouble('alarm_cota_meters', state.cotaMeters);
     await prefs.setBool('alarm_time_enabled', state.timeEnabled);
     await prefs.setInt('alarm_time_seconds', state.timeSeconds);
+    await prefs.setDouble('alarm_volume', state.volume);
     await prefs.setInt('alarm_altitude_view_mode', state.currentViewMode.index);
   }
 
@@ -184,6 +192,13 @@ class AlarmSettingsNotifier extends Notifier<AlarmSettings> {
   void setAltitudeViewMode(AltitudeViewMode mode) {
     state = state.copyWith(currentViewMode: mode);
     _saveToPrefs(); // Guardem la preferència visual
+  }
+
+  void setVolume(double volume) {
+    final clampedVolume = volume.clamp(0.0, 1.0);
+    state = state.copyWith(volume: clampedVolume);
+    ref.read(alarmEngineProvider).sounds.setVolume(clampedVolume);
+    _saveToPrefs();
   }
 }
 

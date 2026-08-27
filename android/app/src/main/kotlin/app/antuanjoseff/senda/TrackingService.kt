@@ -18,6 +18,8 @@ class TrackingService : Service() {
 
     private lateinit var fused: FusedLocationProviderClient
     private lateinit var callback: LocationCallback
+    private lateinit var distanceCallback: LocationCallback
+    private lateinit var distanceTimeCallback: LocationCallback
     private lateinit var locationManager: LocationManager
     private var wakeLock: PowerManager.WakeLock? = null
 
@@ -44,6 +46,8 @@ class TrackingService : Service() {
 
     private val gapRecoverMs = 60_000L
     private val recoveryCooldownMs = 120_000L
+    private val distanceRequestIntervalMs = 1_000L
+    private val distanceTimeFallbackMs = 30_000L
 
     // Callback per rebre l'estat dels satèl·lits
     private val gnssStatusCallback = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
@@ -110,6 +114,20 @@ class TrackingService : Service() {
                 for (loc in result.locations) sendLocationToFlutter(loc)
             }
         }
+
+        distanceCallback = object : LocationCallback() {
+            override fun onLocationResult(result: LocationResult) {
+                for (loc in result.locations) sendLocationToFlutter(loc)
+            }
+        }
+
+        distanceTimeCallback = object : LocationCallback() {
+            override fun onLocationResult(result: LocationResult) {
+                for (loc in result.locations) {
+                    sendLocationToFlutter(loc, isDistanceTimeFallback = true)
+                }
+            }
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -168,28 +186,62 @@ class TrackingService : Service() {
 
     private fun startLocationUpdates() {
         fused.removeLocationUpdates(callback)
+        fused.removeLocationUpdates(distanceCallback)
+        fused.removeLocationUpdates(distanceTimeCallback)
 
         val intervalMs = (if (seconds < 1) 1 else seconds) * 1000L
 
-        // Si usem metres, demanem la ubicació cada segon (més freqüent)
-        // però el filtre 'minDistance' farà que només ens avisi quan ens movem.
-        val realInterval = if (useTime) intervalMs else 1000L
-        val minDistance = if (useTime) 0f else metersThreshold
+        if (useTime) {
+            val builder = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, intervalMs)
+                .setGranularity(Granularity.GRANULARITY_FINE)
+                .setMinUpdateIntervalMillis(intervalMs)
+                .setMinUpdateDistanceMeters(0f)
+                .setMaxUpdateDelayMillis(0)
+                .build()
 
-        val builder = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, realInterval)
+            try {
+                fused.requestLocationUpdates(builder, callback, mainLooper)
+            } catch (e: SecurityException) { /*...*/ }
+            return
+        }
+
+        // En mode distància, el sistema selecciona els punts per moviment.
+        // Una segona petició temporal garanteix un punt cada 30 s durant una
+        // parada, sense aplicar un filtre manual de distància al servei.
+        val distanceBuilder = LocationRequest.Builder(
+            Priority.PRIORITY_HIGH_ACCURACY,
+            distanceRequestIntervalMs
+        )
             .setGranularity(Granularity.GRANULARITY_FINE)
-            .setMinUpdateIntervalMillis(realInterval)
-            .setMinUpdateDistanceMeters(minDistance)
-            // Afegeix això: ajuda a que el primer punt arribi de seguida
+            .setMinUpdateIntervalMillis(distanceRequestIntervalMs)
+            .setMinUpdateDistanceMeters(metersThreshold)
+            .setMaxUpdateDelayMillis(0)
+            .build()
+
+        val distanceTimeBuilder = LocationRequest.Builder(
+            Priority.PRIORITY_HIGH_ACCURACY,
+            distanceTimeFallbackMs
+        )
+            .setGranularity(Granularity.GRANULARITY_FINE)
+            .setMinUpdateIntervalMillis(distanceTimeFallbackMs)
+            .setMinUpdateDistanceMeters(0f)
             .setMaxUpdateDelayMillis(0)
             .build()
 
         try {
-            fused.requestLocationUpdates(builder, callback, mainLooper)
+            fused.requestLocationUpdates(distanceBuilder, distanceCallback, mainLooper)
+            fused.requestLocationUpdates(
+                distanceTimeBuilder,
+                distanceTimeCallback,
+                mainLooper
+            )
         } catch (e: SecurityException) { /*...*/ }
     }
 
-    private fun sendLocationToFlutter(loc: Location) {
+    private fun sendLocationToFlutter(
+        loc: Location,
+        isDistanceTimeFallback: Boolean = false
+    ) {
         totalReceived += 1
 
         if (loc.accuracy > accuracyThreshold) {
@@ -210,19 +262,15 @@ class TrackingService : Service() {
                 maybeEmitDropDebug("time_gate", loc, minDelta)
                 return
             }
-        } else {
-            // Deixa que passi el primer punt sempre (lastLocation == null)
-            if (lastLocation != null) {
-                val dist = lastLocation!!.distanceTo(loc)
-                // Relaxem una mica el filtre manual (90% de la distància)
-                // perquè el GPS té petites variacions de precisió.
-                val minDist = metersThreshold * 0.9
-                if (dist < minDist) {
-                    dropDistanceGate += 1
-                    maybeEmitDropDebug("distance_gate", loc, minDist.toLong())
-                    return
-                }
-            }
+        } else if (isDistanceTimeFallback &&
+            lastSentWallTime > 0L &&
+            System.currentTimeMillis() - lastSentWallTime < distanceTimeFallbackMs
+        ) {
+            // La petició temporal no duplica un punt que acaba d'arribar per
+            // distància; el criteri de metres el resol LocationRequest.
+            dropTimeGate += 1
+            maybeEmitDropDebug("time_fallback_not_due", loc, distanceTimeFallbackMs)
+            return
         }
 
 
@@ -409,6 +457,8 @@ class TrackingService : Service() {
             locationManager.unregisterGnssStatusCallback(gnssStatusCallback)
         }
         fused.removeLocationUpdates(callback)
+        fused.removeLocationUpdates(distanceCallback)
+        fused.removeLocationUpdates(distanceTimeCallback)
         wakeLock?.let { if (it.isHeld) it.release() }
         wakeLock = null
         super.onDestroy()

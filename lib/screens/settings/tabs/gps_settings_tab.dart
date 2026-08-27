@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:strack_rec/l10n/app_localizations.dart';
 import 'package:strack_rec/notifiers/gps_debug_notifier.dart';
 import 'package:strack_rec/notifiers/gps_settings_notifier.dart';
+import 'package:strack_rec/notifiers/alarm_settings_notifier.dart';
 import 'package:strack_rec/services/altitude_logger.dart';
 import 'package:strack_rec/theme/app_colors.dart';
 
@@ -15,10 +16,16 @@ class GpsSettingsTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final gps = ref.watch(gpsSettingsProvider);
     final isFollowing = gps.isFollowing;
+    final alarms = ref.watch(alarmSettingsProvider);
+    final isAlarmActive =
+        alarms.distanceEnabled ||
+        alarms.accEnabled ||
+        alarms.cotaEnabled ||
+        alarms.timeEnabled;
     final t = AppLocalizations.of(context)!;
 
     // Definim l'estat d'activació global de la secció d'autonconfiguració
-    final bool canEdit = !isFollowing;
+    final bool canEdit = !isFollowing && !isAlarmActive;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F7),
@@ -81,7 +88,7 @@ class GpsSettingsTab extends ConsumerWidget {
             title: t.gpsRecordByDistance,
             valueText: "${gps.meters.toInt()} m",
             value: gps.meters.toDouble(),
-            min: 1,
+            min: 5,
             max: 100,
             step: 1,
             onChanged: (val) {
