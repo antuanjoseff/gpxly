@@ -101,8 +101,11 @@ class SegmentStatsNotifier extends Notifier<SegmentStats> {
     double descent = 0;
 
     if (globalAlts.isNotEmpty && start < globalAlts.length) {
-      // 1️⃣ Suavitzat centralitzat
-      final altitudsSuaus = ElevationUtils.smooth(globalAlts);
+      // 1️⃣ Suavitzat centralitzat amb distàncies mètriques
+      final altitudsSuaus = ElevationUtils.smooth(
+        globalAlts,
+        distances: globalDists.length == globalAlts.length ? globalDists : null,
+      );
 
       // 2️⃣ Càlcul robust centralitzat
       final result = ElevationUtils.robustGain(

@@ -153,11 +153,6 @@ class LocationNotifier extends Notifier<UserPosition?> {
       final silence = now.difference(lastPointAt);
       if (silence < _gpsSilenceThreshold) return;
 
-      // 🧍 En mode distància, estar aturat = no arriben punts = NORMAL.
-      // Si l'última velocitat coneguda és gairebé zero, no toquem el GPS.
-      final lastSpeed = state?.speed ?? 0.0;
-      if (lastSpeed < 0.5) return;
-
       final lastRefreshAt = _lastHeartbeatRefreshAt;
       if (lastRefreshAt != null &&
           now.difference(lastRefreshAt) < _gpsSilenceThreshold) {

@@ -176,8 +176,15 @@ class GpxImportService {
     final importedAlts = importedPoints
         .map((p) => p.altitude)
         .toList(growable: false);
-    final ascent = computeAscent(importedAlts);
-    final descent = computeDescent(importedAlts);
+    final importedDists = importedPoints
+        .map((p) => p.distanceAtPoint)
+        .toList(growable: false);
+    final gain = ElevationUtils.computeGain(
+      importedAlts,
+      distances: importedDists,
+    );
+    final ascent = gain.ascent;
+    final descent = gain.descent;
 
     final importedTrack = Track(
       points: importedPoints,

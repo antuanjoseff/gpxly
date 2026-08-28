@@ -18,6 +18,7 @@ import 'package:strack_rec/screens/elevations/widgets/header_legend_widget.dart'
 import 'package:strack_rec/screens/elevations/widgets/waypoints_list_widget.dart';
 import 'package:strack_rec/theme/app_colors.dart';
 import 'package:strack_rec/theme/app_dimensions.dart';
+import 'package:strack_rec/utils/calculations.dart';
 import 'package:strack_rec/utils/distance_utils.dart';
 
 class ElevationProfileScreen extends ConsumerStatefulWidget {
@@ -191,17 +192,12 @@ class _ElevationProfileScreenState
 
         rangeDistance = (globalDists[rangeEnd] - globalDists[rangeStart]).abs();
 
-        double ascent = 0;
-        double descent = 0;
+        final subAlts = globalAlts.sublist(rangeStart, rangeEnd + 1);
+        final subDists = globalDists.sublist(rangeStart, rangeEnd + 1);
+        final gain = ElevationUtils.computeGain(subAlts, distances: subDists);
 
-        for (int i = rangeStart + 1; i <= rangeEnd; i++) {
-          final diff = globalAlts[i] - globalAlts[i - 1];
-          if (diff > 0) ascent += diff;
-          if (diff < 0) descent += diff.abs();
-        }
-
-        rangeAscent = ascent;
-        rangeDescent = descent;
+        rangeAscent = gain.ascent;
+        rangeDescent = gain.descent;
 
         if (real.timestamps.length > rangeEnd &&
             real.timestamps.length > rangeStart) {

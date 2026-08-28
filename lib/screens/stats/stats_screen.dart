@@ -110,9 +110,15 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
     if (track == null || track.altitudes.length < 2) {
       return (0.0, 0.0);
     }
-    final smoothAlts = ElevationUtils.smooth(track.altitudes);
-    final result = ElevationUtils.robustGain(smoothAlts);
-    return (result['ascent'] ?? 0.0, result['descent'] ?? 0.0);
+    List<double>? dists;
+    try {
+      dists = (track.distances as List).cast<double>();
+    } catch (_) {}
+    final gain = ElevationUtils.computeGain(
+      (track.altitudes as List).cast<double>(),
+      distances: dists,
+    );
+    return (gain.ascent, gain.descent);
   }
 
   @override

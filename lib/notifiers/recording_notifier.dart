@@ -10,6 +10,7 @@ import 'package:strack_rec/notifiers/elevation_range_notifier.dart';
 import 'package:strack_rec/notifiers/location_notifier.dart'; // Bloc 1 [INDEX]
 import 'package:strack_rec/notifiers/timer_notifier.dart';
 import 'package:strack_rec/services/altitude_logger.dart';
+import 'package:strack_rec/utils/calculations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class RecordingNotifier extends Notifier<Track> {
@@ -98,24 +99,32 @@ class RecordingNotifier extends Notifier<Track> {
         newPoint.position.longitude,
       );
 
-      if (step.isFinite && step < 200) {
-        newDistance += step;
-        calculatedDistanceAtPoint = newDistance;
-      }
-
       final int timeDiffMs = newPoint.timestamp
           .difference(lastPoint.timestamp)
           .inMilliseconds;
       final double timeDiffSeconds = timeDiffMs / 1000.0;
+      final double rawSpeedKmh = (timeDiffSeconds > 0.0 && step.isFinite && step > 0.2)
+          ? (step / timeDiffSeconds) * 3.6
+          : 0.0;
 
-      if (timeDiffSeconds > 0.0 && step.isFinite && step > 0.2) {
-        final rawSpeedKmh = (step / timeDiffSeconds) * 3.6;
-        _recentSpeedSamples.add(
-          _SpeedSample(timestamp: newPoint.timestamp, speed: rawSpeedKmh),
-        );
-        if (_recentSpeedSamples.length > Track.smoothedSpeedWindow) {
-          _recentSpeedSamples.removeAt(0);
+      final bool isAnomalousJump = step >= 200 || rawSpeedKmh > 130.0;
+
+      if (step.isFinite && !isAnomalousJump) {
+        newDistance += step;
+        calculatedDistanceAtPoint = newDistance;
+
+        if (timeDiffSeconds > 0.0 && step > 0.2) {
+          _recentSpeedSamples.add(
+            _SpeedSample(timestamp: newPoint.timestamp, speed: rawSpeedKmh),
+          );
+          if (_recentSpeedSamples.length > Track.smoothedSpeedWindow) {
+            _recentSpeedSamples.removeAt(0);
+          }
         }
+      } else if (isAnomalousJump) {
+        // En cas de salt anòmal (teletransport/túnel/rebot), no acumulem velocitat ni distància aberrant
+        _recentSpeedSamples.clear();
+        calculatedDistanceAtPoint = newDistance;
       }
 
       if (_recentSpeedSamples.isNotEmpty) {
@@ -127,20 +136,18 @@ class RecordingNotifier extends Notifier<Track> {
       }
     }
 
-    final lastElevation = _lastElevationForGain;
-    if (lastElevation != null) {
-      final elevationDelta = newPoint.altitude - lastElevation;
-      if (elevationDelta.abs() >= 3.5) {
-        if (elevationDelta > 0.0) {
-          newAscent += elevationDelta;
-        } else {
-          newDescent += elevationDelta.abs();
-        }
-        _lastElevationForGain = newPoint.altitude;
-      }
-    } else {
-      _lastElevationForGain = newPoint.altitude;
-    }
+    final userPositionWithDistance = newPoint.copyWith(
+      distanceAtPoint: calculatedDistanceAtPoint,
+      speed: currentSpeedKmh,
+    );
+
+    final allPoints = [...state.points, userPositionWithDistance];
+    final allAlts = allPoints.map((p) => p.altitude).toList(growable: false);
+    final allDists =
+        allPoints.map((p) => p.distanceAtPoint).toList(growable: false);
+    final gain = ElevationUtils.computeGain(allAlts, distances: allDists);
+    newAscent = gain.ascent;
+    newDescent = gain.descent;
 
     if (state.points.isEmpty || newPoint.altitude > newMax) {
       newMax = newPoint.altitude;
@@ -192,11 +199,6 @@ class RecordingNotifier extends Notifier<Track> {
     final double newAvgSpeedTotal = _speedCount == 0
         ? 0.0
         : _speedSum / _speedCount;
-
-    final userPositionWithDistance = newPoint.copyWith(
-      distanceAtPoint: calculatedDistanceAtPoint,
-      speed: currentSpeedKmh,
-    );
 
     final updatedStats = state.stats.copyWith(
       distance: newDistance,

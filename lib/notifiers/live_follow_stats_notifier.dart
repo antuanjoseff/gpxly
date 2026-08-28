@@ -143,8 +143,8 @@ class LiveFollowStatsNotifier extends Notifier<LiveFollowStats> {
     );
 
     final List<double> alts = _buffer.map((p) => p.altitude).toList();
-    final smoothAlts = ElevationUtils.smooth(alts);
-    final gain = ElevationUtils.robustGain(smoothAlts);
+    final List<double> dists = _buffer.map((p) => p.distanceAtPoint).toList();
+    final gain = ElevationUtils.computeGain(alts, distances: dists);
 
     double maxElevation = alts.first;
     double minElevation = alts.first;
@@ -161,8 +161,8 @@ class LiveFollowStatsNotifier extends Notifier<LiveFollowStats> {
       averageSpeedKmh: averageSpeedKmh,
       averageSpeedTotalKmh: averageSpeedTotalKmh,
       maxSpeedKmh: maxSpeedKmh,
-      ascent: gain['ascent'] ?? 0.0,
-      descent: gain['descent'] ?? 0.0,
+      ascent: gain.ascent,
+      descent: gain.descent,
       maxElevation: maxElevation,
       minElevation: minElevation,
       currentAltitude: _buffer.last.altitude,

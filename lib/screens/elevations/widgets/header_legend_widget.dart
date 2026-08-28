@@ -8,6 +8,7 @@ import 'package:strack_rec/notifiers/imported_track_notifier.dart';
 import 'package:strack_rec/notifiers/recording_notifier.dart'; // Bloc 2: Gravació neta
 import 'package:strack_rec/notifiers/timer_notifier.dart';
 import 'package:strack_rec/theme/app_colors.dart';
+import 'package:strack_rec/utils/calculations.dart';
 import 'package:strack_rec/utils/distance_utils.dart';
 
 class HeaderLegendWidget extends ConsumerWidget {
@@ -103,17 +104,11 @@ class HeaderLegendWidget extends ConsumerWidget {
 
     final dist = (t.distances[e] - t.distances[s]).abs();
 
-    double ascent = 0;
-    double descent = 0;
-
-    for (int i = s + 1; i <= e; i++) {
-      final diff = t.altitudes[i] - t.altitudes[i - 1];
-      if (diff > 0) {
-        ascent += diff;
-      } else {
-        descent += diff.abs();
-      }
-    }
+    final subAlts = t.altitudes.sublist(s, e + 1);
+    final subDists = t.distances.sublist(s, e + 1);
+    final gain = ElevationUtils.computeGain(subAlts, distances: subDists);
+    final ascent = gain.ascent;
+    final descent = gain.descent;
 
     // Durada proporcional (simple i suficient)
     final duration = Duration(

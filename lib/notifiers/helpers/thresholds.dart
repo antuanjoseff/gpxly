@@ -44,6 +44,11 @@ class TrackThresholds {
   // Gràfic d'elevacions
   static const double futureTrackVisibility = 0.3; // 30% of axis
 
+  // Càlcul de desnivell i elevació (optimitzat per a DEM 30m i reducció de soroll GPS)
+  static const double elevationSmoothingWindowMeters = 80.0;
+  static const int elevationSmoothingWindowPoints = 15;
+  static const double elevationGainThresholdMeters = 4.0;
+
   // Submenús del menú inferior
   static const Duration submenuAutoHideDelay = Duration(seconds: 4);
 
