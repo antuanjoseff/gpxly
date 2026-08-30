@@ -69,6 +69,7 @@ class NavigationNotifier extends Notifier<NavigationState> {
   int? _lastAlongTrackSegmentIndex;
   int? _lastMatchedSegmentIndex;
   int _nextWaypointAlertIndex = 0;
+  Waypoint? _activeWaypointAlarm;
 
   @override
   NavigationState build() {
@@ -132,6 +133,7 @@ class NavigationNotifier extends Notifier<NavigationState> {
     _reverseDetectionLocked = false;
     _offTrackSnackbarShown = false;
     _nextWaypointAlertIndex = 0;
+    _activeWaypointAlarm = null;
 
     state = NavigationState(isFollowing: true, mode: FollowMode.initializing);
 
@@ -194,6 +196,7 @@ class NavigationNotifier extends Notifier<NavigationState> {
     _reverseDetectionLocked = false;
     _offTrackSnackbarShown = false;
     _nextWaypointAlertIndex = 0;
+    _activeWaypointAlarm = null;
 
     state = NavigationState(mode: FollowMode.notFollowing);
   }
@@ -577,6 +580,7 @@ class NavigationNotifier extends Notifier<NavigationState> {
     _lastAlongTrackSegmentIndex = null;
     _lastMatchedSegmentIndex = null;
     _nextWaypointAlertIndex = 0;
+    _activeWaypointAlarm = null;
 
     if (imported != null && imported.coordinates.length > 1) {
       final importedLatLng = imported.coordinates
@@ -613,6 +617,7 @@ class NavigationNotifier extends Notifier<NavigationState> {
     _lastAlongTrackSegmentIndex = null;
     _lastMatchedSegmentIndex = null;
     _nextWaypointAlertIndex = 0;
+    _activeWaypointAlarm = null;
 
     _reverseDialogShown = false;
     state = state.copyWith(showReverseTrackDialog: false);
@@ -635,6 +640,11 @@ class NavigationNotifier extends Notifier<NavigationState> {
     state = state.copyWith(showBackOnTrackSnackbar: false);
   }
 
+  void clearWaypointSnackbar() {
+    _activeWaypointAlarm = null;
+    state = state.copyWith(showWaypointSnackbar: false);
+  }
+
   void togglePause() {
     state = state.copyWith(isPaused: !state.isPaused);
     if (state.isPaused) {
@@ -653,6 +663,22 @@ class NavigationNotifier extends Notifier<NavigationState> {
     required double currentAlongTrackDistance,
   }) {
     if (importedWaypoints.isEmpty || imported.points.isEmpty) return;
+
+    final activeWaypoint = _activeWaypointAlarm;
+    if (activeWaypoint != null) {
+      final distanceToActiveWaypoint = calculateDistanceManual(
+        userPos.latitude,
+        userPos.longitude,
+        activeWaypoint.lat,
+        activeWaypoint.lon,
+      );
+      if (distanceToActiveWaypoint >
+          TrackThresholds.waypointAlarmDistanceMeters) {
+        clearWaypointSnackbar();
+      } else {
+        return;
+      }
+    }
 
     // Si ja hem passat l'últim waypoint, no fem res més
     if (_nextWaypointAlertIndex >= importedWaypoints.length) return;
@@ -680,6 +706,11 @@ class NavigationNotifier extends Notifier<NavigationState> {
       if (distanceToWaypoint <= TrackThresholds.waypointAlarmDistanceMeters) {
         HapticFeedback.lightImpact();
         sounds.playWaypointAlarm();
+        _activeWaypointAlarm = waypoint;
+        state = state.copyWith(
+          showWaypointSnackbar: true,
+          waypointSnackbarName: waypoint.name,
+        );
         _nextWaypointAlertIndex++;
       }
 

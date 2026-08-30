@@ -14,6 +14,8 @@ class NavigationState {
   final bool showOffTrackSnackbar;
   final bool showBackOnTrackSnackbar;
   final bool showEndOfTrackSnackbar;
+  final bool showWaypointSnackbar;
+  final String? waypointSnackbarName;
   final bool showReverseTrackDialog;
 
   NavigationState({
@@ -25,6 +27,8 @@ class NavigationState {
     this.showOffTrackSnackbar = false,
     this.showBackOnTrackSnackbar = false,
     this.showEndOfTrackSnackbar = false,
+    this.showWaypointSnackbar = false,
+    this.waypointSnackbarName,
     this.showReverseTrackDialog = false,
   });
 
@@ -37,6 +41,8 @@ class NavigationState {
     bool? showOffTrackSnackbar,
     bool? showBackOnTrackSnackbar,
     bool? showEndOfTrackSnackbar,
+    bool? showWaypointSnackbar,
+    String? waypointSnackbarName,
     bool? showReverseTrackDialog,
   }) {
     return NavigationState(
@@ -50,6 +56,8 @@ class NavigationState {
           showBackOnTrackSnackbar ?? this.showBackOnTrackSnackbar,
       showEndOfTrackSnackbar:
           showEndOfTrackSnackbar ?? this.showEndOfTrackSnackbar,
+      showWaypointSnackbar: showWaypointSnackbar ?? this.showWaypointSnackbar,
+      waypointSnackbarName: waypointSnackbarName ?? this.waypointSnackbarName,
       showReverseTrackDialog:
           showReverseTrackDialog ?? this.showReverseTrackDialog,
     );

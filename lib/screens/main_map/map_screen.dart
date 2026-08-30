@@ -1039,7 +1039,26 @@ class _MapScreenState extends ConsumerState<MapScreen>
       }
     });
 
-    // OIENT 13
+    // OIENT 13: PROXIMITAT A WAYPOINT
+    ref.listen<NavigationState>(navigationProvider, (prev, next) {
+      if (!mounted) return;
+
+      if (next.showWaypointSnackbar &&
+          prev?.showWaypointSnackbar != true &&
+          next.waypointSnackbarName != null) {
+        AppMessages.showWaypointPersistentSnackbar(
+          context,
+          ref,
+          waypointName: next.waypointSnackbarName!,
+          distanceMeters: TrackThresholds.waypointAlarmDistanceMeters,
+        );
+      } else if (prev?.showWaypointSnackbar == true &&
+          !next.showWaypointSnackbar) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      }
+    });
+
+    // OIENT 14
     ref.listen<NavigationState>(navigationProvider, (prev, next) {
       // 🛡️ CONTROL INICIAL CRÍTIC: Si la pantalla ja no està muntada, avortem per protegir el context
       if (!mounted) return;

@@ -371,10 +371,24 @@ class AppMessages {
                     );
 
                     if (confirm == true) {
+                      if (!context.mounted) return;
                       ref.read(waypointsProvider.notifier).remove(wp.id);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(t.waypointDeletedSuccess),
+                          content: Row(
+                            children: [
+                              Expanded(child: Text(t.waypointDeletedSuccess)),
+                              IconButton(
+                                icon: const Icon(Icons.close),
+                                tooltip: MaterialLocalizations.of(
+                                  context,
+                                ).closeButtonTooltip,
+                                onPressed: () => ScaffoldMessenger.of(
+                                  context,
+                                ).hideCurrentSnackBar(),
+                              ),
+                            ],
+                          ),
                           backgroundColor: Colors.green.shade800,
                         ),
                       );
@@ -601,7 +615,13 @@ class AppMessages {
             Expanded(
               child: Text(message, style: const TextStyle(color: Colors.white)),
             ),
-            if (trailing != null) trailing,
+            trailing ??
+                IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white),
+                  tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
+                  onPressed: () =>
+                      ScaffoldMessenger.of(context).hideCurrentSnackBar(),
+                ),
           ],
         ),
       ),
@@ -695,6 +715,27 @@ class AppMessages {
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
         // ✅ ADAPTAT: Tanca l'alerta usant el nou navigationProvider
         ref.read(navigationProvider.notifier).dismissBackOnTrackAlert();
+      },
+    ),
+  );
+
+  static void showWaypointPersistentSnackbar(
+    BuildContext context,
+    WidgetRef ref, {
+    required String waypointName,
+    required double distanceMeters,
+  }) => _showCustomSnackBar(
+    context,
+    message:
+        'A ${distanceMeters.toStringAsFixed(0)} m del waypoint: $waypointName',
+    backgroundColor: Colors.green.shade700,
+    icon: Icons.place,
+    duration: const Duration(days: 1),
+    trailing: IconButton(
+      icon: const Icon(Icons.close, color: Colors.white),
+      onPressed: () {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ref.read(navigationProvider.notifier).clearWaypointSnackbar();
       },
     ),
   );
