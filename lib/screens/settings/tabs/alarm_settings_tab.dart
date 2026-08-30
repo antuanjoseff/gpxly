@@ -35,7 +35,7 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
     final progress = ref.watch(alarmProgressProvider).value;
 
     return Scaffold(
-      backgroundColor: Colors.white, // Fons blanc net professional
+      backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: AppColors.primary,
         elevation: 0,
@@ -53,119 +53,170 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Column(
-            mainAxisSize: MainAxisSize.min, // Força a ocupar el mínim espai
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // 🔊 CONTROL DE VOLUMEN (Cápsula independiente y fija superior)
               _buildVolumeControl(context, ref, t, settings.volume),
-              const Divider(height: 1, color: Color(0xFFE5E5EA)),
 
-              // 📊 1. FILA DE DISTÀNCIA
-              _buildRowAlarm(
-                isActive: settings.distanceEnabled,
-                icon: Icons.route,
-                title: t.alarmsDistanceTitle,
-                valueText: _formatDistance(settings.distanceMeters),
-                value: settings.distanceMeters,
-                min: 100,
-                max: 5000,
-                step: 100,
-                progressValue: settings.distanceEnabled
-                    ? (progress?.distance ?? 0.0)
-                    : 0.0,
-                onChanged: (val) => ref
-                    .read(alarmSettingsProvider.notifier)
-                    .setDistanceAlarm(settings.distanceEnabled, val),
-                onToggle: () => _handleToggle(
-                  () => ref
-                      .read(alarmSettingsProvider.notifier)
-                      .setDistanceAlarm(
-                        !settings.distanceEnabled,
-                        settings.distanceMeters,
+              const SizedBox(height: 14),
+
+              Text(
+                t.alarms.toUpperCase(),
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey.shade500,
+                  letterSpacing: 1.1,
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              // 📦 CONTENEDOR PRINCIPAL DE ALARMAS (Flexible sin provocar scroll)
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFAFAFA),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: const Color(0xFFE5E5EA),
+                      width: 1,
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      // 📊 1. DISTANCIA
+                      Expanded(
+                        child: _buildRowAlarm(
+                          isActive: settings.distanceEnabled,
+                          icon: Icons.route,
+                          title: t.alarmsDistanceTitle,
+                          valueText: _formatDistance(settings.distanceMeters),
+                          value: settings.distanceMeters,
+                          min: 100,
+                          max: 5000,
+                          step: 100,
+                          progressValue: settings.distanceEnabled
+                              ? (progress?.distance ?? 0.0)
+                              : 0.0,
+                          onChanged: (val) => ref
+                              .read(alarmSettingsProvider.notifier)
+                              .setDistanceAlarm(settings.distanceEnabled, val),
+                          onToggle: () => _handleToggle(
+                            () => ref
+                                .read(alarmSettingsProvider.notifier)
+                                .setDistanceAlarm(
+                                  !settings.distanceEnabled,
+                                  settings.distanceMeters,
+                                ),
+                          ),
+                          onPlaySound: () => ref
+                              .read(alarmEngineProvider)
+                              .sounds
+                              .playDistanceAlarm(),
+                        ),
                       ),
-                ),
-                onPlaySound: () =>
-                    ref.read(alarmEngineProvider).sounds.playDistanceAlarm(),
-              ),
-              const Divider(height: 1, color: Color(0xFFE5E5EA)),
 
-              // 📊 2. FILA DE COTA (ALTITUD ABSOLUTA)
-              _buildRowAlarm(
-                isActive: settings.cotaEnabled,
-                icon: Icons.layers,
-                title: t.alarmsCotaSegmentLabel, // O el text l10n propi de Cota
-                valueText: t.alarmsCotaValue(settings.cotaMeters.toInt()),
-                value: settings.cotaMeters,
-                min: 50.0,
-                max: 1000.0,
-                step: 50.0,
-                progressValue: settings.cotaEnabled
-                    ? (progress?.cotaProgress ?? 0.0)
-                    : 0.0,
-                onChanged: (val) => ref
-                    .read(alarmSettingsProvider.notifier)
-                    .setCotaAlarm(settings.cotaEnabled, val),
-                onToggle: () => _handleToggle(
-                  () => ref
-                      .read(alarmSettingsProvider.notifier)
-                      .setCotaAlarm(!settings.cotaEnabled, settings.cotaMeters),
-                ),
-                onPlaySound: () =>
-                    ref.read(alarmEngineProvider).sounds.playCotaAlarm(),
-              ),
-              const Divider(height: 1, color: Color(0xFFE5E5EA)),
-
-              // 📊 3. FILA DE DESNIVELL ACUMULAT
-              _buildRowAlarm(
-                isActive: settings.accEnabled,
-                icon: Icons.trending_up,
-                title: t
-                    .alarmsAccSegmentLabel, // O el text l10n propi de Desnivell
-                valueText: "+ ${settings.accMeters.toInt()} m",
-                value: settings.accMeters,
-                min: 10.0,
-                max: 1000.0,
-                step: 10.0,
-                progressValue: settings.accEnabled
-                    ? (progress?.accProgress ?? 0.0)
-                    : 0.0,
-                onChanged: (val) => ref
-                    .read(alarmSettingsProvider.notifier)
-                    .setAccAlarm(settings.accEnabled, val),
-                onToggle: () => _handleToggle(
-                  () => ref
-                      .read(alarmSettingsProvider.notifier)
-                      .setAccAlarm(!settings.accEnabled, settings.accMeters),
-                ),
-                onPlaySound: () =>
-                    ref.read(alarmEngineProvider).sounds.playAccumulatedAlarm(),
-              ),
-              const Divider(height: 1, color: Color(0xFFE5E5EA)),
-
-              // 📊 4. FILA DE TEMPS
-              _buildRowAlarm(
-                isActive: settings.timeEnabled,
-                icon: Icons.timer,
-                title: t.alarmsTimeTitle,
-                valueText: _formatTime(settings.timeSeconds),
-                value: settings.timeSeconds.toDouble(),
-                min: 60,
-                max: 3600,
-                step: 60,
-                progressValue: settings.timeEnabled
-                    ? (progress?.time ?? 0.0)
-                    : 0.0,
-                onChanged: (val) => ref
-                    .read(alarmSettingsProvider.notifier)
-                    .setTimeAlarm(settings.timeEnabled, val.round()),
-                onToggle: () => _handleToggle(
-                  () => ref
-                      .read(alarmSettingsProvider.notifier)
-                      .setTimeAlarm(
-                        !settings.timeEnabled,
-                        settings.timeSeconds,
+                      // 📊 2. COTA (ALTITUD ABSOLUTA)
+                      Expanded(
+                        child: _buildRowAlarm(
+                          isActive: settings.cotaEnabled,
+                          icon: Icons.height_outlined,
+                          title: t.alarmsCotaSegmentLabel,
+                          valueText: t.alarmsCotaValue(
+                            settings.cotaMeters.toInt(),
+                          ),
+                          value: settings.cotaMeters,
+                          min: 50.0,
+                          max: 1000.0,
+                          step: 50.0,
+                          progressValue: settings.cotaEnabled
+                              ? (progress?.cotaProgress ?? 0.0)
+                              : 0.0,
+                          onChanged: (val) => ref
+                              .read(alarmSettingsProvider.notifier)
+                              .setCotaAlarm(settings.cotaEnabled, val),
+                          onToggle: () => _handleToggle(
+                            () => ref
+                                .read(alarmSettingsProvider.notifier)
+                                .setCotaAlarm(
+                                  !settings.cotaEnabled,
+                                  settings.cotaMeters,
+                                ),
+                          ),
+                          onPlaySound: () => ref
+                              .read(alarmEngineProvider)
+                              .sounds
+                              .playCotaAlarm(),
+                        ),
                       ),
+
+                      // 📊 3. DESNIVEL ACUMULADO
+                      Expanded(
+                        child: _buildRowAlarm(
+                          isActive: settings.accEnabled,
+                          icon: Icons.trending_up,
+                          title: t.alarmsAccSegmentLabel,
+                          valueText: "+ ${settings.accMeters.toInt()} m",
+                          value: settings.accMeters,
+                          min: 10.0,
+                          max: 1000.0,
+                          step: 10.0,
+                          progressValue: settings.accEnabled
+                              ? (progress?.accProgress ?? 0.0)
+                              : 0.0,
+                          onChanged: (val) => ref
+                              .read(alarmSettingsProvider.notifier)
+                              .setAccAlarm(settings.accEnabled, val),
+                          onToggle: () => _handleToggle(
+                            () => ref
+                                .read(alarmSettingsProvider.notifier)
+                                .setAccAlarm(
+                                  !settings.accEnabled,
+                                  settings.accMeters,
+                                ),
+                          ),
+                          onPlaySound: () => ref
+                              .read(alarmEngineProvider)
+                              .sounds
+                              .playAccumulatedAlarm(),
+                        ),
+                      ),
+
+                      // 📊 4. TIEMPO
+                      Expanded(
+                        child: _buildRowAlarm(
+                          isActive: settings.timeEnabled,
+                          icon: Icons.timer,
+                          title: t.alarmsTimeTitle,
+                          valueText: _formatTime(settings.timeSeconds),
+                          value: settings.timeSeconds.toDouble(),
+                          min: 60,
+                          max: 3600,
+                          step: 60,
+                          progressValue: settings.timeEnabled
+                              ? (progress?.time ?? 0.0)
+                              : 0.0,
+                          onChanged: (val) => ref
+                              .read(alarmSettingsProvider.notifier)
+                              .setTimeAlarm(settings.timeEnabled, val.round()),
+                          onToggle: () => _handleToggle(
+                            () => ref
+                                .read(alarmSettingsProvider.notifier)
+                                .setTimeAlarm(
+                                  !settings.timeEnabled,
+                                  settings.timeSeconds,
+                                ),
+                          ),
+                          onPlaySound: () => ref
+                              .read(alarmEngineProvider)
+                              .sounds
+                              .playTimeAlarm(),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                onPlaySound: () =>
-                    ref.read(alarmEngineProvider).sounds.playTimeAlarm(),
               ),
             ],
           ),
@@ -182,19 +233,24 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
   ) {
     final percentage = (volume * 100).round();
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF2F2F7),
+        borderRadius: BorderRadius.circular(14),
+      ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             children: [
-              Icon(Icons.volume_up, color: AppColors.primary),
-              const SizedBox(width: 12),
+              Icon(Icons.volume_up, color: AppColors.primary, size: 20),
+              const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   t.alarmsVolume,
                   style: const TextStyle(
-                    fontSize: 15,
+                    fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: Colors.black87,
                   ),
@@ -203,28 +259,33 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
               Text(
                 '$percentage%',
                 style: const TextStyle(
-                  fontSize: 14,
+                  fontSize: 13,
                   fontWeight: FontWeight.bold,
                   color: AppColors.primary,
                 ),
               ),
             ],
           ),
+          const SizedBox(height: 2),
           SliderTheme(
             data: SliderTheme.of(context).copyWith(
               trackHeight: 3,
-              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
-              overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+              overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
+              activeTrackColor: AppColors.primary,
+              inactiveTrackColor: AppColors.primary.withAlpha(30),
+              thumbColor: AppColors.primary,
             ),
-            child: Slider(
-              value: volume,
-              min: 0.0,
-              max: 1.0,
-              divisions: 20,
-              activeColor: AppColors.primary,
-              inactiveColor: AppColors.primary.withAlpha(30),
-              onChanged: (value) =>
-                  ref.read(alarmSettingsProvider.notifier).setVolume(value),
+            child: SizedBox(
+              height: 24,
+              child: Slider(
+                value: volume,
+                min: 0.0,
+                max: 1.0,
+                divisions: 20,
+                onChanged: (value) =>
+                    ref.read(alarmSettingsProvider.notifier).setVolume(value),
+              ),
             ),
           ),
         ],
@@ -232,7 +293,6 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
     );
   }
 
-  // Component amb Switch personalitzat que conté els textos ON/OFF a dins
   Widget _buildRowAlarm({
     required bool isActive,
     required IconData icon,
@@ -247,219 +307,233 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
     required VoidCallback onToggle,
     required VoidCallback onPlaySound,
   }) {
-    final color = isActive ? AppColors.primary : Colors.grey.shade400;
+    final color = isActive ? AppColors.primary : Colors.black87;
 
-    return Opacity(
-      opacity: isActive ? 1.0 : 0.6,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // ─── LÍNIA 1: ICONA, TÍTOL, METRICA I TEXT-SWITCHER ───
-            Row(
-              children: [
-                // Icona de progrés + Play MP3
-                Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    SizedBox(
-                      width: 36,
-                      height: 36,
-                      child: CircularProgressIndicator(
-                        value: progressValue.clamp(0.0, 1.0),
-                        strokeWidth: 2.5,
-                        backgroundColor: Colors.grey.withAlpha(30),
-                        color: color,
-                      ),
-                    ),
-                    IconButton(
-                      icon: Icon(icon, size: 18),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: Colors.grey.shade200, width: 0.5),
+        ),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // ─── LÍNEA 1: ICONO, TÍTULO, MÉTRICA Y SWITCH ANIMADO ───
+          Row(
+            children: [
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  SizedBox(
+                    width: 32,
+                    height: 32,
+                    child: CircularProgressIndicator(
+                      value: progressValue.clamp(0.0, 1.0),
+                      strokeWidth: 2.0,
+                      backgroundColor: Colors.grey.withAlpha(20),
                       color: color,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      onPressed: onPlaySound,
                     ),
-                  ],
-                ),
-                const SizedBox(width: 12),
-
-                // Títol de l'alarma (Flexible)
-                Expanded(
-                  child: Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
+                  IconButton(
+                    icon: Icon(icon, size: 16),
+                    color: color,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    onPressed: onPlaySound,
+                  ),
+                ],
+              ),
+              const SizedBox(width: 10),
 
-                // Mètrica / Valor actual
-                Text(
-                  valueText,
-                  textAlign: TextAlign.end,
+              Expanded(
+                child: Text(
+                  title,
                   style: TextStyle(
                     fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: isActive ? AppColors.primary : Colors.grey.shade600,
+                    fontWeight: FontWeight.w600,
+                    color: color,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(width: 12),
+              ),
 
-                // 🎛️ Switcher personalitzat amb text animat a dins
-                GestureDetector(
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    onToggle();
-                  },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    width: 58, // Amplada fixa per encabir el mecanisme i text
-                    height: 28,
-                    padding: const EdgeInsets.all(3),
-                    decoration: BoxDecoration(
+              Text(
+                isActive ? valueText : "--",
+                textAlign: TextAlign.end,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+              const SizedBox(width: 10),
+
+              GestureDetector(
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  onToggle();
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  width: 54,
+                  height: 26,
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    color: isActive
+                        ? AppColors.primary.withAlpha(40)
+                        : Colors.grey.shade200,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
                       color: isActive
-                          ? AppColors.primary.withAlpha(40)
-                          : Colors.grey.shade200,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: isActive
-                            ? AppColors.primary
-                            : Colors.grey.shade300,
-                        width: 1,
-                      ),
+                          ? AppColors.primary
+                          : Colors.grey.shade300,
+                      width: 1,
                     ),
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        // Textos de fons que queden al descobert
-                        Positioned(
-                          left: 6,
-                          child: Text(
-                            "ON",
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: isActive
-                                  ? AppColors.primary
-                                  : Colors.transparent,
-                            ),
+                  ),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Positioned(
+                        left: 6,
+                        child: Text(
+                          "ON",
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                            color: isActive
+                                ? AppColors.primary
+                                : Colors.transparent,
                           ),
                         ),
-                        Positioned(
-                          right: 6,
-                          child: Text(
-                            "OFF",
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: !isActive
-                                  ? Colors.grey.shade600
-                                  : Colors.transparent,
-                            ),
+                      ),
+                      Positioned(
+                        right: 6,
+                        child: Text(
+                          "OFF",
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                            color: !isActive
+                                ? Colors.grey.shade600
+                                : Colors.transparent,
                           ),
                         ),
-                        // La "boleta" o píndola lliscant que tapa el text inactiu
-                        AnimatedAlign(
-                          duration: const Duration(milliseconds: 200),
-                          curve: Curves.easeInOut,
-                          alignment: isActive
-                              ? Alignment.centerRight
-                              : Alignment.centerLeft,
-                          child: Container(
-                            width: 22,
-                            height: 22,
-                            decoration: BoxDecoration(
-                              color: isActive
-                                  ? AppColors.primary
-                                  : Colors.grey.shade500,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withAlpha(20),
-                                  blurRadius: 2,
-                                  offset: const Offset(0, 1),
+                      ),
+                      AnimatedAlign(
+                        duration: const Duration(milliseconds: 200),
+                        curve: Curves.easeInOut,
+                        alignment: isActive
+                            ? Alignment.centerRight
+                            : Alignment.centerLeft,
+                        child: Container(
+                          width: 20,
+                          height: 20,
+                          decoration: BoxDecoration(
+                            color: isActive
+                                ? AppColors.primary
+                                : Colors.grey.shade500,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withAlpha(20),
+                                blurRadius: 2,
+                                offset: const Offset(0, 1),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          // ─── LÍNEA 2: BOTONES DE CONTROL (+ / -) Y SLIDER DE ALTURA FIJA ───
+          AnimatedSize(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeInOut,
+            alignment: Alignment.topCenter,
+            child: isActive
+                ? Column(
+                    children: [
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          // 1.- Botón Menos Rápido
+                          IconButton(
+                            icon: const Icon(Icons.remove, size: 16),
+                            color: AppColors.primary,
+                            disabledColor: Colors.grey.shade300,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(
+                              minWidth: 28,
+                              minHeight: 28,
+                            ),
+                            onPressed: isActive && value > min
+                                ? () {
+                                    HapticFeedback.lightImpact();
+                                    onChanged((value - step).clamp(min, max));
+                                  }
+                                : null,
+                          ),
+
+                          // 2.- Slider Adaptativo
+                          Expanded(
+                            child: SliderTheme(
+                              data: SliderTheme.of(context).copyWith(
+                                trackHeight: 3,
+                                thumbShape: const RoundSliderThumbShape(
+                                  enabledThumbRadius: 6,
                                 ),
-                              ],
+                                overlayShape: const RoundSliderOverlayShape(
+                                  overlayRadius: 12,
+                                ),
+                                activeTrackColor: AppColors.primary,
+                                inactiveTrackColor: Colors.grey.shade200,
+                                thumbColor: AppColors.primary,
+                              ),
+                              child: SizedBox(
+                                height:
+                                    24, // Limita estrictamente el alto para evitar desbordes
+                                child: Slider(
+                                  value: value.clamp(min, max),
+                                  min: min,
+                                  max: max,
+                                  divisions: ((max - min) / step).round(),
+                                  onChanged: onChanged,
+                                ),
+                              ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
 
-            const SizedBox(height: 8), // Separació entre línies
-            // ─── LÍNIA 2: BOTONS DE CONTROL I SLIDER ───
-            Row(
-              children: [
-                // 1.- Botó Menys
-                IconButton(
-                  icon: const Icon(Icons.remove, size: 18),
-                  color: color,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(
-                    minWidth: 32,
-                    minHeight: 32,
-                  ),
-                  onPressed: isActive && value > min
-                      ? () {
-                          HapticFeedback.lightImpact();
-                          onChanged((value - step).clamp(min, max));
-                        }
-                      : null,
-                ),
-
-                // 2.- Slider
-                Expanded(
-                  child: SliderTheme(
-                    data: SliderTheme.of(context).copyWith(
-                      trackHeight: 3,
-                      thumbShape: const RoundSliderThumbShape(
-                        enabledThumbRadius: 7,
+                          // 3.- Botón Más Rápido
+                          IconButton(
+                            icon: const Icon(Icons.add, size: 16),
+                            color: AppColors.primary,
+                            disabledColor: Colors.grey.shade300,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(
+                              minWidth: 28,
+                              minHeight: 28,
+                            ),
+                            onPressed: isActive && value < max
+                                ? () {
+                                    HapticFeedback.lightImpact();
+                                    onChanged((value + step).clamp(min, max));
+                                  }
+                                : null,
+                          ),
+                        ],
                       ),
-                      overlayShape: const RoundSliderOverlayShape(
-                        overlayRadius: 14,
-                      ),
-                    ),
-                    child: Slider(
-                      value: value.clamp(min, max),
-                      min: min,
-                      max: max,
-                      divisions: ((max - min) / step).round(),
-                      activeColor: AppColors.primary,
-                      inactiveColor: AppColors.primary.withAlpha(30),
-                      onChanged: isActive ? onChanged : null,
-                    ),
-                  ),
-                ),
-
-                // 3.- Botó Més
-                IconButton(
-                  icon: const Icon(Icons.add, size: 18),
-                  color: color,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(
-                    minWidth: 32,
-                    minHeight: 32,
-                  ),
-                  onPressed: isActive && value < max
-                      ? () {
-                          HapticFeedback.lightImpact();
-                          onChanged((value + step).clamp(min, max));
-                        }
-                      : null,
-                ),
-              ],
-            ),
-          ],
-        ),
+                    ],
+                  )
+                : const SizedBox.shrink(),
+          ),
+        ],
       ),
     );
   }

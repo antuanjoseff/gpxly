@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:reorderable_grid_view/reorderable_grid_view.dart';
@@ -199,7 +201,19 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
         : (speedTrack?.currentSpeedKmH ?? 0.0);
     final double displaySpeed = currentSpeed < 0.4 ? 0.0 : currentSpeed;
     // ETA al següent waypoint: calculat pel motor de navegació sobre la guia.
-    final remainingToWaypoint = ref.watch(waypointEtaProvider).eta;
+    final navResult = ref.watch(waypointEtaProvider);
+    final remainingToWaypoint = navResult.eta;
+    final double? remainingDistanceKm =
+        (isFollowing &&
+            importedTrack != null &&
+            importedTrack.points.isNotEmpty)
+        ? math.max(
+                0.0,
+                importedTrack.points.last.distanceAtPoint -
+                    navResult.currentTrackDistance,
+              ) /
+              1000.0
+        : null;
 
     final Map<String, List<Widget>> cardPages = {
       'dist': [
@@ -210,7 +224,14 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
           t.statDistance,
           customValue: formatDistanceKm(distanceKm),
         ),
-        const _StatPage(Icons.flag, null, "km", "RESTANT"),
+        if (isFollowing)
+          _StatPage(
+            Icons.flag,
+            null,
+            "",
+            "RESTANT",
+            customValue: formatDistanceKm(remainingDistanceKm),
+          ),
       ],
       'time': [
         _StatPage(
@@ -540,6 +561,12 @@ class _StatCardState extends State<_StatCard> {
   @override
   void didUpdateWidget(covariant _StatCard oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.pages.length != oldWidget.pages.length) {
+      final maxPageIndex = widget.pages.length - 1;
+      if (_currentPage > maxPageIndex) {
+        _currentPage = math.max(0, maxPageIndex);
+      }
+    }
     if (widget.controller != oldWidget.controller) {
       setState(() {
         _currentPage = widget.controller.hasClients

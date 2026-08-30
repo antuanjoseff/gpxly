@@ -10,6 +10,7 @@ import 'package:strack_rec/models/navigation_state.dart';
 import 'package:strack_rec/models/track.dart';
 import 'package:strack_rec/models/waypoint.dart';
 import 'package:strack_rec/models/user_position.dart';
+import 'package:strack_rec/notifiers/alarm_settings_notifier.dart';
 import 'package:strack_rec/notifiers/gps_settings_notifier.dart';
 import 'package:strack_rec/notifiers/imported_track_notifier.dart';
 import 'package:strack_rec/notifiers/waypoints_imported_notifier.dart';
@@ -71,6 +72,14 @@ class NavigationNotifier extends Notifier<NavigationState> {
 
   @override
   NavigationState build() {
+    // Sincronització del volum amb la configuració d'alarmes
+    sounds.setVolume(ref.read(alarmSettingsProvider).volume);
+    ref.listen<AlarmSettings>(alarmSettingsProvider, (previous, next) {
+      if (previous?.volume != next.volume) {
+        sounds.setVolume(next.volume);
+      }
+    });
+
     // 🔗 DATA PIPELINING INTERN: El motor reacciona sol si ens movem i estem navegant
     ref.listen<UserPosition?>(locationProvider, (previous, next) {
       if (next == null || !state.isFollowing || state.isPaused) return;

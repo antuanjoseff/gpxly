@@ -310,9 +310,9 @@ Future<void> setupWaypointLayers(MapLibreMapController controller) async {
       'waypoints_recorded_layer',
       const CircleLayerProperties(
         circleRadius: 11.0,
-        circleColor: "#FFEB3B",
+        circleColor: "#4CAF50",
         circleStrokeWidth: 2.0,
-        circleStrokeColor: "#F44336",
+        circleStrokeColor: "#FFFFFF",
         circleOpacity: 0.0,
         circleStrokeOpacity: 0.0,
         circleBlur: 0.0,
@@ -324,9 +324,9 @@ Future<void> setupWaypointLayers(MapLibreMapController controller) async {
       'waypoints_imported_layer',
       const CircleLayerProperties(
         circleRadius: 11.0,
-        circleColor: "#FFEB3B",
+        circleColor: "#4CAF50",
         circleStrokeWidth: 2.0,
-        circleStrokeColor: "#F44336",
+        circleStrokeColor: "#FFFFFF",
         circleOpacity: 0.0,
         circleStrokeOpacity: 0.0,
         circleBlur: 0.0,

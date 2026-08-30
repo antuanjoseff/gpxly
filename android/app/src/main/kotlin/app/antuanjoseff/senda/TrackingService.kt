@@ -168,7 +168,9 @@ class TrackingService : Service() {
         acquireWakeLock()
         startLocationUpdates()
 
-        return START_STICKY
+        startService(Intent(this, ServiceKiller::class.java))
+
+        return START_NOT_STICKY
     }
 
     // Manté la CPU desperta perquè Doze/fabricants no aturin la recepció de GPS amb pantalla apagada
@@ -451,8 +453,49 @@ class TrackingService : Service() {
         startForeground(1, notification)
     }
 
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        // 1. EL TRUC: Forcem l'eliminació visual directa utilitzant el gestor de notificacions nativament.
+        // Com que a startForeground(1, notification) vas utilitzar l'ID 1, aquí cancel·lem exactament l'ID 1.
+        try {
+            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.cancel(1) 
+        } catch (e: Exception) {
+            Log.e("SENDA", "Error cancel·lant notificació visual", e)
+        }
+
+        // 2. Traiem el servei de l'estat de primer pla netament
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+        } else {
+            @Suppress("DEPRECATION")
+            stopForeground(true)
+        }
+        
+        // 3. Demanem a Android que aturi el servei. Això farà que el sistema cridi a onDestroy() 
+        // de manera lícita, ordenada i asíncrona un mil·lisegon després.
+        stopSelf()
+        
+        super.onTaskRemoved(rootIntent)
+    }
+
     override fun onDestroy() {
         if (debugEnabled) emitSummary("stop")
+
+        // Per seguretat, tornem a demanar que es tregui la notificació per si s'ha tancat el servei
+        // de manera programàtica des de Flutter en lloc de lliscant l'app.
+        try {
+            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.cancel(1)
+        } catch (e: Exception) { /*...*/ }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+        } else {
+            @Suppress("DEPRECATION")
+            stopForeground(true)
+        }
+
+        // Netegem els teus callbacks de GPS de fons
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && gnssStatusCallback != null) {
             locationManager.unregisterGnssStatusCallback(gnssStatusCallback)
         }
@@ -461,8 +504,24 @@ class TrackingService : Service() {
         fused.removeLocationUpdates(distanceTimeCallback)
         wakeLock?.let { if (it.isHeld) it.release() }
         wakeLock = null
+        
         super.onDestroy()
     }
 
+
     override fun onBind(intent: Intent?): IBinder? = null
+}
+
+class ServiceKiller : Service() {
+    override fun onBind(intent: Intent?): IBinder? = null
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_NOT_STICKY
+
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        // Aquest mètode SÍ que s'executa sempre perquè aquest servei no té GPS ni fons lligat.
+        // Quan es detecta el tancament de l'app, enviem l'ordre d'aturar el servei de tracking principal.
+        val stopIntent = Intent(this, TrackingService::class.java)
+        stopService(stopIntent)
+        stopSelf()
+        super.onTaskRemoved(rootIntent)
+    }
 }

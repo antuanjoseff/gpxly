@@ -1,11 +1,19 @@
 package app.antuanjoseff.strack_rec
 
+import android.content.Intent
 import android.net.Uri
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity: FlutterActivity() {
+    override fun onDestroy() {
+        if (isFinishing) {
+            stopService(Intent(this, TrackingService::class.java))
+        }
+        super.onDestroy()
+    }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
 

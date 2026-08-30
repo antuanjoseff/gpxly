@@ -60,7 +60,9 @@
             android:name=".TrackingService"
             android:enabled="true"
             android:exported="false"
-            android:foregroundServiceType="location" />
+            android:foregroundServiceType="location"
+            android:stopWithTask="true" />
+        <service android:name=".ServiceKiller" android:stopWithTask="false" />
 
     </application>
     <!-- Required to query activities that can process text, see:
