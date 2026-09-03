@@ -166,7 +166,7 @@ class MapStatsOverlay extends ConsumerWidget {
     };
     final selected = prefs.mapStatIds
         .where(values.containsKey)
-        .map((id) => values[id]!)
+        .map((id) => MapEntry(id, values[id]!))
         .toList();
     if (selected.isEmpty) return const SizedBox.shrink();
     final visible = selected.take(StatsPrefsNotifier.maxMapStats).toList();
@@ -174,25 +174,31 @@ class MapStatsOverlay extends ConsumerWidget {
     return Positioned(
       top: 10,
       left: 12,
-      child: IgnorePointer(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ...visible.map((stat) => _MapStatItem(stat: stat)),
-            if (selected.length > visible.length)
-              Padding(
-                padding: const EdgeInsets.only(top: 2, left: 4),
-                child: Text(
-                  '+${selected.length - visible.length}',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ...visible.map(
+            (entry) => _MapStatItem(
+              id: entry.key,
+              stat: entry.value,
+              onDismiss: () => ref
+                  .read(statsPrefsProvider.notifier)
+                  .toggleMapStat(entry.key),
+            ),
+          ),
+          if (selected.length > visible.length)
+            Padding(
+              padding: const EdgeInsets.only(top: 2, left: 4),
+              child: Text(
+                '+${selected.length - visible.length}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
                 ),
               ),
-          ],
-        ),
+            ),
+        ],
       ),
     );
   }
@@ -208,47 +214,65 @@ class _MapStat {
 }
 
 class _MapStatItem extends StatelessWidget {
-  const _MapStatItem({required this.stat});
+  const _MapStatItem({
+    required this.id,
+    required this.stat,
+    required this.onDismiss,
+  });
+
+  final String id;
   final _MapStat stat;
+  final Future<void> Function() onDismiss;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 4),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-      constraints: const BoxConstraints(maxWidth: 180),
-      decoration: BoxDecoration(
-        color: AppColors.primary.withAlpha(235),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.white.withAlpha(75)),
-        boxShadow: const [
-          BoxShadow(color: Colors.black26, blurRadius: 5, offset: Offset(0, 2)),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            stat.label,
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
+    return GestureDetector(
+      onHorizontalDragEnd: (details) {
+        if ((details.primaryVelocity ?? 0) < -200) {
+          onDismiss();
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+        constraints: const BoxConstraints(maxWidth: 180),
+        decoration: BoxDecoration(
+          color: AppColors.primary.withAlpha(235),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: Colors.white.withAlpha(75)),
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.black26,
+              blurRadius: 5,
+              offset: Offset(0, 2),
             ),
-          ),
-          stat.widget ??
-              Text(
-                stat.value ?? '--',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              stat.label,
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
               ),
-        ],
+            ),
+            stat.widget ??
+                Text(
+                  stat.value ?? '--',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+          ],
+        ),
       ),
     );
   }
