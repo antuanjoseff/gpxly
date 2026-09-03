@@ -7,7 +7,6 @@ import 'package:strack_rec/notifiers/imported_track_notifier.dart';
 // ✅ ADAPTAT: Proveïdor analític de navegació que substitueix el trackFollowNotifierProvider
 import 'package:strack_rec/notifiers/navigation_notifier.dart';
 import 'package:strack_rec/notifiers/waypoints_imported_notifier.dart';
-import 'package:strack_rec/services/permissions_service.dart';
 import 'package:strack_rec/theme/app_colors.dart';
 import 'package:strack_rec/ui/app_messages.dart';
 import 'package:strack_rec/ui/bottom_bar/pressable_scale.dart';
@@ -140,15 +139,7 @@ class BottomBarButtons extends ConsumerWidget {
               _circleButton(
                 icon: Icons.navigation_rounded,
                 color: AppColors.deepGreen,
-                onTap: () async {
-                  final ok =
-                      await PermissionsService.ensureBackgroundLocationWithDialog(
-                        context,
-                      );
-                  if (!ok) return;
-
-                  onFollowTrack();
-                },
+                onTap: onFollowTrack,
               ),
               _circleButton(
                 icon: Icons.delete_outline,

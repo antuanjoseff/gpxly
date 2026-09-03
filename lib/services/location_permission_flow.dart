@@ -38,10 +38,7 @@ Future<bool> requestLocationPermissionsUnified(
       return false;
     }
 
-    // Si NO està bloquejat permanentment, fem el flux normal
-    final continuar = await AppMessages.showPermissionExplanation(context);
-    if (continuar != true) return false;
-
+    // El flux normal mostra l'explicació just abans de demanar locationAlways.
     final ok = await PermissionsService.ensurePermissions(context);
     if (!ok) return false;
 

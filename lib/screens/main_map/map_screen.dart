@@ -38,6 +38,7 @@ import 'package:strack_rec/screens/main_map/widgets/map_bottom_controls/navigati
 import 'package:strack_rec/screens/main_map/widgets/map_bottom_controls/recording_submenu.dart';
 import 'package:strack_rec/screens/main_map/widgets/map_selection_reticle.dart';
 import 'package:strack_rec/screens/main_map/widgets/map_stack_widgets.dart';
+import 'package:strack_rec/screens/main_map/widgets/map_stats_overlay.dart';
 import 'package:strack_rec/screens/main_map/widgets/map_top_controls.dart';
 import 'package:strack_rec/theme/app_colors.dart';
 
@@ -1411,6 +1412,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
                       );
                     },
                   ),
+
+                  const MapStatsOverlay(),
 
                   // 🎛️ HUD SUPERIOR (es manté igual)
                   if (!_fullScreen)

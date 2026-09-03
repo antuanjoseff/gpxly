@@ -10,7 +10,15 @@ import 'package:strack_rec/utils/gps_accuracy.dart';
 
 class GpsAccuracyBars extends ConsumerWidget {
   final int totalBars;
-  const GpsAccuracyBars({super.key, this.totalBars = 5});
+  final Color textColor;
+  final Color inactiveBarColor;
+
+  const GpsAccuracyBars({
+    super.key,
+    this.totalBars = 5,
+    this.textColor = Colors.white,
+    this.inactiveBarColor = const Color(0x4BFFFFFF),
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -70,47 +78,41 @@ class GpsAccuracyBars extends ConsumerWidget {
         }
       },
       child: SizedBox(
-        width: 32,
+        width: 56,
         height: 32,
-        child: Stack(
-          alignment: Alignment.center,
-          clipBehavior: Clip.none,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // A) El text de metres flotant a dalt de tot a l'esquerra
-            if (showText)
-              Positioned(
-                left: 0,
-                top: 0,
-                child: Text(
-                  "${accuracy.round()}m",
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 9,
-                  ),
-                ),
-              ),
-
-            // B) Les barres de cobertura verticals (S'apaguen en gris fi si no hi ha GPS)
+            // Les barres de cobertura verticals s'apaguen si no hi ha GPS.
             Row(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: List.generate(totalBars, (index) {
                 final active = isGpsReady && index < activeBars;
                 final height = (index + 1) * 4.0;
-                final Color inactiveColor = Colors.white.withAlpha(75);
 
                 return Container(
                   width: 3,
                   height: height,
                   margin: const EdgeInsets.symmetric(horizontal: 1),
                   decoration: BoxDecoration(
-                    color: active ? color : inactiveColor,
+                    color: active ? color : inactiveBarColor,
                     borderRadius: BorderRadius.circular(1),
                   ),
                 );
               }),
             ),
+            if (showText) ...[
+              const SizedBox(width: 3),
+              Text(
+                "${accuracy.round()}m",
+                style: TextStyle(
+                  color: textColor,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 9,
+                ),
+              ),
+            ],
           ],
         ),
       ),

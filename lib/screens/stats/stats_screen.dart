@@ -17,6 +17,7 @@ import 'package:strack_rec/screens/stats/satellites/screens/satellite_detail_scr
 import 'package:strack_rec/theme/app_colors.dart';
 import 'package:strack_rec/providers/barometer_provider.dart';
 import 'package:strack_rec/utils/calculations.dart';
+import 'package:strack_rec/widgets/gps_accuracy_bars.dart';
 
 class TrackStatsScreen extends ConsumerStatefulWidget {
   const TrackStatsScreen({super.key});
@@ -397,6 +398,7 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
             unitBelow: true,
           ),
         ),
+        const _GpsAccuracyPage(),
       ],
     };
 
@@ -426,11 +428,60 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
                 onPageChanged: (index) => ref
                     .read(statsPrefsProvider.notifier)
                     .setCarouselIdx(key, index),
+                isMapStatSelected: (index) =>
+                    prefsState.mapStatIds.contains('$key:$index'),
+                onToggleMapStat: (index) => ref
+                    .read(statsPrefsProvider.notifier)
+                    .toggleMapStat('$key:$index'),
                 pages: cardPages[key]!,
               );
             }).toList(),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _GpsAccuracyPage extends StatelessWidget {
+  const _GpsAccuracyPage();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'PRECISIO GPS',
+                  style: TextStyle(
+                    color: Colors.black54,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.8,
+                  ),
+                ),
+              ),
+              Icon(Icons.gps_fixed, color: AppColors.primary, size: 20),
+            ],
+          ),
+          Expanded(
+            child: Center(
+              child: Transform.scale(
+                scale: 3,
+                child: GpsAccuracyBars(
+                  textColor: Colors.black87,
+                  inactiveBarColor: Color(0x4B000000),
+                ),
+              ),
+            ),
+          ),
+          SizedBox(height: 12),
+        ],
       ),
     );
   }
@@ -534,6 +585,8 @@ class _StatCard extends StatefulWidget {
   final List<Widget> pages;
   final PageController controller;
   final Function(int) onPageChanged;
+  final bool Function(int) isMapStatSelected;
+  final Future<void> Function(int) onToggleMapStat;
 
   const _StatCard({
     super.key,
@@ -541,6 +594,8 @@ class _StatCard extends StatefulWidget {
     required this.pages,
     required this.controller,
     required this.onPageChanged,
+    required this.isMapStatSelected,
+    required this.onToggleMapStat,
   });
 
   @override
@@ -629,6 +684,40 @@ class _StatCardState extends State<_StatCard> {
                   }),
                 ),
               ),
+            Positioned(
+              bottom: 4,
+              right: 4,
+              child: IconButton(
+                tooltip: widget.isMapStatSelected(_currentPage)
+                    ? 'Treure del mapa'
+                    : 'Mostrar al mapa',
+                icon: widget.isMapStatSelected(_currentPage)
+                    ? Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          const Icon(
+                            Icons.push_pin,
+                            color: AppColors.primary,
+                            size: 19,
+                          ),
+                          Transform.rotate(
+                            angle: -0.75,
+                            child: Container(
+                              width: 24,
+                              height: 2,
+                              color: AppColors.redAlert,
+                            ),
+                          ),
+                        ],
+                      )
+                    : const Icon(
+                        Icons.push_pin_outlined,
+                        color: AppColors.primary,
+                        size: 19,
+                      ),
+                onPressed: () => widget.onToggleMapStat(_currentPage),
+              ),
+            ),
           ],
         ),
       ),

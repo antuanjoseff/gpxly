@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class StatsPrefsState {
   final List<String> order;
   final Map<String, int> indices; // Els índexs del carousel de cada targeta
+  final List<String> mapStatIds;
   final bool isInitialized;
 
   StatsPrefsState({
@@ -17,23 +18,53 @@ class StatsPrefsState {
       'coords': 0,
       'gps': 0,
     },
+    this.mapStatIds = const [],
     this.isInitialized = false,
   });
 
   StatsPrefsState copyWith({
     List<String>? order,
     Map<String, int>? indices,
+    List<String>? mapStatIds,
     bool? isInitialized,
   }) {
     return StatsPrefsState(
       order: order ?? this.order,
       indices: indices ?? this.indices,
+      mapStatIds: mapStatIds ?? this.mapStatIds,
       isInitialized: isInitialized ?? this.isInitialized,
     );
   }
 }
 
 class StatsPrefsNotifier extends Notifier<StatsPrefsState> {
+  static const maxMapStats = 5;
+  static const _mapStatIdsKey = 'map_stat_ids';
+  static const _validMapStatIds = {
+    'dist:0',
+    'dist:1',
+    'time:0',
+    'time:1',
+    'time:2',
+    'time:3',
+    'speed:0',
+    'speed:1',
+    'speed:2',
+    'speed:3',
+    'speed:4',
+    'speed:5',
+    'alt:0',
+    'alt:1',
+    'alt:2',
+    'alt:3',
+    'alt:4',
+    'coords:0',
+    'coords:1',
+    'gps:0',
+    'gps:1',
+    'gps:2',
+  };
+
   @override
   StatsPrefsState build() {
     _loadPrefs();
@@ -76,9 +107,23 @@ class StatsPrefsNotifier extends Notifier<StatsPrefsState> {
           0, // 👈 Registre dinàmic desat a disc
     };
 
+    final savedMapStatIds =
+        prefs
+            .getStringList(_mapStatIdsKey)
+            ?.where(_validMapStatIds.contains)
+            .take(maxMapStats)
+            .toList() ??
+        const <String>[];
+    final storedMapStatIds = prefs.getStringList(_mapStatIdsKey);
+    if (storedMapStatIds != null &&
+        storedMapStatIds.length != savedMapStatIds.length) {
+      await prefs.setStringList(_mapStatIdsKey, savedMapStatIds);
+    }
+
     state = state.copyWith(
       order: savedOrder,
       indices: savedIndices,
+      mapStatIds: savedMapStatIds,
       isInitialized: true,
     );
   }
@@ -101,6 +146,22 @@ class StatsPrefsNotifier extends Notifier<StatsPrefsState> {
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('stats_${key}_idx', val);
+  }
+
+  Future<void> toggleMapStat(String id) async {
+    if (!_validMapStatIds.contains(id)) return;
+
+    final selected = List<String>.from(state.mapStatIds);
+    if (selected.contains(id)) {
+      selected.remove(id);
+    } else {
+      if (selected.length >= maxMapStats) return;
+      selected.add(id);
+    }
+    state = state.copyWith(mapStatIds: selected);
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(_mapStatIdsKey, selected);
   }
 }
 
