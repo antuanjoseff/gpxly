@@ -230,7 +230,7 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
             Icons.flag,
             null,
             "",
-            "RESTANT",
+            t.statRemaining,
             customValue: formatDistanceKm(remainingDistanceKm),
           ),
       ],

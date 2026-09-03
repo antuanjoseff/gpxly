@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:strack_rec/l10n/app_localizations.dart';
 import 'package:strack_rec/models/track.dart';
 import 'package:strack_rec/notifiers/imported_track_notifier.dart';
 import 'package:strack_rec/notifiers/live_follow_stats_notifier.dart';
@@ -46,6 +47,7 @@ class MapStatsOverlay extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final t = AppLocalizations.of(context)!;
     final prefs = ref.watch(statsPrefsProvider);
     if (!prefs.isInitialized || prefs.mapStatIds.isEmpty) {
       return const SizedBox.shrink();
@@ -101,68 +103,72 @@ class MapStatsOverlay extends ConsumerWidget {
     final position = track?.currentPosition ?? location?.position;
 
     final values = <String, _MapStat>{
-      'dist:0': _MapStat('DIST.', _distance(distance)),
-      if (remaining != null) 'dist:1': _MapStat('REST.', _distance(remaining)),
-      'time:0': _MapStat('TEMPS', _duration(duration)),
-      'time:1': _MapStat('MOV.', _duration(duration - stopped)),
-      'time:2': _MapStat('ATUR.', _duration(stopped)),
+      'dist:0': _MapStat(t.mapStatDistance, _distance(distance)),
+      if (remaining != null)
+        'dist:1': _MapStat(t.mapStatRemaining, _distance(remaining)),
+      'time:0': _MapStat(t.mapStatTime, _duration(duration)),
+      'time:1': _MapStat(t.mapStatMoving, _duration(duration - stopped)),
+      'time:2': _MapStat(t.mapStatStopped, _duration(stopped)),
       'time:3': _MapStat(
-        'FITA',
+        t.mapStatWaypoint,
         nav.eta == null ? '--:--' : _duration(nav.eta!),
       ),
       'speed:0': _MapStat(
-        'VEL.',
+        t.mapStatSpeed,
         '${speed < 0.4 ? '0.0' : speed.toStringAsFixed(1)} km/h',
       ),
       'speed:1': _MapStat(
-        'MITJ.',
+        t.mapStatSpeedAvg,
         '${(useLive ? liveStats.averageSpeedKmh : track?.stats.averageSpeed)?.toStringAsFixed(1) ?? '--'} km/h',
       ),
       'speed:2': _MapStat(
-        'TOTAL',
+        t.mapStatSpeedTotal,
         '${(useLive ? liveStats.averageSpeedTotalKmh : track?.stats.averageSpeedTotal)?.toStringAsFixed(1) ?? '--'} km/h',
       ),
       'speed:3': _MapStat(
-        'MÀX.',
+        t.mapStatSpeedMax,
         '${(useLive ? liveStats.maxSpeedKmh : track?.stats.maxSpeed)?.toStringAsFixed(1) ?? '--'} km/h',
       ),
-      'speed:4': _MapStat('RITME', '${_pace(speed)} /km'),
+      'speed:4': _MapStat(t.mapStatPace, '${_pace(speed)} /km'),
       'speed:5': _MapStat(
-        'RITME M.',
+        t.mapStatPaceAvg,
         '${_pace(useLive ? liveStats.averageSpeedKmh : track?.stats.averageSpeed ?? 0)} /km',
       ),
-      'alt:0': _MapStat('COTA', '${altitude?.toStringAsFixed(0) ?? '--'} m'),
+      'alt:0': _MapStat(
+        t.mapStatAltitude,
+        '${altitude?.toStringAsFixed(0) ?? '--'} m',
+      ),
       'alt:1': _MapStat(
-        'COTA MÀX.',
+        t.mapStatAltMax,
         '${(useLive ? liveStats.maxElevation : track?.stats.maxElevation)?.toStringAsFixed(0) ?? '--'} m',
       ),
       'alt:2': _MapStat(
-        'COTA MÍN.',
+        t.mapStatAltMin,
         '${(useLive ? liveStats.minElevation : track?.stats.minElevation)?.toStringAsFixed(0) ?? '--'} m',
       ),
-      'alt:3': _MapStat('PUJADA', '+${ascent.toStringAsFixed(0)} m'),
-      'alt:4': _MapStat('BAIXADA', '-${descent.toStringAsFixed(0)} m'),
+      'alt:3': _MapStat(t.mapStatAscent, '+${ascent.toStringAsFixed(0)} m'),
+      'alt:4': _MapStat(t.mapStatDescent, '-${descent.toStringAsFixed(0)} m'),
       'coords:0': _MapStat(
-        'POS.',
+        t.mapStatPosition,
         position == null
             ? '--'
             : '${position.latitude.toStringAsFixed(5)}, ${position.longitude.toStringAsFixed(5)}',
       ),
       'coords:1': _MapStat(
-        'POS. DMS',
+        t.mapStatPositionDms,
         position == null
             ? '--'
             : '${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)}',
       ),
       'gps:0': _MapStat(
-        'PRESS.',
+        t.mapStatPressure,
         '${ref.watch(barometerProvider).value?.toStringAsFixed(0) ?? '--'} hPa',
       ),
       'gps:1': _MapStat(
-        'GPS',
+        t.mapStatGps,
         '${location?.satellitesUsed ?? 0}/${location?.satellitesInView ?? 0}',
       ),
-      'gps:2': _MapStat.widget('PRECISIO GPS', const GpsAccuracyBars()),
+      'gps:2': _MapStat.widget(t.mapStatGpsAccuracy, const GpsAccuracyBars()),
     };
     final selected = prefs.mapStatIds
         .where(values.containsKey)

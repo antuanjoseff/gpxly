@@ -216,6 +216,75 @@ class AppLocalizationsCa extends AppLocalizations {
   String get statDescent => 'Desnivell acumulat -';
 
   @override
+  String get mapStatDistance => 'DIST.';
+
+  @override
+  String get mapStatRemaining => 'REST.';
+
+  @override
+  String get mapStatTime => 'TEMPS';
+
+  @override
+  String get mapStatMoving => 'MOV.';
+
+  @override
+  String get mapStatStopped => 'ATUR.';
+
+  @override
+  String get mapStatWaypoint => 'FITA';
+
+  @override
+  String get mapStatSpeed => 'VEL.';
+
+  @override
+  String get mapStatSpeedAvg => 'MITJ.';
+
+  @override
+  String get mapStatSpeedTotal => 'TOTAL';
+
+  @override
+  String get mapStatSpeedMax => 'MÀX.';
+
+  @override
+  String get mapStatPace => 'RITME';
+
+  @override
+  String get mapStatPaceAvg => 'RITME M.';
+
+  @override
+  String get mapStatAltitude => 'COTA';
+
+  @override
+  String get mapStatAltMax => 'COTA MÀX.';
+
+  @override
+  String get mapStatAltMin => 'COTA MÍN.';
+
+  @override
+  String get mapStatAscent => 'PUJADA';
+
+  @override
+  String get mapStatDescent => 'BAIXADA';
+
+  @override
+  String get mapStatPosition => 'POS.';
+
+  @override
+  String get mapStatPositionDms => 'POS. DMS';
+
+  @override
+  String get mapStatPressure => 'PRESS.';
+
+  @override
+  String get mapStatGps => 'GPS';
+
+  @override
+  String get mapStatGpsAccuracy => 'PRECISIÓ GPS';
+
+  @override
+  String get statRemaining => 'Restant';
+
+  @override
   String get elevationProfile => 'Perfil d\'elevació';
 
   @override

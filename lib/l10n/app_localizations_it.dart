@@ -216,6 +216,75 @@ class AppLocalizationsIt extends AppLocalizations {
   String get statDescent => 'Dislivello negativo cumulato';
 
   @override
+  String get mapStatDistance => 'DIST.';
+
+  @override
+  String get mapStatRemaining => 'RIM.';
+
+  @override
+  String get mapStatTime => 'TEMPO';
+
+  @override
+  String get mapStatMoving => 'MOV.';
+
+  @override
+  String get mapStatStopped => 'FERM.';
+
+  @override
+  String get mapStatWaypoint => 'TAPPA';
+
+  @override
+  String get mapStatSpeed => 'VEL.';
+
+  @override
+  String get mapStatSpeedAvg => 'MEDIA';
+
+  @override
+  String get mapStatSpeedTotal => 'TOTALE';
+
+  @override
+  String get mapStatSpeedMax => 'MAX';
+
+  @override
+  String get mapStatPace => 'PASSO';
+
+  @override
+  String get mapStatPaceAvg => 'PASSO M.';
+
+  @override
+  String get mapStatAltitude => 'QUOTA';
+
+  @override
+  String get mapStatAltMax => 'QUOTA MAX';
+
+  @override
+  String get mapStatAltMin => 'QUOTA MIN';
+
+  @override
+  String get mapStatAscent => 'SALITA';
+
+  @override
+  String get mapStatDescent => 'DISCESA';
+
+  @override
+  String get mapStatPosition => 'POS.';
+
+  @override
+  String get mapStatPositionDms => 'POS. DMS';
+
+  @override
+  String get mapStatPressure => 'PRESS.';
+
+  @override
+  String get mapStatGps => 'GPS';
+
+  @override
+  String get mapStatGpsAccuracy => 'PRECISIONE GPS';
+
+  @override
+  String get statRemaining => 'Rimanente';
+
+  @override
   String get elevationProfile => 'Profilo altimetrico';
 
   @override

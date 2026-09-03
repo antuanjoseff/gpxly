@@ -515,6 +515,144 @@ abstract class AppLocalizations {
   /// **'Accumulated descent -'**
   String get statDescent;
 
+  /// No description provided for @mapStatDistance.
+  ///
+  /// In en, this message translates to:
+  /// **'DIST.'**
+  String get mapStatDistance;
+
+  /// No description provided for @mapStatRemaining.
+  ///
+  /// In en, this message translates to:
+  /// **'LEFT'**
+  String get mapStatRemaining;
+
+  /// No description provided for @mapStatTime.
+  ///
+  /// In en, this message translates to:
+  /// **'TIME'**
+  String get mapStatTime;
+
+  /// No description provided for @mapStatMoving.
+  ///
+  /// In en, this message translates to:
+  /// **'MOV.'**
+  String get mapStatMoving;
+
+  /// No description provided for @mapStatStopped.
+  ///
+  /// In en, this message translates to:
+  /// **'STOP.'**
+  String get mapStatStopped;
+
+  /// No description provided for @mapStatWaypoint.
+  ///
+  /// In en, this message translates to:
+  /// **'WPT'**
+  String get mapStatWaypoint;
+
+  /// No description provided for @mapStatSpeed.
+  ///
+  /// In en, this message translates to:
+  /// **'SPD'**
+  String get mapStatSpeed;
+
+  /// No description provided for @mapStatSpeedAvg.
+  ///
+  /// In en, this message translates to:
+  /// **'AVG'**
+  String get mapStatSpeedAvg;
+
+  /// No description provided for @mapStatSpeedTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'TOTAL'**
+  String get mapStatSpeedTotal;
+
+  /// No description provided for @mapStatSpeedMax.
+  ///
+  /// In en, this message translates to:
+  /// **'MAX'**
+  String get mapStatSpeedMax;
+
+  /// No description provided for @mapStatPace.
+  ///
+  /// In en, this message translates to:
+  /// **'PACE'**
+  String get mapStatPace;
+
+  /// No description provided for @mapStatPaceAvg.
+  ///
+  /// In en, this message translates to:
+  /// **'AVG PACE'**
+  String get mapStatPaceAvg;
+
+  /// No description provided for @mapStatAltitude.
+  ///
+  /// In en, this message translates to:
+  /// **'ALT'**
+  String get mapStatAltitude;
+
+  /// No description provided for @mapStatAltMax.
+  ///
+  /// In en, this message translates to:
+  /// **'MAX ALT'**
+  String get mapStatAltMax;
+
+  /// No description provided for @mapStatAltMin.
+  ///
+  /// In en, this message translates to:
+  /// **'MIN ALT'**
+  String get mapStatAltMin;
+
+  /// No description provided for @mapStatAscent.
+  ///
+  /// In en, this message translates to:
+  /// **'ASCENT'**
+  String get mapStatAscent;
+
+  /// No description provided for @mapStatDescent.
+  ///
+  /// In en, this message translates to:
+  /// **'DESCENT'**
+  String get mapStatDescent;
+
+  /// No description provided for @mapStatPosition.
+  ///
+  /// In en, this message translates to:
+  /// **'POS.'**
+  String get mapStatPosition;
+
+  /// No description provided for @mapStatPositionDms.
+  ///
+  /// In en, this message translates to:
+  /// **'POS. DMS'**
+  String get mapStatPositionDms;
+
+  /// No description provided for @mapStatPressure.
+  ///
+  /// In en, this message translates to:
+  /// **'PRESS.'**
+  String get mapStatPressure;
+
+  /// No description provided for @mapStatGps.
+  ///
+  /// In en, this message translates to:
+  /// **'GPS'**
+  String get mapStatGps;
+
+  /// No description provided for @mapStatGpsAccuracy.
+  ///
+  /// In en, this message translates to:
+  /// **'GPS ACCURACY'**
+  String get mapStatGpsAccuracy;
+
+  /// No description provided for @statRemaining.
+  ///
+  /// In en, this message translates to:
+  /// **'Remaining'**
+  String get statRemaining;
+
   /// No description provided for @elevationProfile.
   ///
   /// In en, this message translates to:
