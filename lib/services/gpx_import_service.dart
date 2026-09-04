@@ -129,7 +129,7 @@ class GpxImportService {
         .map((entry) => entry.value.copyWith(speed: smoothedSpeeds[entry.key]))
         .toList();
 
-    // Velocitat màxima sostinguda (15s) - més robusta que un pic instantani
+    // Velocitat màxima sostinguda (30s) - més robusta que un pic instantani
     final double maxSpeed = Track.computeMaxSustainedSpeed(
       importedPoints,
       smoothedSpeeds,

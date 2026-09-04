@@ -185,10 +185,10 @@ class Track {
     return smoothed;
   }
 
-  /// Retorna la velocitat màxima sostinguda durant almenys [minSeconds] segons.
+  /// Retorna la velocitat màxima que es pot mantenir durant [minSeconds] segons.
   ///
-  /// Fa servir una finestra lliscant sobre [smoothedSpeeds] i troba el valor més alt
-  /// de velocitat mitjana que es manté durant tota la finestra temporal.
+  /// Per a cada finestra temporal exacta, fa servir la velocitat mínima dels
+  /// punts de la finestra.
   static double computeMaxSustainedSpeed(
     List<UserPosition> points,
     List<double> smoothedSpeeds, {
@@ -199,38 +199,49 @@ class Track {
     double maxSustained = 0.0;
 
     for (int endIndex = 1; endIndex < points.length; endIndex++) {
-      final DateTime endTime = points[endIndex].timestamp;
-
-      // Retrocedim fins trobar el punt que fa almenys minSeconds segons
-      int startIndex = endIndex;
-      for (int i = endIndex - 1; i >= 0; i--) {
-        final int dt = endTime.difference(points[i].timestamp).inSeconds;
-        if (dt >= minSeconds) {
+      final endTime = points[endIndex].timestamp;
+      final startTime = endTime.subtract(Duration(seconds: minSeconds));
+      int startIndex = -1;
+      for (int i = endIndex; i >= 0; i--) {
+        if (!points[i].timestamp.isAfter(startTime)) {
           startIndex = i;
           break;
         }
       }
+      if (startIndex < 0) continue;
 
-      // Si no hem pogut anar prou enrere, saltem aquest punt
-      if (endTime.difference(points[startIndex].timestamp).inSeconds <
-          minSeconds) {
-        continue;
+      double minimumSpeed;
+      if (points[startIndex].timestamp == startTime) {
+        minimumSpeed = smoothedSpeeds[startIndex];
+      } else {
+        final rightIndex = startIndex + 1;
+        if (rightIndex > endIndex) continue;
+        final leftTime = points[startIndex].timestamp;
+        final rightTime = points[rightIndex].timestamp;
+        final totalSeconds =
+            rightTime.difference(leftTime).inMilliseconds / 1000.0;
+        if (totalSeconds <= 0.0) continue;
+        final elapsedSeconds =
+            startTime.difference(leftTime).inMilliseconds / 1000.0;
+        final fraction = elapsedSeconds / totalSeconds;
+        minimumSpeed =
+            smoothedSpeeds[startIndex] +
+            (smoothedSpeeds[rightIndex] - smoothedSpeeds[startIndex]) *
+                fraction;
       }
 
-      // Calculem la mitjana de velocitats suavitzades en aquesta finestra
-      final windowSpeeds = <double>[];
-      for (int i = startIndex; i <= endIndex; i++) {
-        if (smoothedSpeeds[i] > 0.0 && smoothedSpeeds[i].isFinite) {
-          windowSpeeds.add(smoothedSpeeds[i]);
+      if (!minimumSpeed.isFinite || minimumSpeed < 0.0) continue;
+      for (int i = startIndex + 1; i <= endIndex; i++) {
+        final speed = smoothedSpeeds[i];
+        if (!speed.isFinite || speed < 0.0) {
+          minimumSpeed = -1.0;
+          break;
         }
+        if (speed < minimumSpeed) minimumSpeed = speed;
       }
 
-      if (windowSpeeds.isEmpty) continue;
-
-      final double avgInWindow =
-          windowSpeeds.reduce((a, b) => a + b) / windowSpeeds.length;
-      if (avgInWindow > maxSustained) {
-        maxSustained = avgInWindow;
+      if (minimumSpeed >= 0.0 && minimumSpeed > maxSustained) {
+        maxSustained = minimumSpeed;
       }
     }
 

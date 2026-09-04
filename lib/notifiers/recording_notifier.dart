@@ -9,6 +9,7 @@ import 'package:strack_rec/models/user_position.dart';
 import 'package:strack_rec/notifiers/elevation_range_notifier.dart';
 import 'package:strack_rec/notifiers/location_notifier.dart'; // Bloc 1 [INDEX]
 import 'package:strack_rec/notifiers/timer_notifier.dart';
+import 'package:strack_rec/notifiers/helpers/thresholds.dart';
 import 'package:strack_rec/services/altitude_logger.dart';
 import 'package:strack_rec/utils/calculations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -20,7 +21,6 @@ class RecordingNotifier extends Notifier<Track> {
   bool _isStopped = false;
   Timer? _gpsTimeoutTimer;
   final List<_SpeedSample> _recentSpeedSamples = <_SpeedSample>[];
-  final List<_SpeedSample> _sustainedSpeedSamples = <_SpeedSample>[];
   double _speedSum = 0.0;
   int _speedCount = 0;
   double _movingSpeedSum = 0.0;
@@ -103,7 +103,8 @@ class RecordingNotifier extends Notifier<Track> {
           .difference(lastPoint.timestamp)
           .inMilliseconds;
       final double timeDiffSeconds = timeDiffMs / 1000.0;
-      final double rawSpeedKmh = (timeDiffSeconds > 0.0 && step.isFinite && step > 0.2)
+      final double rawSpeedKmh =
+          (timeDiffSeconds > 0.0 && step.isFinite && step > 0.2)
           ? (step / timeDiffSeconds) * 3.6
           : 0.0;
 
@@ -142,9 +143,26 @@ class RecordingNotifier extends Notifier<Track> {
     );
 
     final allPoints = [...state.points, userPositionWithDistance];
+    final latestTimestamp = allPoints.last.timestamp;
+    final recentPoints = allPoints.reversed
+        .takeWhile(
+          (point) =>
+              latestTimestamp.difference(point.timestamp).inSeconds <=
+              TrackThresholds.maxSustainedSpeedWindowSeconds,
+        )
+        .toList()
+        .reversed
+        .toList();
+    final sustainedSpeed = Track.computeMaxSustainedSpeed(
+      recentPoints,
+      recentPoints.map((point) => point.speed).toList(),
+    );
+    if (sustainedSpeed > newMaxSpeed) newMaxSpeed = sustainedSpeed;
+
     final allAlts = allPoints.map((p) => p.altitude).toList(growable: false);
-    final allDists =
-        allPoints.map((p) => p.distanceAtPoint).toList(growable: false);
+    final allDists = allPoints
+        .map((p) => p.distanceAtPoint)
+        .toList(growable: false);
     final gain = ElevationUtils.computeGain(allAlts, distances: allDists);
     newAscent = gain.ascent;
     newDescent = gain.descent;
@@ -159,31 +177,6 @@ class RecordingNotifier extends Notifier<Track> {
     // Filtre protector per a salts geomètrics absurds o rebots de satèl·lits
     if (currentSpeedKmh.isNegative || currentSpeedKmh > 130.0 || _isStopped) {
       currentSpeedKmh = 0.0;
-    }
-
-    final currentSpeedSample = _SpeedSample(
-      timestamp: newPoint.timestamp,
-      speed: currentSpeedKmh,
-    );
-    _sustainedSpeedSamples.add(currentSpeedSample);
-    while (_sustainedSpeedSamples.length > 1 &&
-        newPoint.timestamp
-                .difference(_sustainedSpeedSamples.first.timestamp)
-                .inSeconds >
-            10) {
-      _sustainedSpeedSamples.removeAt(0);
-    }
-    if (_sustainedSpeedSamples.length > 1 &&
-        newPoint.timestamp
-                .difference(_sustainedSpeedSamples.first.timestamp)
-                .inSeconds >=
-            10) {
-      final sustainedSpeed =
-          _sustainedSpeedSamples
-              .map((sample) => sample.speed)
-              .reduce((sum, speed) => sum + speed) /
-          _sustainedSpeedSamples.length;
-      if (sustainedSpeed > newMaxSpeed) newMaxSpeed = sustainedSpeed;
     }
 
     final Duration totalDuration = ref.read(timerProvider);
@@ -439,7 +432,6 @@ class RecordingNotifier extends Notifier<Track> {
 
   void _resetIncrementalState() {
     _recentSpeedSamples.clear();
-    _sustainedSpeedSamples.clear();
     _speedSum = 0.0;
     _speedCount = 0;
     _movingSpeedSum = 0.0;
@@ -462,16 +454,6 @@ class RecordingNotifier extends Notifier<Track> {
     for (final point
         in points.reversed.take(Track.smoothedSpeedWindow).toList().reversed) {
       _recentSpeedSamples.add(
-        _SpeedSample(timestamp: point.timestamp, speed: point.speed),
-      );
-    }
-
-    final latestTimestamp = points.isEmpty ? null : points.last.timestamp;
-    if (latestTimestamp == null) return;
-    for (final point in points.reversed) {
-      if (latestTimestamp.difference(point.timestamp).inSeconds > 10) break;
-      _sustainedSpeedSamples.insert(
-        0,
         _SpeedSample(timestamp: point.timestamp, speed: point.speed),
       );
     }

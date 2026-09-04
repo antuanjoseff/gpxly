@@ -71,5 +71,5 @@ class TrackThresholds {
   static const double speedMaxAccelerationKmhPerSecond = 10.8;
 
   // Finestra temporal mínima per considerar una velocitat màxima sostinguda (segons)
-  static const int maxSustainedSpeedWindowSeconds = 15;
+  static const int maxSustainedSpeedWindowSeconds = 30;
 }
