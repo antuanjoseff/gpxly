@@ -140,7 +140,7 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
     final bool isRecording =
         realTrack.recordingState == RecordingState.recording;
 
-    final track = isRecording && realTrack.points.isNotEmpty
+    final track = isRecording
         ? realTrack
         : (importedTrack != null && importedTrack.points.isNotEmpty
               ? importedTrack

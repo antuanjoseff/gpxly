@@ -45,15 +45,8 @@ class MapElevationHud extends ConsumerWidget {
     String finalAvgSpeedStr = "";
 
     // 🔄 LA REGLA DE NEGOCI CORREGIDA:
-    if (hiHaTramActiu) {
-      // 1️⃣ SI HI HA UN TRAM SELECCIONAT: Mostrem sempre les dades filtrades del segment
-      finalDistanceMeters = stats.distanceMeters;
-      finalAscent = stats.ascentMeters;
-      finalDescent = stats.descentMeters;
-      finalTimeStr = stats.timeElapsedStr;
-      finalAvgSpeedStr = stats.avgSpeedStr;
-    } else if (isRecording) {
-      // 2️⃣ SI NO HI HA TRAM I S'ESTÀ GRAVANT: Mostrem les dades totals en viu de la gravació
+    if (isRecording) {
+      // 1️⃣ SI S'ESTÀ GRAVANT: Mostrem sempre les dades totals en viu de la gravació
       finalDistanceMeters = realTrack.stats.distance;
       finalAscent = realTrack.stats.ascent.roundToDouble();
       finalDescent = realTrack.stats.descent.roundToDouble();
@@ -72,6 +65,13 @@ class MapElevationHud extends ConsumerWidget {
 
       finalAvgSpeedStr =
           "${realTrack.stats.averageSpeed.toStringAsFixed(1)} km/h";
+    } else if (hiHaTramActiu) {
+      // 2️⃣ SI HI HA UN TRAM SELECCIONAT: Mostrem les dades filtrades del segment
+      finalDistanceMeters = stats.distanceMeters;
+      finalAscent = stats.ascentMeters;
+      finalDescent = stats.descentMeters;
+      finalTimeStr = stats.timeElapsedStr;
+      finalAvgSpeedStr = stats.avgSpeedStr;
     } else {
       // 3️⃣ SI NO HI HA TRAM NI GRAVACIÓ: Mostrem el total del track general (importat/restant)
       finalDistanceMeters = stats.distanceMeters;

@@ -163,6 +163,19 @@ class StatsPrefsNotifier extends Notifier<StatsPrefsState> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setStringList(_mapStatIdsKey, selected);
   }
+
+  Future<void> reorderMapStats(int oldIndex, int newIndex) async {
+    final selected = List<String>.from(state.mapStatIds);
+    if (oldIndex < newIndex) newIndex -= 1;
+    if (oldIndex < 0 || newIndex < 0 || oldIndex >= selected.length) return;
+
+    final id = selected.removeAt(oldIndex);
+    selected.insert(newIndex, id);
+    state = state.copyWith(mapStatIds: selected);
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(_mapStatIdsKey, selected);
+  }
 }
 
 final statsPrefsProvider =

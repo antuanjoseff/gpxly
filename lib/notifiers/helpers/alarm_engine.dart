@@ -125,6 +125,9 @@ class AlarmEngine {
           // ✅ ELIMINAT: _accDown = 0; (Ja no esborrem el passat)
           if (_accUp >= settings.accMeters) {
             sounds.playAccumulatedAlarm();
+            rootRef
+                .read(alarmSettingsProvider.notifier)
+                .incrementAccAlarmCount();
             _accUp = 0;
           }
         } else {
@@ -132,6 +135,9 @@ class AlarmEngine {
           // ✅ ELIMINAT: _accUp = 0; (Ja no esborrem el passat)
           if (_accDown >= settings.accMeters) {
             sounds.playAccumulatedAlarm();
+            rootRef
+                .read(alarmSettingsProvider.notifier)
+                .incrementAccAlarmCount();
             _accDown = 0;
           }
         }
@@ -160,6 +166,9 @@ class AlarmEngine {
           final int crossedCotaMark = cotaSuperior.round();
           if (_lastPlayedCotaMark != crossedCotaMark) {
             sounds.playCotaAlarm();
+            rootRef
+                .read(alarmSettingsProvider.notifier)
+                .incrementCotaAlarmCount();
             _lastPlayedCotaMark = crossedCotaMark;
           }
           _lastCotaFloor = _lastCotaFloor! + 1; // Pugem un pis l'estat intern
@@ -170,6 +179,9 @@ class AlarmEngine {
           final int crossedCotaMark = cotaInferior.round();
           if (_lastPlayedCotaMark != crossedCotaMark) {
             sounds.playCotaAlarm();
+            rootRef
+                .read(alarmSettingsProvider.notifier)
+                .incrementCotaAlarmCount();
             _lastPlayedCotaMark = crossedCotaMark;
           }
           _lastCotaFloor = _lastCotaFloor! - 1; // Baixem un pis l'estat intern
@@ -227,6 +239,7 @@ class AlarmEngine {
     _lastTimeAlarm ??= now;
     if (now.difference(_lastTimeAlarm!).inSeconds >= settings.timeSeconds) {
       sounds.playTimeAlarm();
+      rootRef.read(alarmSettingsProvider.notifier).incrementTimeAlarmCount();
       _lastTimeAlarm = now;
     }
   }
@@ -238,6 +251,9 @@ class AlarmEngine {
       _distanceAccumulated += step;
       if (_distanceAccumulated >= threshold) {
         sounds.playDistanceAlarm();
+        rootRef
+            .read(alarmSettingsProvider.notifier)
+            .incrementDistanceAlarmCount();
         _distanceAccumulated = 0;
       }
     }

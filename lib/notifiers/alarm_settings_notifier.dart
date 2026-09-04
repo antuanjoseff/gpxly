@@ -21,6 +21,10 @@ class AlarmSettings {
   final bool timeEnabled;
   final int timeSeconds;
   final double volume;
+  final int distanceAlarmCount;
+  final int accAlarmCount;
+  final int cotaAlarmCount;
+  final int timeAlarmCount;
 
   final AltitudeViewMode currentViewMode;
 
@@ -34,6 +38,10 @@ class AlarmSettings {
     this.timeEnabled = false,
     this.timeSeconds = 60,
     this.volume = 1.0,
+    this.distanceAlarmCount = 0,
+    this.accAlarmCount = 0,
+    this.cotaAlarmCount = 0,
+    this.timeAlarmCount = 0,
     // Per defecte obrim desnivell
     this.currentViewMode = AltitudeViewMode.accumulated,
   });
@@ -48,6 +56,10 @@ class AlarmSettings {
     bool? timeEnabled,
     int? timeSeconds,
     double? volume,
+    int? distanceAlarmCount,
+    int? accAlarmCount,
+    int? cotaAlarmCount,
+    int? timeAlarmCount,
     AltitudeViewMode? currentViewMode, // 🔥 Afegit al copyWith
   }) {
     return AlarmSettings(
@@ -60,6 +72,10 @@ class AlarmSettings {
       timeEnabled: timeEnabled ?? this.timeEnabled,
       timeSeconds: timeSeconds ?? this.timeSeconds,
       volume: volume ?? this.volume,
+      distanceAlarmCount: distanceAlarmCount ?? this.distanceAlarmCount,
+      accAlarmCount: accAlarmCount ?? this.accAlarmCount,
+      cotaAlarmCount: cotaAlarmCount ?? this.cotaAlarmCount,
+      timeAlarmCount: timeAlarmCount ?? this.timeAlarmCount,
       currentViewMode:
           currentViewMode ?? this.currentViewMode, // 🔥 Afegit aquí
     );
@@ -145,7 +161,11 @@ class AlarmSettingsNotifier extends Notifier<AlarmSettings> {
 
   void setDistanceAlarm(bool enabled, double meters) {
     final before = _anyEnabled(state);
-    state = state.copyWith(distanceEnabled: enabled, distanceMeters: meters);
+    state = state.copyWith(
+      distanceEnabled: enabled,
+      distanceMeters: meters,
+      distanceAlarmCount: enabled ? state.distanceAlarmCount : 0,
+    );
     _saveToPrefs();
     _handleEngineTransition(before, _anyEnabled(state));
   }
@@ -154,7 +174,11 @@ class AlarmSettingsNotifier extends Notifier<AlarmSettings> {
     final before = _anyEnabled(state);
     final wasActive = state.accEnabled; // Guardem si ja estava activa
 
-    state = state.copyWith(accEnabled: enabled, accMeters: meters);
+    state = state.copyWith(
+      accEnabled: enabled,
+      accMeters: meters,
+      accAlarmCount: enabled ? state.accAlarmCount : 0,
+    );
     _saveToPrefs();
 
     // 🔥 Millora: Si el valor ha canviat i l'alarma ja estava activa,
@@ -171,7 +195,11 @@ class AlarmSettingsNotifier extends Notifier<AlarmSettings> {
     final before = _anyEnabled(state);
     final wasActive = state.cotaEnabled;
 
-    state = state.copyWith(cotaEnabled: enabled, cotaMeters: meters);
+    state = state.copyWith(
+      cotaEnabled: enabled,
+      cotaMeters: meters,
+      cotaAlarmCount: enabled ? state.cotaAlarmCount : 0,
+    );
     _saveToPrefs();
 
     if (wasActive && enabled) {
@@ -184,7 +212,11 @@ class AlarmSettingsNotifier extends Notifier<AlarmSettings> {
 
   void setTimeAlarm(bool enabled, int seconds) {
     final before = _anyEnabled(state);
-    state = state.copyWith(timeEnabled: enabled, timeSeconds: seconds);
+    state = state.copyWith(
+      timeEnabled: enabled,
+      timeSeconds: seconds,
+      timeAlarmCount: enabled ? state.timeAlarmCount : 0,
+    );
     _saveToPrefs();
     _handleEngineTransition(before, _anyEnabled(state));
   }
@@ -199,6 +231,22 @@ class AlarmSettingsNotifier extends Notifier<AlarmSettings> {
     state = state.copyWith(volume: clampedVolume);
     ref.read(alarmEngineProvider).sounds.setVolume(clampedVolume);
     _saveToPrefs();
+  }
+
+  void incrementDistanceAlarmCount() {
+    state = state.copyWith(distanceAlarmCount: state.distanceAlarmCount + 1);
+  }
+
+  void incrementAccAlarmCount() {
+    state = state.copyWith(accAlarmCount: state.accAlarmCount + 1);
+  }
+
+  void incrementCotaAlarmCount() {
+    state = state.copyWith(cotaAlarmCount: state.cotaAlarmCount + 1);
+  }
+
+  void incrementTimeAlarmCount() {
+    state = state.copyWith(timeAlarmCount: state.timeAlarmCount + 1);
   }
 }
 

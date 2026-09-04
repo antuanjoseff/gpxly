@@ -53,7 +53,7 @@ class MapAppBar extends ConsumerWidget implements PreferredSizeWidget {
         recordingState == RecordingState.paused;
     final recordingColor = recordingState == RecordingState.recording
         ? Colors.red.shade700
-        : Colors.green.shade700;
+        : Colors.amber.shade700;
     final anyAlarmActive =
         alarms.distanceEnabled ||
         alarms.accEnabled ||

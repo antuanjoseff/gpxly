@@ -91,6 +91,7 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
                           isActive: settings.distanceEnabled,
                           icon: Icons.route,
                           title: t.alarmsDistanceTitle,
+                          triggerCount: settings.distanceAlarmCount,
                           valueText: _formatDistance(settings.distanceMeters),
                           value: settings.distanceMeters,
                           min: 100,
@@ -123,6 +124,7 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
                           isActive: settings.cotaEnabled,
                           icon: Icons.height_outlined,
                           title: t.alarmsCotaSegmentLabel,
+                          triggerCount: settings.cotaAlarmCount,
                           valueText: t.alarmsCotaValue(
                             settings.cotaMeters.toInt(),
                           ),
@@ -157,6 +159,7 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
                           isActive: settings.accEnabled,
                           icon: Icons.trending_up,
                           title: t.alarmsAccSegmentLabel,
+                          triggerCount: settings.accAlarmCount,
                           valueText: "+ ${settings.accMeters.toInt()} m",
                           value: settings.accMeters,
                           min: 10.0,
@@ -189,6 +192,7 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
                           isActive: settings.timeEnabled,
                           icon: Icons.timer,
                           title: t.alarmsTimeTitle,
+                          triggerCount: settings.timeAlarmCount,
                           valueText: _formatTime(settings.timeSeconds),
                           value: settings.timeSeconds.toDouble(),
                           min: 60,
@@ -297,6 +301,7 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
     required bool isActive,
     required IconData icon,
     required String title,
+    required int triggerCount,
     required String valueText,
     required double value,
     required double min,
@@ -368,6 +373,28 @@ class _AlarmSettingsTabState extends ConsumerState<AlarmSettingsTab> {
                   color: color,
                 ),
               ),
+              if (isActive) ...[
+                const SizedBox(width: 8),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.notifications_active_outlined,
+                      size: 15,
+                      color: AppColors.primary,
+                    ),
+                    const SizedBox(width: 2),
+                    Text(
+                      '($triggerCount)',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
               const SizedBox(width: 10),
 
               GestureDetector(

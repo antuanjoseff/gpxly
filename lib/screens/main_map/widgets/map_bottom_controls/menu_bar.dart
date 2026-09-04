@@ -56,7 +56,7 @@ class MenuBar extends ConsumerWidget {
       final bool isRecordingActive = recordingState == RecordingState.recording;
       final Color accentColor = isRecordingActive
           ? Colors.red.shade700
-          : Colors.green.shade700;
+          : Colors.amber.shade700;
       final IconData currentIcon = isRecordingActive
           ? Icons.fiber_manual_record
           : Icons.pause_circle_filled_rounded;
@@ -106,9 +106,14 @@ class MenuBar extends ConsumerWidget {
     String navigationLabel = t.navigationLoadTrack;
     IconData navigationIcon = Icons.file_upload_outlined;
 
+    final bool isOffTrack = navState.isFollowing && navState.isOffTrack;
+
     if (hasTrack && !navState.isFollowing) {
       navigationLabel = t.navigationFollow;
       navigationIcon = Icons.explore_outlined;
+    } else if (isOffTrack) {
+      navigationLabel = 'Fora\nruta';
+      navigationIcon = Icons.explore_off;
     } else if (navState.isFollowing) {
       navigationLabel = navState.isPaused
           ? t.navigationPaused
@@ -118,12 +123,62 @@ class MenuBar extends ConsumerWidget {
           : Icons.explore;
     }
 
-    final Widget navigationWidget = MenuTab(
-      icon: navigationIcon,
-      label: navigationLabel,
-      iconColor: Colors.white,
-      onTap: onNavigationTap,
-    );
+    final Widget navigationWidget = navState.isFollowing
+        ? Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: onNavigationTap,
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      navigationIcon,
+                      color: isOffTrack
+                          ? Colors.red.shade700
+                          : navState.isPaused
+                          ? Colors.amber.shade700
+                          : Colors.green.shade700,
+                      size: 22,
+                    ),
+                    const SizedBox(height: 2),
+                    SizedBox(
+                      width: 52,
+                      child: Text(
+                        navigationLabel,
+                        maxLines: 2,
+                        overflow: TextOverflow.clip,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: isOffTrack
+                              ? Colors.red.shade700
+                              : navState.isPaused
+                              ? Colors.amber.shade700
+                              : Colors.green.shade700,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          height: 1.1,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          )
+        : MenuTab(
+            icon: navigationIcon,
+            label: navigationLabel,
+            iconColor: Colors.white,
+            onTap: onNavigationTap,
+          );
 
     // 3. --- Pestaña del Perfil (Toggle chart) ---
     final bool isOpen = !isChartCollapsed;

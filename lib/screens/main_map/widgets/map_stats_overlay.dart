@@ -36,6 +36,17 @@ class MapStatsOverlay extends ConsumerWidget {
         : '${meters ~/ 1000}km ${meters % 1000}m';
   }
 
+  String _coordinateDms(double coordinate, bool isLatitude) {
+    final direction = isLatitude
+        ? (coordinate >= 0 ? 'N' : 'S')
+        : (coordinate >= 0 ? 'E' : 'O');
+    final totalSeconds = (coordinate.abs() * 3600).round();
+    final degrees = totalSeconds ~/ 3600;
+    final minutes = (totalSeconds % 3600) ~/ 60;
+    final seconds = totalSeconds % 60;
+    return '$degrees°$minutes\'$seconds"$direction';
+  }
+
   (double, double) _gain(dynamic track) {
     if (track == null || track.altitudes.length < 2) return (0, 0);
     final gain = ElevationUtils.computeGain(
@@ -56,7 +67,7 @@ class MapStatsOverlay extends ConsumerWidget {
     final realTrack = ref.watch(trackRecordingProvider);
     final importedTrack = ref.watch(importedTrackProvider);
     final isRecording = realTrack.recordingState == RecordingState.recording;
-    final track = isRecording && realTrack.points.isNotEmpty
+    final track = isRecording
         ? realTrack
         : (importedTrack != null && importedTrack.points.isNotEmpty
               ? importedTrack
@@ -152,13 +163,15 @@ class MapStatsOverlay extends ConsumerWidget {
         t.mapStatPosition,
         position == null
             ? '--'
-            : '${position.latitude.toStringAsFixed(5)}, ${position.longitude.toStringAsFixed(5)}',
+            : '${position.latitude.toStringAsFixed(5)}°\n${position.longitude.toStringAsFixed(5)}°',
+        isMultiline: true,
       ),
       'coords:1': _MapStat(
         t.mapStatPositionDms,
         position == null
             ? '--'
-            : '${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)}',
+            : '${_coordinateDms(position.latitude, true)}\n${_coordinateDms(position.longitude, false)}',
+        isMultiline: true,
       ),
       'gps:0': _MapStat(
         t.mapStatPressure,
@@ -180,47 +193,61 @@ class MapStatsOverlay extends ConsumerWidget {
     return Positioned(
       top: 10,
       left: 12,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ...visible.map(
-            (entry) => _MapStatItem(
-              id: entry.key,
-              stat: entry.value,
-              onDismiss: () => ref
-                  .read(statsPrefsProvider.notifier)
-                  .toggleMapStat(entry.key),
-            ),
-          ),
-          if (selected.length > visible.length)
-            Padding(
-              padding: const EdgeInsets.only(top: 2, left: 4),
-              child: Text(
-                '+${selected.length - visible.length}',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                ),
+      child: SizedBox(
+        width: 150,
+        child: ReorderableListView(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          onReorder: (oldIndex, newIndex) => ref
+              .read(statsPrefsProvider.notifier)
+              .reorderMapStats(oldIndex, newIndex),
+          children: [
+            ...visible.map(
+              (entry) => _MapStatItem(
+                key: ValueKey(entry.key),
+                id: entry.key,
+                stat: entry.value,
+                onDismiss: () => ref
+                    .read(statsPrefsProvider.notifier)
+                    .toggleMapStat(entry.key),
               ),
             ),
-        ],
+            if (selected.length > visible.length)
+              Padding(
+                key: const ValueKey('more-map-stats'),
+                padding: const EdgeInsets.only(top: 2, left: 4),
+                child: Text(
+                  '+${selected.length - visible.length}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
 }
 
 class _MapStat {
-  const _MapStat(this.label, this.value) : widget = null;
-  const _MapStat.widget(this.label, this.widget) : value = null;
+  const _MapStat(this.label, this.value, {this.isMultiline = false})
+    : widget = null;
+  const _MapStat.widget(this.label, this.widget)
+    : value = null,
+      isMultiline = false;
 
   final String label;
   final String? value;
   final Widget? widget;
+  final bool isMultiline;
 }
 
 class _MapStatItem extends StatelessWidget {
   const _MapStatItem({
+    super.key,
     required this.id,
     required this.stat,
     required this.onDismiss,
@@ -240,8 +267,7 @@ class _MapStatItem extends StatelessWidget {
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 4),
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-        constraints: const BoxConstraints(maxWidth: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
         decoration: BoxDecoration(
           color: AppColors.primary.withAlpha(235),
           borderRadius: BorderRadius.circular(10),
@@ -254,31 +280,68 @@ class _MapStatItem extends StatelessWidget {
             ),
           ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              stat.label,
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            stat.widget ??
-                Text(
-                  stat.value ?? '--',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w800,
+        child: stat.isMultiline
+            ? Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      stat.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ),
-                ),
-          ],
-        ),
+                  const SizedBox(width: 6),
+                  Text(
+                    stat.value ?? '--',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.end,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      height: 1.1,
+                    ),
+                  ),
+                ],
+              )
+            : Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      stat.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child:
+                        stat.widget ??
+                        Text(
+                          stat.value ?? '--',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.end,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                  ),
+                ],
+              ),
       ),
     );
   }
