@@ -15,6 +15,8 @@ import 'package:strack_rec/utils/calculations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class RecordingNotifier extends Notifier<Track> {
+  static const Duration _autoSaveInterval = Duration(seconds: 30);
+
   // Gestió de temps aturat mantinguda intacta [INDEX]
   Duration _stoppedDuration = Duration.zero;
   DateTime? _stopStart;
@@ -25,7 +27,9 @@ class RecordingNotifier extends Notifier<Track> {
   int _speedCount = 0;
   double _movingSpeedSum = 0.0;
   int _movingSpeedCount = 0;
-  double? _lastElevationForGain;
+  final IncrementalElevationGain _elevationGain = IncrementalElevationGain();
+  DateTime? _lastAutoSaveAt;
+  Future<void>? _saveInFlight;
 
   Duration get stoppedDuration {
     if (_isStopped && _stopStart != null) {
@@ -142,28 +146,27 @@ class RecordingNotifier extends Notifier<Track> {
       speed: currentSpeedKmh,
     );
 
-    final allPoints = [...state.points, userPositionWithDistance];
-    final latestTimestamp = allPoints.last.timestamp;
-    final recentPoints = allPoints.reversed
-        .takeWhile(
-          (point) =>
-              latestTimestamp.difference(point.timestamp).inSeconds <=
-              TrackThresholds.maxSustainedSpeedWindowSeconds,
-        )
-        .toList()
-        .reversed
-        .toList();
+    final recentPoints =
+        state.points.reversed
+            .takeWhile(
+              (point) =>
+                  newPoint.timestamp.difference(point.timestamp).inSeconds <=
+                  TrackThresholds.maxSustainedSpeedWindowSeconds,
+            )
+            .toList()
+            .reversed
+            .toList()
+          ..add(userPositionWithDistance);
     final sustainedSpeed = Track.computeMaxSustainedSpeed(
       recentPoints,
       recentPoints.map((point) => point.speed).toList(),
     );
     if (sustainedSpeed > newMaxSpeed) newMaxSpeed = sustainedSpeed;
 
-    final allAlts = allPoints.map((p) => p.altitude).toList(growable: false);
-    final allDists = allPoints
-        .map((p) => p.distanceAtPoint)
-        .toList(growable: false);
-    final gain = ElevationUtils.computeGain(allAlts, distances: allDists);
+    final gain = _elevationGain.add(
+      newPoint.altitude,
+      calculatedDistanceAtPoint,
+    );
     newAscent = gain.ascent;
     newDescent = gain.descent;
 
@@ -217,8 +220,11 @@ class RecordingNotifier extends Notifier<Track> {
         .read(elevationRangeProvider.notifier)
         .updateWithNewAltitude(newPoint.altitude);
 
-    if (state.points.length % 10 == 0) {
-      _autoSaveToPrefs();
+    final now = DateTime.now();
+    if (_lastAutoSaveAt == null ||
+        now.difference(_lastAutoSaveAt!) >= _autoSaveInterval) {
+      _lastAutoSaveAt = now;
+      unawaited(saveToCache());
 
       processingStopwatch.stop();
       AltitudeLoggerService().log(
@@ -368,11 +374,23 @@ class RecordingNotifier extends Notifier<Track> {
     }
   }
 
+  Future<void> saveToCache() {
+    final activeSave = _saveInFlight;
+    if (activeSave != null) return activeSave;
+
+    final save = _autoSaveToPrefs();
+    _saveInFlight = save.whenComplete(() {
+      _saveInFlight = null;
+    });
+    return _saveInFlight!;
+  }
+
   // ⚙️ MANEGADORS DE CICLES DE VIDA DE GRAVACIÓ [INDEX]
   void startRecording() {
     _stoppedDuration = Duration.zero;
     _stopStart = null;
     _isStopped = false;
+    _lastAutoSaveAt = null;
     _resetIncrementalState();
 
     ref.read(timerProvider.notifier).reset();
@@ -394,6 +412,7 @@ class RecordingNotifier extends Notifier<Track> {
       recordingState: RecordingState.paused,
       stats: state.stats.copyWith(duration: elapsed),
     );
+    unawaited(saveToCache());
   }
 
   void resumeRecording() {
@@ -405,13 +424,18 @@ class RecordingNotifier extends Notifier<Track> {
     _gpsTimeoutTimer?.cancel();
     final total = ref.read(timerProvider);
     ref.read(timerProvider.notifier).pause();
+    final gain = _elevationGain.finish();
 
     state = state.copyWith(
       recordingState: RecordingState.idle,
-      stats: state.stats.copyWith(duration: total),
+      stats: state.stats.copyWith(
+        duration: total,
+        ascent: gain.ascent,
+        descent: gain.descent,
+      ),
     );
 
-    await _autoSaveToPrefs();
+    await saveToCache();
   }
 
   Future<void> clearCache() async {
@@ -436,13 +460,14 @@ class RecordingNotifier extends Notifier<Track> {
     _speedCount = 0;
     _movingSpeedSum = 0.0;
     _movingSpeedCount = 0;
-    _lastElevationForGain = null;
+    _lastAutoSaveAt = null;
+    _elevationGain.reset();
   }
 
   void _rebuildIncrementalState(List<UserPosition> points) {
     _resetIncrementalState();
     for (final point in points) {
-      _lastElevationForGain = point.altitude;
+      _elevationGain.add(point.altitude, point.distanceAtPoint);
       _speedSum += point.speed;
       _speedCount += 1;
       if (point.speed > 0.0) {

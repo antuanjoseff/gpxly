@@ -425,6 +425,18 @@ abstract class AppLocalizations {
   /// **'Deselect all'**
   String get gpxDeselectAll;
 
+  /// No description provided for @gpxSaveTrack.
+  ///
+  /// In en, this message translates to:
+  /// **'Save track now'**
+  String get gpxSaveTrack;
+
+  /// No description provided for @gpxTrackSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Track saved'**
+  String get gpxTrackSaved;
+
   /// No description provided for @switchOn.
   ///
   /// In en, this message translates to:

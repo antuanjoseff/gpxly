@@ -29,14 +29,14 @@ class MapElevationHud extends ConsumerWidget {
     final realTrack = ref.watch(trackRecordingProvider);
     final isRecording = realTrack.recordingState == RecordingState.recording;
 
-    // 🚀 Escoltem el segment_stats_notifier (que ja calcula Tot o Tram segons convingui)
-    final stats = ref.watch(segmentStatsProvider);
-
     // 🚀 Mirem si hi ha una selecció de tram activa real a l'app
     final selection = ref.watch(elevationSelectionProvider);
     final bool hiHaTramActiu =
         (selection.mode == SelectionMode.range) ||
         (selection.mapToolState == MapSelectionToolState.selected);
+    final stats = hiHaTramActiu || !isRecording
+        ? ref.watch(segmentStatsProvider)
+        : SegmentStats.empty;
 
     double finalDistanceMeters = 0.0;
     double finalAscent = 0.0;
@@ -45,8 +45,15 @@ class MapElevationHud extends ConsumerWidget {
     String finalAvgSpeedStr = "";
 
     // 🔄 LA REGLA DE NEGOCI CORREGIDA:
-    if (isRecording) {
-      // 1️⃣ SI S'ESTÀ GRAVANT: Mostrem sempre les dades totals en viu de la gravació
+    if (hiHaTramActiu) {
+      // 1️⃣ SI HI HA UN TRAM SELECCIONAT: Mostrem les dades filtrades del segment
+      finalDistanceMeters = stats.distanceMeters;
+      finalAscent = stats.ascentMeters;
+      finalDescent = stats.descentMeters;
+      finalTimeStr = stats.timeElapsedStr;
+      finalAvgSpeedStr = stats.avgSpeedStr;
+    } else if (isRecording) {
+      // 2️⃣ SI S'ESTÀ GRAVANT: Mostrem les dades totals en viu de la gravació
       finalDistanceMeters = realTrack.stats.distance;
       finalAscent = realTrack.stats.ascent.roundToDouble();
       finalDescent = realTrack.stats.descent.roundToDouble();
@@ -65,13 +72,6 @@ class MapElevationHud extends ConsumerWidget {
 
       finalAvgSpeedStr =
           "${realTrack.stats.averageSpeed.toStringAsFixed(1)} km/h";
-    } else if (hiHaTramActiu) {
-      // 2️⃣ SI HI HA UN TRAM SELECCIONAT: Mostrem les dades filtrades del segment
-      finalDistanceMeters = stats.distanceMeters;
-      finalAscent = stats.ascentMeters;
-      finalDescent = stats.descentMeters;
-      finalTimeStr = stats.timeElapsedStr;
-      finalAvgSpeedStr = stats.avgSpeedStr;
     } else {
       // 3️⃣ SI NO HI HA TRAM NI GRAVACIÓ: Mostrem el total del track general (importat/restant)
       finalDistanceMeters = stats.distanceMeters;

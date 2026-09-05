@@ -178,9 +178,141 @@ class ElevationUtils {
       window: window,
     );
     final result = robustGain(smoothAlts, threshold: threshold);
-    return (
-      ascent: result['ascent'] ?? 0.0,
-      descent: result['descent'] ?? 0.0,
-    );
+    return (ascent: result['ascent'] ?? 0.0, descent: result['descent'] ?? 0.0);
   }
+}
+
+class IncrementalElevationGain {
+  IncrementalElevationGain({
+    this.windowMeters = ElevationUtils.defaultWindowMeters,
+    this.threshold = ElevationUtils.defaultThreshold,
+  });
+
+  final double windowMeters;
+  final double threshold;
+  final List<_ElevationSample> _samples = [];
+  int _firstPendingIndex = 0;
+  double _finalAscent = 0.0;
+  double _finalDescent = 0.0;
+  double? _lastFinalAcceptedAltitude;
+
+  ({double ascent, double descent}) add(double altitude, double distance) {
+    _samples.add(_ElevationSample(altitude: altitude, distance: distance));
+    _finalizePoints(distance - (windowMeters / 2));
+    return _preview();
+  }
+
+  ({double ascent, double descent}) finish() {
+    while (_firstPendingIndex < _samples.length) {
+      _acceptFinalAltitude(_smoothedAltitudeAt(_firstPendingIndex));
+      _firstPendingIndex += 1;
+    }
+    _samples.clear();
+    _firstPendingIndex = 0;
+    return (ascent: _finalAscent, descent: _finalDescent);
+  }
+
+  void _finalizePoints(double maximumDistance) {
+    while (_firstPendingIndex < _samples.length &&
+        _samples[_firstPendingIndex].distance <= maximumDistance) {
+      _acceptFinalAltitude(_smoothedAltitudeAt(_firstPendingIndex));
+      _firstPendingIndex += 1;
+    }
+
+    _trimHistory();
+  }
+
+  ({double ascent, double descent}) _preview() {
+    var ascent = _finalAscent;
+    var descent = _finalDescent;
+    var lastAcceptedAltitude = _lastFinalAcceptedAltitude;
+
+    for (var index = _firstPendingIndex; index < _samples.length; index++) {
+      final smoothedAltitude = _smoothedAltitudeAt(index);
+      if (lastAcceptedAltitude == null) {
+        lastAcceptedAltitude = smoothedAltitude;
+        continue;
+      }
+
+      final difference = smoothedAltitude - lastAcceptedAltitude;
+      if (difference.abs() >= threshold) {
+        if (difference > 0) {
+          ascent += difference;
+        } else {
+          descent += difference.abs();
+        }
+        lastAcceptedAltitude = smoothedAltitude;
+      }
+    }
+
+    return (ascent: ascent, descent: descent);
+  }
+
+  double _smoothedAltitudeAt(int index) {
+    final centerDistance = _samples[index].distance;
+    final minimumDistance = centerDistance - (windowMeters / 2);
+    final maximumDistance = centerDistance + (windowMeters / 2);
+    var sum = 0.0;
+    var count = 0;
+
+    for (final sample in _samples) {
+      if (sample.distance >= minimumDistance &&
+          sample.distance <= maximumDistance) {
+        sum += sample.altitude;
+        count += 1;
+      }
+    }
+
+    return count == 0 ? _samples[index].altitude : sum / count;
+  }
+
+  void _acceptFinalAltitude(double altitude) {
+    final previousAltitude = _lastFinalAcceptedAltitude;
+    if (previousAltitude == null) {
+      _lastFinalAcceptedAltitude = altitude;
+      return;
+    }
+
+    final difference = altitude - previousAltitude;
+    if (difference.abs() >= threshold) {
+      if (difference > 0) {
+        _finalAscent += difference;
+      } else {
+        _finalDescent += difference.abs();
+      }
+      _lastFinalAcceptedAltitude = altitude;
+    }
+  }
+
+  void _trimHistory() {
+    if (_firstPendingIndex >= _samples.length) return;
+
+    final minimumRequiredDistance =
+        _samples[_firstPendingIndex].distance - (windowMeters / 2);
+    var removeCount = 0;
+    while (removeCount < _firstPendingIndex &&
+        _samples[removeCount].distance < minimumRequiredDistance) {
+      removeCount += 1;
+    }
+
+    if (removeCount > 0) {
+      _samples.removeRange(0, removeCount);
+      _firstPendingIndex -= removeCount;
+    }
+  }
+
+  void reset() {
+    _samples.clear();
+    _firstPendingIndex = 0;
+    _finalAscent = 0.0;
+    _finalDescent = 0.0;
+    _lastFinalAcceptedAltitude = null;
+  }
+}
+
+class _ElevationSample {
+  const _ElevationSample({required this.altitude, required this.distance});
+
+  final double altitude;
+  final double distance;
 }

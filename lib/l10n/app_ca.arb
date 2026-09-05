@@ -66,6 +66,8 @@
   "gpxVerticalAccuracy": "Vertical accuracy",
   "gpxSelectAll": "Marcar-ho tot",
   "gpxDeselectAll": "Desmarcar-ho tot",
+  "gpxSaveTrack": "Desar el track ara",
+  "gpxTrackSaved": "Track desat",
   "switchOn": "ON",
   "switchOff": "OFF",
 

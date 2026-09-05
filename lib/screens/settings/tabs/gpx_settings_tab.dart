@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:strack_rec/l10n/app_localizations.dart';
 import 'package:strack_rec/notifiers/gpx_settings_notifier.dart';
+import 'package:strack_rec/notifiers/recording_notifier.dart';
 import 'package:strack_rec/theme/app_colors.dart';
 
 class GpxSettingsTab extends ConsumerWidget {
@@ -12,6 +13,9 @@ class GpxSettingsTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(gpxSettingsProvider);
+    final hasTrackPoints = ref.watch(
+      trackRecordingProvider.select((track) => track.points.isNotEmpty),
+    );
     final t = AppLocalizations.of(context)!;
 
     // Lògica de comprovació per saber si estan tots seleccionats
@@ -100,6 +104,23 @@ class GpxSettingsTab extends ConsumerWidget {
             field: "vAccuracies",
             title: t.gpxVerticalAccuracy,
             icon: Icons.height_rounded,
+          ),
+
+          const SizedBox(height: 24),
+          FilledButton.icon(
+            onPressed: hasTrackPoints
+                ? () async {
+                    await ref
+                        .read(trackRecordingProvider.notifier)
+                        .saveToCache();
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text(t.gpxTrackSaved)));
+                  }
+                : null,
+            icon: const Icon(Icons.save_outlined),
+            label: Text(t.gpxSaveTrack),
           ),
 
           const SizedBox(height: 40),

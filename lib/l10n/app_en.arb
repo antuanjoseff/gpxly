@@ -66,6 +66,8 @@
   "gpxVerticalAccuracy": "Vertical accuracy",
   "gpxSelectAll": "Select all",
   "gpxDeselectAll": "Deselect all",
+  "gpxSaveTrack": "Save track now",
+  "gpxTrackSaved": "Track saved",
   "switchOn": "ON",
   "switchOff": "OFF",
 

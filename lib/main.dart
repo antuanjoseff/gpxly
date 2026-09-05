@@ -1,10 +1,13 @@
 // main.dart
+import 'dart:async';
+
 import 'package:strack_rec/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:strack_rec/notifiers/location_notifier.dart';
 import 'package:strack_rec/notifiers/permissions_notifier.dart';
+import 'package:strack_rec/notifiers/recording_notifier.dart';
 import 'package:strack_rec/screens/main_map/map_screen.dart';
 import 'package:strack_rec/services/cog_service.dart';
 import 'package:strack_rec/theme/app_theme.dart';
@@ -82,6 +85,7 @@ class _LifecycleWrapperState extends ConsumerState<_LifecycleWrapper>
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.detached) {
       ref.read(locationProvider.notifier).saveCurrentPositionToPrefs();
+      unawaited(ref.read(trackRecordingProvider.notifier).saveToCache());
     }
 
     if (state == AppLifecycleState.resumed) {

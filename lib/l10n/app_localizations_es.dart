@@ -171,6 +171,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get gpxDeselectAll => 'Desmarcar todo';
 
   @override
+  String get gpxSaveTrack => 'Guardar track ahora';
+
+  @override
+  String get gpxTrackSaved => 'Track guardado';
+
+  @override
   String get switchOn => 'ON';
 
   @override

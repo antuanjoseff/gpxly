@@ -171,6 +171,12 @@ class AppLocalizationsCa extends AppLocalizations {
   String get gpxDeselectAll => 'Desmarcar-ho tot';
 
   @override
+  String get gpxSaveTrack => 'Desar el track ara';
+
+  @override
+  String get gpxTrackSaved => 'Track desat';
+
+  @override
   String get switchOn => 'ON';
 
   @override
