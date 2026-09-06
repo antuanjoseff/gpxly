@@ -16,7 +16,6 @@ import 'package:strack_rec/screens/stats/notifiers/stats_prefs_notifier.dart';
 import 'package:strack_rec/screens/stats/satellites/screens/satellite_detail_screen.dart';
 import 'package:strack_rec/theme/app_colors.dart';
 import 'package:strack_rec/providers/barometer_provider.dart';
-import 'package:strack_rec/utils/calculations.dart';
 import 'package:strack_rec/widgets/gps_accuracy_bars.dart';
 
 class TrackStatsScreen extends ConsumerStatefulWidget {
@@ -109,21 +108,6 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
     return "${kmPart}km ${mPart}m";
   }
 
-  (double ascent, double descent) _computeElevationGain(dynamic track) {
-    if (track == null || track.altitudes.length < 2) {
-      return (0.0, 0.0);
-    }
-    List<double>? dists;
-    try {
-      dists = (track.distances as List).cast<double>();
-    } catch (_) {}
-    final gain = ElevationUtils.computeGain(
-      (track.altitudes as List).cast<double>(),
-      distances: dists,
-    );
-    return (gain.ascent, gain.descent);
-  }
-
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context)!;
@@ -156,7 +140,7 @@ class _TrackStatsScreenState extends ConsumerState<TrackStatsScreen> {
 
     final (ascent, descent) = useLiveStats
         ? (liveStats.ascent, liveStats.descent)
-        : _computeElevationGain(track);
+        : (track?.stats.ascent ?? 0.0, track?.stats.descent ?? 0.0);
 
     final duration = useLiveStats
         ? liveStats.duration
