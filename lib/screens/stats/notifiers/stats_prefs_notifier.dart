@@ -38,7 +38,6 @@ class StatsPrefsState {
 }
 
 class StatsPrefsNotifier extends Notifier<StatsPrefsState> {
-  static const maxMapStats = 5;
   static const _mapStatIdsKey = 'map_stat_ids';
   static const _validMapStatIds = {
     'dist:0',
@@ -111,7 +110,6 @@ class StatsPrefsNotifier extends Notifier<StatsPrefsState> {
         prefs
             .getStringList(_mapStatIdsKey)
             ?.where(_validMapStatIds.contains)
-            .take(maxMapStats)
             .toList() ??
         const <String>[];
     final storedMapStatIds = prefs.getStringList(_mapStatIdsKey);
@@ -155,7 +153,6 @@ class StatsPrefsNotifier extends Notifier<StatsPrefsState> {
     if (selected.contains(id)) {
       selected.remove(id);
     } else {
-      if (selected.length >= maxMapStats) return;
       selected.add(id);
     }
     state = state.copyWith(mapStatIds: selected);

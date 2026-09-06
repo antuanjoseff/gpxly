@@ -188,46 +188,10 @@ class MapStatsOverlay extends ConsumerWidget {
         .map((id) => MapEntry(id, values[id]!))
         .toList();
     if (selected.isEmpty) return const SizedBox.shrink();
-    final visible = selected.take(StatsPrefsNotifier.maxMapStats).toList();
-
     return Positioned(
       top: 10,
       left: 12,
-      child: SizedBox(
-        width: 150,
-        child: ReorderableListView(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          onReorder: (oldIndex, newIndex) => ref
-              .read(statsPrefsProvider.notifier)
-              .reorderMapStats(oldIndex, newIndex),
-          children: [
-            ...visible.map(
-              (entry) => _MapStatItem(
-                key: ValueKey(entry.key),
-                id: entry.key,
-                stat: entry.value,
-                onDismiss: () => ref
-                    .read(statsPrefsProvider.notifier)
-                    .toggleMapStat(entry.key),
-              ),
-            ),
-            if (selected.length > visible.length)
-              Padding(
-                key: const ValueKey('more-map-stats'),
-                padding: const EdgeInsets.only(top: 2, left: 4),
-                child: Text(
-                  '+${selected.length - visible.length}',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
+      child: _MapStatsCarousel(selected: selected),
     );
   }
 }
@@ -245,104 +209,235 @@ class _MapStat {
   final bool isMultiline;
 }
 
-class _MapStatItem extends StatelessWidget {
-  const _MapStatItem({
-    super.key,
-    required this.id,
-    required this.stat,
-    required this.onDismiss,
-  });
+class _MapStatsCarousel extends ConsumerStatefulWidget {
+  const _MapStatsCarousel({required this.selected});
 
-  final String id;
-  final _MapStat stat;
-  final Future<void> Function() onDismiss;
+  final List<MapEntry<String, _MapStat>> selected;
+
+  @override
+  ConsumerState<_MapStatsCarousel> createState() => _MapStatsCarouselState();
+}
+
+class _MapStatsCarouselState extends ConsumerState<_MapStatsCarousel> {
+  late final PageController _controller;
+  var _currentPage = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = PageController();
+  }
+
+  @override
+  void didUpdateWidget(covariant _MapStatsCarousel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final lastPage = widget.selected.length - 1;
+    if (_currentPage > lastPage) {
+      _currentPage = lastPage;
+      _controller.jumpToPage(_currentPage);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onHorizontalDragEnd: (details) {
-        if ((details.primaryVelocity ?? 0) < -200) {
-          onDismiss();
-        }
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 4),
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-        decoration: BoxDecoration(
-          color: AppColors.primary.withAlpha(235),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Colors.white.withAlpha(75)),
-          boxShadow: const [
-            BoxShadow(
-              color: Colors.black26,
-              blurRadius: 5,
-              offset: Offset(0, 2),
+    final statsCardSize = (MediaQuery.sizeOf(context).width - 36) / 2;
+    final carouselSize = statsCardSize * 0.75;
+
+    return SizedBox(
+      width: carouselSize,
+      height: carouselSize,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: Stack(
+          children: [
+            PageView.builder(
+              controller: _controller,
+              itemCount: widget.selected.length,
+              onPageChanged: (index) => setState(() => _currentPage = index),
+              itemBuilder: (context, index) {
+                final entry = widget.selected[index];
+                return _MapStatItem(stat: entry.value);
+              },
+            ),
+            if (widget.selected.length > 1)
+              Positioned(
+                bottom: 6,
+                left: 8,
+                right: 8,
+                child: LayoutBuilder(
+                  builder: (context, constraints) => SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minWidth: constraints.maxWidth,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(widget.selected.length, (
+                          index,
+                        ) {
+                          final isActive = index == _currentPage;
+                          return AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            margin: const EdgeInsets.symmetric(horizontal: 2),
+                            width: isActive ? 9 : 4,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(4),
+                              color: isActive ? Colors.white : Colors.white54,
+                            ),
+                          );
+                        }),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            Positioned(
+              top: 1,
+              right: 1,
+              child: IconButton(
+                tooltip: 'Treure del mapa',
+                visualDensity: VisualDensity.compact,
+                iconSize: 18,
+                color: Colors.white70,
+                onPressed: () => ref
+                    .read(statsPrefsProvider.notifier)
+                    .toggleMapStat(widget.selected[_currentPage].key),
+                icon: const Icon(Icons.delete),
+              ),
             ),
           ],
         ),
-        child: stat.isMultiline
-            ? Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      stat.label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
+      ),
+    );
+  }
+}
+
+class _MapStatItem extends StatelessWidget {
+  const _MapStatItem({required this.stat});
+
+  final _MapStat stat;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 20),
+      decoration: BoxDecoration(
+        color: AppColors.dark.withAlpha(150),
+        border: Border.all(color: Colors.white.withAlpha(75)),
+        boxShadow: const [
+          BoxShadow(color: Colors.black26, blurRadius: 5, offset: Offset(0, 2)),
+        ],
+      ),
+      child: stat.isMultiline
+          ? _MapMultilineStat(stat: stat)
+          : _MapSingleLineStat(stat: stat),
+    );
+  }
+}
+
+class _MapMultilineStat extends StatelessWidget {
+  const _MapMultilineStat({required this.stat});
+
+  final _MapStat stat;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(right: 22),
+          child: Text(
+            stat.label,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Colors.amberAccent,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Expanded(
+          child: Center(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                stat.value ?? '--',
+                maxLines: 2,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.amberAccent,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  height: 1.2,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _MapSingleLineStat extends StatelessWidget {
+  const _MapSingleLineStat({required this.stat});
+
+  final _MapStat stat;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(right: 22),
+          child: Text(
+            stat.label,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Colors.amberAccent,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Expanded(
+          child: Center(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child:
+                  stat.widget ??
                   Text(
                     stat.value ?? '--',
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.end,
+                    maxLines: 1,
+                    textAlign: TextAlign.center,
                     style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 11,
+                      color: Colors.amberAccent,
+                      fontSize: 22,
                       fontWeight: FontWeight.w800,
-                      height: 1.1,
                     ),
                   ),
-                ],
-              )
-            : Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      stat.label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Flexible(
-                    child:
-                        stat.widget ??
-                        Text(
-                          stat.value ?? '--',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.end,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                  ),
-                ],
-              ),
-      ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
