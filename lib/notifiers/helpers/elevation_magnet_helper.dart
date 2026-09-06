@@ -7,7 +7,6 @@ import 'package:strack_rec/models/track.dart';
 import 'package:strack_rec/notifiers/elevation_selection_provider.dart';
 import 'package:strack_rec/notifiers/recording_notifier.dart';
 import 'package:strack_rec/notifiers/imported_track_notifier.dart';
-import 'package:strack_rec/utils/map_layers.dart';
 
 class ElevationMagnetHelper {
   // 🛡️ Candado estático: evita colisiones en la GPU si Riverpod o los movimientos
@@ -69,36 +68,6 @@ class ElevationMagnetHelper {
 
       // 4. Sincronització de l'estat a Riverpod (Es manté intacte)
       notifier.updateProvisionalEnd(nearestIndex);
-
-      final liveState = ref.read(elevationSelectionProvider);
-      final bool selectingStart =
-          liveState.mapToolState == MapSelectionToolState.selectingStart;
-      notifier.updateTemporaryRange(
-        startIndex: selectingStart ? nearestIndex : liveState.startTrackIndex,
-        endIndex: selectingStart ? null : nearestIndex,
-      );
-
-      // 🟢 MODIFICACIÓ DE SEGURETAT: Li passem explícitament el selectionMode actual
-      // perquè en fer el copyWith cap a la línia de la GPU no es destrueixi en ple moviment.
-      final geometryState = liveState.copyWith(
-        startTrackIndex: liveState.startTrackIndex,
-        endTrackIndex:
-            liveState.mapToolState == MapSelectionToolState.selectingEnd
-            ? nearestIndex
-            : null,
-        provisionalEndIndex: nearestIndex,
-        mode: liveState.mapToolState == MapSelectionToolState.selectingEnd
-            ? SelectionMode.range
-            : SelectionMode.single,
-        selectionMode: liveState.selectionMode, // 👈 PROTECCIÓ EN MOVIMENT
-      );
-
-      // 5. Pintem a la GPU esperando a que la operación nativa finalice
-      await updateSelectedSegmentGeometry(
-        mapController,
-        geometryState,
-        coordsAEvaluar,
-      );
     } catch (e) {
       debugPrint("⚠️ Errada en el helper de magnetisme: $e");
     } finally {
