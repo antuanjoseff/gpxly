@@ -305,12 +305,12 @@ class _MapStatsCarouselState extends ConsumerState<_MapStatsCarousel> {
               child: IconButton(
                 tooltip: 'Treure del mapa',
                 visualDensity: VisualDensity.compact,
-                iconSize: 18,
+                iconSize: 16,
                 color: Colors.white70,
                 onPressed: () => ref
                     .read(statsPrefsProvider.notifier)
                     .toggleMapStat(widget.selected[_currentPage].key),
-                icon: const Icon(Icons.delete),
+                icon: const Icon(Icons.cancel_outlined),
               ),
             ),
           ],
@@ -354,8 +354,29 @@ class _MapMultilineStat extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.center,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(right: 22),
+        Expanded(
+          child: Center(
+            child: Transform.translate(
+              offset: const Offset(0, 6),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  stat.value ?? '--',
+                  maxLines: 2,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.amberAccent,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    height: 1.2,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        Transform.translate(
+          offset: const Offset(0, -6),
           child: Text(
             stat.label,
             maxLines: 2,
@@ -363,27 +384,8 @@ class _MapMultilineStat extends StatelessWidget {
             textAlign: TextAlign.center,
             style: const TextStyle(
               color: Colors.amberAccent,
-              fontSize: 12,
+              fontSize: 15,
               fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
-        const SizedBox(height: 10),
-        Expanded(
-          child: Center(
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                stat.value ?? '--',
-                maxLines: 2,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.amberAccent,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  height: 1.2,
-                ),
-              ),
             ),
           ),
         ),
@@ -403,23 +405,9 @@ class _MapSingleLineStat extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.center,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(right: 22),
-          child: Text(
-            stat.label,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Colors.amberAccent,
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
-        const SizedBox(height: 10),
         Expanded(
-          child: Center(
+          child: Transform.translate(
+            offset: const Offset(0, 6),
             child: FittedBox(
               fit: BoxFit.scaleDown,
               child:
@@ -434,6 +422,20 @@ class _MapSingleLineStat extends StatelessWidget {
                       fontWeight: FontWeight.w800,
                     ),
                   ),
+            ),
+          ),
+        ),
+        Transform.translate(
+          offset: const Offset(0, -6),
+          child: Text(
+            stat.label,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Colors.amberAccent,
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ),

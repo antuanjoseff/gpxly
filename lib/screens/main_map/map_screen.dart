@@ -1284,9 +1284,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
                         child: Stack(
                           children: [
                             // 1. EL VISOR CENTRAL PERSONALITZAT (S'immunitza contra el moviment del mapa)
-                            const IgnorePointer(
-                              ignoring: true,
-                              child: Positioned.fill(
+                            const Positioned.fill(
+                              child: IgnorePointer(
+                                ignoring: true,
                                 child: MapFullScreenReticle(
                                   color: AppColors.mapSelectionReticleColor,
                                 ),
