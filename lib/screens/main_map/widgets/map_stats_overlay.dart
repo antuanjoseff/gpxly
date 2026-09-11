@@ -233,8 +233,10 @@ class _MapStatsCarouselState extends ConsumerState<_MapStatsCarousel> {
     super.didUpdateWidget(oldWidget);
     final lastPage = widget.selected.length - 1;
     if (_currentPage > lastPage) {
-      _currentPage = lastPage;
-      _controller.jumpToPage(_currentPage);
+      _currentPage = lastPage < 0 ? 0 : lastPage;
+      if (_controller.hasClients && widget.selected.isNotEmpty) {
+        _controller.jumpToPage(_currentPage);
+      }
     }
   }
 
@@ -306,11 +308,11 @@ class _MapStatsCarouselState extends ConsumerState<_MapStatsCarousel> {
                 tooltip: 'Treure del mapa',
                 visualDensity: VisualDensity.compact,
                 iconSize: 16,
-                color: Colors.white70,
+                color: Colors.redAccent,
                 onPressed: () => ref
                     .read(statsPrefsProvider.notifier)
                     .toggleMapStat(widget.selected[_currentPage].key),
-                icon: const Icon(Icons.cancel_outlined),
+                icon: const Icon(Icons.delete_outline_rounded),
               ),
             ),
           ],

@@ -11,10 +11,6 @@ import 'package:strack_rec/notifiers/waypoints_imported_notifier.dart';
 import 'package:strack_rec/utils/calculations.dart';
 import 'package:strack_rec/utils/geo_utils.dart';
 
-DateTime truncateSeconds(DateTime t) {
-  return DateTime(t.year, t.month, t.day, t.hour, t.minute, t.second);
-}
-
 class GpxImportService {
   static double computeSustainedSpeedKmhAtIndex(
     List<UserPosition> points,
@@ -71,7 +67,7 @@ class GpxImportService {
       final currentLat = p.lat!;
       final currentLon = p.lon!;
       final currentAlt = p.ele ?? 0.0;
-      final normalizedTime = truncateSeconds(p.time!.toLocal());
+      final normalizedTime = p.time!.toLocal();
 
       if (currentLat < minLat) minLat = currentLat;
       if (currentLat > maxLat) maxLat = currentLat;
@@ -91,9 +87,8 @@ class GpxImportService {
         );
         accumulatedDistance += distanceDelta;
 
-        final int timeDeltaSeconds = normalizedTime
-            .difference(lastTime)
-            .inSeconds;
+        final double timeDeltaSeconds =
+            normalizedTime.difference(lastTime).inMilliseconds / 1000.0;
 
         if (timeDeltaSeconds > 0) {
           segmentSpeed = distanceDelta / timeDeltaSeconds;

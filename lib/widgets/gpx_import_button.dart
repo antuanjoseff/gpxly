@@ -24,7 +24,7 @@ Future<void> importGpxAndZoom({
 
   if (result == null) return;
 
-  final path = result.files.single.path;
+  final path = result.single.path;
   if (path == null) return;
 
   final xml = await File(path).readAsString();
