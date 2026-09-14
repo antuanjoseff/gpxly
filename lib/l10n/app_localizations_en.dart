@@ -102,9 +102,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get permissionNeededTitle => 'Permission required';
 
   @override
-  String get permissionNeededMessage => 'To record the route correctly with the screen off, you must select: 👉 \"Allow always\".';
-
-  @override
   String get continueLabel => 'CONTINUE';
 
   @override
@@ -459,19 +456,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get batteryOptimizationTitle => 'Prevent Android from stopping GPS';
 
   @override
-  String get batteryOptimizationMessage => 'To record without gaps, especially during long stops, sTrack Rec needs to be excluded from battery optimization. Otherwise Android may stop the GPS when the screen is off for a while.';
-
-  @override
   String get confirm => 'CONFIRM';
 
   @override
   String get notificationPermissionTitle => 'Tracking Notifications';
 
   @override
-  String get notificationPermissionMessage => 'sTrack Rec needs to show a notification while recording your route. This prevents the system from stopping the app to save battery and ensures you don\'t lose your track.';
+  String get understood => 'UNDERSTOOD';
 
   @override
-  String get understood => 'UNDERSTOOD';
+  String get permissionNeededMessage => 'This app collects location data to record and track your routes in real time, even when the app is closed, minimized, or not in use. To enable this feature, please grant the location permission \'Allow all the time\' in the next step.';
+
+  @override
+  String get batteryOptimizationMessage => 'To record your tracks accurately without gaps or interruptions when the screen is turned off, this app requires background processing. Please exclude the app from battery optimization so the GPS tracking can run continuously.';
+
+  @override
+  String get notificationPermissionMessage => 'This app runs a foreground service to ensure continuous GPS tracking while recording your route. A persistent notification will be displayed to keep you informed that the app is actively collecting location data, preventing the system from interrupting your trip.';
 
   @override
   String get gpxErrorInvalidExtension => 'The selected file is not a GPX file';

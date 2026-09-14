@@ -102,9 +102,6 @@ class AppLocalizationsIt extends AppLocalizations {
   String get permissionNeededTitle => 'Autorizzazione necessaria';
 
   @override
-  String get permissionNeededMessage => 'Per registrare correttamente il percorso a schermo spento, devi selezionare: 👉 \"Consenti sempre\".';
-
-  @override
   String get continueLabel => 'CONTINUA';
 
   @override
@@ -459,19 +456,22 @@ class AppLocalizationsIt extends AppLocalizations {
   String get batteryOptimizationTitle => 'Evita che Android interrompa il GPS';
 
   @override
-  String get batteryOptimizationMessage => 'Per registrare senza interruzioni, soprattutto nelle soste lunghe, sTrack Rec deve essere esclusa dall\'ottimizzazione della batteria. Altrimenti Android potrebbe fermare il GPS quando lo schermo è spento per un po\'.';
-
-  @override
   String get confirm => 'CONFERMA';
 
   @override
   String get notificationPermissionTitle => 'Notifiche del seguimento';
 
   @override
-  String get notificationPermissionMessage => 'sTrack Rec deve mostrare una notifica durante la registrazione del percorso. Questo impedisce al sistema di arrestare l\'app per risparmiare batteria e garantisce che la tua traccia non venga persa.';
+  String get understood => 'HO CAPITO';
 
   @override
-  String get understood => 'HO CAPITO';
+  String get permissionNeededMessage => 'Questa applicazione raccoglie i dati sulla posizione per registrare e tracciare i tuoi percorsi in tempo real, anche quando l\'app è chiusa, minimizzata o non in uso. Per abilitare questa funzione, concedi l\'autorizzazione alla posizione \'Consenti sempre\' nel passaggio successivo.';
+
+  @override
+  String get batteryOptimizationMessage => 'Per registrare i tuoi percorsi in modo accurato e senza interruzioni quando lo schermo è spento, questa applicazione richiede l\'elaborazione in background. Escludi l\'app dall\'ottimizzazione della batteria in modo che il tracciamento GPS possa funzionare continuamente.';
+
+  @override
+  String get notificationPermissionMessage => 'Questa applicazione esegue un servizio in primo piano per garantire un tracciamento GPS continuo durante la registrazione del percorso. Verrà mostrata una notifica persistente per informarti che l\'app sta raccogliendo attivamente i dati sulla posizione, impedendo al sistema di interrompere il tuo viaggio.';
 
   @override
   String get gpxErrorInvalidExtension => 'Il file selezionato non è un file GPX';

@@ -102,9 +102,6 @@ class AppLocalizationsCa extends AppLocalizations {
   String get permissionNeededTitle => 'Permís necessari';
 
   @override
-  String get permissionNeededMessage => 'Per poder gravar la ruta correctament amb la pantalla apagada, cal seleccionar: 👉 \"Permetre sempre\".';
-
-  @override
   String get continueLabel => 'CONTINUA';
 
   @override
@@ -459,19 +456,22 @@ class AppLocalizationsCa extends AppLocalizations {
   String get batteryOptimizationTitle => 'Evita que Android aturi el GPS';
 
   @override
-  String get batteryOptimizationMessage => 'Per gravar sense talls, sobretot en parades llargues, cal excloure sTrack Rec de l\'estalvi de bateria. Si no, Android pot aturar el GPS quan la pantalla estigui apagada una estona.';
-
-  @override
   String get confirm => 'CONFIRMAR';
 
   @override
   String get notificationPermissionTitle => 'Notificacions de seguiment';
 
   @override
-  String get notificationPermissionMessage => 'Strack Rec necessita mostrar una notificació mentre graves la ruta. Això evita que el sistema aturi l\'aplicació per estalviar bateria i garanteix que no perdis el teu track.';
+  String get understood => 'UNDERSTOOD';
 
   @override
-  String get understood => 'ENTESOS';
+  String get permissionNeededMessage => 'Aquesta aplicació recopila dades d\'ubicació per registrar i fer el seguiment de les teves rutes en temps real, fins i tot quan l\'aplicació està tancada, minimitzada o no s\'està utilitzant. Per activar aquesta funció, concedeix el permís d\'ubicació \'Permetre sempre\' en el següent pas.';
+
+  @override
+  String get batteryOptimizationMessage => 'Per registrar les teves rutes amb precisió i sense interrupcions quan la pantalla està apagada, aquesta aplicació requereix processament en segon pla. Exclou l\'aplicació de l\'optimització de bateria perquè el seguiment GPS pugui funcionar de manera contínua.';
+
+  @override
+  String get notificationPermissionMessage => 'Aquesta aplicació executa un servei en primer pla per garantir un seguiment GPS continu mentre registres la teva ruta. Es mostrarà una notificació persistent per informar-te que l\'aplicació està recopilant dades d\'ubicació de manera activa, evitant que el sistema interrompi el teu viatge.';
 
   @override
   String get gpxErrorInvalidExtension => 'El fitxer seleccionat no és un GPX';

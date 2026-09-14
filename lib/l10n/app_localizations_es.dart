@@ -102,9 +102,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get permissionNeededTitle => 'Permiso necesario';
 
   @override
-  String get permissionNeededMessage => 'Para grabar la ruta correctamente con la pantalla apagada, debes seleccionar: 👉 \"Permitir siempre\".';
-
-  @override
   String get continueLabel => 'CONTINUAR';
 
   @override
@@ -459,19 +456,22 @@ class AppLocalizationsEs extends AppLocalizations {
   String get batteryOptimizationTitle => 'Evita que Android detenga el GPS';
 
   @override
-  String get batteryOptimizationMessage => 'Para grabar sin cortes, sobre todo en paradas largas, hay que excluir sTrack Rec del ahorro de batería. Si no, Android puede detener el GPS cuando la pantalla esté apagada un rato.';
-
-  @override
   String get confirm => 'CONFIRMAR';
 
   @override
   String get notificationPermissionTitle => 'Notificaciones de seguimiento';
 
   @override
-  String get notificationPermissionMessage => 'sTrack Rec necesita mostrar una notificación mientras grabas la ruta. Esto evita que el sistema detenga la aplicación para ahorrar batería y garantiza que no pierdas tu track.';
+  String get understood => 'ENTENDIDO';
 
   @override
-  String get understood => 'ENTENDIDO';
+  String get permissionNeededMessage => 'Esta aplicación recopila datos de ubicación para registrar y realizar el seguimiento de tus rutas en tiempo real, incluso cuando la aplicación está cerrada, minimizada o no se está utilizando. Para activar esta función, concede el permiso de ubicación \'Permitir siempre\' en el siguiente paso.';
+
+  @override
+  String get batteryOptimizationMessage => 'Para registrar tus rutas con precisión y sin interrupciones cuando la pantalla está apagada, esta aplicación requiere procesamiento en segundo plano. Excluye la aplicación de la optimización de batería para que el seguimiento GPS pueda funcionar de forma continua.';
+
+  @override
+  String get notificationPermissionMessage => 'Esta aplicación ejecuta un servicio en primer plano para garantizar un seguimiento GPS continuo mientras registras tu ruta. Se mostrará una notificación persistente para informarte de que la aplicación está recopilando datos de ubicación de forma activa, evitando que el sistema interrumpa tu viaje.';
 
   @override
   String get gpxErrorInvalidExtension => 'El archivo seleccionado no es un GPX';

@@ -39,7 +39,6 @@
   "activate": "ACTIVER",
 
   "permissionNeededTitle": "Autorisation requise",
-  "permissionNeededMessage": "Pour enregistrer correctement l'itinéraire lorsque l'écran est éteint, vous devez sélectionner : 👉 \"Toujours autoriser\".",
   "continueLabel": "CONTINUER",
 
   "locationPermissionTitle": "Autorisation de localisation",
@@ -179,12 +178,14 @@
   "gpsOptimizationTitle": "Optimisation du GPS",
   "gpsOptimizationMessage": "Pour un suivi précis, il est nécessaire d'activer le mode haute précision. Cela peut augmenter la consommation de batterie.",
   "batteryOptimizationTitle": "Empêcher Android d'arrêter le GPS",
-  "batteryOptimizationMessage": "Pour enregistrer sans coupures, surtout lors d'arrêts prolongés, sTrack Rec doit être exclue de l'optimisation de la batterie. Sinon, Android peut arrêter le GPS lorsque l'écran est éteint un moment.",
   "confirm": "CONFIRMER",
 
   "notificationPermissionTitle": "Notifications de suivi",
-  "notificationPermissionMessage": "sTrack Rec doit afficher une notification pendant l'enregistrement de l'itinéraire. Cela empêche le système d'arrêter l'application pour économiser la batterie et garantit que vous ne perdrez pas votre trace.",
   "understood": "COMPRIS",
+
+  "permissionNeededMessage": "Cette application collecte des données de localisation pour enregistrer et suivre vos itinéraires en temps réel, même lorsque l'application est fermée, minimisée ou non utilisée. Pour activer cette fonctionnalité, veuillez accorder l'autorisation de localisation 'Toujours autoriser' à l'étape suivante.",
+  "batteryOptimizationMessage": "Pour enregistrer vos parcours avec précision et sans interruption lorsque l'écran est éteint, cette application nécessite un traitement en arrière-plan. Veuillez exclure l'application de l'optimisation de la batterie afin que le suivi GPS puisse fonctionner en continu.",
+  "notificationPermissionMessage": "Cette application exécute un service au premier plan pour garantir un suivi GPS continu pendant l'enregistrement de votre itinéraire. Une notification persistante sera affichée pour vous informer que l'application collecte activement des données de localisation, empêchant le système d'interrompre votre trajet.",
 
   "gpxErrorInvalidExtension": "Le fichier sélectionné n'est pas un fichier GPX",
   "gpxErrorRead": "Impossible de lire le fichier GPX",

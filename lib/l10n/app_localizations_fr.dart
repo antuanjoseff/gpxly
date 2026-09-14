@@ -102,9 +102,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get permissionNeededTitle => 'Autorisation requise';
 
   @override
-  String get permissionNeededMessage => 'Pour enregistrer correctement l\'itinéraire lorsque l\'écran est éteint, vous devez sélectionner : 👉 \"Toujours autoriser\".';
-
-  @override
   String get continueLabel => 'CONTINUER';
 
   @override
@@ -459,19 +456,22 @@ class AppLocalizationsFr extends AppLocalizations {
   String get batteryOptimizationTitle => 'Empêcher Android d\'arrêter le GPS';
 
   @override
-  String get batteryOptimizationMessage => 'Pour enregistrer sans coupures, surtout lors d\'arrêts prolongés, sTrack Rec doit être exclue de l\'optimisation de la batterie. Sinon, Android peut arrêter le GPS lorsque l\'écran est éteint un moment.';
-
-  @override
   String get confirm => 'CONFIRMER';
 
   @override
   String get notificationPermissionTitle => 'Notifications de suivi';
 
   @override
-  String get notificationPermissionMessage => 'sTrack Rec doit afficher une notification pendant l\'enregistrement de l\'itinéraire. Cela empêche le système d\'arrêter l\'application pour économiser la batterie et garantit que vous ne perdrez pas votre trace.';
+  String get understood => 'COMPRIS';
 
   @override
-  String get understood => 'COMPRIS';
+  String get permissionNeededMessage => 'Cette application collecte des données de localisation pour enregistrer et suivre vos itinéraires en temps réel, même lorsque l\'application est fermée, minimisée ou non utilisée. Pour activer cette fonctionnalité, veuillez accorder l\'autorisation de localisation \'Toujours autoriser\' à l\'étape suivante.';
+
+  @override
+  String get batteryOptimizationMessage => 'Pour enregistrer vos parcours avec précision et sans interruption lorsque l\'écran est éteint, cette application nécessite un traitement en arrière-plan. Veuillez exclure l\'application de l\'optimisation de la batterie afin que le suivi GPS puisse fonctionner en continu.';
+
+  @override
+  String get notificationPermissionMessage => 'Cette application exécute un service au premier plan pour garantir un suivi GPS continu pendant l\'enregistrement de votre itinéraire. Une notification persistante sera affichée pour vous informer que l\'application collecte activement des données de localisation, empêchant le système d\'interrompre votre trajet.';
 
   @override
   String get gpxErrorInvalidExtension => 'Le fichier sélectionné n\'est pas un fichier GPX';

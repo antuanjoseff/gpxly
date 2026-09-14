@@ -38,7 +38,6 @@
   "activate": "ACTIVATE",
 
   "permissionNeededTitle": "Permission required",
-  "permissionNeededMessage": "To record the route correctly with the screen off, you must select: 👉 \"Allow always\".",
   "continueLabel": "CONTINUE",
 
   "locationPermissionTitle": "Location permission",
@@ -178,12 +177,15 @@
   "gpsOptimizationTitle": "GPS Optimization",
   "gpsOptimizationMessage": "For precise tracking, high-fidelity mode will be activated. This may increase battery consumption.",
   "batteryOptimizationTitle": "Prevent Android from stopping GPS",
-  "batteryOptimizationMessage": "To record without gaps, especially during long stops, sTrack Rec needs to be excluded from battery optimization. Otherwise Android may stop the GPS when the screen is off for a while.",
   "confirm": "CONFIRM",
 
   "notificationPermissionTitle": "Tracking Notifications",
-  "notificationPermissionMessage": "sTrack Rec needs to show a notification while recording your route. This prevents the system from stopping the app to save battery and ensures you don't lose your track.",
   "understood": "UNDERSTOOD",
+
+  "permissionNeededMessage": "This app collects location data to record and track your routes in real time, even when the app is closed, minimized, or not in use. To enable this feature, please grant the location permission 'Allow all the time' in the next step.",
+  "batteryOptimizationMessage": "To record your tracks accurately without gaps or interruptions when the screen is turned off, this app requires background processing. Please exclude the app from battery optimization so the GPS tracking can run continuously.",
+  "notificationPermissionMessage": "This app runs a foreground service to ensure continuous GPS tracking while recording your route. A persistent notification will be displayed to keep you informed that the app is actively collecting location data, preventing the system from interrupting your trip.",
+
 
   "gpxErrorInvalidExtension": "The selected file is not a GPX file",
   "gpxErrorRead": "The GPX file could not be read",
