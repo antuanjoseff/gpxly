@@ -4,6 +4,7 @@ import android.util.Log
 import android.app.*
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.os.IBinder
 import android.os.Build
 import android.os.PowerManager
@@ -167,8 +168,6 @@ class TrackingService : Service() {
         startForegroundServiceNotification()
         acquireWakeLock()
         startLocationUpdates()
-
-        startService(Intent(this, ServiceKiller::class.java))
 
         return START_NOT_STICKY
     }
@@ -432,9 +431,8 @@ class TrackingService : Service() {
         }
 
         val notificationIntent = Intent(this, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
         }
-
         val pendingIntent = PendingIntent.getActivity(
             this,
             0,
@@ -447,35 +445,18 @@ class TrackingService : Service() {
             .setContentText("GPS actiu")
             .setSmallIcon(android.R.drawable.ic_menu_mylocation)
             .setOngoing(true)
-            .setContentIntent(pendingIntent)   // 👈 AIXÒ FA QUE S’OBRI L’APP
+            .setContentIntent(pendingIntent)
             .build()
 
-        startForeground(1, notification)
-    }
-
-    override fun onTaskRemoved(rootIntent: Intent?) {
-        // 1. EL TRUC: Forcem l'eliminació visual directa utilitzant el gestor de notificacions nativament.
-        // Com que a startForeground(1, notification) vas utilitzar l'ID 1, aquí cancel·lem exactament l'ID 1.
-        try {
-            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.cancel(1) 
-        } catch (e: Exception) {
-            Log.e("SENDA", "Error cancel·lant notificació visual", e)
-        }
-
-        // 2. Traiem el servei de l'estat de primer pla netament
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            stopForeground(STOP_FOREGROUND_REMOVE)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(
+                1,
+                notification,
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
+            )
         } else {
-            @Suppress("DEPRECATION")
-            stopForeground(true)
+            startForeground(1, notification)
         }
-        
-        // 3. Demanem a Android que aturi el servei. Això farà que el sistema cridi a onDestroy() 
-        // de manera lícita, ordenada i asíncrona un mil·lisegon després.
-        stopSelf()
-        
-        super.onTaskRemoved(rootIntent)
     }
 
     override fun onDestroy() {
@@ -504,24 +485,10 @@ class TrackingService : Service() {
         fused.removeLocationUpdates(distanceTimeCallback)
         wakeLock?.let { if (it.isHeld) it.release() }
         wakeLock = null
-        
+
         super.onDestroy()
     }
 
 
     override fun onBind(intent: Intent?): IBinder? = null
-}
-
-class ServiceKiller : Service() {
-    override fun onBind(intent: Intent?): IBinder? = null
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_NOT_STICKY
-
-    override fun onTaskRemoved(rootIntent: Intent?) {
-        // Aquest mètode SÍ que s'executa sempre perquè aquest servei no té GPS ni fons lligat.
-        // Quan es detecta el tancament de l'app, enviem l'ordre d'aturar el servei de tracking principal.
-        val stopIntent = Intent(this, TrackingService::class.java)
-        stopService(stopIntent)
-        stopSelf()
-        super.onTaskRemoved(rootIntent)
-    }
 }

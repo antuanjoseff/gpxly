@@ -111,7 +111,15 @@ class RecordedWaypointsNotifier extends Notifier<List<Waypoint>> {
 
   Future<bool> hasSavedWaypoints() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.containsKey(_prefsKey);
+    final jsonString = prefs.getString(_prefsKey);
+    if (jsonString == null) return false;
+
+    try {
+      final list = jsonDecode(jsonString);
+      return list is List && list.isNotEmpty;
+    } catch (_) {
+      return false;
+    }
   }
 }
 

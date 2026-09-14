@@ -453,9 +453,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gpsOptimizationMessage => 'For precise tracking, high-fidelity mode will be activated. This may increase battery consumption.';
 
   @override
-  String get batteryOptimizationTitle => 'Prevent Android from stopping GPS';
-
-  @override
   String get confirm => 'CONFIRM';
 
   @override
@@ -465,10 +462,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get understood => 'UNDERSTOOD';
 
   @override
-  String get permissionNeededMessage => 'This app requires the \'Allow all the time\' location permission to record and track your routes in real time while the app is running in the background or minimize';
-
-  @override
-  String get batteryOptimizationMessage => 'To record your tracks accurately without gaps or interruptions when the screen is turned off, this app requires background processing. Please exclude the app from battery optimization so the GPS tracking can run continuously.';
+  String get permissionNeededMessage => 'This application requires you to select the \'Allow all the time\' option to collect location data while the app is running. This allows us to record and track your routes in real time, even when the app is minimized or running in the background.';
 
   @override
   String get notificationPermissionMessage => 'This app runs a foreground service to ensure continuous GPS tracking while recording your route. A persistent notification will be displayed to keep you informed that the app is actively collecting location data, preventing the system from interrupting your trip.';

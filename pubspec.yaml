@@ -1,6 +1,6 @@
 name: strack_rec
 description: App Flutter para grabar y exportar tracks GPX
-version: 0.1.0+20
+version: 0.1.0+22
 environment:
   sdk: ^3.9.2
 
@@ -50,6 +50,7 @@ dependencies:
   archive:
   flutter_localizations:
     sdk: flutter
+  flutter_native_splash:
 
 dev_dependencies:
   flutter_test:
@@ -57,7 +58,11 @@ dev_dependencies:
   flutter_launcher_icons: ^0.13.1
   change_app_package_name:
   flutter_lints: ^3.0.0
-  flutter_native_splash:
+
+# permission_handler_android 14.x requereix AGP 9 (kotlin{} built-in). Es fixa
+# una versió anterior compatible amb AGP 8.9.1 fins que actualitzem AGP.
+dependency_overrides:
+  permission_handler_android: 13.0.1
 
 flutter_launcher_icons:
   android: true

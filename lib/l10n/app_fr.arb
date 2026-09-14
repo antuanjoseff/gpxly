@@ -177,14 +177,12 @@
 
   "gpsOptimizationTitle": "Optimisation du GPS",
   "gpsOptimizationMessage": "Pour un suivi précis, il est nécessaire d'activer le mode haute précision. Cela peut augmenter la consommation de batterie.",
-  "batteryOptimizationTitle": "Empêcher Android d'arrêter le GPS",
   "confirm": "CONFIRMER",
 
   "notificationPermissionTitle": "Notifications de suivi",
   "understood": "COMPRIS",
 
-  "permissionNeededMessage": "Cette application nécessite l'autorisation de localisation 'Toujours autoriser' pour enregistrer et suivre vos itinéraires en temps réel lorsque l'application est en arrière-plan ou minimisée",
-  "batteryOptimizationMessage": "Pour enregistrer vos parcours avec précision et sans interruption lorsque l'écran est éteint, cette application nécessite un traitement en arrière-plan. Veuillez exclure l'application de l'optimisation de la batterie afin que le suivi GPS puisse fonctionner en continu.",
+  "permissionNeededMessage": "Cette application nécessite que vous sélectionniez l'option 'Toujours autoriser' pour collecter les données de localisation pendant l'exécution de l'application. Cela permet d'enregistrer et de suivre vos itinéraires en temps réel, même lorsque l'application est réduite o fonctionne en arrière-plan.",
   "notificationPermissionMessage": "Cette application exécute un service au premier plan pour garantir un suivi GPS continu pendant l'enregistrement de votre itinéraire. Une notification persistante sera affichée pour vous informer que l'application collecte activement des données de localisation, empêchant le système d'interrompre votre trajet.",
 
   "gpxErrorInvalidExtension": "Le fichier sélectionné n'est pas un fichier GPX",

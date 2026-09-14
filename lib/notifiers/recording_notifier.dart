@@ -330,6 +330,26 @@ class RecordingNotifier extends Notifier<Track> {
     }
   }
 
+  Future<bool> hasRecoverableCache() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final rawData = prefs.getString('temp_track_data');
+      if (rawData == null) return false;
+
+      final data = jsonDecode(rawData) as Map<String, dynamic>;
+      final points = data['points'];
+      final recordingState = data['recordingState'];
+
+      return points is List &&
+          points.isNotEmpty &&
+          recordingState is int &&
+          (recordingState == RecordingState.recording.index ||
+              recordingState == RecordingState.paused.index);
+    } catch (_) {
+      return false;
+    }
+  }
+
   // 💾 PERSISTÈNCIA NETEJA (SERIALITZACIÓ DE SUB-MODELS CORREGIDA)
   Future<void> _autoSaveToPrefs() async {
     try {

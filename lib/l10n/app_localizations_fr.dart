@@ -453,9 +453,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get gpsOptimizationMessage => 'Pour un suivi précis, il est nécessaire d\'activer le mode haute précision. Cela peut augmenter la consommation de batterie.';
 
   @override
-  String get batteryOptimizationTitle => 'Empêcher Android d\'arrêter le GPS';
-
-  @override
   String get confirm => 'CONFIRMER';
 
   @override
@@ -465,10 +462,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get understood => 'COMPRIS';
 
   @override
-  String get permissionNeededMessage => 'Cette application nécessite l\'autorisation de localisation \'Toujours autoriser\' pour enregistrer et suivre vos itinéraires en temps réel lorsque l\'application est en arrière-plan ou minimisée';
-
-  @override
-  String get batteryOptimizationMessage => 'Pour enregistrer vos parcours avec précision et sans interruption lorsque l\'écran est éteint, cette application nécessite un traitement en arrière-plan. Veuillez exclure l\'application de l\'optimisation de la batterie afin que le suivi GPS puisse fonctionner en continu.';
+  String get permissionNeededMessage => 'Cette application nécessite que vous sélectionniez l\'option \'Toujours autoriser\' pour collecter les données de localisation pendant l\'exécution de l\'application. Cela permet d\'enregistrer et de suivre vos itinéraires en temps réel, même lorsque l\'application est réduite o fonctionne en arrière-plan.';
 
   @override
   String get notificationPermissionMessage => 'Cette application exécute un service au premier plan pour garantir un suivi GPS continu pendant l\'enregistrement de votre itinéraire. Une notification persistante sera affichée pour vous informer que l\'application collecte activement des données de localisation, empêchant le système d\'interrompre votre trajet.';

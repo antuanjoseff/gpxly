@@ -989,12 +989,6 @@ abstract class AppLocalizations {
   /// **'For precise tracking, high-fidelity mode will be activated. This may increase battery consumption.'**
   String get gpsOptimizationMessage;
 
-  /// No description provided for @batteryOptimizationTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Prevent Android from stopping GPS'**
-  String get batteryOptimizationTitle;
-
   /// No description provided for @confirm.
   ///
   /// In en, this message translates to:
@@ -1016,14 +1010,8 @@ abstract class AppLocalizations {
   /// No description provided for @permissionNeededMessage.
   ///
   /// In en, this message translates to:
-  /// **'This app requires the \'Allow all the time\' location permission to record and track your routes in real time while the app is running in the background or minimize'**
+  /// **'This application requires you to select the \'Allow all the time\' option to collect location data while the app is running. This allows us to record and track your routes in real time, even when the app is minimized or running in the background.'**
   String get permissionNeededMessage;
-
-  /// No description provided for @batteryOptimizationMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'To record your tracks accurately without gaps or interruptions when the screen is turned off, this app requires background processing. Please exclude the app from battery optimization so the GPS tracking can run continuously.'**
-  String get batteryOptimizationMessage;
 
   /// No description provided for @notificationPermissionMessage.
   ///

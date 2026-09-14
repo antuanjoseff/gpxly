@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:strack_rec/services/native_gps_channel.dart';
 import 'package:strack_rec/ui/app_messages.dart';
 
 enum GpsPermissionStatus { ok, gpsOff, permissionDenied }
@@ -46,41 +45,22 @@ class PermissionsService {
   ) async {
     // 1. Comprovem si ja tenim el permís "Sempre" (Always)
     final status = await Permission.locationAlways.status;
-    if (status.isGranted) return true;
+    if (status.isGranted) {
+      return _ensureNotifications(context);
+    }
 
     // 2. Si no el tenim, mostrem el TEU diàleg explicatiu (AppMessages)
     final continuar = await AppMessages.showPermissionExplanation(context);
     if (continuar != true) return false;
 
     // 3. Demanem el permís de sistema (Always)
-    // Això és el que permet que el teu NativeGpsChannel continuï viu
-    // quan l'usuari bloquegi la pantalla.
     final res = await Permission.locationAlways.request();
 
     if (res.isGranted) {
-      await _ensureNotifications(context); // Ara fa servir el diàleg explicatiu
-      await _ensureIgnoreBatteryOptimizations(context);
-      return true;
+      return _ensureNotifications(context);
     }
 
     return false;
-  }
-
-  // Evita que Android/fabricants matin el servei GPS en parades llargues amb pantalla apagada
-  static Future<void> _ensureIgnoreBatteryOptimizations(
-    BuildContext context,
-  ) async {
-    if (!Platform.isAndroid) return;
-
-    final alreadyIgnoring =
-        await NativeGpsChannel.isIgnoringBatteryOptimizations();
-    if (alreadyIgnoring) return;
-    if (!context.mounted) return;
-
-    final go = await AppMessages.showBatteryOptimizationDialog(context);
-    if (go == true) {
-      await NativeGpsChannel.requestIgnoreBatteryOptimizations();
-    }
   }
 
   static Future<bool> _ensureGpsEnabled(BuildContext context) async {
@@ -171,7 +151,11 @@ class PermissionsService {
       perm = await Geolocator.requestPermission();
     }
 
-    return perm == LocationPermission.whileInUse ||
+    final locationGranted =
+        perm == LocationPermission.whileInUse ||
         perm == LocationPermission.always;
+    if (!locationGranted) return false;
+
+    return true;
   }
 }

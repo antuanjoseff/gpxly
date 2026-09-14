@@ -176,13 +176,11 @@
 
   "gpsOptimizationTitle": "Optimització GPS",
   "gpsOptimizationMessage": "Per a un seguiment precís, cal activar el mode d'alta fidelitat. Això pot augmentar el consum de bateria.",
-  "batteryOptimizationTitle": "Evita que Android aturi el GPS",
   "confirm": "CONFIRMAR",
 
   "notificationPermissionTitle": "Notificacions de seguiment",
   "understood": "ENTÈS",
-  "permissionNeededMessage": "Aquesta aplicació requereix el permís d'ubicació 'Permetre sempre' per poder registrar i fer el seguiment de les teves rutes en temps real quan l'aplicació està en segon pla o minimitzada",
-  "batteryOptimizationMessage": "Per registrar les teves rutes amb precisió i sense interrupcions quan la pantalla està apagada, aquesta aplicació requereix processament en segon pla. Exclou l'aplicació de l'optimització de bateria perquè el seguiment GPS pugui funcionar de manera contínua.",
+  "permissionNeededMessage": "Aquesta aplicació requereix que seleccionis l'opció 'Permetre sempre' per poder recollir les dades d'ubicació durant l'execució de l'app. Això permet registrar i fer el seguiment de les teves rutes en temps real, fins i tot quan la tens minimitzada o treballa en segon pla.",
   "notificationPermissionMessage": "Aquesta aplicació executa un servei en primer pla per garantir un seguiment GPS continu mentre registres la teva ruta. Es mostrarà una notificació persistent per informar-te que l'aplicació està recopilant dades d'ubicació de manera activa, evitant que el sistema interrompi el teu viatge.",
 
   "gpxErrorInvalidExtension": "El fitxer seleccionat no és un GPX",

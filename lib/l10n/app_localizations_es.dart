@@ -453,9 +453,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get gpsOptimizationMessage => 'Para un seguimiento preciso, activaremos el modo de alta fidelidad. Esto puede aumentar el consumo de batería.';
 
   @override
-  String get batteryOptimizationTitle => 'Evita que Android detenga el GPS';
-
-  @override
   String get confirm => 'CONFIRMAR';
 
   @override
@@ -465,10 +462,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get understood => 'ENTENDIDO';
 
   @override
-  String get permissionNeededMessage => 'Esta aplicación requiere el permiso de ubicación \'Permitir siempre\' para poder registrar y realizar el seguimiento de tus rutas en tiempo real cuando la aplicación está en segundo plano o minimizada';
-
-  @override
-  String get batteryOptimizationMessage => 'Para registrar tus rutas con precisión y sin interrupciones cuando la pantalla está apagada, esta aplicación requiere procesamiento en segundo plano. Excluye la aplicación de la optimización de batería para que el seguimiento GPS pueda funcionar de forma continua.';
+  String get permissionNeededMessage => 'Esta aplicación requiere que selecciones la opción \'Permitir siempre\' para poder recopilar los datos de ubicación durante la ejecución de la app. Esto permite registrar y hacer el seguimiento de tus rutas en tiempo real, incluso cuando la tienes minimizada o trabaja en segundo plano.';
 
   @override
   String get notificationPermissionMessage => 'Esta aplicación ejecuta un servicio en primer plano para garantizar un seguimiento GPS continuo mientras registras tu ruta. Se mostrará una notificación persistente para informarte de que la aplicación está recopilando datos de ubicación de forma activa, evitando que el sistema interrumpa tu viaje.';

@@ -10,7 +10,6 @@ import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
-import android.os.PowerManager
 import androidx.core.content.ContextCompat
 import androidx.core.app.ActivityCompat
 
@@ -132,34 +131,6 @@ class TrackingPlugin :
 
                 "requestBackgroundPermission" -> {
                     requestBackgroundPermission(result)
-                }
-
-                "isIgnoringBatteryOptimizations" -> {
-                    val ctx = applicationContext
-                    if (ctx == null) {
-                        result.success(true)
-                    } else {
-                        val pm = ctx.getSystemService(Context.POWER_SERVICE) as PowerManager
-                        result.success(pm.isIgnoringBatteryOptimizations(ctx.packageName))
-                    }
-                }
-
-                "requestIgnoreBatteryOptimizations" -> {
-                    val ctx = applicationContext
-                    if (ctx == null) {
-                        result.success(false)
-                    } else {
-                        try {
-                            val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
-                                data = Uri.parse("package:${ctx.packageName}")
-                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                            }
-                            ctx.startActivity(intent)
-                            result.success(true)
-                        } catch (e: Exception) {
-                            result.success(false)
-                        }
-                    }
                 }
 
                 else -> result.notImplemented()

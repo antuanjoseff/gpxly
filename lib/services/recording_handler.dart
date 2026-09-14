@@ -27,13 +27,13 @@ class RecordingHandler {
     final wpNotifier = ref.read(waypointsProvider.notifier);
     final prefs = await SharedPreferences.getInstance();
 
-    final hasTrackCache = prefs.containsKey('temp_track_data');
+    final hasTrackCache = await recordingNotifier.hasRecoverableCache();
     final hasWpCache = await wpNotifier.hasSavedWaypoints();
 
     // ───────────────────────────────────────────────
     // 1. RECUPERAR TRACK + WAYPOINTS DES DE LA CACHÉ
     // ───────────────────────────────────────────────
-    if (hasTrackCache || hasWpCache) {
+    if (hasTrackCache) {
       print("🔴 [HANDLER] Detectada cache de track.");
       if (!context.mounted) return;
 
@@ -59,9 +59,11 @@ class RecordingHandler {
         ref.read(permissionsProvider.notifier).checkPermissions();
         return;
       } else {
-        if (hasTrackCache) await prefs.remove('temp_track_data');
+        await prefs.remove('temp_track_data');
         if (hasWpCache) wpNotifier.clear();
       }
+    } else if (hasWpCache) {
+      wpNotifier.clear();
     }
 
     // ───────────────────────────────────────────────
