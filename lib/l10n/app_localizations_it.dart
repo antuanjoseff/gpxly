@@ -465,7 +465,7 @@ class AppLocalizationsIt extends AppLocalizations {
   String get understood => 'HO CAPITO';
 
   @override
-  String get permissionNeededMessage => 'Questa applicazione raccoglie i dati sulla posizione per registrare e tracciare i tuoi percorsi in tempo real, anche quando l\'app è chiusa, minimizzata o non in uso. Per abilitare questa funzione, concedi l\'autorizzazione alla posizione \'Consenti sempre\' nel passaggio successivo.';
+  String get permissionNeededMessage => 'Questa applicazione richiede il permesso di localizzazione \'Consenti sempre\' per registrare e tracciare i tuoi percorsi in tempo reale quando l\'app è in background o minimizzata';
 
   @override
   String get batteryOptimizationMessage => 'Per registrare i tuoi percorsi in modo accurato e senza interruzioni quando lo schermo è spento, questa applicazione richiede l\'elaborazione in background. Escludi l\'app dall\'ottimizzazione della batteria in modo che il tracciamento GPS possa funzionare continuamente.';

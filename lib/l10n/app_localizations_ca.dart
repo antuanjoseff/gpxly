@@ -462,10 +462,10 @@ class AppLocalizationsCa extends AppLocalizations {
   String get notificationPermissionTitle => 'Notificacions de seguiment';
 
   @override
-  String get understood => 'UNDERSTOOD';
+  String get understood => 'ENTÈS';
 
   @override
-  String get permissionNeededMessage => 'Aquesta aplicació recopila dades d\'ubicació per registrar i fer el seguiment de les teves rutes en temps real, fins i tot quan l\'aplicació està tancada, minimitzada o no s\'està utilitzant. Per activar aquesta funció, concedeix el permís d\'ubicació \'Permetre sempre\' en el següent pas.';
+  String get permissionNeededMessage => 'Aquesta aplicació requereix el permís d\'ubicació \'Permetre sempre\' per poder registrar i fer el seguiment de les teves rutes en temps real quan l\'aplicació està en segon pla o minimitzada';
 
   @override
   String get batteryOptimizationMessage => 'Per registrar les teves rutes amb precisió i sense interrupcions quan la pantalla està apagada, aquesta aplicació requereix processament en segon pla. Exclou l\'aplicació de l\'optimització de bateria perquè el seguiment GPS pugui funcionar de manera contínua.';

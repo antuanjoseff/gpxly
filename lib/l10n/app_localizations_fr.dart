@@ -465,7 +465,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get understood => 'COMPRIS';
 
   @override
-  String get permissionNeededMessage => 'Cette application collecte des données de localisation pour enregistrer et suivre vos itinéraires en temps réel, même lorsque l\'application est fermée, minimisée ou non utilisée. Pour activer cette fonctionnalité, veuillez accorder l\'autorisation de localisation \'Toujours autoriser\' à l\'étape suivante.';
+  String get permissionNeededMessage => 'Cette application nécessite l\'autorisation de localisation \'Toujours autoriser\' pour enregistrer et suivre vos itinéraires en temps réel lorsque l\'application est en arrière-plan ou minimisée';
 
   @override
   String get batteryOptimizationMessage => 'Pour enregistrer vos parcours avec précision et sans interruption lorsque l\'écran est éteint, cette application nécessite un traitement en arrière-plan. Veuillez exclure l\'application de l\'optimisation de la batterie afin que le suivi GPS puisse fonctionner en continu.';

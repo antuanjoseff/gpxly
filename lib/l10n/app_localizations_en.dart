@@ -465,7 +465,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get understood => 'UNDERSTOOD';
 
   @override
-  String get permissionNeededMessage => 'This app collects location data to record and track your routes in real time, even when the app is closed, minimized, or not in use. To enable this feature, please grant the location permission \'Allow all the time\' in the next step.';
+  String get permissionNeededMessage => 'This app requires the \'Allow all the time\' location permission to record and track your routes in real time while the app is running in the background or minimize';
 
   @override
   String get batteryOptimizationMessage => 'To record your tracks accurately without gaps or interruptions when the screen is turned off, this app requires background processing. Please exclude the app from battery optimization so the GPS tracking can run continuously.';

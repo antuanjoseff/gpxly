@@ -465,7 +465,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get understood => 'ENTENDIDO';
 
   @override
-  String get permissionNeededMessage => 'Esta aplicación recopila datos de ubicación para registrar y realizar el seguimiento de tus rutas en tiempo real, incluso cuando la aplicación está cerrada, minimizada o no se está utilizando. Para activar esta función, concede el permiso de ubicación \'Permitir siempre\' en el siguiente paso.';
+  String get permissionNeededMessage => 'Esta aplicación requiere el permiso de ubicación \'Permitir siempre\' para poder registrar y realizar el seguimiento de tus rutas en tiempo real cuando la aplicación está en segundo plano o minimizada';
 
   @override
   String get batteryOptimizationMessage => 'Para registrar tus rutas con precisión y sin interrupciones cuando la pantalla está apagada, esta aplicación requiere procesamiento en segundo plano. Excluye la aplicación de la optimización de batería para que el seguimiento GPS pueda funcionar de forma continua.';

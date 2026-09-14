@@ -1016,7 +1016,7 @@ abstract class AppLocalizations {
   /// No description provided for @permissionNeededMessage.
   ///
   /// In en, this message translates to:
-  /// **'This app collects location data to record and track your routes in real time, even when the app is closed, minimized, or not in use. To enable this feature, please grant the location permission \'Allow all the time\' in the next step.'**
+  /// **'This app requires the \'Allow all the time\' location permission to record and track your routes in real time while the app is running in the background or minimize'**
   String get permissionNeededMessage;
 
   /// No description provided for @batteryOptimizationMessage.
