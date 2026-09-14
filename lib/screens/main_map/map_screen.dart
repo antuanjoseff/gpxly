@@ -127,6 +127,17 @@ class _MapScreenState extends ConsumerState<MapScreen>
     NativeBarometerChannel.start();
     _loadLastPosition();
     _bindExternalGpxOpen();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+
+      final locationGranted = await PermissionsService.ensureBasicLocation(
+        context,
+      );
+      if (!locationGranted || !mounted) return;
+
+      await ref.read(locationProvider.notifier).ensureGpsStarted();
+    });
   }
 
   @override

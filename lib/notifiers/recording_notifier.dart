@@ -339,12 +339,14 @@ class RecordingNotifier extends Notifier<Track> {
       final data = jsonDecode(rawData) as Map<String, dynamic>;
       final points = data['points'];
       final recordingState = data['recordingState'];
+      final preserved = prefs.getBool('preserve_track_on_start') ?? false;
 
       return points is List &&
           points.isNotEmpty &&
           recordingState is int &&
           (recordingState == RecordingState.recording.index ||
-              recordingState == RecordingState.paused.index);
+              recordingState == RecordingState.paused.index ||
+              (recordingState == RecordingState.idle.index && preserved));
     } catch (_) {
       return false;
     }

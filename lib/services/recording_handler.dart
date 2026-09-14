@@ -39,6 +39,7 @@ class RecordingHandler {
 
       final recuperar = await AppMessages.showRecoverTrackDialog(context);
       if (recuperar == true) {
+        await prefs.setBool('preserve_track_on_start', false);
         // Carreguem el cache estructurat dins del nou model a través de recordingNotifier
         if (hasTrackCache) await recordingNotifier.loadFromCache();
         if (hasWpCache) wpNotifier.restoreFromPrefs();
