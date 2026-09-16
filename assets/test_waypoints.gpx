@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="strack_rec test" xmlns="http://www.topografix.com/GPX/1/1">
+  <wpt lat="42.0180" lon="2.8210">
+    <ele>70</ele>
+    <name>Font de la Bateria</name>
+  </wpt>
+  <wpt lat="42.0185" lon="2.8225">
+    <ele>75</ele>
+    <name>Creu de Sant Grau</name>
+  </wpt>
+  <wpt lat="42.0175" lon="2.8230">
+    <ele>72</ele>
+    <name>Pi Gros dels Gavarres</name>
+  </wpt>
+  <wpt lat="42.0190" lon="2.8200">
+    <ele>80</ele>
+    <name>Coll de l'Àliga</name>
+  </wpt>
+  <trk>
+    <name>Test waypoints</name>
+    <trkseg>
+      <trkpt lat="42.0180" lon="2.8210"><ele>70</ele><time>2026-09-15T08:00:00Z</time></trkpt>
+      <trkpt lat="42.0182" lon="2.8218"><ele>72</ele><time>2026-09-15T08:01:00Z</time></trkpt>
+      <trkpt lat="42.0185" lon="2.8225"><ele>75</ele><time>2026-09-15T08:02:00Z</time></trkpt>
+      <trkpt lat="42.0180" lon="2.8230"><ele>73</ele><time>2026-09-15T08:03:00Z</time></trkpt>
+      <trkpt lat="42.0175" lon="2.8230"><ele>72</ele><time>2026-09-15T08:04:00Z</time></trkpt>
+    </trkseg>
+  </trk>
+</gpx>

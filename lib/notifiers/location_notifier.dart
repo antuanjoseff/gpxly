@@ -1,6 +1,7 @@
 import 'dart:async'; // ✅ MANTINGUT / AFEGIT per al Timer
 import 'package:strack_rec/services/altitude_logger.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:strack_rec/core/altitude/altitude_processor.dart';
 // Models immutables refactoritzats
@@ -19,8 +20,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 class LocationNotifier extends Notifier<UserPosition?> {
   StreamSubscription? _gpsSub;
   StreamSubscription? _gpsDebugSub;
+  StreamSubscription<Position>? _mapModeSub;
   Timer? _gpsHeartbeatTimer;
   bool gpsActive = false;
+  bool _isMapModeActive = false;
   bool _isSimulationRunning = false;
   bool _isSimulationPaused = false;
   DateTime? _lastGpsPointAt;
@@ -45,12 +48,14 @@ class LocationNotifier extends Notifier<UserPosition?> {
 
   bool get isSimulationRunning => _isSimulationRunning;
   bool get isSimulationPaused => _isSimulationPaused;
+  bool get isMapModeActive => _isMapModeActive;
 
   @override
   UserPosition? build() {
     ref.onDispose(() {
       _gpsSub?.cancel();
       _gpsDebugSub?.cancel();
+      _mapModeSub?.cancel();
       _gpsHeartbeatTimer?.cancel();
       _simulationTimer
           ?.cancel(); // Netegem també el temporitzador si es destrueix el giny [INDEX]
@@ -63,10 +68,63 @@ class LocationNotifier extends Notifier<UserPosition?> {
     _isSimulationPaused = !_isSimulationPaused;
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // 🗺️ MODE MAPA: punt blau SENSE servei foreground ni notificació
+  // Fa servir el stream del Geolocator (plugin Dart, sense servei Android),
+  // així el permís de notificacions NO cal demanar-lo per veure la posició.
+  // El servei foreground (amb notificació) només s'engega amb Gravar/Seguir.
+  // ─────────────────────────────────────────────────────────────
+  Future<void> startMapOnlyMode() async {
+    if (_isMapModeActive || gpsActive || _isSimulationRunning) return;
+
+    _isMapModeActive = true;
+    _mapModeSub?.cancel();
+    _mapModeSub =
+        Geolocator.getPositionStream(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            distanceFilter: 3,
+          ),
+        ).listen(
+          (position) => _processIncomingGpsPoint(_mapPositionToData(position)),
+          onError: (Object e) async {
+            await AltitudeLoggerService().log(
+              "⚠️ MODE MAPA -> Error stream: $e",
+            );
+          },
+        );
+  }
+
+  void stopMapOnlyMode() {
+    _isMapModeActive = false;
+    _mapModeSub?.cancel();
+    _mapModeSub = null;
+  }
+
+  Map<String, dynamic> _mapPositionToData(Position p) {
+    return {
+      "lat": p.latitude,
+      "lon": p.longitude,
+      "accuracy": p.accuracy,
+      "altitude": p.altitude,
+      "speed": p.speed,
+      "heading": p.heading,
+      "timestamp": p.timestamp.millisecondsSinceEpoch,
+      "vAccuracy": 0.0,
+      "satellites": 0,
+      "sat_used": 0,
+      "sat_view": 0,
+    };
+  }
+
   // 🛰️ HARDWARE: ENGEGADA I CONFIGURACIÓ SEGONS GPS_SETTINGS
   // Dins de lib/notifiers/location_notifier.dart
   Future<void> ensureGpsStarted() async {
     if (gpsActive) return;
+
+    // Si el punt blau venia del mode mapa (Geolocator), l'aturem: a partir
+    // d'ara la posició l'alimentarà el servei foreground natiu.
+    stopMapOnlyMode();
 
     // 1. Engeguem els dos canals físics de maquinari de fons
     await NativeBarometerChannel.start();
@@ -411,6 +469,7 @@ class LocationNotifier extends Notifier<UserPosition?> {
   }
 
   void stopGps() {
+    stopMapOnlyMode();
     _simulationTimer?.cancel(); // Netegem el timer si s'atura globalment
     _simulationTimer = null;
     _gpsHeartbeatTimer?.cancel();
@@ -432,6 +491,13 @@ class LocationNotifier extends Notifier<UserPosition?> {
 
     // Netegem el processador d'altitud per forçar una nova calibració a la propera ruta
     ref.read(altitudeProcessorProvider.notifier).reset();
+  }
+
+  // Atura el servei foreground (notificació) però manté el punt blau actiu
+  // tornant al mode mapa. Es crida en aturar una gravació o un seguiment.
+  void stopServiceAndReturnToMapMode() {
+    stopGps();
+    startMapOnlyMode();
   }
 
   // ─── 💾 PERSISTÈNCIA A DISC: GUARDAR COORDENADES AL SORTIR ───

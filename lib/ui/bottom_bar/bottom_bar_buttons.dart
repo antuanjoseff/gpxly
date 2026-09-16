@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:strack_rec/l10n/app_localizations.dart';
 import 'package:strack_rec/models/track.dart';
 import 'package:strack_rec/notifiers/imported_track_notifier.dart';
+import 'package:strack_rec/notifiers/location_notifier.dart';
 // ✅ ADAPTAT: Proveïdor analític de navegació que substitueix el trackFollowNotifierProvider
 import 'package:strack_rec/notifiers/navigation_notifier.dart';
 import 'package:strack_rec/notifiers/waypoints_imported_notifier.dart';
@@ -177,6 +178,8 @@ class BottomBarButtons extends ConsumerWidget {
         if (confirm == true) {
           // ✅ ADAPTAT: Acció enviada al nou analitzador navigationProvider
           ref.read(navigationProvider.notifier).stopFollowing();
+          // Aturem el servei foreground però mantenim el punt blau al mapa.
+          ref.read(locationProvider.notifier).stopServiceAndReturnToMapMode();
           ref.read(importedTrackProvider.notifier).clear();
           ref.read(importedWaypointsProvider.notifier).clear();
         }

@@ -107,9 +107,14 @@ class NavigationNotifier extends Notifier<NavigationState> {
     BuildContext context,
     MapLibreMapController? mapController,
   ) async {
-    // 1. Permisos
+    // 1. Permisos (inclou GPS en segon pla + notificacions)
     final ok = await PermissionsService.ensureGpsReady(context);
     if (!ok) return;
+
+    // 1b. Engeguem el servei GPS foreground ARA, amb tots els permisos ja
+    // concedits, perquè la notificació es mostri també la primera vegada.
+    // (Abans s'engegava a l'arrencada de l'app, sense permís de notificacions.)
+    await ref.read(locationProvider.notifier).ensureGpsStarted();
 
     // Ponemos el GPS en modo "Navegación" usando los umbrales centralizados
     await ref.read(gpsSettingsProvider.notifier).setNavigationMode();

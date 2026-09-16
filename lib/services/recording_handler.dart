@@ -134,6 +134,10 @@ class RecordingHandler {
         .read(trackRecordingProvider.notifier)
         .stopRecording(finalDuration); // ✅ ADAPTAT
 
+    // Aturem el servei foreground (notificació) però mantenim el punt blau
+    // actiu al mapa tornant al mode mapa (Geolocator, sense servei).
+    ref.read(locationProvider.notifier).stopServiceAndReturnToMapMode();
+
     ref.read(timerProvider.notifier).reset();
   }
 }

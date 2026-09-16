@@ -131,12 +131,16 @@ class _MapScreenState extends ConsumerState<MapScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
 
+      // A l'arrencada demanem el permís bàsic de GPS (primer permís que veu
+      // l'usuari) i engeguem el MODE MAPA: punt blau via Geolocator, sense
+      // servei foreground ni notificació. Així el permís de notificacions no
+      // cal demanar-lo aquí i la notificació no pot fallar la primera vegada.
       final locationGranted = await PermissionsService.ensureBasicLocation(
         context,
       );
       if (!locationGranted || !mounted) return;
 
-      await ref.read(locationProvider.notifier).ensureGpsStarted();
+      await ref.read(locationProvider.notifier).startMapOnlyMode();
     });
   }
 
@@ -1586,6 +1590,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
       case "stop_follow":
         ref.read(elevationSelectionProvider.notifier).clearSelection();
         ref.read(navigationProvider.notifier).stopFollowing();
+        // Aturem el servei foreground però mantenim el punt blau al mapa.
+        ref.read(locationProvider.notifier).stopServiceAndReturnToMapMode();
         ref.read(importedTrackProvider.notifier).clear();
         ref.read(importedWaypointsProvider.notifier).clear();
         ref.read(mapSelectionToolProvider.notifier).deactivate();

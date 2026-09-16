@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:strack_rec/notifiers/imported_track_notifier.dart';
+import 'package:strack_rec/notifiers/location_notifier.dart';
 import 'package:strack_rec/notifiers/navigation_notifier.dart';
 import 'package:strack_rec/notifiers/waypoints_imported_notifier.dart';
 import 'package:strack_rec/services/gpx_import_flow.dart';
@@ -83,6 +84,8 @@ class NavigationFlowHandler {
 
       case "stop_follow":
         ref.read(navigationProvider.notifier).stopFollowing();
+        // Aturem el servei foreground però mantenim el punt blau al mapa.
+        ref.read(locationProvider.notifier).stopServiceAndReturnToMapMode();
         ref.read(importedTrackProvider.notifier).clear();
         ref.read(importedWaypointsProvider.notifier).clear();
         break;
