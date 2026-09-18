@@ -42,6 +42,7 @@ class GPXlyApp extends StatelessWidget {
           Locale('nl'),
           Locale('nl', 'BE'),
           Locale('lb'),
+          Locale('pt'),
         ],
         theme: appTheme,
         home: const MapScreen(),
