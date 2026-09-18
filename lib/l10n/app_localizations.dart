@@ -1721,6 +1721,12 @@ abstract class AppLocalizations {
   /// **'Waiting for GPS signal...'**
   String get waypointNoGps;
 
+  /// No description provided for @waypointDefaultPrefix.
+  ///
+  /// In en, this message translates to:
+  /// **'P'**
+  String get waypointDefaultPrefix;
+
   /// No description provided for @gpsSearching.
   ///
   /// In en, this message translates to:

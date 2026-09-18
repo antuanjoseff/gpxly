@@ -332,6 +332,40 @@ Future<void> setupWaypointLayers(MapLibreMapController controller) async {
         circleBlur: 0.0,
       ),
     );
+
+    // 🏷️ ETIQUETES AMB EL NOM DEL WAYPOINT
+    // Requereix 'glyphs' a l'estil (veure assets/osm_style.json).
+    // La font HA d'existir al servidor de glifos: demotiles només serveix
+    // "Open Sans Semibold". Si la font retorna 404, MapLibre no completa
+    // el layout del símbol i desapareix sencer (icona inclosa).
+    const SymbolLayerProperties waypointLabelProps = SymbolLayerProperties(
+      textField: [Expressions.get, 'name'],
+      textFont: ['Open Sans Semibold'],
+      textSize: 12.0,
+      textColor: '#1A1A1A',
+      textHaloColor: '#FFFFFF',
+      textHaloWidth: 1.5,
+      textOffset: [0, 1.4],
+      textAnchor: 'top',
+      textAllowOverlap: false,
+      textIgnorePlacement: false,
+      textPadding: 4.0,
+      // 📐 Prova diverses posicions al voltant del punt abans de descartar l'etiqueta
+      textVariableAnchor: ['top', 'bottom', 'left', 'right'],
+      textRadialOffset: 1.2,
+    );
+
+    await controller.addLayer(
+      'waypoints_recorded_source',
+      'waypoints_recorded_label_layer',
+      waypointLabelProps,
+    );
+
+    await controller.addLayer(
+      'waypoints_imported_source',
+      'waypoints_imported_label_layer',
+      waypointLabelProps,
+    );
   } catch (e) {
     debugPrint("⚠️ Error al dar de alta las capas de waypoints en la GPU: $e");
   }

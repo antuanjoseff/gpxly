@@ -428,7 +428,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final waypoints = ref.read(waypointsProvider);
     final name = await AppMessages.showAddWaypointDialog(
       context,
-      suggestedName: "Punt ${waypoints.length + 1}",
+      suggestedName:
+          "${AppLocalizations.of(context)!.waypointDefaultPrefix}${waypoints.length + 1}",
     );
 
     if (name == null || name.isEmpty) return;

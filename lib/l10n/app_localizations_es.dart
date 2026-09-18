@@ -825,6 +825,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get waypointNoGps => 'Esperando señal GPS...';
 
   @override
+  String get waypointDefaultPrefix => 'P';
+
+  @override
   String get gpsSearching => 'Buscando...';
 
   @override

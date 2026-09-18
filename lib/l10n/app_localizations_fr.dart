@@ -825,6 +825,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get waypointNoGps => 'En attente du signal GPS...';
 
   @override
+  String get waypointDefaultPrefix => 'P';
+
+  @override
   String get gpsSearching => 'Recherche...';
 
   @override

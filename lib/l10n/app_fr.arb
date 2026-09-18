@@ -338,6 +338,7 @@
   "gpsDisabledAppBar": "SANS GPS",
   "recoverTrackDialogBody": "Des données d'un itinéraire précédent non enregistré ont été détectées. Voulez-vous les récupérer ou préférez-vous repartir de zéro avec un nouvel itinéraire ?",
   "waypointNoGps": "En attente du signal GPS...",
+  "waypointDefaultPrefix": "P",
   "gpsSearching": "Recherche...",
 
   "fixStart": "Point de départ",
