@@ -49,7 +49,9 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
   Map<String, dynamic> _buildGridGeoJson(List<DemBounds> downloadedCells) {
     final List<Map<String, dynamic>> features = [];
 
-    for (final filename in MapConstants.tifFilesEspanya) {
+    final tiles =
+        ref.read(availableTilesProvider).value ?? MapConstants.tifFilesEspanya;
+    for (final filename in tiles) {
       final latBase = double.parse(filename.substring(1, 3));
       final lonSign = filename.substring(3, 4) == 'E' ? 1.0 : -1.0;
       final lonBase = double.parse(filename.substring(4, 7)) * lonSign;
@@ -218,6 +220,13 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
 
     // Cada cop que hi hagi un canvi al proveïdor, forçarem el refresc automàtic de la quadrícula al mapa
     ref.listen(demBoundsProvider, (previous, next) {
+      if (_styleLoaded) {
+        _refreshGridGeometry();
+      }
+    });
+
+    // Quan arribi la llista remota de tessel·les, refresca la graella
+    ref.listen(availableTilesProvider, (previous, next) {
       if (_styleLoaded) {
         _refreshGridGeometry();
       }

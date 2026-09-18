@@ -1,0 +1,348 @@
+{
+"appTitle": "STRec",
+"startRecording": "Opnemen",
+"stopRecording": "Opname stoppen",
+"gpsDisabled": "GPS is uitgeschakeld",
+"locationPermissionRequired": "Locatietoestemming vereist",
+
+"exitWarning": "Druk nogmaals op Terug om af te sluiten",
+"exitWhileRecording": "Beëindig eerst de opname voordat je de app verlaat",
+"exitWhileFollowing": "Beëindig eerst de navigatie voordat je de app verlaat",
+"exitWhileRecordingAndFollowing": "Beëindig eerst de opname en de navigatie voordat je de app verlaat",
+"longPressToFinish": "Houd ingedrukt om de opname te beëindigen",
+
+"gpsDisabledTitle": "GPS",
+"gpsDisabledMessage": "GPS",
+
+"cancel": "ANNULEREN",
+"close": "SLUITEN",
+"ok": "OK",
+"settings": "Instellingen",
+
+"recoverTrackTitle": "Openstaande route",
+"recoverTrackMessage": "Er is een opname gevonden die niet correct werd afgesloten. Wil je deze hervatten of een nieuwe starten?",
+"discard": "VERWIJDEREN",
+"recover": "HERSTELLEN",
+
+"exportTitle": "GPX exporteren",
+"exportMessage": "Wil je de track nu exporteren?",
+"export": "EXPORTEREN",
+
+"importGpxTitle": "GPX importeren",
+"importGpxMessage": "Je hebt al een actieve route of geladen gegevens. Wil je deze vervangen door het GPX-bestand?",
+"import": "IMPORTEREN",
+
+"viewModeTitle": "Weergavemodus",
+"viewModeMessage": "Wil je naar de weergavemodus gaan? Er worden geen nieuwe punten toegevoegd en de opname wordt uitgeschakeld.",
+"no": "NEE",
+"activate": "ACTIVEREN",
+
+"permissionNeededTitle": "Toestemming vereist",
+"continueLabel": "DOORGAAN",
+
+"locationPermissionTitle": "Locatietoestemming",
+"locationPermissionMessage": "De app heeft geen toestemming om toegang te krijgen tot je locatie. Wil je de instellingen openen om toestemming te geven?",
+
+"offTrack": "Je wijkt af van de route",
+"backOnTrack": "Je bent weer op de track",
+
+"elevationFixing": "Hoogtes corrigeren",
+"error": "Fout",
+
+"gpsRecordByTime": "Opnemen op tijd",
+"gpsRecordByDistance": "Opnemen op afstand",
+"gpsMaxAccuracy": "Maximale nauwkeurigheid",
+"gpsRecordingMethod": "Opnamemethode",
+"gpsSignalQuality": "Signaalkwaliteit",
+"gpsDiagnosticMode": "GPS-diagnosemodus",
+"gpsDiagnosticDescription": "Registreert gedetailleerde telemetrie. Dit kan het batterijverbruik verhogen.",
+
+"gpxIncludeExtraData": "Extra gegevens opnemen in het GPX-bestand",
+"gpxAccuracyPerPoint": "Nauwkeurigheid per punt",
+"gpxSpeed": "Snelheid",
+"gpxHeading": "Richting",
+"gpxSatellites": "Satellieten",
+"gpxVerticalAccuracy": "Verticale nauwkeurigheid",
+"gpxSelectAll": "Alles selecteren",
+"gpxDeselectAll": "Alles deselecteren",
+"gpxSaveTrack": "Track nu opslaan",
+"gpxTrackSaved": "Track opgeslagen",
+"switchOn": "AAN",
+"switchOff": "UIT",
+
+"trackColor": "Kleur van de track",
+"changeTrackColor": "KLEUR VAN DE TRACK WIJZIGEN",
+"trackWidth": "Dikte van de track",
+"trackPreview": "Voorbeeld van de track:",
+"pickColor": "Kies een kleur",
+
+"trackStatsTitle": "Routegegevens",
+"statTime": "Totale tijd",
+"statDistance": "Totale afstand",
+"statSpeed": "Huidige snelheid",
+"statMaxElevation": "Maximale hoogte",
+"statMinElevation": "Minimale hoogte",
+"statAscent": "Totale stijging +",
+"statDescent": "Totale daling -",
+
+"mapStatDistance": "AFST.",
+"mapStatRemaining": "REST.",
+"mapStatTime": "TIJD",
+"mapStatMoving": "BEW.",
+"mapStatStopped": "STOP",
+"mapStatWaypoint": "PUNT",
+"mapStatSpeed": "SNELH.",
+"mapStatSpeedAvg": "GEM.",
+"mapStatSpeedTotal": "TOTAAL",
+"mapStatSpeedMax": "MAX.",
+"mapStatPace": "TEMPO",
+"mapStatPaceAvg": "GEM. TEMPO",
+"mapStatAltitude": "HOOGTE",
+"mapStatAltMax": "MAX. HOOGTE",
+"mapStatAltMin": "MIN. HOOGTE",
+"mapStatAscent": "STIJGING",
+"mapStatDescent": "DALING",
+"mapStatPosition": "POS.",
+"mapStatPositionDms": "POS. DMS",
+"mapStatPressure": "DRUK",
+"mapStatGps": "GPS",
+"mapStatGpsAccuracy": "GPS-NAUWKEURIGHEID",
+"statRemaining": "Resterend",
+
+"elevationProfile": "Hoogteprofiel",
+"noData": "Geen gegevens",
+"recordingTrack": "Track",
+"importedTrack": "Route",
+
+"resume": "HERVATTEN",
+"stopFollowing": "STOPPEN",
+"follow": "ROUTE VOLGEN",
+"pause": "PAUZE",
+
+"apply": "TOEPASSEN",
+"pendingChangesTitle": "Niet-toegepaste wijzigingen",
+"pendingChangesMessage": "Je hebt wijzigingen aangebracht die nog niet zijn toegepast. Wil je deze toepassen voordat je teruggaat naar de kaart?",
+"settingsApplied": "Instellingen toegepast!",
+"gpsTab": "GPS",
+"gpxTab": "GPX",
+"trackTab": "Track",
+"applyUpper": "TOEPASSEN",
+
+"endOfTrack": "Je hebt het einde van de track bereikt",
+
+"reverseTrackTitle": "Omgekeerde richting",
+"reverseTrackMessage": "Het lijkt erop dat je de track in de tegenovergestelde richting volgt. Wil je deze omkeren om de navigatie te verbeteren?",
+"reverseTrackConfirm": "Ja, omkeren",
+"ignoreTrackReverse": "Doorgaan",
+
+"gpxFilenameTitle": "Naam van het GPX-bestand",
+"gpxFilenameLabel": "Bestandsnaam",
+"gpxFilenameHint": "Voer de bestandsnaam in",
+
+"recording": "Opnemen...",
+"paused": "GEPAUZEERD",
+"following": "VOLGEN",
+"followPaused": "ROUTE GEPAUZEERD",
+
+"track": "Route",
+"followShort": "Volgen",
+"followingTitle": "NAVIGATIE",
+"recordingTitle": "OPNAME",
+"pauseShort": "Pauze",
+"stopShort": "Stoppen",
+
+"stopFollowingTitle": "Navigatie stoppen",
+"stopFollowingMessage": "Wil je de navigatie stoppen? De route wordt van de kaart verwijderd.",
+"stopFollowingConfirm": "ROUTE STOPPEN",
+
+"waypointNameTitle": "Naam van het waypoint",
+"waypointNameHint": "Voer een naam in",
+
+"finishRecordingTitle": "Opname beëindigen",
+"finishRecordingMessage": "Wat wil je met de huidige opname doen?",
+"finishRecordingConfirm": "BEËINDIGEN",
+"shareTrack": "DELEN",
+"continueRecording": "Doorgaan met opnemen",
+"deleteTrackTitle": "Track verwijderen",
+"deleteTrackMessage": "Weet je zeker dat je deze route wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.",
+"deleteTrackConfirm": "VERWIJDEREN",
+
+"waypointDetailsTitle": "Waypointgegevens",
+"waypointName": "Naam",
+"waypointAltitude": "Hoogte",
+"waypointTrackPoint": "Routepunt",
+"waypointDistance": "Totale afgelegde afstand",
+"waypointTime": "Passeertijd",
+
+"gpsOptimizationTitle": "GPS-optimalisatie",
+"gpsOptimizationMessage": "Voor nauwkeurige navigatie moet de modus voor hoge nauwkeurigheid worden geactiveerd. Dit kan het batterijverbruik verhogen.",
+"confirm": "BEVESTIGEN",
+
+"notificationPermissionTitle": "Navigatiemeldingen",
+"understood": "BEGREPEN",
+"permissionNeededMessage": "Deze app vereist dat je de optie 'Altijd toestaan' selecteert om locatiegegevens te kunnen verzamelen terwijl de app actief is. Hierdoor kunnen je routes in realtime worden opgenomen en gevolgd, zelfs wanneer de app is geminimaliseerd of op de achtergrond draait.",
+"notificationPermissionMessage": "Deze app gebruikt een voorgrondservice om continue GPS-navigatie te garanderen tijdens het opnemen van je route. Er wordt een permanente melding weergegeven om je te informeren dat de app actief locatiegegevens verzamelt en om te voorkomen dat het systeem je route onderbreekt.",
+
+"gpxErrorInvalidExtension": "Het geselecteerde bestand is geen GPX-bestand",
+"gpxErrorRead": "Het GPX-bestand kon niet worden gelezen",
+"gpxErrorInvalidXml": "Het bestand lijkt geen geldige GPX-XML te zijn",
+"gpxErrorNoGpxTag": "Het bestand bevat geen GPX-gegevens",
+
+"alarms": "Alarmen",
+"alarmsDistanceTitle": "Afstand",
+"alarmsDistanceLabel": "Afgelegde meters",
+"alarmsAltitudeTitle": "Hoogte",
+"alarmsAltitudeLabel": "Hoogtemeters (+/-)",
+"alarmsTimeTitle": "Tijd",
+"alarmsTimeLabel": "Seconden",
+"alarmsAccSegmentLabel": "Hoogteverschil",
+"alarmsCotaSegmentLabel": "Hoogtes",
+"alarmsCotaValue": "Hoogte {meters} m",
+"alarmsVolume": "Alarmvolume",
+"@alarmsCotaValue": {
+"placeholders": {
+"meters": { "type": "int" }
+}
+},
+"gpsAutoConfigInfo": "Wanneer je een track volgt of het afstandsalarm activeert, wordt de GPS automatisch geconfigureerd om de nauwkeurigheid te verbeteren.",
+
+"gpsLockedMessage": "Instellingen vergrendeld: navigatie of alarm actief",
+"reasonAlarm": "Alarm actief",
+"reasonTrack": "Navigatie actief",
+
+"barometerTitle": "Barometer",
+"fusedAltitude": "Gecorrigeerde hoogte",
+"manualCalibration": "Handmatige kalibratie",
+"recalibrateGpsDem": "Opnieuw kalibreren met GPS/DEM",
+"currentGpsAccuracy": "Huidige GPS-nauwkeurigheid",
+"insufficientCoverage": "Onvoldoende dekking om goed te kalibreren.",
+"waitingValidAltitude": "Wachten op een geldig hoogtesignaal...",
+"barometerCalibratedSuccess": "Barometer succesvol gekalibreerd",
+"autoCalibrationInterval": "Interval voor automatische kalibratie",
+"howOften": "Hoe vaak?",
+"barometerExplanation": "De barometer wordt automatisch opnieuw gekalibreerd zodra deze tijd is verstreken, zolang de GPS-dekking goed is.",
+
+"statDetailRecordingData": "Opnamegegevens",
+"statDetailRealTrackSubtitle": "Track in realtime",
+"statDetailReferenceData": "Referentiegegevens",
+"statDetailImportedTrackSubtitle": "Route",
+"statDetailBackButton": "TERUG NAAR STATISTIEKEN",
+"statDetailChartTitle": "PROFIEL VAN {label}",
+"statDetailChartProfile": "PROFIEL VAN {label}",
+
+"@statDetailChartProfile": {
+"placeholders": {
+"label": { "type": "String" }
+}
+},
+
+"waypointsRecorded": "Waypoints van de track",
+"waypointsImported": "Waypoints van de route",
+
+"noRecordedTrack": "Geen track beschikbaar",
+"usingImportedTrack": "Geïmporteerde route wordt weergegeven",
+
+"statTimeTotal": "Totale tijd",
+"statTimeMoving": "Bewegingstijd",
+"statTimeStopped": "Stilstandtijd",
+"statTimeToWaypoint": "Tijd tot waypoint",
+
+"statSpeedCurrent": "Huidige snelheid",
+"statSpeedAverage": "Gemiddelde snelheid",
+"statSpeedTotal": "Gemiddelde totale snelheid",
+
+"statElevation": "Hoogte",
+"statElevationCurrent": "Huidige hoogte",
+
+"statGps": "GPS",
+"statHeading": "Richting",
+"statSatellites": "Satellieten",
+"statAccuracy": "Nauwkeurigheid",
+
+"satelliteSkyplotTitle": "Hemelkaart",
+"satelliteFlagsMode": "Signalen",
+"satelliteGeometryMode": "Geometrieën",
+"satelliteSearching": "Satellieten zoeken... Zorg ervoor dat GPS buiten is ingeschakeld.",
+"satelliteNoVisible": "Geen zichtbare satellieten",
+"satelliteUtcTime": "UTC-tijd",
+"satelliteFixType": "Fix-type",
+"satelliteFix3dRtk": "3D/RTK-fix",
+"satelliteNoFix": "Geen fix",
+"satelliteSatellitesInView": "Satellieten in beeld",
+"satelliteSatellitesInUse": "Satellieten in gebruik",
+"satelliteConstellationGps": "GPS",
+"satelliteConstellationGlonass": "GLONASS",
+"satelliteConstellationGalileo": "GALILEO",
+"satelliteConstellationBeidou": "BEIDOU",
+
+"deleteWaypoint": "Waypoint verwijderen",
+"deleteWaypointTitle": "Waypoint verwijderen?",
+"deleteWaypointMessage": "Weet je zeker dat je dit interessepunt definitief wilt verwijderen?",
+"deleteConfirm": "VERWIJDEREN",
+"waypointDeletedSuccess": "Waypoint succesvol verwijderd",
+
+"statSpeedMax": "Maximale snelheid",
+"statPaceAverage": "Gemiddeld tempo",
+"statPace": "Tempo",
+
+"statBarometerPressure": "Atmosferische druk",
+
+"statRangeSelectedTitle": "Geselecteerd bereik",
+"statRangeDistance": "Afstand",
+"statRangeAscent": "Stijging +",
+"statRangeDescent": "Daling -",
+"statRangeTime": "Tijd van het traject",
+
+"statPositionDecimal": "Decimale positie",
+"statPositionDMS": "Positie DMS",
+
+"demManagerTitle": "DEM-tegelbeheer",
+"demManagerDesc": "Strack Rec downloadt de hoogte automatisch wanneer er dekking beschikbaar is. Zoom in op de kaart om handmatig maximaal 8 gebieden van 0,2° op te slaan voor offline gebruik.",
+"demCellDownloaded": "Tegel lokaal gedownload",
+"demCellAvailable": "Tegel beschikbaar om te downloaden",
+"demDeleteConfirm": "Wil je deze tegel van de schijf verwijderen?",
+"demLimitReached": "Limiet bereikt. Verwijder een oude tegel om een nieuwe te downloaden.",
+
+"record": "Opnemen",
+"recordPaused": "Gepauzeerd",
+"recordStart": "Opname starten",
+"recordPause": "Pauzeren",
+"recordResume": "Hervatten",
+"recordStop": "Beëindigen",
+
+"navigationLoadTrack": "Track laden",
+"navigationFollow": "Volgen",
+"navigationFollowing": "Volgen...",
+"navigationPaused": "Gepauzeerd",
+"navigationStart": "Starten",
+"navigationCancel": "Annuleren",
+"navigationStop": "Beëindigen",
+
+"menuProfile": "Profiel",
+"menuSettings": "Instellingen",
+
+"submenuImportGpx": "GPX importeren",
+
+"submenuCancel": "Annuleren",
+"submenuStop": "Beëindigen",
+
+"submenuPause": "Pauzeren",
+"submenuResume": "Hervatten",
+
+"submenuFollowingPause": "Pauzeren",
+"submenuFollowingResume": "Hervatten",
+"submenuFollowingStop": "Beëindigen",
+
+"gpsDisabledAppBar": "GEEN GPS",
+"recoverTrackDialogBody": "Er zijn gegevens van een eerder niet-opgeslagen route gevonden. Wil je deze herstellen of liever helemaal opnieuw beginnen?",
+"waypointNoGps": "Wachten op GPS-signaal...",
+"waypointDefaultPrefix": "P",
+"gpsSearching": "Zoeken...",
+
+"fixStart": "Startpunt",
+"fixEnd": "Eindpunt",
+
+"deleteCurrentTrackTitle": "Gegevens verwijderen?",
+"deleteCurrentTrackMessage": "Wil je de huidige trackgegevens verwijderen?",
+"deleteCurrentTrackKeep": "BEWAREN"
+}

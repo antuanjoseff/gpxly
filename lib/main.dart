@@ -5,6 +5,7 @@ import 'package:strack_rec/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:strack_rec/notifiers/dem_bounds_notifier.dart';
 import 'package:strack_rec/notifiers/location_notifier.dart';
 import 'package:strack_rec/notifiers/permissions_notifier.dart';
 import 'package:strack_rec/notifiers/recording_notifier.dart';
@@ -37,6 +38,10 @@ class GPXlyApp extends StatelessWidget {
           Locale('es'),
           Locale('fr'),
           Locale('it'),
+          Locale('de'),
+          Locale('nl'),
+          Locale('nl', 'BE'),
+          Locale('lb'),
         ],
         theme: appTheme,
         home: const MapScreen(),
@@ -70,6 +75,9 @@ class _LifecycleWrapperState extends ConsumerState<_LifecycleWrapper>
 
       // 2. 🔥 NOU: Recupera els fitxers .bin de disc i omple el demBoundsProvider instantàniament
       await CogService().initService(ref);
+
+      // 3. 🌐 Carrega UN COP la llista de tessel·les disponibles al servidor
+      ref.read(availableTilesProvider.future);
     });
   }
 

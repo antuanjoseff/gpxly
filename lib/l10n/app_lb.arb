@@ -1,0 +1,348 @@
+{
+"appTitle": "STRec",
+"startRecording": "Opzeechnen",
+"stopRecording": "Opzeechnung stoppen",
+"gpsDisabled": "GPS ass deaktivéiert",
+"locationPermissionRequired": "Standuertberechtegung erfuerderlech",
+
+"exitWarning": "Dréck nach eng Kéier op Zeréck fir ze verloossen",
+"exitWhileRecording": "Fir ze verloossen, musst du d'Opzeechnung fir d'éischt ofschléissen",
+"exitWhileFollowing": "Fir ze verloossen, musst du d'Verfollegung fir d'éischt ofschléissen",
+"exitWhileRecordingAndFollowing": "Fir ze verloossen, musst du d'Opzeechnung an d'Verfollegung fir d'éischt ofschléissen",
+"longPressToFinish": "Gedréckt halen, fir d'Opzeechnung ofzeschléissen",
+
+"gpsDisabledTitle": "GPS",
+"gpsDisabledMessage": "GPS",
+
+"cancel": "OFBRIECHEN",
+"close": "ZOUMAACHEN",
+"ok": "OK",
+"settings": "Astellungen",
+
+"recoverTrackTitle": "Onofgeschloss Streck",
+"recoverTrackMessage": "Et gouf eng Opzeechnung fonnt, déi net richteg ofgeschloss gouf. Wëlls du se weiderféieren oder eng nei ufänken?",
+"discard": "VERWERFEN",
+"recover": "ERËMHERSTELLEN",
+
+"exportTitle": "GPX exportéieren",
+"exportMessage": "Wëlls du den Track elo exportéieren?",
+"export": "EXPORTÉIEREN",
+
+"importGpxTitle": "GPX importéieren",
+"importGpxMessage": "Du hues schonn eng aktiv Streck oder gelueden Donnéeën. Wëlls du se duerch d'GPX-Datei ersetzen?",
+"import": "IMPORTÉIEREN",
+
+"viewModeTitle": "Affichagemodus",
+"viewModeMessage": "Wëlls du an den Affichagemodus wiesselen? Et ginn keng nei Punkten dobäigesat an d'Opzeechnung gëtt deaktivéiert.",
+"no": "NEE",
+"activate": "AKTIVÉIEREN",
+
+"permissionNeededTitle": "Berechtigung erfuerderlech",
+"continueLabel": "WEIDER",
+
+"locationPermissionTitle": "Standuertberechtegung",
+"locationPermissionMessage": "D'App huet keng Berechtegung fir op däi Standuert zouzegräifen. Wëlls du d'Astellungen opmaachen, fir d'Berechtigung ze ginn?",
+
+"offTrack": "Du entferns dech vun der Streck",
+"backOnTrack": "Du bass nees op der Streck",
+
+"elevationFixing": "Héichten ginn korrigéiert",
+"error": "Feeler",
+
+"gpsRecordByTime": "Opzeechnung no Zäit",
+"gpsRecordByDistance": "Opzeechnung no Distanz",
+"gpsMaxAccuracy": "Maximal Genauegkeet",
+"gpsRecordingMethod": "Opzeechnungsmethod",
+"gpsSignalQuality": "Signalqualitéit",
+"gpsDiagnosticMode": "GPS-Diagnosmodus",
+"gpsDiagnosticDescription": "Registréiert detailléiert Telemetrie. Dëst kann de Batterieverbrauch erhéijen.",
+
+"gpxIncludeExtraData": "Zousätzlech Donnéeën an d'GPX-Datei ophuelen",
+"gpxAccuracyPerPoint": "Genauegkeet pro Punkt",
+"gpxSpeed": "Geschwindegkeet",
+"gpxHeading": "Richtung",
+"gpxSatellites": "Satellitten",
+"gpxVerticalAccuracy": "Vertikal Genauegkeet",
+"gpxSelectAll": "Alles auswielen",
+"gpxDeselectAll": "Alles ofwielen",
+"gpxSaveTrack": "Track elo späicheren",
+"gpxTrackSaved": "Track gespäichert",
+"switchOn": "AUS",
+"switchOff": "AUS",
+
+"trackColor": "Faarf vun der Streck",
+"changeTrackColor": "Faarf vun der Streck änneren",
+"trackWidth": "Breet vun der Streck",
+"trackPreview": "Virschau vun der Streck:",
+"pickColor": "Faarf auswielen",
+
+"trackStatsTitle": "Streckendonnéeën",
+"statTime": "Gesamtzäit",
+"statDistance": "Gesamtdistanz",
+"statSpeed": "Aktuell Geschwindegkeet",
+"statMaxElevation": "Maximal Héicht",
+"statMinElevation": "Minimal Héicht",
+"statAscent": "Gesamten Opstieg +",
+"statDescent": "Gesamten Ofstieg -",
+
+"mapStatDistance": "DIST.",
+"mapStatRemaining": "RES.",
+"mapStatTime": "ZÄIT",
+"mapStatMoving": "BEW.",
+"mapStatStopped": "STËLL.",
+"mapStatWaypoint": "PUNKT",
+"mapStatSpeed": "VIT.",
+"mapStatSpeedAvg": "DUER.",
+"mapStatSpeedTotal": "TOTAL",
+"mapStatSpeedMax": "MAX.",
+"mapStatPace": "TEMPO",
+"mapStatPaceAvg": "DUER. TEMPO",
+"mapStatAltitude": "HÉICHT",
+"mapStatAltMax": "MAX. HÉICHT",
+"mapStatAltMin": "MIN. HÉICHT",
+"mapStatAscent": "OPSTIEG",
+"mapStatDescent": "OFSTIEG",
+"mapStatPosition": "POS.",
+"mapStatPositionDms": "POS. DMS",
+"mapStatPressure": "DROCK",
+"mapStatGps": "GPS",
+"mapStatGpsAccuracy": "GPS-GENAUEGKEET",
+"statRemaining": "Rescht",
+
+"elevationProfile": "Héichtenprofil",
+"noData": "Keng Donnéeën",
+"recordingTrack": "Track",
+"importedTrack": "Streck",
+
+"resume": "WEIDERMAACHEN",
+"stopFollowing": "STOPPEN",
+"follow": "STRECK FOLLEGEN",
+"pause": "PAUS",
+
+"apply": "UWENDEN",
+"pendingChangesTitle": "Onapplizéiert Ännerungen",
+"pendingChangesMessage": "Du hues Ännerunge gemaach, déi nach net applizéiert goufen. Wëlls du se uwenden, ier s du op d'Kaart zeréckgees?",
+"settingsApplied": "Astellungen applizéiert!",
+"gpsTab": "GPS",
+"gpxTab": "GPX",
+"trackTab": "Track",
+"applyUpper": "UWENDEN",
+
+"endOfTrack": "Du hues d'Enn vun der Streck erreecht",
+
+"reverseTrackTitle": "Ëmgedréinte Richtung",
+"reverseTrackMessage": "Et schéngt, datt du d'Streck an der entgéintgesater Richtung follegs. Wëlls du se ëmdréinen, fir d'Navigatioun ze verbesseren?",
+"reverseTrackConfirm": "Jo, ëmdréinen",
+"ignoreTrackReverse": "Weiderfueren",
+
+"gpxFilenameTitle": "Numm vun der GPX-Datei",
+"gpxFilenameLabel": "Dateinumm",
+"gpxFilenameHint": "Gëff den Numm vun der Datei an",
+
+"recording": "Opzeechnung...",
+"paused": "PAUSÉIERT",
+"following": "FOLLEGEN",
+"followPaused": "STRECK PAUSÉIERT",
+
+"track": "Streck",
+"followShort": "Folleegen",
+"followingTitle": "VERFOLLEGUNG",
+"recordingTitle": "OPZEECHNUNG",
+"pauseShort": "Paus",
+"stopShort": "Stoppen",
+
+"stopFollowingTitle": "Verfollegung stoppen",
+"stopFollowingMessage": "Wëlls du d'Verfollegung stoppen? D'Streck gëtt vun der Kaart ewechgeholl.",
+"stopFollowingConfirm": "STRECK STOPPEN",
+
+"waypointNameTitle": "Numm vum Waypoint",
+"waypointNameHint": "Gëff en Numm an",
+
+"finishRecordingTitle": "Opzeechnung ofschléissen",
+"finishRecordingMessage": "Wat wëlls du mat der aktueller Opzeechnung maachen?",
+"finishRecordingConfirm": "OFSCHELÉISSEN",
+"shareTrack": "DEELEN",
+"continueRecording": "Opzeechnung weiderféieren",
+"deleteTrackTitle": "Streck läschen",
+"deleteTrackMessage": "Bass du sécher, datt s du dës Streck läsche wëlls? Dës Aktioun kann net réckgängeg gemaach ginn.",
+"deleteTrackConfirm": "LÄSCHEN",
+
+"waypointDetailsTitle": "Waypoint-Detailer",
+"waypointName": "Numm",
+"waypointAltitude": "Héicht",
+"waypointTrackPoint": "Strecke-Punkt",
+"waypointDistance": "Zréckgeluechten Distanz",
+"waypointTime": "Duerchgangszäit",
+
+"gpsOptimizationTitle": "GPS-Optimiséierung",
+"gpsOptimizationMessage": "Fir eng präzis Navigatioun muss den Héichpräzisiounsmodus aktivéiert ginn. Dëst kann de Batterieverbrauch erhéijen.",
+"confirm": "BESTÄTEGEN",
+
+"notificationPermissionTitle": "Navigatiounsnotifikatiounen",
+"understood": "VERSTANEN",
+"permissionNeededMessage": "Dës App erfuerdert, datt s du d'Optioun „Ëmmer erlaben“ auswiels, fir Standuertdaten während der Ausféierung vun der App kënnen ze sammelen. Doduerch kënnen deng Strecken an Echtzäit opgeholl a verfollegt ginn, och wann d'App miniméiert ass oder am Hannergrond leeft.",
+"notificationPermissionMessage": "Dës App benotzt e Virdergrond-Service, fir eng kontinuéierlech GPS-Navigatioun ze garantéieren, während s du deng Streck ophëls. Et gëtt eng dauerhaft Notifikatioun ugewisen, déi dech informéiert, datt d'App aktiv Standuertdaten sammelt, a verhënnert, datt de System deng Rees ënnerbrécht.",
+
+"gpxErrorInvalidExtension": "Déi ausgewielte Datei ass keng GPX-Datei",
+"gpxErrorRead": "D'GPX-Datei konnt net gelies ginn",
+"gpxErrorInvalidXml": "D'Datei schéngt kee valabele GPX-XML ze sinn",
+"gpxErrorNoGpxTag": "D'Datei enthält keng GPX-Donnéeën",
+
+"alarms": "Alarmen",
+"alarmsDistanceTitle": "Distanz",
+"alarmsDistanceLabel": "Zréckgeluechte Meter",
+"alarmsAltitudeTitle": "Héicht",
+"alarmsAltitudeLabel": "Héichtemeter (+/-)",
+"alarmsTimeTitle": "Zäit",
+"alarmsTimeLabel": "Sekonnen",
+"alarmsAccSegmentLabel": "Héichtenënnerscheed",
+"alarmsCotaSegmentLabel": "Héichten",
+"alarmsCotaValue": "Héicht {meters} m",
+"alarmsVolume": "Alarmvolumen",
+"@alarmsCotaValue": {
+"placeholders": {
+"meters": { "type": "int" }
+}
+},
+"gpsAutoConfigInfo": "Wann s du engem Track follegs oder den Distanzalarm aktivéiers, gëtt de GPS automatesch konfiguréiert, fir d'Genauegkeet ze verbesseren.",
+
+"gpsLockedMessage": "Astellunge gespaart: Navigatioun oder Alarm aktiv",
+"reasonAlarm": "Alarm aktiv",
+"reasonTrack": "Navigatioun amgaang",
+
+"barometerTitle": "Barometer",
+"fusedAltitude": "Korrigéiert Héicht",
+"manualCalibration": "Manuell Kalibréierung",
+"recalibrateGpsDem": "Mat GPS/DEM nei kalibréieren",
+"currentGpsAccuracy": "Aktuell GPS-Genauegkeet",
+"insufficientCoverage": "Net genuch Ofdeckung fir korrekt ze kalibréieren.",
+"waitingValidAltitude": "Waarden op e valabelt Héichtesignal...",
+"barometerCalibratedSuccess": "Barometer erfollegräich kalibréiert",
+"autoCalibrationInterval": "Intervall vun der automatescher Kalibréierung",
+"howOften": "Wéi dacks?",
+"barometerExplanation": "De Barometer gëtt automatesch nei kalibréiert, wann dës Zäit vergaangen ass, virausgesat datt d'GPS-Ofdeckung gutt ass.",
+
+"statDetailRecordingData": "Opzeechnungsdaten",
+"statDetailRealTrackSubtitle": "Track an Echtzäit",
+"statDetailReferenceData": "Referenzdaten",
+"statDetailImportedTrackSubtitle": "Streck",
+"statDetailBackButton": "ZERÉCK BEI D'STATISTIKEN",
+"statDetailChartTitle": "PROFIL VUN {label}",
+"statDetailChartProfile": "PROFIL VUN {label}",
+
+"@statDetailChartProfile": {
+"placeholders": {
+"label": { "type": "String" }
+}
+},
+
+"waypointsRecorded": "Waypoints vum Track",
+"waypointsImported": "Waypoints vun der Streck",
+
+"noRecordedTrack": "Keen Track verfügbar",
+"usingImportedTrack": "Importéiert Streck gëtt ugewisen",
+
+"statTimeTotal": "Gesamtzäit",
+"statTimeMoving": "Beweegungszäit",
+"statTimeStopped": "Stillstandszäit",
+"statTimeToWaypoint": "Zäit bis zum Waypoint",
+
+"statSpeedCurrent": "Aktuell Geschwindegkeet",
+"statSpeedAverage": "Duerchschnëttsgeschwindegkeet",
+"statSpeedTotal": "Duerchschnëttlech Gesamtgeschwindegkeet",
+
+"statElevation": "Héicht",
+"statElevationCurrent": "Aktuell Héicht",
+
+"statGps": "GPS",
+"statHeading": "Richtung",
+"statSatellites": "Satellitten",
+"statAccuracy": "Genauegkeet",
+
+"satelliteSkyplotTitle": "Himmelskaart",
+"satelliteFlagsMode": "Signaler",
+"satelliteGeometryMode": "Geometrien",
+"satelliteSearching": "Satellitte sichen... Vergewësser dech, datt GPS dobausse aktivéiert ass.",
+"satelliteNoVisible": "Keng siichtbar Satellitten",
+"satelliteUtcTime": "UTC-Zäit",
+"satelliteFixType": "Fix-Typ",
+"satelliteFix3dRtk": "3D/RTK-Fix",
+"satelliteNoFix": "Kee Fix",
+"satelliteSatellitesInView": "Satellitten am Siichtfeld",
+"satelliteSatellitesInUse": "Benotzte Satellitten",
+"satelliteConstellationGps": "GPS",
+"satelliteConstellationGlonass": "GLONASS",
+"satelliteConstellationGalileo": "GALILEO",
+"satelliteConstellationBeidou": "BEIDOU",
+
+"deleteWaypoint": "Waypoint läschen",
+"deleteWaypointTitle": "Waypoint läschen?",
+"deleteWaypointMessage": "Bass du sécher, datt s du dësen Interessepunkt definitiv läsche wëlls?",
+"deleteConfirm": "LÄSCHEN",
+"waypointDeletedSuccess": "Waypoint erfollegräich geläscht",
+
+"statSpeedMax": "Maximal Geschwindegkeet",
+"statPaceAverage": "Duerchschnëttstempo",
+"statPace": "Tempo",
+
+"statBarometerPressure": "Atmosphäreschen Drock",
+
+"statRangeSelectedTitle": "Ausgewielte Beräich",
+"statRangeDistance": "Distanz",
+"statRangeAscent": "Opstieg +",
+"statRangeDescent": "Ofstieg -",
+"statRangeTime": "Zäit vum Abschnitt",
+
+"statPositionDecimal": "Dezimalpositioun",
+"statPositionDMS": "Positioun DMS",
+
+"demManagerTitle": "DEM-Kachelverwaltung",
+"demManagerDesc": "Strack Rec lued d'Héicht automatesch erof, wann Ofdeckung verfügbar ass. Zoom op der Kaart eran, fir manuell bis zu 8 Beräicher vun 0,2° ze späicheren an offline ze benotzen.",
+"demCellDownloaded": "Kachel lokal erofgelueden",
+"demCellAvailable": "Kachel verfügbar fir erofzelueden",
+"demDeleteConfirm": "Wëlls du dës Kachel vun der Festplack läschen?",
+"demLimitReached": "Limit erreecht. Läscht eng al Kachel, fir eng nei erofzelueden.",
+
+"record": "Opzeechnen",
+"recordPaused": "Pauséiert",
+"recordStart": "Opzeechnung starten",
+"recordPause": "Pauséieren",
+"recordResume": "Weidermaachen",
+"recordStop": "Ofschléissen",
+
+"navigationLoadTrack": "Track lueden",
+"navigationFollow": "Folleegen",
+"navigationFollowing": "Follegen...",
+"navigationPaused": "Pauséiert",
+"navigationStart": "Starten",
+"navigationCancel": "Ofbriechen",
+"navigationStop": "Ofschléissen",
+
+"menuProfile": "Profil",
+"menuSettings": "Astellungen",
+
+"submenuImportGpx": "GPX importéieren",
+
+"submenuCancel": "Ofbriechen",
+"submenuStop": "Ofschléissen",
+
+"submenuPause": "Pauséieren",
+"submenuResume": "Weidermaachen",
+
+"submenuFollowingPause": "Pauséieren",
+"submenuFollowingResume": "Weidermaachen",
+"submenuFollowingStop": "Ofschléissen",
+
+"gpsDisabledAppBar": "KEE GPS",
+"recoverTrackDialogBody": "Et goufen Donnéeë vun enger fréierer, net gespäicherter Streck fonnt. Wëlls du se recuperéieren oder léiwer ganz vun Ufank un ufänken?",
+"waypointNoGps": "Waarden op GPS-Signal...",
+"waypointDefaultPrefix": "P",
+"gpsSearching": "Sichen...",
+
+"fixStart": "Startpunkt",
+"fixEnd": "Ennpunkt",
+
+"deleteCurrentTrackTitle": "Donnéeë läschen?",
+"deleteCurrentTrackMessage": "Wëlls du déi aktuell Track-Donnéeë läschen?",
+"deleteCurrentTrackKeep": "BEHALEN"
+}

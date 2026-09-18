@@ -72,7 +72,27 @@ class CogService {
   // GETTER: Exposem la llista de celdas actuals en memòria cau per poder dibuixar els seus bounds
   List<CogMap> get activeCacheMaps => List.unmodifiable(_cache);
 
-  /// 📥 INICIALITZACIÓ CRÍTICA: Restaura els arxius de disc i actualitza el demBoundsProvider al mateix temps
+  /// � Obté del servidor la llista de tessel·les COG disponibles (p. ex. ["N41E002", ...])
+  Future<List<String>> fetchAvailableTiles() async {
+    final uri = Uri.https(ApiConfig.cogApiHost, ApiConfig.cogListPath);
+    debugPrint("📡 [COG TILES] Cridant URI: $uri");
+
+    final response = await http.get(uri).timeout(const Duration(seconds: 15));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      final tiles = List<String>.from(data['tiles'] ?? []);
+      debugPrint(
+        "✅ [COG TILES] Rebudes ${tiles.length} tessel·les del servidor",
+      );
+      return tiles;
+    }
+    throw Exception(
+      "Error ${response.statusCode} carregant la llista de tiles",
+    );
+  }
+
+  /// �📥 INICIALITZACIÓ CRÍTICA: Restaura els arxius de disc i actualitza el demBoundsProvider al mateix temps
   Future<void> initService(dynamic ref) async {
     final prefs = await SharedPreferences.getInstance();
 

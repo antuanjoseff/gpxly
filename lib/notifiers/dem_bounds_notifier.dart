@@ -1,4 +1,16 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:strack_rec/services/cog_service.dart';
+import 'package:strack_rec/utils/map_constants.dart';
+
+/// 🌐 Llista global de tessel·les disponibles al servidor (es carrega UN COP a l'arrencada)
+/// Fallback: llista hardcoded si la crida falla.
+final availableTilesProvider = FutureProvider<List<String>>((ref) async {
+  try {
+    return await CogService().fetchAvailableTiles();
+  } catch (_) {
+    return MapConstants.tifFilesEspanya;
+  }
+});
 
 class DemBounds {
   final double minLon;

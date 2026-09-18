@@ -1,0 +1,348 @@
+{
+  "appTitle": "STRec",
+"startRecording": "Aufzeichnen",
+"stopRecording": "Aufzeichnung stoppen",
+"gpsDisabled": "GPS ist deaktiviert",
+"locationPermissionRequired": "Standortberechtigung erforderlich",
+
+"exitWarning": "Drücke erneut Zurück, um die App zu verlassen",
+"exitWhileRecording": "Beende zuerst die Aufzeichnung, bevor du die App verlässt",
+"exitWhileFollowing": "Beende zuerst die Navigation, bevor du die App verlässt",
+"exitWhileRecordingAndFollowing": "Beende zuerst die Aufzeichnung und die Navigation, bevor du die App verlässt",
+"longPressToFinish": "Gedrückt halten, um die Aufzeichnung zu beenden",
+
+"gpsDisabledTitle": "GPS",
+"gpsDisabledMessage": "GPS",
+
+"cancel": "ABBRECHEN",
+"close": "SCHLIESSEN",
+"ok": "OK",
+"settings": "Einstellungen",
+
+"recoverTrackTitle": "Ausstehende Route",
+"recoverTrackMessage": "Es wurde eine Aufzeichnung erkannt, die nicht ordnungsgemäß beendet wurde. Möchtest du sie fortsetzen oder eine neue starten?",
+"discard": "VERWERFEN",
+"recover": "WIEDERHERSTELLEN",
+
+"exportTitle": "GPX exportieren",
+"exportMessage": "Möchtest du den Track jetzt exportieren?",
+"export": "EXPORTIEREN",
+
+"importGpxTitle": "GPX importieren",
+"importGpxMessage": "Du hast bereits eine aktive Route oder geladene Daten. Möchtest du sie durch die GPX-Datei ersetzen?",
+"import": "IMPORTIEREN",
+
+"viewModeTitle": "Anzeigemodus",
+"viewModeMessage": "Möchtest du in den Anzeigemodus wechseln? Es werden keine neuen Punkte hinzugefügt und die Aufzeichnung wird deaktiviert.",
+"no": "NEIN",
+"activate": "AKTIVIEREN",
+
+"permissionNeededTitle": "Berechtigung erforderlich",
+"continueLabel": "WEITER",
+
+"locationPermissionTitle": "Standortberechtigung",
+"locationPermissionMessage": "Die App hat keine Berechtigung, auf deinen Standort zuzugreifen. Möchtest du die Einstellungen öffnen, um die Berechtigung zu erteilen?",
+
+"offTrack": "Du entfernst dich von der Route",
+"backOnTrack": "Du bist wieder auf dem Track",
+
+"elevationFixing": "Höhen werden korrigiert",
+"error": "Fehler",
+
+"gpsRecordByTime": "Aufzeichnung nach Zeit",
+"gpsRecordByDistance": "Aufzeichnung nach Entfernung",
+"gpsMaxAccuracy": "Maximale Genauigkeit",
+"gpsRecordingMethod": "Aufzeichnungsmethode",
+"gpsSignalQuality": "Signalqualität",
+"gpsDiagnosticMode": "GPS-Diagnosemodus",
+"gpsDiagnosticDescription": "Zeichnet detaillierte Telemetriedaten auf. Dies kann den Akkuverbrauch erhöhen.",
+
+"gpxIncludeExtraData": "Zusätzliche Daten in die GPX-Datei aufnehmen",
+"gpxAccuracyPerPoint": "Genauigkeit pro Punkt",
+"gpxSpeed": "Geschwindigkeit",
+"gpxHeading": "Kurs",
+"gpxSatellites": "Satelliten",
+"gpxVerticalAccuracy": "Vertikale Genauigkeit",
+"gpxSelectAll": "Alles auswählen",
+"gpxDeselectAll": "Alles abwählen",
+"gpxSaveTrack": "Track jetzt speichern",
+"gpxTrackSaved": "Track gespeichert",
+"switchOn": "EIN",
+"switchOff": "AUS",
+
+"trackColor": "Track-Farbe",
+"changeTrackColor": "TRACK-FARBE ÄNDERN",
+"trackWidth": "Track-Breite",
+"trackPreview": "Vorschau des Tracks:",
+"pickColor": "Farbe auswählen",
+
+"trackStatsTitle": "Routendaten",
+"statTime": "Gesamtzeit",
+"statDistance": "Gesamtentfernung",
+"statSpeed": "Aktuelle Geschwindigkeit",
+"statMaxElevation": "Maximale Höhe",
+"statMinElevation": "Minimale Höhe",
+"statAscent": "Höhengewinn +",
+"statDescent": "Höhenverlust -",
+
+"mapStatDistance": "ENTF.",
+"mapStatRemaining": "REST",
+"mapStatTime": "ZEIT",
+"mapStatMoving": "BEW.",
+"mapStatStopped": "STOPP",
+"mapStatWaypoint": "PUNKT",
+"mapStatSpeed": "GES.",
+"mapStatSpeedAvg": "Ø",
+"mapStatSpeedTotal": "GESAMT",
+"mapStatSpeedMax": "MAX.",
+"mapStatPace": "TEMPO",
+"mapStatPaceAvg": "Ø TEMPO",
+"mapStatAltitude": "HÖHE",
+"mapStatAltMax": "MAX. HÖHE",
+"mapStatAltMin": "MIN. HÖHE",
+"mapStatAscent": "AUFSTIEG",
+"mapStatDescent": "ABSTIEG",
+"mapStatPosition": "POS.",
+"mapStatPositionDms": "POS. DMS",
+"mapStatPressure": "DRUCK",
+"mapStatGps": "GPS",
+"mapStatGpsAccuracy": "GPS-GENAUIGKEIT",
+"statRemaining": "Verbleibend",
+
+"elevationProfile": "Höhenprofil",
+"noData": "Keine Daten",
+"recordingTrack": "Track",
+"importedTrack": "Route",
+
+"resume": "FORTSETZEN",
+"stopFollowing": "STOPP",
+"follow": "ROUTE FOLGEN",
+"pause": "PAUSE",
+
+"apply": "ANWENDEN",
+"pendingChangesTitle": "Ausstehende Änderungen",
+"pendingChangesMessage": "Du hast Änderungen vorgenommen, die noch nicht angewendet wurden. Möchtest du sie anwenden, bevor du zur Karte zurückkehrst?",
+"settingsApplied": "Einstellungen angewendet!",
+"gpsTab": "GPS",
+"gpxTab": "GPX",
+"trackTab": "Track",
+"applyUpper": "ANWENDEN",
+
+"endOfTrack": "Du hast das Ende des Tracks erreicht",
+
+"reverseTrackTitle": "Umgekehrte Richtung",
+"reverseTrackMessage": "Es scheint, dass du dem Track in umgekehrter Richtung folgst. Möchtest du ihn umkehren, um die Navigation zu verbessern?",
+"reverseTrackConfirm": "Ja, umkehren",
+"ignoreTrackReverse": "Fortfahren",
+
+"gpxFilenameTitle": "Name der GPX-Datei",
+"gpxFilenameLabel": "Dateiname",
+"gpxFilenameHint": "Dateinamen eingeben",
+
+"recording": "Aufzeichnung...",
+"paused": "PAUSIERT",
+"following": "FOLGEN",
+"followPaused": "ROUTE PAUSIERT",
+
+"track": "Route",
+"followShort": "Folgen",
+"followingTitle": "NAVIGATION",
+"recordingTitle": "AUFZEICHNUNG",
+"pauseShort": "Pause",
+"stopShort": "Stopp",
+
+"stopFollowingTitle": "Navigation stoppen",
+"stopFollowingMessage": "Möchtest du die Navigation stoppen? Die Route wird von der Karte entfernt.",
+"stopFollowingConfirm": "ROUTE STOPPEN",
+
+"waypointNameTitle": "Name des Wegpunkts",
+"waypointNameHint": "Namen eingeben",
+
+"finishRecordingTitle": "Aufzeichnung beenden",
+"finishRecordingMessage": "Was möchtest du mit der aktuellen Aufzeichnung machen?",
+"finishRecordingConfirm": "BEENDEN",
+"shareTrack": "TEILEN",
+"continueRecording": "Aufzeichnung fortsetzen",
+"deleteTrackTitle": "Track löschen",
+"deleteTrackMessage": "Möchtest du diese Route wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
+"deleteTrackConfirm": "LÖSCHEN",
+
+"waypointDetailsTitle": "Wegpunktdetails",
+"waypointName": "Name",
+"waypointAltitude": "Höhe",
+"waypointTrackPoint": "Routenpunkt",
+"waypointDistance": "Zurückgelegte Entfernung",
+"waypointTime": "Durchgangszeit",
+
+"gpsOptimizationTitle": "GPS-Optimierung",
+"gpsOptimizationMessage": "Für eine präzise Navigation muss der Hochpräzisionsmodus aktiviert sein. Dies kann den Akkuverbrauch erhöhen.",
+"confirm": "BESTÄTIGEN",
+
+"notificationPermissionTitle": "Navigationsbenachrichtigungen",
+"understood": "VERSTANDEN",
+"permissionNeededMessage": "Diese App benötigt die Berechtigung „Immer erlauben“, um während der Ausführung der App Standortdaten erfassen zu können. Dadurch können deine Routen in Echtzeit aufgezeichnet und verfolgt werden, auch wenn die App minimiert ist oder im Hintergrund ausgeführt wird.",
+"notificationPermissionMessage": "Diese App verwendet einen Vordergrunddienst, um eine kontinuierliche GPS-Navigation während der Aufzeichnung deiner Route zu gewährleisten. Es wird eine dauerhafte Benachrichtigung angezeigt, die dich darüber informiert, dass die App aktiv Standortdaten erfasst und verhindert, dass das System deine Tour unterbricht.",
+
+"gpxErrorInvalidExtension": "Die ausgewählte Datei ist keine GPX-Datei",
+"gpxErrorRead": "Die GPX-Datei konnte nicht gelesen werden",
+"gpxErrorInvalidXml": "Die Datei scheint kein gültiges GPX-XML zu sein",
+"gpxErrorNoGpxTag": "Die Datei enthält keine GPX-Daten",
+
+"alarms": "Alarme",
+"alarmsDistanceTitle": "Entfernung",
+"alarmsDistanceLabel": "Zurückgelegte Meter",
+"alarmsAltitudeTitle": "Höhe",
+"alarmsAltitudeLabel": "Höhenmeter (+/-)",
+"alarmsTimeTitle": "Zeit",
+"alarmsTimeLabel": "Sekunden",
+"alarmsAccSegmentLabel": "Höhenunterschied",
+"alarmsCotaSegmentLabel": "Höhen",
+"alarmsCotaValue": "Höhe {meters} m",
+"alarmsVolume": "Alarmlautstärke",
+"@alarmsCotaValue": {
+"placeholders": {
+"meters": { "type": "int" }
+}
+},
+"gpsAutoConfigInfo": "Wenn du einem Track folgst oder den Entfernungsalarm aktivierst, wird das GPS automatisch konfiguriert, um die Genauigkeit zu verbessern.",
+
+"gpsLockedMessage": "Einstellungen gesperrt: Navigation oder Alarm aktiv",
+"reasonAlarm": "Alarm aktiv",
+"reasonTrack": "Navigation läuft",
+
+"barometerTitle": "Barometer",
+"fusedAltitude": "Korrigierte Höhe",
+"manualCalibration": "Manuelle Kalibrierung",
+"recalibrateGpsDem": "Mit GPS/DEM neu kalibrieren",
+"currentGpsAccuracy": "Aktuelle GPS-Genauigkeit",
+"insufficientCoverage": "Unzureichende Abdeckung für eine genaue Kalibrierung.",
+"waitingValidAltitude": "Warte auf ein gültiges Höhensignal...",
+"barometerCalibratedSuccess": "Barometer erfolgreich kalibriert",
+"autoCalibrationInterval": "Intervall für automatische Kalibrierung",
+"howOften": "Wie oft?",
+"barometerExplanation": "Das Barometer wird automatisch nach Ablauf dieser Zeit neu kalibriert, sofern die GPS-Abdeckung gut ist.",
+
+"statDetailRecordingData": "Aufzeichnungsdaten",
+"statDetailRealTrackSubtitle": "Track in Echtzeit",
+"statDetailReferenceData": "Referenzdaten",
+"statDetailImportedTrackSubtitle": "Route",
+"statDetailBackButton": "ZURÜCK ZU DEN STATISTIKEN",
+"statDetailChartTitle": "PROFIL VON {label}",
+"statDetailChartProfile": "PROFIL VON {label}",
+
+"@statDetailChartProfile": {
+"placeholders": {
+"label": { "type": "String" }
+}
+},
+
+"waypointsRecorded": "Wegpunkte des Tracks",
+"waypointsImported": "Wegpunkte der Route",
+
+"noRecordedTrack": "Kein Track verfügbar",
+"usingImportedTrack": "Importierte Route wird angezeigt",
+
+"statTimeTotal": "Gesamtzeit",
+"statTimeMoving": "Bewegungszeit",
+"statTimeStopped": "Stillstandszeit",
+"statTimeToWaypoint": "Zeit bis zum Wegpunkt",
+
+"statSpeedCurrent": "Aktuelle Geschwindigkeit",
+"statSpeedAverage": "Durchschnittsgeschwindigkeit",
+"statSpeedTotal": "Durchschnittliche Gesamtgeschwindigkeit",
+
+"statElevation": "Höhe",
+"statElevationCurrent": "Aktuelle Höhe",
+
+"statGps": "GPS",
+"statHeading": "Kurs",
+"statSatellites": "Satelliten",
+"statAccuracy": "Genauigkeit",
+
+"satelliteSkyplotTitle": "Himmelskarte",
+"satelliteFlagsMode": "Signale",
+"satelliteGeometryMode": "Geometrien",
+"satelliteSearching": "Suche nach Satelliten... Stelle sicher, dass GPS im Freien aktiviert ist.",
+"satelliteNoVisible": "Keine sichtbaren Satelliten",
+"satelliteUtcTime": "UTC-Zeit",
+"satelliteFixType": "Fix-Typ",
+"satelliteFix3dRtk": "3D/RTK-Fix",
+"satelliteNoFix": "Kein Fix",
+"satelliteSatellitesInView": "Satelliten in Sicht",
+"satelliteSatellitesInUse": "Verwendete Satelliten",
+"satelliteConstellationGps": "GPS",
+"satelliteConstellationGlonass": "GLONASS",
+"satelliteConstellationGalileo": "GALILEO",
+"satelliteConstellationBeidou": "BEIDOU",
+
+"deleteWaypoint": "Wegpunkt löschen",
+"deleteWaypointTitle": "Wegpunkt löschen?",
+"deleteWaypointMessage": "Möchtest du diesen Interessenpunkt wirklich endgültig löschen?",
+"deleteConfirm": "LÖSCHEN",
+"waypointDeletedSuccess": "Wegpunkt erfolgreich gelöscht",
+
+"statSpeedMax": "Maximale Geschwindigkeit",
+"statPaceAverage": "Durchschnittliches Tempo",
+"statPace": "Tempo",
+
+"statBarometerPressure": "Atmosphärischer Druck",
+
+"statRangeSelectedTitle": "Ausgewählter Bereich",
+"statRangeDistance": "Entfernung",
+"statRangeAscent": "Höhengewinn +",
+"statRangeDescent": "Höhenverlust -",
+"statRangeTime": "Zeit des Abschnitts",
+
+"statPositionDecimal": "Position Dezimal",
+"statPositionDMS": "Position DMS",
+
+"demManagerTitle": "DEM-Kachelverwaltung",
+"demManagerDesc": "Strack Rec lädt die Höhe automatisch herunter, wenn eine Internetverbindung verfügbar ist. Zoome auf der Karte hinein, um manuell bis zu 8 Bereiche mit 0,2° zu speichern und offline zu verwenden.",
+"demCellDownloaded": "Kachel lokal heruntergeladen",
+"demCellAvailable": "Kachel zum Herunterladen verfügbar",
+"demDeleteConfirm": "Möchtest du diese Kachel vom Gerät löschen?",
+"demLimitReached": "Limit erreicht. Lösche eine alte Kachel, um eine neue herunterzuladen.",
+
+"record": "Aufzeichnen",
+"recordPaused": "Pausiert",
+"recordStart": "Aufzeichnung starten",
+"recordPause": "Pausieren",
+"recordResume": "Fortsetzen",
+"recordStop": "Beenden",
+
+"navigationLoadTrack": "Track laden",
+"navigationFollow": "Folgen",
+"navigationFollowing": "Folge...",
+"navigationPaused": "Pausiert",
+"navigationStart": "Starten",
+"navigationCancel": "Abbrechen",
+"navigationStop": "Beenden",
+
+"menuProfile": "Profil",
+"menuSettings": "Einstellungen",
+
+"submenuImportGpx": "GPX importieren",
+
+"submenuCancel": "Abbrechen",
+"submenuStop": "Beenden",
+
+"submenuPause": "Pausieren",
+"submenuResume": "Fortsetzen",
+
+"submenuFollowingPause": "Pausieren",
+"submenuFollowingResume": "Fortsetzen",
+"submenuFollowingStop": "Beenden",
+
+"gpsDisabledAppBar": "KEIN GPS",
+"recoverTrackDialogBody": "Es wurden Daten einer zuvor nicht gespeicherten Route gefunden. Möchtest du sie wiederherstellen oder lieber ganz von vorne beginnen?",
+"waypointNoGps": "Warte auf GPS-Signal...",
+"waypointDefaultPrefix": "P",
+"gpsSearching": "Suche...",
+
+"fixStart": "Startpunkt",
+"fixEnd": "Endpunkt",
+
+"deleteCurrentTrackTitle": "Daten löschen?",
+"deleteCurrentTrackMessage": "Möchtest du die aktuellen Track-Daten löschen?",
+"deleteCurrentTrackKeep": "BEIBEHALTEN"
+}
