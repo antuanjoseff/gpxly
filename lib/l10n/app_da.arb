@@ -1,0 +1,348 @@
+{
+  "appTitle": "STRec",
+  "startRecording": "Optag",
+  "stopRecording": "Stop optagelse",
+  "gpsDisabled": "GPS er deaktiveret",
+  "locationPermissionRequired": "Placeringstilladelse er påkrævet",
+
+  "exitWarning": "Tryk tilbage igen for at afslutte",
+  "exitWhileRecording": "Afslut optagelsen, før du lukker",
+  "exitWhileFollowing": "Afslut sporing, før du lukker",
+  "exitWhileRecordingAndFollowing": "Afslut optagelsen og sporingen, før du lukker",
+  "longPressToFinish": "Tryk og hold for at afslutte optagelsen",
+
+  "gpsDisabledTitle": "GPS",
+  "gpsDisabledMessage": "GPS",
+
+  "cancel": "ANNULLER",
+  "close": "LUK",
+  "ok": "OK",
+  "settings": "Indstillinger",
+
+  "recoverTrackTitle": "Uafsluttet rute",
+  "recoverTrackMessage": "Der blev fundet en optagelse, som ikke blev afsluttet korrekt. Vil du fortsætte den eller starte en ny?",
+  "discard": "KASSÉR",
+  "recover": "GENDAN",
+
+  "exportTitle": "Eksportér GPX",
+  "exportMessage": "Vil du eksportere tracket nu?",
+  "export": "EKSPORTÉR",
+
+  "importGpxTitle": "Importér GPX",
+  "importGpxMessage": "Du har allerede en aktiv rute eller indlæste data. Vil du erstatte dem med GPX-filen?",
+  "import": "IMPORTÉR",
+
+  "viewModeTitle": "Visningstilstand",
+  "viewModeMessage": "Vil du gå til visningstilstand? Der tilføjes ingen nye punkter, og optagelsen deaktiveres.",
+  "no": "NEJ",
+  "activate": "AKTIVÉR",
+
+  "permissionNeededTitle": "Tilladelse påkrævet",
+  "continueLabel": "FORTSÆT",
+
+  "locationPermissionTitle": "Placeringstilladelse",
+  "locationPermissionMessage": "Appen har ikke tilladelse til at få adgang til din placering. Vil du åbne indstillingerne for at give tilladelse?",
+
+  "offTrack": "Du bevæger dig væk fra ruten",
+  "backOnTrack": "Du er tilbage på tracket",
+
+  "elevationFixing": "Korrigerer højder",
+  "error": "Fejl",
+
+  "gpsRecordByTime": "Tidsbaseret optagelse",
+  "gpsRecordByDistance": "Afstandsbaseret optagelse",
+  "gpsMaxAccuracy": "Maksimal nøjagtighed",
+  "gpsRecordingMethod": "Optagelsesmetode",
+  "gpsSignalQuality": "Signalkvalitet",
+  "gpsDiagnosticMode": "GPS-diagnosetilstand",
+  "gpsDiagnosticDescription": "Registrerer detaljeret telemetri. Kan øge batteriforbruget.",
+
+  "gpxIncludeExtraData": "Inkludér ekstra data i GPX-filen",
+  "gpxAccuracyPerPoint": "Nøjagtighed pr. punkt",
+  "gpxSpeed": "Hastighed",
+  "gpxHeading": "Retning",
+  "gpxSatellites": "Satellitter",
+  "gpxVerticalAccuracy": "Lodret nøjagtighed",
+  "gpxSelectAll": "Markér alle",
+  "gpxDeselectAll": "Fjern markering fra alle",
+  "gpxSaveTrack": "Gem tracket nu",
+  "gpxTrackSaved": "Track gemt",
+  "switchOn": "TIL",
+  "switchOff": "FRA",
+
+  "trackColor": "Trackfarve",
+  "changeTrackColor": "SKIFT FARVE PÅ SPOR",
+  "trackWidth": "Sporbredde",
+  "trackPreview": "Forhåndsvisning af spor:",
+  "pickColor": "Vælg en farve",
+
+  "trackStatsTitle": "Rutedata",
+  "statTime": "Samlet tid",
+  "statDistance": "Samlet distance",
+  "statSpeed": "Aktuel hastighed",
+  "statMaxElevation": "Maksimal højde",
+  "statMinElevation": "Minimal højde",
+  "statAscent": "Samlet stigning +",
+  "statDescent": "Samlet nedstigning -",
+
+  "mapStatDistance": "DIST.",
+  "mapStatRemaining": "REST.",
+  "mapStatTime": "TID",
+  "mapStatMoving": "I BEV.",
+  "mapStatStopped": "STOP.",
+  "mapStatWaypoint": "WAYPOINT",
+  "mapStatSpeed": "FART",
+  "mapStatSpeedAvg": "GN.SN.",
+  "mapStatSpeedTotal": "TOTAL",
+  "mapStatSpeedMax": "MAKS.",
+  "mapStatPace": "TEMPO",
+  "mapStatPaceAvg": "GN.SN. TEMPO",
+  "mapStatAltitude": "HØJDE",
+  "mapStatAltMax": "MAKS. HØJDE",
+  "mapStatAltMin": "MIN. HØJDE",
+  "mapStatAscent": "STIGNING",
+  "mapStatDescent": "NEDSTIGNING",
+  "mapStatPosition": "POS.",
+  "mapStatPositionDms": "POS. DMS",
+  "mapStatPressure": "TRYK",
+  "mapStatGps": "GPS",
+  "mapStatGpsAccuracy": "GPS-NØJAGTIGHED",
+  "statRemaining": "Resterende",
+
+  "elevationProfile": "Højdeprofil",
+  "noData": "Ingen data",
+  "recordingTrack": "Track",
+  "importedTrack": "Rute",
+
+  "resume": "GENOPTAG",
+  "stopFollowing": "STOP",
+  "follow": "FØLG RUTE",
+  "pause": "PAUSE",
+
+  "apply": "ANVEND",
+  "pendingChangesTitle": "Ventende ændringer",
+  "pendingChangesMessage": "Du har foretaget ændringer, som ikke er anvendt. Vil du anvende dem, før du vender tilbage til kortet?",
+  "settingsApplied": "Indstillinger anvendt!",
+  "gpsTab": "GPS",
+  "gpxTab": "GPX",
+  "trackTab": "Track",
+  "applyUpper": "ANVEND",
+
+  "endOfTrack": "Du er nået til slutningen af tracket",
+
+  "reverseTrackTitle": "Omvendt retning",
+  "reverseTrackMessage": "Det ser ud til, at du følger tracket i den modsatte retning. Vil du vende det for at forbedre navigationen?",
+  "reverseTrackConfirm": "Ja, vend det",
+  "ignoreTrackReverse": "Fortsæt",
+
+  "gpxFilenameTitle": "Navn på GPX-fil",
+  "gpxFilenameLabel": "Filnavn",
+  "gpxFilenameHint": "Indtast filnavnet",
+
+  "recording": "Optager...",
+  "paused": "PAUSET",
+  "following": "FØLGER",
+  "followPaused": "RUTE PAUSET",
+
+  "track": "Rute",
+  "followShort": "Følg",
+  "followingTitle": "SPORING",
+  "recordingTitle": "OPTAGELSE",
+  "pauseShort": "Pause",
+  "stopShort": "Stop",
+
+  "stopFollowingTitle": "Stop sporing",
+  "stopFollowingMessage": "Vil du stoppe sporingen? Ruten fjernes fra kortet.",
+  "stopFollowingConfirm": "STOP RUTE",
+
+  "waypointNameTitle": "Waypoint-navn",
+  "waypointNameHint": "Indtast et navn",
+
+  "finishRecordingTitle": "Afslut optagelse",
+  "finishRecordingMessage": "Hvad vil du gøre med den aktuelle optagelse?",
+  "finishRecordingConfirm": "AFSLUT",
+  "shareTrack": "DEL",
+  "continueRecording": "Fortsæt med at optage",
+  "deleteTrackTitle": "Slet track",
+  "deleteTrackMessage": "Er du sikker på, at du vil slette denne rute? Denne handling kan ikke fortrydes.",
+  "deleteTrackConfirm": "SLET",
+
+  "waypointDetailsTitle": "Waypoint-detaljer",
+  "waypointName": "Navn",
+  "waypointAltitude": "Højde",
+  "waypointTrackPoint": "Rutepunkt",
+  "waypointDistance": "Samlet distance",
+  "waypointTime": "Passagetid",
+
+  "gpsOptimizationTitle": "GPS-optimering",
+  "gpsOptimizationMessage": "For præcis sporing skal tilstanden med høj præcision aktiveres. Dette kan øge batteriforbruget.",
+  "confirm": "BEKRÆFT",
+
+  "notificationPermissionTitle": "Sporingsnotifikationer",
+  "understood": "FORSTÅET",
+  "permissionNeededMessage": "Denne app kræver, at du vælger indstillingen 'Tillad altid' for at kunne indsamle placeringsdata, mens appen kører. Dette gør det muligt at registrere og følge dine ruter i realtid, også når appen er minimeret eller kører i baggrunden.",
+  "notificationPermissionMessage": "Denne app kører en tjeneste i forgrunden for at sikre kontinuerlig GPS-sporing, mens du registrerer din rute. Der vises en vedvarende notifikation for at informere dig om, at appen aktivt indsamler placeringsdata, så systemet ikke afbryder din tur.",
+
+  "gpxErrorInvalidExtension": "Den valgte fil er ikke en GPX-fil",
+  "gpxErrorRead": "GPX-filen kunne ikke læses",
+  "gpxErrorInvalidXml": "Filen ser ikke ud til at være gyldig GPX-XML",
+  "gpxErrorNoGpxTag": "Filen indeholder ingen GPX-data",
+
+  "alarms": "Alarmer",
+  "alarmsDistanceTitle": "Distance",
+  "alarmsDistanceLabel": "Tilbagelagte meter",
+  "alarmsAltitudeTitle": "Højde",
+  "alarmsAltitudeLabel": "Højdeforskel (± meter)",
+  "alarmsTimeTitle": "Tid",
+  "alarmsTimeLabel": "Sekunder",
+  "alarmsAccSegmentLabel": "Højdeforskel",
+  "alarmsCotaSegmentLabel": "Højder",
+  "alarmsCotaValue": "Højde {meters} m",
+  "alarmsVolume": "Alarmlydstyrke",
+  "@alarmsCotaValue": {
+    "placeholders": {
+      "meters": { "type": "int" }
+    }
+  },
+  "gpsAutoConfigInfo": "Når du følger et track eller aktiverer afstandsalarmen, konfigureres GPS automatisk for at forbedre nøjagtigheden.",
+
+  "gpsLockedMessage": "Indstillinger låst: Sporing eller alarm aktiv",
+  "reasonAlarm": "Alarm aktiv",
+  "reasonTrack": "Sporing i gang",
+
+  "barometerTitle": "Barometer",
+  "fusedAltitude": "Korrigeret højde",
+  "manualCalibration": "Manuel kalibrering",
+  "recalibrateGpsDem": "Kalibrér igen med GPS/DEM",
+  "currentGpsAccuracy": "Aktuel GPS-nøjagtighed",
+  "insufficientCoverage": "Utilstrækkelig dækning til korrekt kalibrering.",
+  "waitingValidAltitude": "Venter på gyldigt højdesignal...",
+  "barometerCalibratedSuccess": "Barometer kalibreret",
+  "autoCalibrationInterval": "Automatisk kalibreringsinterval",
+  "howOften": "Hvor ofte?",
+  "barometerExplanation": "Barometeret kalibreres automatisk igen, hver gang dette tidsinterval er gået, så længe GPS-dækningen er god.",
+
+  "statDetailRecordingData": "Optagelsesdata",
+  "statDetailRealTrackSubtitle": "Track i realtid",
+  "statDetailReferenceData": "Referencedata",
+  "statDetailImportedTrackSubtitle": "Rute",
+  "statDetailBackButton": "TILBAGE TIL STATISTIK",
+  "statDetailChartTitle": "PROFIL AF {label}",
+  "statDetailChartProfile": "PROFIL AF {label}",
+
+  "@statDetailChartProfile": {
+    "placeholders": {
+      "label": { "type": "String" }
+    }
+  },
+
+  "waypointsRecorded": "Track-waypoints",
+  "waypointsImported": "Rute-waypoints",
+
+  "noRecordedTrack": "Der er ingen tilgængelige tracks",
+  "usingImportedTrack": "Viser importeret rute",
+
+  "statTimeTotal": "Samlet tid",
+  "statTimeMoving": "Tid i bevægelse",
+  "statTimeStopped": "Stilletid",
+  "statTimeToWaypoint": "Tid til waypoint",
+
+  "statSpeedCurrent": "Aktuel hastighed",
+  "statSpeedAverage": "Gennemsnitshastighed",
+  "statSpeedTotal": "Samlet gennemsnitshastighed",
+
+  "statElevation": "Højde",
+  "statElevationCurrent": "Aktuel højde",
+
+  "statGps": "GPS",
+  "statHeading": "Retning",
+  "statSatellites": "Satellitter",
+  "statAccuracy": "Nøjagtighed",
+
+  "satelliteSkyplotTitle": "Himmeldiagram",
+  "satelliteFlagsMode": "Flag",
+  "satelliteGeometryMode": "Geometrier",
+  "satelliteSearching": "Søger efter satellitter... Sørg for, at GPS er aktiveret og at du er udendørs.",
+  "satelliteNoVisible": "Ingen synlige satellitter",
+  "satelliteUtcTime": "UTC-tid",
+  "satelliteFixType": "Fix-type",
+  "satelliteFix3dRtk": "3D/RTK-fix",
+  "satelliteNoFix": "Intet fix",
+  "satelliteSatellitesInView": "Satellitter i synsfeltet",
+  "satelliteSatellitesInUse": "Satellitter i brug",
+  "satelliteConstellationGps": "GPS",
+  "satelliteConstellationGlonass": "GLONASS",
+  "satelliteConstellationGalileo": "GALILEO",
+  "satelliteConstellationBeidou": "BEIDOU",
+
+  "deleteWaypoint": "Slet waypoint",
+  "deleteWaypointTitle": "Slet waypoint?",
+  "deleteWaypointMessage": "Er du sikker på, at du vil slette dette interessepunkt permanent?",
+  "deleteConfirm": "SLET",
+  "waypointDeletedSuccess": "Waypoint slettet",
+
+  "statSpeedMax": "Maksimal hastighed",
+  "statPaceAverage": "Gennemsnitstempo",
+  "statPace": "Tempo",
+
+  "statBarometerPressure": "Atmosfærisk tryk",
+
+  "statRangeSelectedTitle": "Valgt interval",
+  "statRangeDistance": "Distance",
+  "statRangeAscent": "Stigning +",
+  "statRangeDescent": "Nedstigning -",
+  "statRangeTime": "Strækkets tid",
+
+  "statPositionDecimal": "Position GD",
+  "statPositionDMS": "Position DMS",
+
+  "demManagerTitle": "DEM-cellehåndtering",
+  "demManagerDesc": "Strack Rec downloader automatisk højdedata, når der er dækning. Zoom ind på kortet for manuelt at gemme op til 8 områder på 0,2° til offline-brug.",
+  "demCellDownloaded": "Celle downloadet lokalt",
+  "demCellAvailable": "Celle tilgængelig til download",
+  "demDeleteConfirm": "Vil du slette denne celle fra disken?",
+  "demLimitReached": "Grænsen er nået. Slet en ældre celle for at downloade en ny.",
+
+  "record": "Optag",
+  "recordPaused": "Pauset",
+  "recordStart": "Start optagelse",
+  "recordPause": "Pause",
+  "recordResume": "Genoptag",
+  "recordStop": "Afslut",
+
+  "navigationLoadTrack": "Indlæs track",
+  "navigationFollow": "Følg",
+  "navigationFollowing": "Følger...",
+  "navigationPaused": "Pauset",
+  "navigationStart": "Start",
+  "navigationCancel": "Annuller",
+  "navigationStop": "Afslut",
+
+  "menuProfile": "Profil",
+  "menuSettings": "Indstillinger",
+
+  "submenuImportGpx": "Importér GPX",
+
+  "submenuCancel": "Annuller",
+  "submenuStop": "Afslut",
+
+  "submenuPause": "Pause",
+  "submenuResume": "Genoptag",
+
+  "submenuFollowingPause": "Pause",
+  "submenuFollowingResume": "Genoptag",
+  "submenuFollowingStop": "Afslut",
+
+  "gpsDisabledAppBar": "INGEN GPS",
+  "recoverTrackDialogBody": "Der blev fundet data fra en tidligere, ikke-gemt rute. Vil du gendanne den, eller vil du hellere starte en helt ny fra bunden?",
+  "waypointNoGps": "Venter på GPS-signal...",
+  "waypointDefaultPrefix": "P",
+  "gpsSearching": "Søger...",
+
+  "fixStart": "Startpunkt",
+  "fixEnd": "Slutpunkt",
+
+  "deleteCurrentTrackTitle": "Slet data?",
+  "deleteCurrentTrackMessage": "Vil du slette de aktuelle trackoplysninger?",
+  "deleteCurrentTrackKeep": "BEHOLD"
+}
