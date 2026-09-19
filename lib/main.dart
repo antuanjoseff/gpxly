@@ -80,6 +80,9 @@ class _LifecycleWrapperState extends ConsumerState<_LifecycleWrapper>
 
       // 3. 🌐 Carrega UN COP la llista de tessel·les disponibles al servidor
       ref.read(availableTilesProvider.future);
+
+      // 4. 🗺️ Carrega UN COP el footprint global del servidor
+      ref.read(footprintProvider.future);
     });
   }
 

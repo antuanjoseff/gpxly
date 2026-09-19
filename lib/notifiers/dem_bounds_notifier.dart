@@ -12,6 +12,16 @@ final availableTilesProvider = FutureProvider<List<String>>((ref) async {
   }
 });
 
+/// 🗺️ Footprint global (contorn irregular) calculat pel servidor.
+/// Retorna null si falla: el client pot recórrer al càlcul local.
+final footprintProvider = FutureProvider<Map<String, dynamic>?>((ref) async {
+  try {
+    return await CogService().fetchFootprint();
+  } catch (_) {
+    return null;
+  }
+});
+
 class DemBounds {
   final double minLon;
   final double minLat;

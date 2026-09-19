@@ -107,6 +107,147 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
     return {"type": "FeatureCollection", "features": features};
   }
 
+  /// 🔲 Construeix el polígon irregular (footprint) unint totes les cel·les
+  /// de 0.2º. Les arestes interiors compartides per dues cel·les es cancel·len
+  /// i les exteriors es concatenen formant anells tancats (contorns + forats)
+  /// que es retornen com un únic MultiPolygon.
+  Map<String, dynamic> _buildFootprintGeoJson() {
+    final tiles =
+        ref.read(availableTilesProvider).value ?? MapConstants.tifFilesEspanya;
+
+    // Arestes dirigides en coordenades enteres (graus x 5) per evitar errors
+    // de punt flotant. Cada cel·la s'afegeix en sentit antihorari, de manera
+    // que l'interior queda sempre a l'esquerra de l'aresta.
+    final Map<String, List<int>> edges = {};
+
+    void addEdge(int x1, int y1, int x2, int y2) {
+      final String reverseKey = "$x2,$y2>$x1,$y1";
+      if (edges.containsKey(reverseKey)) {
+        edges.remove(reverseKey);
+      } else {
+        edges["$x1,$y1>$x2,$y2"] = [x1, y1, x2, y2];
+      }
+    }
+
+    for (final filename in tiles) {
+      final latBase = double.parse(filename.substring(1, 3));
+      final lonSign = filename.substring(3, 4) == 'E' ? 1.0 : -1.0;
+      final lonBase = double.parse(filename.substring(4, 7)) * lonSign;
+
+      final int baseX = (lonBase * 5).round();
+      final int baseY = (latBase * 5).round();
+
+      for (int i = 0; i < 5; i++) {
+        for (int j = 0; j < 5; j++) {
+          final int minX = baseX + j;
+          final int maxX = minX + 1;
+          final int minY = baseY + i;
+          final int maxY = minY + 1;
+          addEdge(minX, minY, maxX, minY);
+          addEdge(maxX, minY, maxX, maxY);
+          addEdge(maxX, maxY, minX, maxY);
+          addEdge(minX, maxY, minX, minY);
+        }
+      }
+    }
+
+    // Concatena les arestes restants en anells tancats
+    final Set<String> unused = edges.keys.toSet();
+    final List<List<List<double>>> rings = [];
+
+    while (unused.isNotEmpty) {
+      final first = edges[unused.first]!;
+      unused.remove(unused.first);
+      final List<List<int>> ring = [
+        [first[0], first[1]],
+        [first[2], first[3]],
+      ];
+      int cx = first[2];
+      int cy = first[3];
+      int dx = first[2] - first[0];
+      int dy = first[3] - first[1];
+
+      while (cx != ring.first[0] || cy != ring.first[1]) {
+        // Preferència de gir: esquerra > recte > dreta > enrere
+        final List<List<int>> prefs = [
+          [-dy, dx],
+          [dx, dy],
+          [dy, -dx],
+          [-dx, -dy],
+        ];
+        bool advanced = false;
+        for (final p in prefs) {
+          final int tx = cx + p[0];
+          final int ty = cy + p[1];
+          final String key = "$cx,$cy>$tx,$ty";
+          if (unused.contains(key)) {
+            unused.remove(key);
+            cx = tx;
+            cy = ty;
+            dx = p[0];
+            dy = p[1];
+            ring.add([cx, cy]);
+            advanced = true;
+            break;
+          }
+        }
+        if (!advanced) break;
+      }
+
+      if (cx == ring.first[0] && cy == ring.first[1] && ring.length >= 4) {
+        rings.add(ring.map((p) => [p[0] / 5.0, p[1] / 5.0]).toList());
+      }
+    }
+
+    // Classifica els anells: àrea positiva = contorn exterior, negativa = forat
+    double signedArea(List<List<double>> ring) {
+      double area = 0;
+      for (int k = 0; k < ring.length - 1; k++) {
+        area += ring[k][0] * ring[k + 1][1] - ring[k + 1][0] * ring[k][1];
+      }
+      return area / 2;
+    }
+
+    final outers = rings.where((r) => signedArea(r) > 0).toList();
+    final holes = rings.where((r) => signedArea(r) < 0).toList();
+
+    bool containsPoint(List<List<double>> ring, List<double> p) {
+      bool inside = false;
+      for (int a = 0, b = ring.length - 1; a < ring.length; b = a++) {
+        final double xa = ring[a][0], ya = ring[a][1];
+        final double xb = ring[b][0], yb = ring[b][1];
+        if ((ya > p[1]) != (yb > p[1]) &&
+            p[0] < (xb - xa) * (p[1] - ya) / (yb - ya) + xa) {
+          inside = !inside;
+        }
+      }
+      return inside;
+    }
+
+    final List<List<List<List<double>>>> polygons = [
+      for (final outer in outers) [outer],
+    ];
+    for (final hole in holes) {
+      for (final polygon in polygons) {
+        if (containsPoint(polygon.first, hole.first)) {
+          polygon.add(hole);
+          break;
+        }
+      }
+    }
+
+    return {
+      "type": "FeatureCollection",
+      "features": [
+        {
+          "type": "Feature",
+          "properties": {},
+          "geometry": {"type": "MultiPolygon", "coordinates": polygons},
+        },
+      ],
+    };
+  }
+
   Future<void> _refreshGridGeometry() async {
     if (_mapController == null || !_styleLoaded) return;
     final demState = ref.read(demBoundsProvider);
@@ -122,6 +263,7 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
       await _mapController!.addLayer(
         "dem_grid_source",
         "dem_grid_layer",
+        minzoom: 5,
         const FillLayerProperties(
           fillColor: [
             "case",
@@ -157,6 +299,31 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
           ],
           fillOutlineColor: "#ffffff",
         ),
+      );
+    }
+
+    // 🗺️ Footprint global per a zooms allunyats: un sol polígon irregular.
+    // Preferència: footprint calculat pel servidor. Fallback: càlcul local.
+    final serverFootprint = ref.read(footprintProvider).value;
+    final footprint = serverFootprint ?? _buildFootprintGeoJson();
+    try {
+      await _mapController!.setGeoJsonSource("dem_footprint_source", footprint);
+    } catch (_) {
+      await _mapController!.addSource(
+        "dem_footprint_source",
+        GeojsonSourceProperties(data: footprint),
+      );
+      await _mapController!.addLayer(
+        "dem_footprint_source",
+        "dem_footprint_layer",
+        maxzoom: 5,
+        const FillLayerProperties(fillColor: "#2980b9", fillOpacity: 0.15),
+      );
+      await _mapController!.addLayer(
+        "dem_footprint_source",
+        "dem_footprint_outline",
+        maxzoom: 5,
+        const LineLayerProperties(lineColor: "#e74c3c", lineWidth: 1.5),
       );
     }
   }
@@ -227,6 +394,13 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
 
     // Quan arribi la llista remota de tessel·les, refresca la graella
     ref.listen(availableTilesProvider, (previous, next) {
+      if (_styleLoaded) {
+        _refreshGridGeometry();
+      }
+    });
+
+    // Quan arribi el footprint del servidor, refresca el polígon de contorn
+    ref.listen(footprintProvider, (previous, next) {
       if (_styleLoaded) {
         _refreshGridGeometry();
       }

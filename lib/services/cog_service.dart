@@ -92,6 +92,20 @@ class CogService {
     );
   }
 
+  /// 🗺️ Obté del servidor el footprint (polígon de contorn global) en GeoJSON
+  Future<Map<String, dynamic>> fetchFootprint() async {
+    final uri = Uri.https(ApiConfig.cogApiHost, ApiConfig.cogFootprintPath);
+    debugPrint("📡 [COG FOOTPRINT] Cridant URI: $uri");
+
+    final response = await http.get(uri).timeout(const Duration(seconds: 15));
+
+    if (response.statusCode == 200) {
+      debugPrint("✅ [COG FOOTPRINT] Footprint rebut del servidor");
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    }
+    throw Exception("Error ${response.statusCode} carregant el footprint");
+  }
+
   /// �📥 INICIALITZACIÓ CRÍTICA: Restaura els arxius de disc i actualitza el demBoundsProvider al mateix temps
   Future<void> initService(dynamic ref) async {
     final prefs = await SharedPreferences.getInstance();

@@ -15,15 +15,15 @@ os.makedirs(CARPETA_SORTIDA, exist_ok=True)
 
 
 def generar_nom_arxiu(lat, lon):
-    """Genera el nom de l'arxiu basat en la latitud i longitud (ex: N60W003_cog.tif)"""
-    ns = "N" if lat >= 0 else "S"
-    ew = "E" if lon >= 0 else "W"
+    """Genera el nom de l'arxiu basat en la cantonada inferior esquerra (Sud-Oest)"""
+    # math.floor assegura que anem al grau sencer correcte, especialment en negatius
+    lat_base = math.floor(lat)
+    lon_base = math.floor(lon)
 
-    # Utilitzem el valor absolut per al nom del fitxer
-    lat_val = abs(lat)
-    lon_val = abs(lon)
+    ns = "N" if lat_base >= 0 else "S"
+    ew = "E" if lon_base >= 0 else "W"
 
-    return f"{ns}{lat_val:02d}{ew}{lon_val:03d}_cog.tif"
+    return f"{ns}{abs(lat_base):02d}{ew}{abs(lon_base):03d}_cog.tif"
 
 
 def processar_fitxers():
@@ -112,7 +112,7 @@ def processar_fitxers():
 
                     # Generar el nom segons la lògica demanada (es pren la cantonada Nord-Oest com a referència habitual)
                     # En el teu exemple N60W003 correspon a la cel·la que va de Lat 59 a 60 i Lon -3 a -2.
-                    nom_final = generar_nom_arxiu(t_superior, t_esquerra)
+                    nom_final = generar_nom_arxiu(t_inferior, t_esquerra)
                     ruta_sortida = os.path.join(CARPETA_SORTIDA, nom_final)
 
                     # Escriure l'arxiu tallat en format COG

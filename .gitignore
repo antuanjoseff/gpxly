@@ -36,6 +36,9 @@ migrate_working_dir/
 # Symbolication related
 app.*.symbols
 
+# Dades MDE (GeoTIFF pesants)
+scripts/mde_*/
+
 # Obfuscation related
 app.*.map.json
 

@@ -6,4 +6,5 @@ class ApiConfig {
   static const String cogApiHost = "trackio.es";
   static const String cogApiPath = "api/getTileGrid";
   static const String cogListPath = "api/listTiles";
+  static const String cogFootprintPath = "api/footprint";
 }
