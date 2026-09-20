@@ -56,6 +56,11 @@
             android:name="flutterEmbedding"
             android:value="2" />
 
+        <!-- Prova: desactivar Impeller per evitar crash de MapLibre en alguns Samsung -->
+        <meta-data
+            android:name="io.flutter.embedding.android.EnableImpeller"
+            android:value="false" />
+
         <service
             android:name=".TrackingService"
             android:enabled="true"

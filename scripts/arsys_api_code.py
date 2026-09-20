@@ -322,6 +322,7 @@ MBTILES_FOLDER_PATH = os.path.join(BASE_DIR, "mbtiles")
 
 
 @app.get("/mapes/glyphs")
+@app.get("/mapes/glyphs/")
 def descarregar_glyphs():
     """
     Serveix el zip amb tots els glyphs (fonts PBF) compartits per totes

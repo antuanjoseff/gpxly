@@ -29,6 +29,21 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
   static const String _lineLayerId = 'offline-region-line';
 
   MapLibreMapController? _controller;
+  bool _disposed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    debugPrint('🔵 [OFFLINE SCREEN] initState');
+  }
+
+  @override
+  void dispose() {
+    debugPrint('🔴 [OFFLINE SCREEN] dispose - netejant controller');
+    _disposed = true;
+    _controller = null;
+    super.dispose();
+  }
 
   bool _isInsideRegion(LatLng p) {
     return p.longitude >= _minLon &&
@@ -37,44 +52,88 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
         p.latitude <= _maxLat;
   }
 
-  Future<void> _onStyleLoaded(MapLibreMapController controller) async {
-    // Polígon del bounding box com a GeoJSON
+  Future<void> _addRegionLayers() async {
+    if (_disposed) {
+      debugPrint('⚠️ [OFFLINE SCREEN] _addRegionLayers: widget ja disposed');
+      return;
+    }
+    if (_controller == null) {
+      debugPrint('⚠️ [OFFLINE SCREEN] _addRegionLayers: controller és null');
+      return;
+    }
+
+    debugPrint('🗺️ [OFFLINE SCREEN] Afegint capes del rectangle...');
+
     final geojson = {
-      "type": "Feature",
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [
-          [
-            [_minLon, _minLat],
-            [_maxLon, _minLat],
-            [_maxLon, _maxLat],
-            [_minLon, _maxLat],
-            [_minLon, _minLat],
-          ],
-        ],
-      },
+      "type": "FeatureCollection",
+      "features": [
+        {
+          "type": "Feature",
+          "properties": {},
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [_minLon, _minLat],
+                [_maxLon, _minLat],
+                [_maxLon, _maxLat],
+                [_minLon, _maxLat],
+                [_minLon, _minLat],
+              ],
+            ],
+          },
+        },
+      ],
     };
 
-    await controller.addSource(
-      _sourceId,
-      GeojsonSourceProperties(data: geojson),
-    );
-    await controller.addLayer(
-      _sourceId,
-      _fillLayerId,
-      const FillLayerProperties(fillColor: '#1E88E5', fillOpacity: 0.15),
-    );
-    await controller.addLineLayer(
-      _sourceId,
-      _lineLayerId,
-      const LineLayerProperties(lineColor: '#1E88E5', lineWidth: 3.0),
-    );
+    try {
+      debugPrint('🗺️ [OFFLINE SCREEN] Afegint source...');
+      await _controller!.addSource(
+        _sourceId,
+        GeojsonSourceProperties(data: geojson),
+      );
+      debugPrint('✅ [OFFLINE SCREEN] Source afegida');
+
+      debugPrint('🗺️ [OFFLINE SCREEN] Afegint fill layer...');
+      await _controller!.addLayer(
+        _sourceId,
+        _fillLayerId,
+        const FillLayerProperties(fillColor: '#1E88E5', fillOpacity: 0.15),
+      );
+      debugPrint('✅ [OFFLINE SCREEN] Fill layer afegida');
+
+      debugPrint('🗺️ [OFFLINE SCREEN] Afegint line layer...');
+      await _controller!.addLineLayer(
+        _sourceId,
+        _lineLayerId,
+        const LineLayerProperties(lineColor: '#1E88E5', lineWidth: 3.0),
+      );
+      debugPrint('✅ [OFFLINE SCREEN] Line layer afegida - TOTES LES CAPES OK');
+    } catch (e, stack) {
+      debugPrint('💥 [OFFLINE SCREEN] Error afegint capes: $e');
+      debugPrint('💥 [OFFLINE SCREEN] Stack: $stack');
+    }
   }
 
   Future<void> _onMapClick(LatLng latLng) async {
+    debugPrint('👆 [OFFLINE SCREEN] Click al mapa: $latLng');
+
+    if (_disposed) {
+      debugPrint('⚠️ [OFFLINE SCREEN] Click ignorat: widget disposed');
+      return;
+    }
+
     final offline = ref.read(offlineMapsProvider);
-    if (offline.downloading) return;
-    if (!_isInsideRegion(latLng)) return;
+    if (offline.downloading) {
+      debugPrint('⚠️ [OFFLINE SCREEN] Click ignorat: ja està descarregant');
+      return;
+    }
+    if (!_isInsideRegion(latLng)) {
+      debugPrint('⚠️ [OFFLINE SCREEN] Click fora del rectangle');
+      return;
+    }
+
+    debugPrint('✅ [OFFLINE SCREEN] Click DINS del rectangle');
 
     final t = AppLocalizations.of(context)!;
     final notifier = ref.read(offlineMapsProvider.notifier);
@@ -132,26 +191,60 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
     final notifier = ref.read(offlineMapsProvider.notifier);
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF5F5F7),
       appBar: AppBar(
         backgroundColor: AppColors.primary,
-        title: Text(t.offlineTab),
+        iconTheme: const IconThemeData(color: Colors.white),
+        title: Text(
+          t.offlineTab,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        elevation: 0,
       ),
       body: Stack(
         children: [
-          MapLibreMap(
-            styleString: "assets/osm_style.json",
-            tiltGesturesEnabled: false,
-            rotateGesturesEnabled: false,
-            compassEnabled: false,
-            initialCameraPosition: const CameraPosition(
-              target: LatLng(41.7, 1.7), // centre de Catalunya
-              zoom: 6.2,
+          Positioned.fill(
+            child: MapLibreMap(
+              tiltGesturesEnabled: false,
+              rotateGesturesEnabled: false,
+              compassEnabled: false,
+              styleString: "assets/osm_style.json",
+              initialCameraPosition: const CameraPosition(
+                target: LatLng(41.7, 1.7), // centre de Catalunya
+                zoom: 6.2,
+              ),
+              onMapCreated: (controller) {
+                debugPrint(
+                  '🗺️ [OFFLINE SCREEN] onMapCreated - controller assignat',
+                );
+                _controller = controller;
+              },
+              onStyleLoadedCallback: () async {
+                debugPrint('🎨 [OFFLINE SCREEN] onStyleLoadedCallback iniciat');
+                if (_disposed) {
+                  debugPrint(
+                    '⚠️ [OFFLINE SCREEN] Style loaded però widget ja disposed',
+                  );
+                  return;
+                }
+                if (_controller == null) {
+                  debugPrint(
+                    '⚠️ [OFFLINE SCREEN] Style loaded però controller és null',
+                  );
+                  return;
+                }
+                debugPrint('🎨 [OFFLINE SCREEN] Cridant _addRegionLayers...');
+                await _addRegionLayers();
+                debugPrint(
+                  '🎨 [OFFLINE SCREEN] onStyleLoadedCallback completat',
+                );
+              },
+              onMapClick: (point, latLng) => _onMapClick(latLng),
             ),
-            onMapCreated: (c) => _controller = c,
-            onStyleLoadedCallback: () {
-              if (_controller != null) _onStyleLoaded(_controller!);
-            },
-            onMapClick: (point, latLng) => _onMapClick(latLng),
           ),
 
           // Targeta inferior amb l'estat
