@@ -747,6 +747,39 @@ class AppLocalizationsFr extends AppLocalizations {
   String get demLimitReached => 'Limite atteinte. Supprimez une ancienne cellule pour en télécharger une nouvelle.';
 
   @override
+  String get offlineTab => 'Offline';
+
+  @override
+  String get offlineTapRegion => 'Tap inside the rectangle to download the map of Catalonia for offline use.';
+
+  @override
+  String get offlineDownloadTitle => 'Offline map';
+
+  @override
+  String get offlineDownloadConfirm => 'Download the map of Catalonia (~200 MB)? We recommend using Wi-Fi.';
+
+  @override
+  String get offlineDownloadDone => 'Map downloaded successfully';
+
+  @override
+  String get offlineDownloadError => 'Download failed. Please try again.';
+
+  @override
+  String get offlineDownloaded => 'Map of Catalonia downloaded';
+
+  @override
+  String get offlineUseOffline => 'Use the offline map';
+
+  @override
+  String get offlineDelete => 'Delete the downloaded map';
+
+  @override
+  String get download => 'Download';
+
+  @override
+  String get downloading => 'Downloading...';
+
+  @override
   String get record => 'Enregistrer';
 
   @override

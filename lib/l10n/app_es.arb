@@ -304,6 +304,18 @@
   "demDeleteConfirm": "¿Quieres eliminar esta celda del disco?",
   "demLimitReached": "Techo alcanzado. Elimina una celda antigua para bajar una nueva.",
 
+  "offlineTab": "Offline",
+  "offlineTapRegion": "Toca dentro del rectángulo para descargar el mapa de Cataluña para uso offline.",
+  "offlineDownloadTitle": "Mapa offline",
+  "offlineDownloadConfirm": "¿Quieres descargar el mapa de Cataluña (~200 MB)? Recomendamos hacerlo con Wi-Fi.",
+  "offlineDownloadDone": "Mapa descargado correctamente",
+  "offlineDownloadError": "Error en la descarga. Inténtalo de nuevo.",
+  "offlineDownloaded": "Mapa de Cataluña descargado",
+  "offlineUseOffline": "Usar el mapa offline",
+  "offlineDelete": "Eliminar el mapa descargado",
+  "download": "Descargar",
+  "downloading": "Descargando...",
+
   "record": "Grabar",
   "recordPaused": "Pausado",
   "recordStart": "Iniciar grabación",

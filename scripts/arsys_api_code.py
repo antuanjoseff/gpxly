@@ -309,3 +309,64 @@ def get_footprint():
         return _footprint_cache
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# -------------------------------------------------------------------------
+# 9. MAPES OFFLINE - DESCÀRREGA DE FITXERS MBTILES EN STREAMING
+# -------------------------------------------------------------------------
+
+from fastapi.responses import FileResponse
+
+# Definim la ruta interna cap al nou volum que hem creat
+MBTILES_FOLDER_PATH = os.path.join(BASE_DIR, "mbtiles")
+
+
+@app.get("/mapes/glyphs")
+def descarregar_glyphs():
+    """
+    Serveix el zip amb tots els glyphs (fonts PBF) compartits per totes
+    les regions offline. L'app el descarrega un sol cop i el descomprimeix
+    a un directori local; l'estil offline hi apunta amb file://.
+    """
+    ruta_zip = os.path.join(BASE_DIR, "glyphs.zip")
+
+    if not os.path.exists(ruta_zip):
+        raise HTTPException(
+            status_code=404,
+            detail="El paquet de glyphs no està disponible al servidor.",
+        )
+
+    headers = {"Content-Disposition": "attachment; filename=glyphs.zip"}
+
+    return FileResponse(
+        path=ruta_zip, media_type="application/octet-stream", headers=headers
+    )
+
+
+@app.get("/mapes/{regio}")
+def descarregar_mapa_offline(regio: str):
+    """
+    Endpoint dinàmic per descarregar un fitxer .mbtiles per a ús offline a l'App.
+    Exemple de crida: /api/mapes/catalunya
+    """
+    # Seguretat: només lletres minúscules, dígits, guions i guions baixos
+    if not re.fullmatch(r"[a-z0-9_\-]+", regio.lower()):
+        raise HTTPException(status_code=400, detail="Nom de regió no vàlid")
+
+    # Netegem el paràmetre i afegim l'extensió automàticament
+    nom_fitxer = f"{regio.lower()}.mbtiles"
+    ruta_fitxer_mbtiles = os.path.join(MBTILES_FOLDER_PATH, nom_fitxer)
+
+    # Validem si el fitxer realment existeix a la nova carpeta
+    if not os.path.exists(ruta_fitxer_mbtiles):
+        raise HTTPException(
+            status_code=404,
+            detail=f"El mapa offline de la regió '{regio}' no està disponible al servidor.",
+        )
+
+    # Enviem els 197 MB de forma segura paquet a paquet (FileResponse actua en streaming)
+    headers = {"Content-Disposition": f"attachment; filename={nom_fitxer}"}
+
+    return FileResponse(
+        path=ruta_fitxer_mbtiles, media_type="application/octet-stream", headers=headers
+    )

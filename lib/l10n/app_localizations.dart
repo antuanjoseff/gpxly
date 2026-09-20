@@ -1576,6 +1576,72 @@ abstract class AppLocalizations {
   /// **'Limit reached. Delete an old cell to download a new one.'**
   String get demLimitReached;
 
+  /// No description provided for @offlineTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline'**
+  String get offlineTab;
+
+  /// No description provided for @offlineTapRegion.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap inside the rectangle to download the map of Catalonia for offline use.'**
+  String get offlineTapRegion;
+
+  /// No description provided for @offlineDownloadTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline map'**
+  String get offlineDownloadTitle;
+
+  /// No description provided for @offlineDownloadConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Download the map of Catalonia (~200 MB)? We recommend using Wi-Fi.'**
+  String get offlineDownloadConfirm;
+
+  /// No description provided for @offlineDownloadDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Map downloaded successfully'**
+  String get offlineDownloadDone;
+
+  /// No description provided for @offlineDownloadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Download failed. Please try again.'**
+  String get offlineDownloadError;
+
+  /// No description provided for @offlineDownloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Map of Catalonia downloaded'**
+  String get offlineDownloaded;
+
+  /// No description provided for @offlineUseOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the offline map'**
+  String get offlineUseOffline;
+
+  /// No description provided for @offlineDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete the downloaded map'**
+  String get offlineDelete;
+
+  /// No description provided for @download.
+  ///
+  /// In en, this message translates to:
+  /// **'Download'**
+  String get download;
+
+  /// No description provided for @downloading.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading...'**
+  String get downloading;
+
   /// No description provided for @record.
   ///
   /// In en, this message translates to:

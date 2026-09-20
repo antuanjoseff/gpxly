@@ -7,4 +7,7 @@ class ApiConfig {
   static const String cogApiPath = "api/getTileGrid";
   static const String cogListPath = "api/listTiles";
   static const String cogFootprintPath = "api/footprint";
+
+  // Mapes offline: /api/mapes/{regio} i /api/mapes/glyphs
+  static const String offlineMapsPath = "api/mapes";
 }

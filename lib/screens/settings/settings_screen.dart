@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:strack_rec/l10n/app_localizations.dart';
 import 'package:strack_rec/notifiers/alarm_settings_notifier.dart';
 import 'package:strack_rec/notifiers/navigation_notifier.dart';
+import 'package:strack_rec/screens/settings/offline_maps_screen.dart';
 import 'package:strack_rec/screens/settings/tabs/alarm_settings_tab.dart';
 import 'package:strack_rec/screens/settings/tabs/barometer_settings_tab.dart';
 import 'package:strack_rec/screens/settings/tabs/gps_settings_tab.dart';
@@ -98,6 +99,15 @@ class SettingsScreen extends ConsumerWidget {
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const AlarmSettingsTab()),
+              ),
+            ),
+            _SettingsTile(
+              icon: Icons.offline_pin_outlined,
+              label: t.offlineTab,
+              t: t,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const OfflineMapsScreen()),
               ),
             ),
             _SettingsTile(
@@ -199,7 +209,7 @@ class _SettingsTile extends StatelessWidget {
         elevation: enabled ? 2 : 0,
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
-            onTap: enabled
+          onTap: enabled
               ? onTap
               : () {
                   String message = t.gpsLockedMessage;

@@ -1,0 +1,203 @@
+// lib/services/offline_maps_service.dart
+import 'dart:io';
+import 'package:archive/archive.dart';
+import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
+import 'elevations_api_conf.dart';
+
+/// Callback de progrés de descàrrega: (bytesRebuts, bytesTotals o null si desconegut)
+typedef OfflineDownloadProgress = void Function(int received, int? total);
+
+/// Servei de mapes offline: descàrrega de fitxers .mbtiles i del paquet
+/// de glyphs (fonts PBF) compartit per totes les regions.
+///
+/// Estructura al dispositiu (getApplicationDocumentsDirectory):
+///   <docs>/offline_maps/<regio>.mbtiles
+///   <docs>/glyphs/<fontstack>/<start>-<end>.pbf
+class OfflineMapsService {
+  OfflineMapsService._();
+  static final OfflineMapsService instance = OfflineMapsService._();
+
+  // ───────────────────────────────────────────────
+  // RUTES LOCALS
+  // ───────────────────────────────────────────────
+
+  Future<Directory> _offlineMapsDir() async {
+    final docs = await getApplicationDocumentsDirectory();
+    final dir = Directory('${docs.path}/offline_maps');
+    if (!await dir.exists()) await dir.create(recursive: true);
+    return dir;
+  }
+
+  Future<Directory> glyphsDir() async {
+    final docs = await getApplicationDocumentsDirectory();
+    return Directory('${docs.path}/glyphs');
+  }
+
+  Future<File> _regionFile(String regio) async {
+    final dir = await _offlineMapsDir();
+    return File('${dir.path}/${regio.toLowerCase()}.mbtiles');
+  }
+
+  // ───────────────────────────────────────────────
+  // ESTAT
+  // ───────────────────────────────────────────────
+
+  Future<bool> isRegionDownloaded(String regio) async {
+    final f = await _regionFile(regio);
+    if (!await f.exists()) return false;
+    return await f.length() > 0;
+  }
+
+  Future<bool> areGlyphsReady() async {
+    final dir = await glyphsDir();
+    if (!await dir.exists()) return false;
+    // Comprovació ràpida: hi ha algun .pbf dins algun fontstack
+    await for (final entity in dir.list(recursive: true)) {
+      if (entity is File && entity.path.endsWith('.pbf')) return true;
+    }
+    return false;
+  }
+
+  Future<void> deleteRegion(String regio) async {
+    final f = await _regionFile(regio);
+    if (await f.exists()) await f.delete();
+  }
+
+  // ───────────────────────────────────────────────
+  // DESCÀRREGA DE REGIÓ (.mbtiles)
+  // ───────────────────────────────────────────────
+
+  /// Descarrega el fitxer .mbtiles de [regio] en streaming.
+  /// Llença Exception si el servidor respon amb error.
+  Future<File> downloadRegion(
+    String regio, {
+    OfflineDownloadProgress? onProgress,
+  }) async {
+    final uri = Uri.https(
+      ApiConfig.cogApiHost,
+      '${ApiConfig.offlineMapsPath}/${regio.toLowerCase()}',
+    );
+    debugPrint('⬇️ [OFFLINE] Descarregant regió: $uri');
+
+    final client = http.Client();
+    IOSink? sink;
+    try {
+      final request = http.Request('GET', uri);
+      final response = await client.send(request);
+
+      if (response.statusCode != 200) {
+        final body = await response.stream.bytesToString();
+        throw Exception(
+          'Error ${response.statusCode} descarregant la regió: $body',
+        );
+      }
+
+      final total = response.contentLength;
+      final tmpFile = File('${(await _regionFile(regio)).path}.part');
+      sink = tmpFile.openWrite();
+
+      int received = 0;
+      await for (final chunk in response.stream) {
+        sink.add(chunk);
+        received += chunk.length;
+        onProgress?.call(received, total);
+      }
+      await sink.close();
+      sink = null;
+
+      // Renombrem de forma atòmica: mai queda un .mbtiles a mitges
+      final finalFile = await _regionFile(regio);
+      await tmpFile.rename(finalFile.path);
+      debugPrint(
+        '✅ [OFFLINE] Regió "$regio" desada (${received ~/ 1024} KB) a ${finalFile.path}',
+      );
+      return finalFile;
+    } catch (e) {
+      debugPrint('💥 [OFFLINE] Error descarregant regió "$regio": $e');
+      // Neteja del fitxer parcial si n'hi ha
+      try {
+        await sink?.close();
+        final tmp = File('${(await _regionFile(regio)).path}.part');
+        if (await tmp.exists()) await tmp.delete();
+      } catch (_) {}
+      rethrow;
+    } finally {
+      client.close();
+    }
+  }
+
+  // ───────────────────────────────────────────────
+  // GLYPHS (una sola vegada, compartits per totes les regions)
+  // ───────────────────────────────────────────────
+
+  /// Garanteix que els glyphs estan descomprimits al dispositiu.
+  /// Si ja hi són, no fa res. Si no, baixa el zip del servidor i el descomprimeix.
+  Future<void> ensureGlyphs({OfflineDownloadProgress? onProgress}) async {
+    if (await areGlyphsReady()) return;
+
+    final uri = Uri.https(
+      ApiConfig.cogApiHost,
+      '${ApiConfig.offlineMapsPath}/glyphs',
+    );
+    debugPrint('⬇️ [OFFLINE] Descarregant glyphs: $uri');
+
+    final response = await http.get(uri);
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Error ${response.statusCode} descarregant els glyphs: ${response.body}',
+      );
+    }
+    onProgress?.call(response.bodyBytes.length, response.bodyBytes.length);
+
+    final glyphsPath = await glyphsDir();
+    if (!await glyphsPath.exists()) await glyphsPath.create(recursive: true);
+
+    final archive = ZipDecoder().decodeBytes(response.bodyBytes);
+    for (final entry in archive) {
+      final outPath = '${glyphsPath.path}/${entry.name}';
+      if (entry.isFile) {
+        final outFile = File(outPath);
+        await outFile.parent.create(recursive: true);
+        await outFile.writeAsBytes(entry.content as List<int>);
+      }
+    }
+    debugPrint('✅ [OFFLINE] Glyphs descomprimits a ${glyphsPath.path}');
+  }
+
+  // ───────────────────────────────────────────────
+  // ESTIL OFFLINE (generat en runtime amb rutes reals)
+  // ───────────────────────────────────────────────
+
+  /// Genera el JSON d'estil que fa servir el mbtiles local i els glyphs locals.
+  /// Retorna null si la regió o els glyphs no estan disponibles.
+  Future<String?> buildOfflineStyle(String regio) async {
+    if (!await isRegionDownloaded(regio)) return null;
+    if (!await areGlyphsReady()) return null;
+
+    final mbtilesPath = (await _regionFile(regio)).path;
+    final glyphsPath = (await glyphsDir()).path;
+
+    return '''
+{
+  "version": 8,
+  "name": "Offline $regio",
+  "glyphs": "file://$glyphsPath/{fontstack}/{range}.pbf",
+  "sources": {
+    "offline": {
+      "type": "vector",
+      "url": "mbtiles://$mbtilesPath"
+    }
+  },
+  "layers": [
+    {
+      "id": "background",
+      "type": "background",
+      "paint": {"background-color": "#e8f0e8"}
+    }
+  ]
+}
+''';
+  }
+}

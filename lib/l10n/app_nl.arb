@@ -303,6 +303,18 @@
 "demDeleteConfirm": "Wil je deze tegel van de schijf verwijderen?",
 "demLimitReached": "Limiet bereikt. Verwijder een oude tegel om een nieuwe te downloaden.",
 
+  "offlineTab": "Offline",
+  "offlineTapRegion": "Tap inside the rectangle to download the map of Catalonia for offline use.",
+  "offlineDownloadTitle": "Offline map",
+  "offlineDownloadConfirm": "Download the map of Catalonia (~200 MB)? We recommend using Wi-Fi.",
+  "offlineDownloadDone": "Map downloaded successfully",
+  "offlineDownloadError": "Download failed. Please try again.",
+  "offlineDownloaded": "Map of Catalonia downloaded",
+  "offlineUseOffline": "Use the offline map",
+  "offlineDelete": "Delete the downloaded map",
+  "download": "Download",
+  "downloading": "Downloading...",
+
 "record": "Opnemen",
 "recordPaused": "Gepauzeerd",
 "recordStart": "Opname starten",

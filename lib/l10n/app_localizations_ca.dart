@@ -747,6 +747,39 @@ class AppLocalizationsCa extends AppLocalizations {
   String get demLimitReached => 'Sostre assolit. Elimina una cèl·la antiga per baixar-ne una de nova.';
 
   @override
+  String get offlineTab => 'Offline';
+
+  @override
+  String get offlineTapRegion => 'Toca dins del rectangle per descarregar el mapa de Catalunya per a ús offline.';
+
+  @override
+  String get offlineDownloadTitle => 'Mapa offline';
+
+  @override
+  String get offlineDownloadConfirm => 'Vols descarregar el mapa de Catalunya (~200 MB)? Recomanem fer-ho amb Wi-Fi.';
+
+  @override
+  String get offlineDownloadDone => 'Mapa descarregat correctament';
+
+  @override
+  String get offlineDownloadError => 'Error en la descàrrega. Torna-ho a provar.';
+
+  @override
+  String get offlineDownloaded => 'Mapa de Catalunya descarregat';
+
+  @override
+  String get offlineUseOffline => 'Fer servir el mapa offline';
+
+  @override
+  String get offlineDelete => 'Eliminar el mapa descarregat';
+
+  @override
+  String get download => 'Descarregar';
+
+  @override
+  String get downloading => 'Descarregant...';
+
+  @override
   String get record => 'Gravar';
 
   @override
