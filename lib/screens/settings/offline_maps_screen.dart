@@ -46,10 +46,16 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
   }
 
   bool _isInsideRegion(LatLng p) {
-    return p.longitude >= _minLon &&
+    final inside =
+        p.longitude >= _minLon &&
         p.longitude <= _maxLon &&
         p.latitude >= _minLat &&
         p.latitude <= _maxLat;
+    debugPrint(
+      '🔍 [OFFLINE SCREEN] _isInsideRegion($p) = $inside '
+      '(bbox: $_minLon,$_minLat → $_maxLon,$_maxLat)',
+    );
+    return inside;
   }
 
   Future<void> _addRegionLayers() async {
@@ -138,8 +144,12 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
     final t = AppLocalizations.of(context)!;
     final notifier = ref.read(offlineMapsProvider.notifier);
 
-    if (offline.catalunyaDownloaded) return; // ja descarregat: no cal res
+    if (offline.catalunyaDownloaded) {
+      debugPrint('⚠️ [OFFLINE SCREEN] Click ignorat: catalunya ja descarregat');
+      return; // ja descarregat: no cal res
+    }
 
+    debugPrint('💬 [OFFLINE SCREEN] Obrint diàleg de confirmació...');
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -158,7 +168,10 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
       ),
     );
 
+    debugPrint('💬 [OFFLINE SCREEN] Diàleg tancat amb confirm=$confirm');
+
     if (confirm == true && mounted) {
+      debugPrint('⬇️ [OFFLINE SCREEN] Cridant notifier.downloadCatalunya()...');
       try {
         await notifier.downloadCatalunya();
         if (mounted) {
@@ -222,6 +235,24 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
                   '🗺️ [OFFLINE SCREEN] onMapCreated - controller assignat',
                 );
                 _controller = controller;
+
+                // Igual que a barometer_settings_tab.dart: els taps sobre les
+                // capes del rectangle NO arriben a onMapClick — s'han de
+                // capturar aquí via onFeatureTapped.
+                controller.onFeatureTapped.add((
+                  point,
+                  latLng,
+                  featureId,
+                  layerId,
+                  annotation,
+                ) async {
+                  debugPrint(
+                    '🎯 [OFFLINE SCREEN] onFeatureTapped: layerId=$layerId featureId=$featureId a $latLng',
+                  );
+                  if (layerId == _fillLayerId || layerId == _lineLayerId) {
+                    await _onMapClick(latLng);
+                  }
+                });
               },
               onStyleLoadedCallback: () async {
                 debugPrint('🎨 [OFFLINE SCREEN] onStyleLoadedCallback iniciat');

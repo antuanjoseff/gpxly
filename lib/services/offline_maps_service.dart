@@ -1,9 +1,13 @@
 // lib/services/offline_maps_service.dart
+import 'dart:convert';
 import 'dart:io';
+
 import 'package:archive/archive.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
+
 import 'elevations_api_conf.dart';
 
 /// Callback de progrés de descàrrega: (bytesRebuts, bytesTotals o null si desconegut)
@@ -33,6 +37,34 @@ class OfflineMapsService {
   Future<Directory> glyphsDir() async {
     final docs = await getApplicationDocumentsDirectory();
     return Directory('${docs.path}/glyphs');
+  }
+
+  Future<Directory> spritesDir() async {
+    final docs = await getApplicationDocumentsDirectory();
+    return Directory('${docs.path}/sprites');
+  }
+
+  /// Copia l'sprite inclòs a assets/sprites/ al disc (cal perquè MapLibre
+  /// només pot llegir fitxers del sistema, no assets de Flutter).
+  Future<bool> ensureSprites() async {
+    try {
+      final dir = await spritesDir();
+      if (!await dir.exists()) await dir.create(recursive: true);
+      final png = File('${dir.path}/sprite.png');
+      final json = File('${dir.path}/sprite.json');
+      if (!await png.exists()) {
+        final data = await rootBundle.load('assets/sprites/sprite.png');
+        await png.writeAsBytes(data.buffer.asUint8List());
+      }
+      if (!await json.exists()) {
+        final data = await rootBundle.load('assets/sprites/sprite.json');
+        await json.writeAsBytes(data.buffer.asUint8List());
+      }
+      return await png.exists() && await json.exists();
+    } catch (e) {
+      debugPrint('⚠️ [OFFLINE STYLE] Error copiant sprites: $e');
+      return false;
+    }
   }
 
   Future<File> _regionFile(String regio) async {
@@ -171,33 +203,62 @@ class OfflineMapsService {
   // ───────────────────────────────────────────────
 
   /// Genera el JSON d'estil que fa servir el mbtiles local i els glyphs locals.
+  /// Carrega l'estil OSM Bright de assets i li canvia el source/glyphs.
   /// Retorna null si la regió o els glyphs no estan disponibles.
   Future<String?> buildOfflineStyle(String regio) async {
-    if (!await isRegionDownloaded(regio)) return null;
-    if (!await areGlyphsReady()) return null;
+    final downloaded = await isRegionDownloaded(regio);
+    final glyphsOk = await areGlyphsReady();
+    debugPrint(
+      '🗺️ [OFFLINE STYLE] isRegionDownloaded=$downloaded areGlyphsReady=$glyphsOk',
+    );
+    if (!downloaded) return null;
+    if (!glyphsOk) return null;
 
     final mbtilesPath = (await _regionFile(regio)).path;
     final glyphsPath = (await glyphsDir()).path;
+    debugPrint(
+      '🗺️ [OFFLINE STYLE] mbtiles=mbtiles://$mbtilesPath glyphs=file://$glyphsPath',
+    );
 
-    return '''
-{
-  "version": 8,
-  "name": "Offline $regio",
-  "glyphs": "file://$glyphsPath/{fontstack}/{range}.pbf",
-  "sources": {
-    "offline": {
-      "type": "vector",
-      "url": "mbtiles://$mbtilesPath"
+    // Diagnòstic: llista els fontstacks realment disponibles. L'estil demana
+    // "Noto Sans Regular/Bold/Italic" — si aquí no hi són, els topònims
+    // que els fan servir no es pintaran.
+    try {
+      final stacks = await Directory(glyphsPath)
+          .list()
+          .where((e) => e is Directory)
+          .map((e) => e.path.split('/').last)
+          .toList();
+      debugPrint('🔤 [OFFLINE STYLE] Fontstacks disponibles: $stacks');
+    } catch (e) {
+      debugPrint('⚠️ [OFFLINE STYLE] No he pogut llistar fontstacks: $e');
     }
-  },
-  "layers": [
-    {
-      "id": "background",
-      "type": "background",
-      "paint": {"background-color": "#e8f0e8"}
+
+    // Carrega l'estil OSM Bright base des de assets
+    final styleJson = await rootBundle.loadString(
+      'assets/osm_bright_offline.json',
+    );
+    final Map<String, dynamic> style = jsonDecode(styleJson);
+
+    // Substitueix el source pel mbtiles local
+    style['sources'] = {
+      'openmaptiles': {'type': 'vector', 'url': 'mbtiles://$mbtilesPath'},
+    };
+
+    // Substitueix glyphs pels locals
+    style['glyphs'] = 'file://$glyphsPath/{fontstack}/{range}.pbf';
+
+    // Sprite local: el copia del bundle si cal i l'apunta; si falla, el treu
+    final spritesOk = await ensureSprites();
+    if (spritesOk) {
+      final spritesPath = (await spritesDir()).path;
+      // MapLibre vol esquema file:// per als sprites locals
+      style['sprite'] = 'file://$spritesPath/sprite';
+      debugPrint('🖼️ [OFFLINE STYLE] Sprite=file://$spritesPath/sprite');
+    } else {
+      style.remove('sprite');
     }
-  ]
-}
-''';
+
+    return jsonEncode(style);
   }
 }

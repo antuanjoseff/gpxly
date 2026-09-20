@@ -77,7 +77,13 @@ class OfflineMapsNotifier extends Notifier<OfflineMapsState> {
 
   /// Descarrega la regió de Catalunya (+ glyphs si cal).
   Future<void> downloadCatalunya() async {
-    if (state.downloading) return;
+    debugPrint('⬇️ [OFFLINE] downloadCatalunya() iniciat');
+    if (state.downloading) {
+      debugPrint(
+        '⚠️ [OFFLINE] downloadCatalunya abortat: ja està descarregant',
+      );
+      return;
+    }
     state = state.copyWith(
       downloading: true,
       progress: () => 0,
@@ -85,7 +91,9 @@ class OfflineMapsNotifier extends Notifier<OfflineMapsState> {
     );
 
     try {
+      debugPrint('⬇️ [OFFLINE] ensureGlyphs()...');
       await OfflineMapsService.instance.ensureGlyphs();
+      debugPrint('⬇️ [OFFLINE] ensureGlyphs() OK - iniciant downloadRegion...');
       await OfflineMapsService.instance.downloadRegion(
         regioCatalunya,
         onProgress: (received, total) {
@@ -95,6 +103,7 @@ class OfflineMapsNotifier extends Notifier<OfflineMapsState> {
           );
         },
       );
+      debugPrint('✅ [OFFLINE] downloadRegion completat');
       state = state.copyWith(
         downloading: false,
         catalunyaDownloaded: true,
