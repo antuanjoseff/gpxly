@@ -1,4 +1,9 @@
+# Esquema Planetiler Custom Map
+# Compatible amb l'estil assets/osm_bright_offline.json
+# Dades OSM per a un mapa offline de senderisme
+
 schema_name: "SenderismeComplet"
+schema_description: "Mapa vectorial offline de senderisme compatible amb OSM Bright"
 attribution: '<a href="https://openstreetmap.org">&copy; OpenStreetMap</a>'
 
 sources:
@@ -7,103 +12,537 @@ sources:
     url: "local"
 
 layers:
-  # === CAPA 1: COSTA I AIGUA ===
-  - id: lineas_coast_i_aigua
+  # ═══════════════════════════════════════════════════════════
+  # WATER — polígons d'aigua
+  # ═══════════════════════════════════════════════════════════
+  - id: water
     features:
       - source: osm
         geometry: polygon
         min_zoom: 0
         max_zoom: 14
         include_when:
-          natural: [water, coastline]
+          natural: [water, coastline, bay, strait]
+          landuse: [reservoir, basin]
+          waterway: [riverbank, dock]
         attributes:
           - key: name
+            tag_value: name
           - key: natural
+            tag_value: natural
+          - key: landuse
+            tag_value: landuse
+          - key: waterway
+            tag_value: waterway
+          - key: water
+            tag_value: water
+          - key: class
+            value:
+              coalesce:
+                - tag_value: natural
+                - tag_value: landuse
+                - tag_value: waterway
+                - "water"
+
+  # ═══════════════════════════════════════════════════════════
+  # WATERWAY — rius, rieres, canals
+  # ═══════════════════════════════════════════════════════════
+  - id: waterway
+    features:
       - source: osm
         geometry: line
         min_zoom: 5
         max_zoom: 14
         include_when:
+          waterway: [river, stream, canal, ditch, drain]
           natural: [coastline]
-          waterway: [river, stream, canal]
         attributes:
           - key: name
+            tag_value: name
           - key: waterway
+            tag_value: waterway
           - key: natural
+            tag_value: natural
+          - key: intermittent
+            tag_value: intermittent
+          - key: class
+            value:
+              coalesce:
+                - tag_value: waterway
+                - "coastline"
 
-  # === CAPA 2: CARRETERES I VIES ===
-  - id: carreteres_i_vies
+  # ═══════════════════════════════════════════════════════════
+  # WATER_NAME — etiquetes de masses d'aigua
+  # ═══════════════════════════════════════════════════════════
+  - id: water_name
+    features:
+      - source: osm
+        geometry: point
+        min_zoom: 8
+        max_zoom: 14
+        include_when:
+          natural: [water, bay, strait, cape]
+          waterway: [river]
+        attributes:
+          - key: name
+            tag_value: name
+          - key: natural
+            tag_value: natural
+          - key: class
+            value:
+              coalesce:
+                - tag_value: natural
+                - "water"
+          - key: "name:latin"
+            tag_value: name
+
+  # ═══════════════════════════════════════════════════════════
+  # TRANSPORTATION — carreteres, camins i senders
+  # ═══════════════════════════════════════════════════════════
+  - id: transportation
     features:
       - source: osm
         geometry: line
-        min_zoom: 7
+        min_zoom: 4
         max_zoom: 14
         include_when:
-          highway: [motorway, trunk, primary, secondary, tertiary, residential, service, unclassified]
+          highway:
+            [
+              motorway,
+              trunk,
+              primary,
+              secondary,
+              tertiary,
+              unclassified,
+              residential,
+              service,
+              track,
+              path,
+              footway,
+              cycleway,
+              bridleway,
+              steps,
+              pedestrian,
+              living_street,
+            ]
         attributes:
           - key: name
+            tag_value: name
           - key: highway
+            tag_value: highway
+          - key: surface
+            tag_value: surface
+          - key: tracktype
+            tag_value: tracktype
+          - key: sac_scale
+            tag_value: sac_scale
+          - key: trail_visibility
+            tag_value: trail_visibility
+          - key: bridge
+            tag_value: bridge
+          - key: tunnel
+            tag_value: tunnel
+          - key: oneway
+            tag_value: oneway
+            type: direction
+          - key: ref
+            tag_value: ref
+          - key: class
+            tag_value: highway
+          - key: subclass
+            tag_value: highway
 
-  # === CAPA 3: EDIFICIS ===
-  - id: edificis
+  # ═══════════════════════════════════════════════════════════
+  # TRANSPORTATION_NAME — noms de carreteres i camins
+  # ═══════════════════════════════════════════════════════════
+  - id: transportation_name
+    features:
+      - source: osm
+        geometry: line
+        min_zoom: 10
+        max_zoom: 14
+        include_when:
+          highway:
+            [
+              motorway,
+              trunk,
+              primary,
+              secondary,
+              tertiary,
+              unclassified,
+              residential,
+              track,
+              path,
+              footway,
+            ]
+        attributes:
+          - key: name
+            tag_value: name
+          - key: highway
+            tag_value: highway
+          - key: ref
+            tag_value: ref
+          - key: class
+            tag_value: highway
+          - key: "name:latin"
+            tag_value: name
+
+  # ═══════════════════════════════════════════════════════════
+  # RUTES DE SENDERISME SENYALITZADES
+  # ═══════════════════════════════════════════════════════════
+  - id: hiking_routes
+    features:
+      - source: osm
+        geometry: line
+        min_zoom: 6
+        max_zoom: 14
+        include_when:
+          route: [hiking, foot, walking]
+        attributes:
+          - key: name
+            tag_value: name
+          - key: route
+            tag_value: route
+          - key: network
+            tag_value: network
+          - key: ref
+            tag_value: ref
+          - key: symbol
+            tag_value: symbol
+          - key: colour
+            tag_value: colour
+          - key: osmc:symbol
+            tag_value: osmc:symbol
+          - key: class
+            value:
+              coalesce:
+                - tag_value: network
+                - "rwn"
+
+  # ═══════════════════════════════════════════════════════════
+  # BUILDING — edificis
+  # ═══════════════════════════════════════════════════════════
+  - id: building
     features:
       - source: osm
         geometry: polygon
         min_zoom: 13
         max_zoom: 14
         include_when:
-          building: [yes, residential, apartments, industrial]
+          building: true
         attributes:
           - key: building
+            tag_value: building
 
-  # === CAPA 4: ZONES VERDES I BOSCOS ===
-  - id: zones_verdes_i_boscos
+  # ═══════════════════════════════════════════════════════════
+  # LANDCOVER — vegetació
+  # ═══════════════════════════════════════════════════════════
+  - id: landcover
     features:
       - source: osm
         geometry: polygon
-        min_zoom: 6
+        min_zoom: 5
         max_zoom: 14
         include_when:
-          landuse: [forest, orchard, vineyard, residential]
-          natural: [wood, scrub, heath]
+          natural:
+            [
+              wood,
+              scrub,
+              heath,
+              grassland,
+              glacier,
+              bare_rock,
+              scree,
+              sand,
+              beach,
+            ]
+          landuse: [forest, meadow, orchard, vineyard, grass, farmland]
         attributes:
-          - key: landuse
           - key: natural
+            tag_value: natural
+          - key: landuse
+            tag_value: landuse
+          - key: class
+            value:
+              coalesce:
+                - tag_value: natural
+                - tag_value: landuse
+          - key: subclass
+            value:
+              coalesce:
+                - tag_value: natural
+                - tag_value: landuse
 
-  # === CAPA 5: RUTES DE SENDERISME ===
-  - id: rutes_senderisme
+  # ═══════════════════════════════════════════════════════════
+  # LANDUSE — usos del sòl
+  # ═══════════════════════════════════════════════════════════
+  - id: landuse
     features:
       - source: osm
-        geometry: line
+        geometry: polygon
         min_zoom: 8
         max_zoom: 14
         include_when:
-          route: [hiking, foot, path]
-          highway: [path, footway, track]
-          sac_scale: [hiking, mountain_hiking, demanding_mountain_hiking]
+          landuse:
+            [
+              residential,
+              industrial,
+              commercial,
+              retail,
+              cemetery,
+              allotments,
+              quarry,
+              landfill,
+              military,
+            ]
+          amenity: [school, university, hospital, parking]
+          leisure: [park, garden, pitch, playground, golf_course]
+        attributes:
+          - key: landuse
+            tag_value: landuse
+          - key: amenity
+            tag_value: amenity
+          - key: leisure
+            tag_value: leisure
+          - key: name
+            tag_value: name
+          - key: class
+            value:
+              coalesce:
+                - tag_value: landuse
+                - tag_value: amenity
+                - tag_value: leisure
+
+  # ═══════════════════════════════════════════════════════════
+  # PARK — parcs naturals i zones protegides
+  # ═══════════════════════════════════════════════════════════
+  - id: park
+    features:
+      - source: osm
+        geometry: polygon
+        min_zoom: 5
+        max_zoom: 14
+        include_when:
+          boundary: [national_park, protected_area, nature_reserve]
+          leisure: [nature_reserve]
         attributes:
           - key: name
-          - key: route
-          - key: highway
-          - key: network
-          - key: symbol
-          - key: sac_scale
+            tag_value: name
+          - key: boundary
+            tag_value: boundary
+          - key: leisure
+            tag_value: leisure
+          - key: protect_class
+            tag_value: protect_class
+          - key: class
+            value:
+              coalesce:
+                - tag_value: boundary
+                - tag_value: leisure
 
-  # === CAPA 6: ELEMENTS DE MUNTANYA ===
-  - id: elements_muntanya
+  # ═══════════════════════════════════════════════════════════
+  # PLACE — pobles, ciutats i llocs
+  # ═══════════════════════════════════════════════════════════
+  - id: place
+    features:
+      - source: osm
+        geometry: point
+        min_zoom: 4
+        max_zoom: 14
+        include_when:
+          place:
+            [
+              city,
+              town,
+              village,
+              hamlet,
+              isolated_dwelling,
+              suburb,
+              neighbourhood,
+              locality,
+            ]
+        attributes:
+          - key: name
+            tag_value: name
+          - key: place
+            tag_value: place
+          - key: population
+            tag_value: population
+          - key: class
+            tag_value: place
+          - key: "name:latin"
+            tag_value: name
+
+  # ═══════════════════════════════════════════════════════════
+  # MOUNTAIN_PEAK — cims, turons, volcans
+  # ═══════════════════════════════════════════════════════════
+  - id: mountain_peak
+    features:
+      - source: osm
+        geometry: point
+        min_zoom: 9
+        max_zoom: 14
+        include_when:
+          natural: [peak, volcano, saddle, ridge]
+        attributes:
+          - key: name
+            tag_value: name
+          - key: natural
+            tag_value: natural
+          - key: ele
+            tag_value: ele
+            type: integer
+          - key: class
+            tag_value: natural
+          - key: "name:latin"
+            tag_value: name
+
+  # ═══════════════════════════════════════════════════════════
+  # HIKING_POIS — fonts, refugis, coves, miradors...
+  # ═══════════════════════════════════════════════════════════
+  - id: hiking_pois
     features:
       - source: osm
         geometry: point
         min_zoom: 10
         max_zoom: 14
         include_when:
-          natural: [spring, peak, cave_entrance]
-          amenity: [drinking_water, shelter]
-          tourism: [alpine_hut, wilderness_hut, viewpoint]
+          natural: [spring, cave_entrance, waterfall, hot_spring, geyser]
+          amenity: [drinking_water, shelter, water_point]
+          tourism:
+            [alpine_hut, wilderness_hut, viewpoint, picnic_site, camp_site]
+          leisure: [picnic_table]
+          emergency: [phone, access_point]
         attributes:
           - key: name
+            tag_value: name
           - key: natural
+            tag_value: natural
           - key: amenity
+            tag_value: amenity
           - key: tourism
+            tag_value: tourism
+          - key: leisure
+            tag_value: leisure
+          - key: emergency
+            tag_value: emergency
+          - key: ele
+            tag_value: ele
+            type: integer
           - key: drinking_water
-          - key: elevation
+            tag_value: drinking_water
+          - key: class
+            value:
+              coalesce:
+                - tag_value: natural
+                - tag_value: amenity
+                - tag_value: tourism
+                - tag_value: leisure
+                - tag_value: emergency
+          - key: "name:latin"
+            tag_value: name
+
+  # ═══════════════════════════════════════════════════════════
+  # POI — punts d'interès urbans
+  # ═══════════════════════════════════════════════════════════
+  - id: poi
+    features:
+      - source: osm
+        geometry: point
+        min_zoom: 12
+        max_zoom: 14
+        include_when:
+          amenity:
+            [
+              restaurant,
+              cafe,
+              bar,
+              pharmacy,
+              bank,
+              fuel,
+              parking,
+              toilets,
+              bench,
+            ]
+          shop: [supermarket, convenience, bakery, outdoor]
+          tourism: [hotel, hostel, guest_house, information, museum]
+          public_transport: [station, bus_stop]
+          railway: [station, halt]
+        attributes:
+          - key: name
+            tag_value: name
+          - key: amenity
+            tag_value: amenity
+          - key: shop
+            tag_value: shop
+          - key: tourism
+            tag_value: tourism
+          - key: railway
+            tag_value: railway
+          - key: public_transport
+            tag_value: public_transport
+          - key: class
+            value:
+              coalesce:
+                - tag_value: amenity
+                - tag_value: shop
+                - tag_value: tourism
+                - tag_value: railway
+                - tag_value: public_transport
+          - key: "name:latin"
+            tag_value: name
+
+  # ═══════════════════════════════════════════════════════════
+  # BOUNDARY — límits administratius
+  # ═══════════════════════════════════════════════════════════
+  - id: boundary
+    features:
+      - source: osm
+        geometry: line
+        min_zoom: 4
+        max_zoom: 14
+        include_when:
+          boundary: [administrative]
+        attributes:
+          - key: admin_level
+            tag_value: admin_level
+          - key: boundary
+            tag_value: boundary
+          - key: class
+            value: "administrative"
+
+  # ═══════════════════════════════════════════════════════════
+  # AEROWAY — pistes
+  # ═══════════════════════════════════════════════════════════
+  - id: aeroway
+    features:
+      - source: osm
+        geometry: line
+        min_zoom: 10
+        max_zoom: 14
+        include_when:
+          aeroway: [runway, taxiway]
+        attributes:
+          - key: aeroway
+            tag_value: aeroway
+
+  # ═══════════════════════════════════════════════════════════
+  # AERODROME_LABEL — noms d'aeroports
+  # ═══════════════════════════════════════════════════════════
+  - id: aerodrome_label
+    features:
+      - source: osm
+        geometry: point
+        min_zoom: 10
+        max_zoom: 14
+        include_when:
+          aeroway: [aerodrome]
+        attributes:
+          - key: name
+            tag_value: name
+          - key: aeroway
+            tag_value: aeroway
+          - key: class
+            tag_value: aeroway
+          - key: "name:latin"
+            tag_value: name
