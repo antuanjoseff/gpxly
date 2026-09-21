@@ -41,14 +41,30 @@ class _MapBaseLayerState extends ConsumerState<MapBaseLayer> {
   String? _styleString;
   MapLibreMapController? _controller;
 
+  /// Estil offline pendent d'aplicar un cop el mapa s'ha inicialitzat amb
+  /// l'estil online. Evita que el renderer natiu peti processant mbtiles
+  /// mentre s'inicialitza (SIGABRT a libmaplibre.so).
+  String? _pendingOfflineStyle;
+
   @override
   void initState() {
     super.initState();
     _loadStyle();
   }
 
-  /// Decideix l'estil (online/offline) i l'aplica: si el mapa ja existeix,
-  /// en calent via setStyleString; si no, via setState per la construcció.
+  /// Decideix l'estil (online/offline) i l'aplica.
+  ///
+  /// 🛡️ ESTRATÈGIA PER EVITAR EL CRASH JNI:
+  /// En mode offline, NO carreguem l'estil offline com a `styleString` inicial
+  /// del MapLibreMap. El renderer natiu peta (SIGABRT) si processa tiles del
+  /// mbtiles mentre s'inicialitza. En lloc d'això:
+  ///   1. Creem el mapa amb l'estil ONLINE (estable, ràpid).
+  ///   2. Un cop l'estil online està carregat i el mapa és estable,
+  ///      fem `setStyle` a l'offline en calent.
+  ///
+  /// Si el mapa ja existeix (canvi offline↔online amb l'app en marxa),
+  /// simplement fem `setStyle` en calent — això funciona bé perquè el
+  /// renderer ja està inicialitzat.
   Future<void> _loadStyle() async {
     final offline = ref.read(offlineMapsProvider);
     debugPrint(
@@ -65,11 +81,18 @@ class _MapBaseLayerState extends ConsumerState<MapBaseLayer> {
       );
       if (style != null && mounted) {
         if (_controller != null) {
+          // Mapa ja existeix: canvi en calent (funciona bé)
           await _controller!.setStyle(style);
         } else {
-          setState(() => _styleString = style);
+          // 🛡️ ARRENCADA OFFLINE: no posem l'estil offline com a inicial.
+          // Creem el mapa amb l'estil online primer; el canvi a offline es
+          // farà a onStyleLoaded quan el renderer ja sigui estable.
+          setState(() {
+            _styleString = 'assets/osm_style.json';
+            _pendingOfflineStyle = style;
+          });
         }
-        debugPrint('🗺️ [OFFLINE] Estil offline carregat');
+        debugPrint('🗺️ [OFFLINE] Estil offline preparat');
         return;
       }
     }
@@ -126,7 +149,20 @@ class _MapBaseLayerState extends ConsumerState<MapBaseLayer> {
             _controller = controller;
             widget.onMapCreated(controller);
           },
-          onStyleLoadedCallback: widget.onStyleLoaded,
+          onStyleLoadedCallback: () async {
+            // 🛡️ Si hi havia un estil offline pendent (arrencada offline),
+            // l'apliquem ARA que el renderer ja és estable, ABANS de dir
+            // al pare que l'estil està llest (que activa els listeners).
+            if (_pendingOfflineStyle != null && _controller != null) {
+              debugPrint('🗺️ [OFFLINE] Aplicant estil offline pendent...');
+              await _controller!.setStyle(_pendingOfflineStyle!);
+              _pendingOfflineStyle = null;
+              // No cridem widget.onStyleLoaded encara: esperem el proper
+              // onStyleLoaded que dispararà el setStyle en calent.
+              return;
+            }
+            widget.onStyleLoaded();
+          },
         ),
       ),
     );

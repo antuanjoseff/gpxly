@@ -85,117 +85,169 @@ void _updateWaypointPulse(MapLibreMapController controller) {
   }
 }
 
+/// Executa una alta a la GPU tolerant els duplicats ("already exists").
+/// Quan l'estil del mapa es recarrega (mode offline/online), el setup pot
+/// executar-se més d'una vegada sobre el mateix estil; sense aquesta protecció
+/// MapLibre llança [PlatformException] i l'app es tanca.
+Future<void> _safeMapAdd(Future<void> Function() action, String what) async {
+  try {
+    await action();
+  } on PlatformException catch (e) {
+    if ((e.message ?? '').contains('already exists')) {
+      debugPrint("ℹ️ $what ja existia a l'estil (recàrrega); es reutilitza.");
+    } else {
+      rethrow;
+    }
+  }
+}
+
 Future<void> setupUserLocationLayer(MapLibreMapController controller) async {
   // imported_track
-  await controller.addSource(
-    "imported_track",
-    const GeojsonSourceProperties(
-      data: {"type": "FeatureCollection", "features": []},
+  await _safeMapAdd(
+    () => controller.addSource(
+      "imported_track",
+      const GeojsonSourceProperties(
+        data: {"type": "FeatureCollection", "features": []},
+      ),
     ),
+    "imported_track",
   );
 
-  await controller.addLayer(
-    "imported_track",
-    "imported_track_layer",
-    const LineLayerProperties(
-      lineColor: "#00A8E8",
-      lineWidth: 4.0,
-      lineJoin: "round",
-      lineCap: "round",
+  await _safeMapAdd(
+    () => controller.addLayer(
+      "imported_track",
+      "imported_track_layer",
+      const LineLayerProperties(
+        lineColor: "#00A8E8",
+        lineWidth: 4.0,
+        lineJoin: "round",
+        lineCap: "round",
+      ),
     ),
+    "imported_track_layer",
   );
 
   // track_line
-  await controller.addSource(
-    "track_line",
-    const GeojsonSourceProperties(
-      data: {"type": "FeatureCollection", "features": []},
+  await _safeMapAdd(
+    () => controller.addSource(
+      "track_line",
+      const GeojsonSourceProperties(
+        data: {"type": "FeatureCollection", "features": []},
+      ),
     ),
+    "track_line",
   );
 
-  await controller.addLayer(
-    "track_line",
-    "track_line_layer",
-    const LineLayerProperties(
-      lineColor: "#FF0000",
-      lineWidth: 4.0,
-      lineJoin: "round",
-      lineCap: "round",
+  await _safeMapAdd(
+    () => controller.addLayer(
+      "track_line",
+      "track_line_layer",
+      const LineLayerProperties(
+        lineColor: "#FF0000",
+        lineWidth: 4.0,
+        lineJoin: "round",
+        lineCap: "round",
+      ),
     ),
+    "track_line_layer",
   );
 
   // selected_segment_source
-  await controller.addSource(
-    "selected_segment_source",
-    const GeojsonSourceProperties(
-      data: {"type": "FeatureCollection", "features": []},
+  await _safeMapAdd(
+    () => controller.addSource(
+      "selected_segment_source",
+      const GeojsonSourceProperties(
+        data: {"type": "FeatureCollection", "features": []},
+      ),
     ),
+    "selected_segment_source",
   );
 
-  await controller.addLayer(
-    "selected_segment_source",
+  await _safeMapAdd(
+    () => controller.addLayer(
+      "selected_segment_source",
+      "selected_segment_casing_layer",
+      const LineLayerProperties(
+        lineColor: "#FFFFFF", // ⚪ Blanco puro de fondo
+        lineWidth:
+            9.0, // 🎯 Gruesa para que sobresalga por los bordes de la naranja
+        lineJoin: "round",
+        lineCap: "round",
+      ),
+    ),
     "selected_segment_casing_layer",
-    const LineLayerProperties(
-      lineColor: "#FFFFFF", // ⚪ Blanco puro de fondo
-      lineWidth:
-          9.0, // 🎯 Gruesa para que sobresalga por los bordes de la naranja
-      lineJoin: "round",
-      lineCap: "round",
-    ),
   );
 
-  await controller.addLayer(
-    "selected_segment_source",
-    "selected_segment_layer",
-    const LineLayerProperties(
-      lineColor: "#FF9800", // 🍊 Color naranja STrack Rec
-      lineWidth: 5.0, // 🎯 Más fina para centrarse sobre el fondo blanco
-      lineJoin: "round",
-      lineCap: "round",
-      // 💡 PATRÓN DISCONTINUO: [longitud del guion, espacio en blanco] en múltiplos de grosor
-      lineDasharray: [2.0, 2.0],
+  await _safeMapAdd(
+    () => controller.addLayer(
+      "selected_segment_source",
+      "selected_segment_layer",
+      const LineLayerProperties(
+        lineColor: "#FF9800", // 🍊 Color naranja STrack Rec
+        lineWidth: 5.0, // 🎯 Más fina para centrarse sobre el fondo blanco
+        lineJoin: "round",
+        lineCap: "round",
+        // 💡 PATRÓN DISCONTINUO: [longitud del guion, espacio en blanco] en múltiplos de grosor
+        lineDasharray: [2.0, 2.0],
+      ),
     ),
+    "selected_segment_layer",
   );
 
   // track_animating_segment
-  await controller.addSource(
-    "track_animating_segment",
-    const GeojsonSourceProperties(
-      data: {"type": "FeatureCollection", "features": []},
+  await _safeMapAdd(
+    () => controller.addSource(
+      "track_animating_segment",
+      const GeojsonSourceProperties(
+        data: {"type": "FeatureCollection", "features": []},
+      ),
     ),
+    "track_animating_segment",
   );
 
-  await controller.addLayer(
-    "track_animating_segment",
-    "track_animating_layer",
-    const LineLayerProperties(
-      lineColor: "#FF0000",
-      lineWidth: 4.0,
-      lineJoin: "round",
-      lineCap: "round",
+  await _safeMapAdd(
+    () => controller.addLayer(
+      "track_animating_segment",
+      "track_animating_layer",
+      const LineLayerProperties(
+        lineColor: "#FF0000",
+        lineWidth: 4.0,
+        lineJoin: "round",
+        lineCap: "round",
+      ),
     ),
+    "track_animating_layer",
   );
 
   final Uint8List blueDot = await _createBlueDot();
-  await controller.addImage("user_icon", blueDot);
-
-  // user_location
-  await controller.addSource(
-    "user_location",
-    const GeojsonSourceProperties(
-      data: {"type": "FeatureCollection", "features": []},
-    ),
+  await _safeMapAdd(
+    () => controller.addImage("user_icon", blueDot),
+    "user_icon",
   );
 
-  await controller.addLayer(
-    "user_location",
-    "user_location_layer",
-    const SymbolLayerProperties(
-      iconImage: "user_icon",
-      iconSize: 1.0,
-      iconAllowOverlap: true,
-      iconIgnorePlacement: true,
+  // user_location
+  await _safeMapAdd(
+    () => controller.addSource(
+      "user_location",
+      const GeojsonSourceProperties(
+        data: {"type": "FeatureCollection", "features": []},
+      ),
     ),
+    "user_location",
+  );
+
+  await _safeMapAdd(
+    () => controller.addLayer(
+      "user_location",
+      "user_location_layer",
+      const SymbolLayerProperties(
+        iconImage: "user_icon",
+        iconSize: 1.0,
+        iconAllowOverlap: true,
+        iconIgnorePlacement: true,
+      ),
+    ),
+    "user_location_layer",
   );
 }
 
@@ -288,24 +340,30 @@ Future<void> animateWaypointAppearance(
 }
 
 Future<void> setupWaypointLayers(MapLibreMapController controller) async {
-  await controller.addSource(
-    'waypoints_recorded_source',
-    const GeojsonSourceProperties(
-      data: {"type": "FeatureCollection", "features": []},
+  await _safeMapAdd(
+    () => controller.addSource(
+      'waypoints_recorded_source',
+      const GeojsonSourceProperties(
+        data: {"type": "FeatureCollection", "features": []},
+      ),
     ),
+    'waypoints_recorded_source',
   );
 
-  await controller.addSource(
-    'waypoints_imported_source',
-    const GeojsonSourceProperties(
-      data: {"type": "FeatureCollection", "features": []},
+  await _safeMapAdd(
+    () => controller.addSource(
+      'waypoints_imported_source',
+      const GeojsonSourceProperties(
+        data: {"type": "FeatureCollection", "features": []},
+      ),
     ),
+    'waypoints_imported_source',
   );
 
   // 🚀 BLINDADO CONTRA EL LOG 'circle-blur Expected number but found string instead':
   // Inyectamos la configuración nativa de la GPU mediante mapas planos directos al inicializar la capa.
-  try {
-    await controller.addLayer(
+  await _safeMapAdd(
+    () => controller.addLayer(
       'waypoints_recorded_source',
       'waypoints_recorded_layer',
       const CircleLayerProperties(
@@ -317,9 +375,12 @@ Future<void> setupWaypointLayers(MapLibreMapController controller) async {
         circleStrokeOpacity: 0.0,
         circleBlur: 0.0,
       ),
-    );
+    ),
+    'waypoints_recorded_layer',
+  );
 
-    await controller.addLayer(
+  await _safeMapAdd(
+    () => controller.addLayer(
       'waypoints_imported_source',
       'waypoints_imported_layer',
       const CircleLayerProperties(
@@ -331,44 +392,49 @@ Future<void> setupWaypointLayers(MapLibreMapController controller) async {
         circleStrokeOpacity: 0.0,
         circleBlur: 0.0,
       ),
-    );
+    ),
+    'waypoints_imported_layer',
+  );
 
-    // 🏷️ ETIQUETES AMB EL NOM DEL WAYPOINT
-    // Requereix 'glyphs' a l'estil (veure assets/osm_style.json).
-    // La font HA d'existir al servidor de glifos: demotiles només serveix
-    // "Open Sans Semibold". Si la font retorna 404, MapLibre no completa
-    // el layout del símbol i desapareix sencer (icona inclosa).
-    const SymbolLayerProperties waypointLabelProps = SymbolLayerProperties(
-      textField: [Expressions.get, 'name'],
-      textFont: ['Open Sans Semibold'],
-      textSize: 12.0,
-      textColor: '#1A1A1A',
-      textHaloColor: '#FFFFFF',
-      textHaloWidth: 1.5,
-      textOffset: [0, 1.4],
-      textAnchor: 'top',
-      textAllowOverlap: false,
-      textIgnorePlacement: false,
-      textPadding: 4.0,
-      // 📐 Prova diverses posicions al voltant del punt abans de descartar l'etiqueta
-      textVariableAnchor: ['top', 'bottom', 'left', 'right'],
-      textRadialOffset: 1.2,
-    );
+  // 🏷️ ETIQUETES AMB EL NOM DEL WAYPOINT
+  // Requereix 'glyphs' a l'estil (veure assets/osm_style.json).
+  // La font HA d'existir al servidor de glifos: demotiles només serveix
+  // "Open Sans Semibold". Si la font retorna 404, MapLibre no completa
+  // el layout del símbol i desapareix sencer (icona inclosa).
+  const SymbolLayerProperties waypointLabelProps = SymbolLayerProperties(
+    textField: [Expressions.get, 'name'],
+    textFont: ['Open Sans Semibold'],
+    textSize: 12.0,
+    textColor: '#1A1A1A',
+    textHaloColor: '#FFFFFF',
+    textHaloWidth: 1.5,
+    textOffset: [0, 1.4],
+    textAnchor: 'top',
+    textAllowOverlap: false,
+    textIgnorePlacement: false,
+    textPadding: 4.0,
+    // 📐 Prova diverses posicions al voltant del punt abans de descartar l'etiqueta
+    textVariableAnchor: ['top', 'bottom', 'left', 'right'],
+    textRadialOffset: 1.2,
+  );
 
-    await controller.addLayer(
+  await _safeMapAdd(
+    () => controller.addLayer(
       'waypoints_recorded_source',
       'waypoints_recorded_label_layer',
       waypointLabelProps,
-    );
+    ),
+    'waypoints_recorded_label_layer',
+  );
 
-    await controller.addLayer(
+  await _safeMapAdd(
+    () => controller.addLayer(
       'waypoints_imported_source',
       'waypoints_imported_label_layer',
       waypointLabelProps,
-    );
-  } catch (e) {
-    debugPrint("⚠️ Error al dar de alta las capas de waypoints en la GPU: $e");
-  }
+    ),
+    'waypoints_imported_label_layer',
+  );
 }
 
 Future<Uint8List> _createBlueDot() async {
@@ -400,22 +466,35 @@ Future<Uint8List> _createBlueDot() async {
   return byteData!.buffer.asUint8List();
 }
 
+/// GeoJSON segur: `features` és SEMPRE una llista (mai null).
+/// MapLibre natiu peta amb SIGABRT si `features` és null a un
+/// FeatureCollection enviat mentre l'estil es reconstrueix.
+Map<String, dynamic> _safeGeojson(List<Map<String, dynamic>> features) => {
+  "type": "FeatureCollection",
+  "features": features,
+};
+
 void setTrackLineGeometry(
   MapLibreMapController controller,
   List<List<double>> coordinates,
 ) {
   try {
-    controller.setGeoJsonSource("track_line", {
-      "type": "FeatureCollection",
-      "features": coordinates.isEmpty
-          ? []
-          : [
-              {
-                "type": "Feature",
-                "geometry": {"type": "LineString", "coordinates": coordinates},
-              },
-            ],
-    });
+    controller.setGeoJsonSource(
+      "track_line",
+      _safeGeojson(
+        coordinates.isEmpty
+            ? []
+            : [
+                {
+                  "type": "Feature",
+                  "geometry": {
+                    "type": "LineString",
+                    "coordinates": coordinates,
+                  },
+                },
+              ],
+      ),
+    );
   } catch (e) {
     debugPrint("⚠️ Error al setTrackLineGeometry: $e");
   }

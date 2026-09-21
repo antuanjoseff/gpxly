@@ -43,121 +43,158 @@ class SettingsScreen extends ConsumerWidget {
         title: Text(t.settings),
         toolbarHeight: 80,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: GridView.count(
-          crossAxisCount: 2,
-          mainAxisSpacing: 16,
-          crossAxisSpacing: 16,
-          children: [
-            _SettingsTile(
-              icon: Icons.gps_fixed,
-              label: t.gpsTab,
-              enabled: true,
-              locked: gpsLocked,
-              isAlarmActive: isAlarmActive,
-              isTrackActive: isTrackActive,
-              t: t,
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const GpsSettingsTab()),
-              ),
-            ),
-            _SettingsTile(
-              icon: Icons.map,
-              label: t.gpxTab,
-              t: t,
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const GpxSettingsTab()),
-              ),
-            ),
-            _SettingsTile(
-              icon: Icons.timeline,
-              label: t.trackTab,
-              t: t,
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const TrackSettingsTab()),
-              ),
-            ),
-            _SettingsTile(
-              icon: Icons.route,
-              label: t.importedTrack,
-              t: t,
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const ImportedTrackSettingsTab(),
-                ),
-              ),
-            ),
-            _SettingsTile(
-              icon: Icons.alarm,
-              label: t.alarms,
-              t: t,
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const AlarmSettingsTab()),
-              ),
-            ),
-            _SettingsTile(
-              icon: Icons.offline_pin_outlined,
-              label: t.offlineTab,
-              t: t,
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const OfflineMapsScreen()),
-              ),
-            ),
-            _SettingsTile(
-              label: t.demManagerTitle,
-              t: t,
-              // 🟢 SUPERPOSICIÓ COMPLEMENTÀRIA: Creem un bloc de mapa + graella
-              customIcon: SizedBox(
-                width: 42,
-                height: 42,
-                child: Stack(
-                  children: [
-                    const Positioned(
-                      left: 0,
-                      top: 0,
-                      child: Icon(
-                        Icons.landscape_outlined,
-                        size: 34,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                    Positioned(
-                      right: 0,
-                      bottom: 0,
-                      child: Container(
-                        padding: const EdgeInsets.all(1.5),
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.grid_on_rounded,
-                          size: 18,
-                          color: AppColors.skyBlue,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+      // 🛡️ SafeArea: evita que les cel·les inferiors quedin per sota dels
+      // botons de navegació del SO (gestures o barra de 3 botons).
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              // 📐 Adaptem l'alçada de les cel·les perquè el grid capi sense scroll
+              const crossAxisCount = 2;
+              const spacing = 16.0;
+              const itemCount = 7;
+              const minCellHeight = 120.0;
 
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const BarometerSettingsTab(),
+              final rows = (itemCount / crossAxisCount).ceil();
+              final cellWidth =
+                  (constraints.maxWidth - (crossAxisCount - 1) * spacing) /
+                  crossAxisCount;
+              final availableCellHeight =
+                  (constraints.maxHeight - (rows - 1) * spacing) / rows;
+              // Si la pantalla és massa baixa (p. ex. horitzontal), mantenim
+              // una alçada mínima i deixem l'scroll actiu com a alternativa
+              final fitsWithoutScroll = availableCellHeight >= minCellHeight;
+              final cellHeight = fitsWithoutScroll
+                  ? availableCellHeight
+                  : minCellHeight;
+
+              return GridView.count(
+                crossAxisCount: crossAxisCount,
+                mainAxisSpacing: spacing,
+                crossAxisSpacing: spacing,
+                childAspectRatio: cellWidth / cellHeight,
+                physics: fitsWithoutScroll
+                    ? const NeverScrollableScrollPhysics()
+                    : null,
+                children: [
+                  _SettingsTile(
+                    icon: Icons.gps_fixed,
+                    label: t.gpsTab,
+                    enabled: true,
+                    locked: gpsLocked,
+                    isAlarmActive: isAlarmActive,
+                    isTrackActive: isTrackActive,
+                    t: t,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const GpsSettingsTab()),
+                    ),
                   ),
-                );
-              },
-            ),
-          ],
+                  _SettingsTile(
+                    icon: Icons.map,
+                    label: t.gpxTab,
+                    t: t,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const GpxSettingsTab()),
+                    ),
+                  ),
+                  _SettingsTile(
+                    icon: Icons.timeline,
+                    label: t.trackTab,
+                    t: t,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const TrackSettingsTab(),
+                      ),
+                    ),
+                  ),
+                  _SettingsTile(
+                    icon: Icons.route,
+                    label: t.importedTrack,
+                    t: t,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const ImportedTrackSettingsTab(),
+                      ),
+                    ),
+                  ),
+                  _SettingsTile(
+                    icon: Icons.alarm,
+                    label: t.alarms,
+                    t: t,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const AlarmSettingsTab(),
+                      ),
+                    ),
+                  ),
+                  _SettingsTile(
+                    icon: Icons.offline_pin_outlined,
+                    label: t.offlineTab,
+                    t: t,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const OfflineMapsScreen(),
+                      ),
+                    ),
+                  ),
+                  _SettingsTile(
+                    label: t.demManagerTitle,
+                    t: t,
+                    // 🟢 SUPERPOSICIÓ COMPLEMENTÀRIA: Creem un bloc de mapa + graella
+                    customIcon: SizedBox(
+                      width: 42,
+                      height: 42,
+                      child: Stack(
+                        children: [
+                          const Positioned(
+                            left: 0,
+                            top: 0,
+                            child: Icon(
+                              Icons.landscape_outlined,
+                              size: 34,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                          Positioned(
+                            right: 0,
+                            bottom: 0,
+                            child: Container(
+                              padding: const EdgeInsets.all(1.5),
+                              decoration: const BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.grid_on_rounded,
+                                size: 18,
+                                color: AppColors.skyBlue,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const BarometerSettingsTab(),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              );
+            },
+          ),
         ),
       ),
     );

@@ -1,0 +1,109 @@
+schema_name: "SenderismeComplet"
+attribution: '<a href="https://openstreetmap.org">&copy; OpenStreetMap</a>'
+
+sources:
+  osm:
+    type: osm
+    url: "local"
+
+layers:
+  # === CAPA 1: COSTA I AIGUA ===
+  - id: lineas_coast_i_aigua
+    features:
+      - source: osm
+        geometry: polygon
+        min_zoom: 0
+        max_zoom: 14
+        include_when:
+          natural: [water, coastline]
+        attributes:
+          - key: name
+          - key: natural
+      - source: osm
+        geometry: line
+        min_zoom: 5
+        max_zoom: 14
+        include_when:
+          natural: [coastline]
+          waterway: [river, stream, canal]
+        attributes:
+          - key: name
+          - key: waterway
+          - key: natural
+
+  # === CAPA 2: CARRETERES I VIES ===
+  - id: carreteres_i_vies
+    features:
+      - source: osm
+        geometry: line
+        min_zoom: 7
+        max_zoom: 14
+        include_when:
+          highway: [motorway, trunk, primary, secondary, tertiary, residential, service, unclassified]
+        attributes:
+          - key: name
+          - key: highway
+
+  # === CAPA 3: EDIFICIS ===
+  - id: edificis
+    features:
+      - source: osm
+        geometry: polygon
+        min_zoom: 13
+        max_zoom: 14
+        include_when:
+          building: [yes, residential, apartments, industrial]
+        attributes:
+          - key: building
+
+  # === CAPA 4: ZONES VERDES I BOSCOS ===
+  - id: zones_verdes_i_boscos
+    features:
+      - source: osm
+        geometry: polygon
+        min_zoom: 6
+        max_zoom: 14
+        include_when:
+          landuse: [forest, orchard, vineyard, residential]
+          natural: [wood, scrub, heath]
+        attributes:
+          - key: landuse
+          - key: natural
+
+  # === CAPA 5: RUTES DE SENDERISME ===
+  - id: rutes_senderisme
+    features:
+      - source: osm
+        geometry: line
+        min_zoom: 8
+        max_zoom: 14
+        include_when:
+          route: [hiking, foot, path]
+          highway: [path, footway, track]
+          sac_scale: [hiking, mountain_hiking, demanding_mountain_hiking]
+        attributes:
+          - key: name
+          - key: route
+          - key: highway
+          - key: network
+          - key: symbol
+          - key: sac_scale
+
+  # === CAPA 6: ELEMENTS DE MUNTANYA ===
+  - id: elements_muntanya
+    features:
+      - source: osm
+        geometry: point
+        min_zoom: 10
+        max_zoom: 14
+        include_when:
+          natural: [spring, peak, cave_entrance]
+          amenity: [drinking_water, shelter]
+          tourism: [alpine_hut, wilderness_hut, viewpoint]
+        attributes:
+          - key: name
+          - key: natural
+          - key: amenity
+          - key: tourism
+          - key: drinking_water
+          - key: elevation

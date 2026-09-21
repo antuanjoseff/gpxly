@@ -76,6 +76,12 @@ class _MapScreenState extends ConsumerState<MapScreen>
   bool _fullScreen = false;
   Timer? _mapStopTimer;
   Timer? _submenuAutoHideTimer;
+
+  /// Cua que serialitza el setup de capes de l'estil del mapa.
+  /// Sense aquesta cua, la recàrrega d'estil del mode offline disparava dues
+  /// execucions concurrents del setup i l'app es tancava amb
+  /// "Source imported_track already exists".
+  Future<void> _styleSetupQueue = Future.value();
   LatLng? _initialCameraTarget;
   double _initialZoom = 14;
   bool waypointLayersReady = false;
@@ -88,6 +94,72 @@ class _MapScreenState extends ConsumerState<MapScreen>
   bool hasDoneRecoveryFit = false;
   DateTime _lastPrefsSave = DateTime.now();
   LatLng? _lastCameraCenter;
+
+  /// Setup complet de les capes un cop l'estil del mapa s'ha carregat.
+  /// S'ha de cridar SEMPRE a través de [_styleSetupQueue] (vegeu onStyleLoaded)
+  /// per evitar curses quan l'estil es recarrega (canvi online ↔ offline).
+  Future<void> _onStyleLoadedSetup() async {
+    // 🛡️ MENTRE L'ESTIL ES RECARREGA, BLOQUEM TOTS ELS OIENTS.
+    // Tothom comprova `styleInitialized` abans de tocar fonts de la GPU;
+    // si no el baixem aquí, un `setGeoJsonSource` pot arribar mentre el
+    // renderer natiu reconstrueix l'estil i peta JNI (SIGABRT a libmaplibre).
+    if (mounted) {
+      setState(() {
+        styleInitialized = false;
+        waypointLayersReady = false;
+      });
+    }
+
+    await Future.delayed(const Duration(milliseconds: 100));
+
+    if (!mounted || mapController == null) return;
+
+    final trackSettings = ref.read(trackSettingsProvider);
+    final importedSettings = ref.read(importedTrackSettingsProvider);
+
+    // 1. Damos de alta todas las fuentes y capas base en la GPU nativa
+    await setupUserLocationLayer(mapController!);
+    await setupWaypointLayers(mapController!);
+
+    // 🚀 CORRECCIÓ DEFINITIVA 1 (Ruta gravada):
+    // Creem un objecte LineLayerProperties real tal com demana MapLibre.
+    // Forcem que el color sigui una String vàlida i el gruix un double de Dart.
+    final String trackColorHex =
+        trackSettings.color.toMapLibreColor().isNotEmpty
+        ? trackSettings.color.toMapLibreColor()
+        : "#FF0000";
+
+    await mapController!.setLayerProperties(
+      "track_line_layer",
+      LineLayerProperties(
+        lineColor: trackColorHex,
+        lineWidth: trackSettings.width.toDouble(), // 🎯 Forcem double pur!
+      ),
+    );
+
+    // 🚀 CORRECCIÓ DEFINITIVA 2 (Ruta importada):
+    final String importedColorHex =
+        importedSettings.color.toMapLibreColor().isNotEmpty
+        ? importedSettings.color.toMapLibreColor()
+        : "#00A8E8";
+
+    await mapController!.setLayerProperties(
+      "imported_track_layer",
+      LineLayerProperties(
+        lineColor: importedColorHex,
+        lineWidth: importedSettings.width.toDouble(), // 🎯 Forcem double pur!
+      ),
+    );
+
+    // 🚀 CLAVE DE SINCRONIZACIÓN:
+    // Solo cuando la GPU ha terminado de procesar absolutamente todo el estilo,
+    // abrimos las puertas de la interfaz para que el listener de Riverpod pueda operar de forma segura.
+    if (!mounted) return;
+    setState(() {
+      waypointLayersReady = true;
+      styleInitialized = true;
+    });
+  }
 
   // Índexs del gràfic
   int? selectedIndexStart;
@@ -1193,59 +1265,16 @@ class _MapScreenState extends ConsumerState<MapScreen>
                       mapAnimator = MapAnimator(controller);
                       controller.onFeatureTapped.add(_onFeatureTapped);
                     },
-                    onStyleLoaded: () async {
-                      await Future.delayed(const Duration(milliseconds: 100));
-
-                      if (!mounted || mapController == null) return;
-
-                      final trackSettings = ref.read(trackSettingsProvider);
-                      final importedSettings = ref.read(
-                        importedTrackSettingsProvider,
-                      );
-
-                      // 1. Damos de alta todas las fuentes y capas base en la GPU nativa
-                      await setupUserLocationLayer(mapController!);
-                      await setupWaypointLayers(mapController!);
-
-                      // 🚀 CORRECCIÓ DEFINITIVA 1 (Ruta gravada):
-                      // Creem un objecte LineLayerProperties real tal com demana MapLibre.
-                      // Forcem que el color sigui una String vàlida i el gruix un double de Dart.
-                      final String trackColorHex =
-                          trackSettings.color.toMapLibreColor().isNotEmpty
-                          ? trackSettings.color.toMapLibreColor()
-                          : "#FF0000";
-
-                      await mapController!.setLayerProperties(
-                        "track_line_layer",
-                        LineLayerProperties(
-                          lineColor: trackColorHex,
-                          lineWidth: trackSettings.width
-                              .toDouble(), // 🎯 Forcem double pur!
-                        ),
-                      );
-
-                      // 🚀 CORRECCIÓ DEFINITIVA 2 (Ruta importada):
-                      final String importedColorHex =
-                          importedSettings.color.toMapLibreColor().isNotEmpty
-                          ? importedSettings.color.toMapLibreColor()
-                          : "#00A8E8";
-
-                      await mapController!.setLayerProperties(
-                        "imported_track_layer",
-                        LineLayerProperties(
-                          lineColor: importedColorHex,
-                          lineWidth: importedSettings.width
-                              .toDouble(), // 🎯 Forcem double pur!
-                        ),
-                      );
-
-                      // 🚀 CLAVE DE SINCRONIZACIÓN:
-                      // Solo cuando la GPU ha terminado de procesar absolutamente todo el estilo,
-                      // abrimos las puertas de la interfaz para que el listener de Riverpod pueda operar de forma segura.
-                      setState(() {
-                        waypointLayersReady = true;
-                        styleInitialized = true;
-                      });
+                    onStyleLoaded: () {
+                      // 🔒 SERIALITZEM EL SETUP: si l'estil es recarrega
+                      // (canvi online ↔ offline), les execucions s'encuen i
+                      // mai no corren en paral·lel. Això elimina la cursa que
+                      // provocava "Source imported_track already exists".
+                      _styleSetupQueue = _styleSetupQueue
+                          .then((_) => _onStyleLoadedSetup())
+                          .catchError((Object e) {
+                            debugPrint("⚠️ Error en el setup de l'estil: $e");
+                          });
                     },
                   ),
 
