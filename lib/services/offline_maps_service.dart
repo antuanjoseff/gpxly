@@ -46,24 +46,34 @@ class OfflineMapsService {
 
   /// Copia l'sprite inclòs a assets/sprites/ al disc (cal perquè MapLibre
   /// només pot llegir fitxers del sistema, no assets de Flutter).
+  /// Copia també la variant @2x: en dispositius amb pixelRatio > 1 MapLibre
+  /// Native la demana automàticament i, si no existeix, l'sprite sencer
+  /// falla en silenci i les icones no es dibuixen mai en mode offline.
   Future<bool> ensureSprites() async {
     try {
       final dir = await spritesDir();
       if (!await dir.exists()) await dir.create(recursive: true);
+      await _copyAssetIfMissing(dir, 'sprite.png');
+      await _copyAssetIfMissing(dir, 'sprite.json');
+      await _copyAssetIfMissing(dir, 'sprite@2x.png');
+      await _copyAssetIfMissing(dir, 'sprite@2x.json');
       final png = File('${dir.path}/sprite.png');
       final json = File('${dir.path}/sprite.json');
-      if (!await png.exists()) {
-        final data = await rootBundle.load('assets/sprites/sprite.png');
-        await png.writeAsBytes(data.buffer.asUint8List());
-      }
-      if (!await json.exists()) {
-        final data = await rootBundle.load('assets/sprites/sprite.json');
-        await json.writeAsBytes(data.buffer.asUint8List());
-      }
       return await png.exists() && await json.exists();
     } catch (e) {
       debugPrint('⚠️ [OFFLINE STYLE] Error copiant sprites: $e');
       return false;
+    }
+  }
+
+  Future<void> _copyAssetIfMissing(Directory dir, String fileName) async {
+    final file = File('${dir.path}/$fileName');
+    if (await file.exists()) return;
+    try {
+      final data = await rootBundle.load('assets/sprites/$fileName');
+      await file.writeAsBytes(data.buffer.asUint8List());
+    } catch (e) {
+      debugPrint('⚠️ [OFFLINE STYLE] No he pogut copiar $fileName: $e');
     }
   }
 

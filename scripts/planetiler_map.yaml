@@ -365,6 +365,10 @@ layers:
               neighbourhood,
               locality,
             ]
+        # Evita duplicar l'etiqueta quan el mateix node ja és un pic/cim
+        # (nodes amb place=locality + natural=peak alhora, ex: "Montigalar").
+        exclude_when:
+          natural: [peak, volcano, saddle, ridge]
         attributes:
           - key: name
             tag_value: name

@@ -1,0 +1,5 @@
+[out:json][timeout:25];
+(
+  node["name"~"Montigalar",i](41.75,2.85,41.85,3.05);
+);
+out body;
