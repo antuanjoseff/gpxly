@@ -1,0 +1,128 @@
+{
+  "spring": {
+    "width": 80,
+    "height": 80,
+    "x": 8,
+    "y": 8,
+    "pixelRatio": 2
+  },
+  "drinking_water": {
+    "width": 80,
+    "height": 80,
+    "x": 96,
+    "y": 8,
+    "pixelRatio": 2
+  },
+  "fountain": {
+    "width": 80,
+    "height": 80,
+    "x": 184,
+    "y": 8,
+    "pixelRatio": 2
+  },
+  "waterfall": {
+    "width": 80,
+    "height": 80,
+    "x": 272,
+    "y": 8,
+    "pixelRatio": 2
+  },
+  "peak": {
+    "width": 80,
+    "height": 80,
+    "x": 360,
+    "y": 8,
+    "pixelRatio": 2
+  },
+  "climbing": {
+    "width": 80,
+    "height": 80,
+    "x": 448,
+    "y": 8,
+    "pixelRatio": 2
+  },
+  "cave_entrance": {
+    "width": 80,
+    "height": 80,
+    "x": 8,
+    "y": 96,
+    "pixelRatio": 2
+  },
+  "guidepost": {
+    "width": 80,
+    "height": 80,
+    "x": 96,
+    "y": 96,
+    "pixelRatio": 2
+  },
+  "alpine_hut": {
+    "width": 80,
+    "height": 80,
+    "x": 184,
+    "y": 96,
+    "pixelRatio": 2
+  },
+  "wilderness_hut": {
+    "width": 80,
+    "height": 80,
+    "x": 272,
+    "y": 96,
+    "pixelRatio": 2
+  },
+  "shelter": {
+    "width": 80,
+    "height": 80,
+    "x": 360,
+    "y": 96,
+    "pixelRatio": 2
+  },
+  "campsite": {
+    "width": 80,
+    "height": 80,
+    "x": 448,
+    "y": 96,
+    "pixelRatio": 2
+  },
+  "campfire": {
+    "width": 80,
+    "height": 80,
+    "x": 8,
+    "y": 184,
+    "pixelRatio": 2
+  },
+  "viewpoint": {
+    "width": 80,
+    "height": 80,
+    "x": 96,
+    "y": 184,
+    "pixelRatio": 2
+  },
+  "picnic_site": {
+    "width": 80,
+    "height": 80,
+    "x": 184,
+    "y": 184,
+    "pixelRatio": 2
+  },
+  "information": {
+    "width": 80,
+    "height": 80,
+    "x": 272,
+    "y": 184,
+    "pixelRatio": 2
+  },
+  "monument": {
+    "width": 80,
+    "height": 80,
+    "x": 360,
+    "y": 184,
+    "pixelRatio": 2
+  },
+  "parking": {
+    "width": 80,
+    "height": 80,
+    "x": 448,
+    "y": 184,
+    "pixelRatio": 2
+  }
+}
