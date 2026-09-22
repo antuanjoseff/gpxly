@@ -5128,7 +5128,7 @@
           "fountain",
           "drinking_water"
         ],
-        "icon-size": 0.8,
+        "icon-size": 0.4,
         "icon-allow-overlap": true,
         "text-field": "{name:latin}",
         "text-font": [
@@ -5182,7 +5182,7 @@
           "waterfall",
           "spring"
         ],
-        "icon-size": 0.8,
+        "icon-size": 0.4,
         "icon-allow-overlap": true,
         "text-field": "{name:latin}",
         "text-font": [
@@ -5224,7 +5224,7 @@
       ],
       "layout": {
         "icon-image": "peak",
-        "icon-size": 0.8,
+        "icon-size": 0.4,
         "icon-allow-overlap": true,
         "text-field": "{name:latin}",
         "text-font": [
@@ -5315,7 +5315,7 @@
       ],
       "layout": {
         "icon-image": "alpine_hut",
-        "icon-size": 0.9,
+        "icon-size": 0.45,
         "icon-allow-overlap": true,
         "text-field": "{name:latin}",
         "text-font": [
@@ -5358,7 +5358,7 @@
       ],
       "layout": {
         "icon-image": "viewpoint",
-        "icon-size": 0.9,
+        "icon-size": 0.45,
         "icon-allow-overlap": true,
         "text-field": "{name:latin}",
         "text-font": [
@@ -5401,7 +5401,7 @@
       ],
       "layout": {
         "icon-image": "picnic_site",
-        "icon-size": 0.8,
+        "icon-size": 0.4,
         "icon-allow-overlap": true,
         "text-field": "{name:latin}",
         "text-font": [
@@ -5482,7 +5482,7 @@
       ],
       "layout": {
         "icon-image": "campsite",
-        "icon-size": 0.9,
+        "icon-size": 0.45,
         "icon-allow-overlap": true,
         "text-field": "{name:latin}",
         "text-font": [
