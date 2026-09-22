@@ -64,7 +64,11 @@ layers:
           - key: natural
             tag_value: natural
           - key: intermittent
-            tag_value: intermittent
+            value:
+              1:
+                intermittent: [yes, "1", "true"]
+              0: otherwise
+            type: integer
           - key: class
             value:
               coalesce:
