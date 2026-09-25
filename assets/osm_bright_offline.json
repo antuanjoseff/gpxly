@@ -444,46 +444,6 @@
       }
     },
     {
-      "id": "coastline",
-      "type": "line",
-      "metadata": {
-        "mapbox:group": "1444849382550.77"
-      },
-      "source": "openmaptiles",
-      "source-layer": "waterway",
-      "minzoom": 5,
-      "filter": [
-        "==",
-        "class",
-        "coastline"
-      ],
-      "layout": {
-        "line-cap": "round",
-        "line-join": "round",
-        "visibility": "visible"
-      },
-      "paint": {
-        "line-color": "#5b93bd",
-        "line-width": {
-          "base": 1.2,
-          "stops": [
-            [
-              5,
-              0.75
-            ],
-            [
-              13,
-              1.5
-            ],
-            [
-              20,
-              3
-            ]
-          ]
-        }
-      }
-    },
-    {
       "id": "waterway-stream-canal",
       "type": "line",
       "metadata": {
@@ -794,6 +754,46 @@
           0,
           2.5
         ]
+      }
+    },
+    {
+      "id": "coastline",
+      "type": "line",
+      "metadata": {
+        "mapbox:group": "1444849382550.77"
+      },
+      "source": "openmaptiles",
+      "source-layer": "waterway",
+      "minzoom": 5,
+      "filter": [
+        "==",
+        "class",
+        "coastline"
+      ],
+      "layout": {
+        "line-cap": "round",
+        "line-join": "round",
+        "visibility": "visible"
+      },
+      "paint": {
+        "line-color": "#5b93bd",
+        "line-width": {
+          "base": 1.2,
+          "stops": [
+            [
+              5,
+              0.75
+            ],
+            [
+              13,
+              1.5
+            ],
+            [
+              20,
+              3
+            ]
+          ]
+        }
       }
     },
     {
