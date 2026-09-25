@@ -416,68 +416,48 @@
       }
     },
     {
-      "id": "waterway-all-proportional",
-      "type": "line",
-      "source": "openmaptiles",
-      "source-layer": "waterway",
-      "filter": ["has", "class"],
-      "layout": {
-        "line-cap": "round",
-        "visibility": "visible"
-      },
-      "paint": {
-        "line-color": "#a0c8f0",
-        "line-width": [
-          "match",
-          ["get", "class"],
-          "river", 2.0,
-          "canal", 1.5,
-          "stream", 1.0,
-          0.5           
-        ],
-        "line-dasharray": [
-          "case",
-          ["boolean", ["get", "intermittent"], false],
-          ["literal", [4, 3]],
-          ["literal", [1, 0]]
-        ]
-      }
-    },
-    {
-      "id": "coastline",
+      "id": "waterway-other-intermittent",
       "type": "line",
       "metadata": {
         "mapbox:group": "1444849382550.77"
       },
       "source": "openmaptiles",
       "source-layer": "waterway",
-      "minzoom": 5,
       "filter": [
-        "==",
-        "class",
-        "coastline"
+        "all",
+        [
+          "!in",
+          "class",
+          "canal",
+          "river",
+          "stream"
+        ],
+        [
+          "==",
+          "intermittent",
+          1
+        ]
       ],
       "layout": {
         "line-cap": "round",
-        "line-join": "round",
         "visibility": "visible"
       },
       "paint": {
-        "line-color": "#5b93bd",
+        "line-color": "#a0c8f0",
+        "line-dasharray": [
+          4,
+          3
+        ],
         "line-width": {
-          "base": 1.2,
+          "base": 1.3,
           "stops": [
             [
-              5,
-              0.75
-            ],
-            [
               13,
-              1.5
+              0.5
             ],
             [
               20,
-              3
+              2
             ]
           ]
         }
@@ -4868,6 +4848,118 @@
       }
     },
     {
+      "id": "path-pedestrian",
+      "type": "line",
+      "source": "openmaptiles",
+      "source-layer": "transportation",
+      "filter": [
+        "all",
+        [
+          "in",
+          "class",
+          "path",
+          "track",
+          "footway",
+          "steps",
+          "pedestrian"
+        ]
+      ],
+      "layout": {
+        "line-join": "round",
+        "line-cap": "round"
+      },
+      "paint": {
+        "line-color": "#d9652b",
+        "line-width": {
+          "base": 1.2,
+          "stops": [
+            [
+              12,
+              1
+            ],
+            [
+              20,
+              3
+            ]
+          ]
+        },
+        "line-dasharray": [
+          2,
+          2
+        ]
+      }
+    },
+    {
+      "id": "aerialway",
+      "type": "line",
+      "source": "openmaptiles",
+      "source-layer": "transportation",
+      "filter": [
+        "all",
+        [
+          "==",
+          "class",
+          "aerialway"
+        ]
+      ],
+      "layout": {
+        "line-join": "round",
+        "line-cap": "round"
+      },
+      "paint": {
+        "line-color": "#555555",
+        "line-width": 1.5,
+        "line-dasharray": [
+          2,
+          1
+        ]
+      }
+    },
+    {
+      "id": "boundary-protected-areas",
+      "type": "line",
+      "source": "openmaptiles",
+      "source-layer": "boundary",
+      "filter": [
+        "any",
+        [
+          "==",
+          "class",
+          "national_park"
+        ],
+        [
+          "==",
+          "class",
+          "nature_reserve"
+        ]
+      ],
+      "layout": {
+        "line-join": "round",
+        "line-cap": "round"
+      },
+      "paint": {
+        "line-color": "#339933",
+        "line-width": {
+          "base": 1.2,
+          "stops": [
+            [
+              8,
+              1
+            ],
+            [
+              14,
+              3
+            ]
+          ]
+        },
+        "line-dasharray": [
+          4,
+          4
+        ],
+        "line-opacity": 0.5
+      }
+    },
+    {
       "id": "waterway-name",
       "type": "symbol",
       "source": "openmaptiles",
@@ -5049,11 +5141,11 @@
           "stops": [
             [
               15,
-              0.5
+              0.25
             ],
             [
               19,
-              1
+              0.5
             ]
           ]
         },
@@ -5098,11 +5190,11 @@
           "stops": [
             [
               15,
-              0.5
+              0.25
             ],
             [
               19,
-              1
+              0.5
             ]
           ]
         },
@@ -5148,7 +5240,7 @@
           "fountain",
           "drinking_water"
         ],
-        "icon-size": 0.4,
+        "icon-size": 0.2,
         "icon-allow-overlap": true,
         "text-field": "{name:latin}",
         "text-font": [
@@ -5202,7 +5294,7 @@
           "waterfall",
           "spring"
         ],
-        "icon-size": 0.4,
+        "icon-size": 0.2,
         "icon-allow-overlap": true,
         "text-field": "{name:latin}",
         "text-font": [
@@ -5244,7 +5336,7 @@
       ],
       "layout": {
         "icon-image": "peak",
-        "icon-size": 0.4,
+        "icon-size": 0.2,
         "icon-allow-overlap": true,
         "text-field": "{name:latin}",
         "text-font": [
@@ -5335,7 +5427,7 @@
       ],
       "layout": {
         "icon-image": "alpine_hut",
-        "icon-size": 0.45,
+        "icon-size": 0.225,
         "icon-allow-overlap": true,
         "text-field": "{name:latin}",
         "text-font": [
@@ -5378,7 +5470,7 @@
       ],
       "layout": {
         "icon-image": "viewpoint",
-        "icon-size": 0.45,
+        "icon-size": 0.225,
         "icon-allow-overlap": true,
         "text-field": "{name:latin}",
         "text-font": [
@@ -5421,7 +5513,7 @@
       ],
       "layout": {
         "icon-image": "picnic_site",
-        "icon-size": 0.4,
+        "icon-size": 0.2,
         "icon-allow-overlap": true,
         "text-field": "{name:latin}",
         "text-font": [
@@ -5502,7 +5594,7 @@
       ],
       "layout": {
         "icon-image": "campsite",
-        "icon-size": 0.45,
+        "icon-size": 0.225,
         "icon-allow-overlap": true,
         "text-field": "{name:latin}",
         "text-font": [
@@ -5907,7 +5999,7 @@
       "layout": {
         "icon-image": "road_{ref_length}",
         "icon-rotation-alignment": "viewport",
-        "icon-size": 1,
+        "icon-size": 0.5,
         "symbol-placement": {
           "base": 1,
           "stops": [
@@ -5958,7 +6050,7 @@
       "layout": {
         "icon-image": "{network}_{ref_length}",
         "icon-rotation-alignment": "viewport",
-        "icon-size": 1,
+        "icon-size": 0.5,
         "symbol-placement": {
           "base": 1,
           "stops": [
@@ -6016,7 +6108,7 @@
       "layout": {
         "icon-image": "{network}_{ref_length}",
         "icon-rotation-alignment": "viewport",
-        "icon-size": 1,
+        "icon-size": 0.5,
         "symbol-placement": {
           "base": 1,
           "stops": [
@@ -6057,7 +6149,7 @@
       ],
       "layout": {
         "icon-image": "airport_11",
-        "icon-size": 1,
+        "icon-size": 0.5,
         "text-anchor": "top",
         "text-field": "{name:latin}\n{name:nonlatin}",
         "text-font": [
@@ -6320,7 +6412,7 @@
       ],
       "layout": {
         "icon-image": "star_11",
-        "icon-size": 0.8,
+        "icon-size": 0.4,
         "text-anchor": "left",
         "text-field": "{name:latin}\n{name:nonlatin}",
         "text-font": [
@@ -6596,95 +6688,193 @@
       }
     },
     {
-      "id": "roads-local",
-      "type": "line",
-      "source": "openmaptiles",
-      "source-layer": "roads",
-      "minzoom": 12,
-      "filter": [
-        "all",
-        [
-          "==",
-          "$type",
-          "LineString"
-        ],
-        [
-          "has",
-          "highway"
-        ]
-      ],
-      "layout": {
-        "line-cap": "round",
-        "line-join": "round"
-      },
-      "paint": {
-        "line-color": "#d2d0cd",
-        "line-width": {
-          "stops": [
-            [
-              12,
-              0.8
-            ],
-            [
-              15,
-              2
-            ],
-            [
-              18,
-              5
-            ],
-            [
-              20,
-              9
-            ]
-          ]
-        }
-      }
-    },
-    {
-      "id": "road-labels-local",
+      "id": "mountain-peaks",
       "type": "symbol",
       "source": "openmaptiles",
-      "source-layer": "road_labels",
-      "minzoom": 15,
-      "filter": [
-        "all",
-        [
-          "has",
-          "name"
-        ],
-        [
-          "has",
-          "highway"
-        ]
-      ],
+      "source-layer": "mountain_peak",
       "layout": {
+        "icon-image": "mountain_11",
+        "icon-size": 0.5,
         "text-field": "{name}",
         "text-font": [
-          "Noto Sans Regular"
+          "Open Sans Semibold",
+          "KlokanTech Noto Sans Regular"
         ],
         "text-size": {
           "stops": [
             [
-              15,
+              10,
               10
             ],
             [
-              18,
-              13
+              15,
+              14
             ]
           ]
         },
-        "symbol-placement": "line",
-        "text-optional": true
+        "text-offset": [
+          0,
+          1.2
+        ],
+        "text-anchor": "top"
       },
       "paint": {
-        "text-color": "#665f58",
-        "text-halo-color": "#f8f4f0",
-        "text-halo-width": 1.5
+        "text-color": "#643c16",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1
+      }
+    },
+    {
+      "id": "poi-shelter",
+      "type": "symbol",
+      "source": "openmaptiles",
+      "source-layer": "poi",
+      "filter": [
+        "all",
+        [
+          "in",
+          "class",
+          "lodging",
+          "campsite",
+          "shelter"
+        ],
+        [
+          "has",
+          "name"
+        ]
+      ],
+      "layout": {
+        "icon-image": "shelter_11",
+        "text-field": "{name}",
+        "text-font": [
+          "Open Sans Semibold",
+          "KlokanTech Noto Sans Regular"
+        ],
+        "text-size": 11,
+        "text-offset": [
+          0,
+          1.2
+        ],
+        "text-anchor": "top"
+      },
+      "paint": {
+        "text-color": "#5b3112",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1
+      }
+    },
+    {
+      "id": "poi-spring",
+      "type": "symbol",
+      "source": "openmaptiles",
+      "source-layer": "poi",
+      "filter": [
+        "all",
+        [
+          "in",
+          "subclass",
+          "spring",
+          "drinking_water"
+        ]
+      ],
+      "layout": {
+        "icon-image": "drinking_water_11",
+        "text-field": "{name}",
+        "text-font": [
+          "Open Sans Semibold",
+          "KlokanTech Noto Sans Regular"
+        ],
+        "text-size": 10,
+        "text-offset": [
+          0,
+          1.2
+        ],
+        "text-anchor": "top"
+      },
+      "paint": {
+        "text-color": "#0000ff",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1
+      }
+    },
+    {
+      "id": "poi-viewpoint",
+      "type": "symbol",
+      "source": "openmaptiles",
+      "source-layer": "poi",
+      "filter": [
+        "all",
+        [
+          "in",
+          "subclass",
+          "viewpoint",
+          "picnic_site",
+          "information"
+        ]
+      ],
+      "layout": {
+        "icon-image": [
+          "match",
+          [
+            "get",
+            "subclass"
+          ],
+          "viewpoint",
+          "viewpoint_11",
+          "picnic_site",
+          "picnic_site_11",
+          "information",
+          "information_11",
+          "marker_11"
+        ],
+        "text-field": "{name}",
+        "text-font": [
+          "Open Sans Semibold",
+          "KlokanTech Noto Sans Regular"
+        ],
+        "text-size": 10,
+        "text-offset": [
+          0,
+          1.2
+        ],
+        "text-anchor": "top"
+      },
+      "paint": {
+        "text-color": "#4a4a4a",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1
+      }
+    },
+    {
+      "id": "poi-parking",
+      "type": "symbol",
+      "source": "openmaptiles",
+      "source-layer": "poi",
+      "filter": [
+        "==",
+        "subclass",
+        "parking"
+      ],
+      "layout": {
+        "icon-image": "parking_11",
+        "text-field": "{name}",
+        "text-font": [
+          "Open Sans Semibold",
+          "KlokanTech Noto Sans Regular"
+        ],
+        "text-size": 10,
+        "text-offset": [
+          0,
+          1.2
+        ],
+        "text-anchor": "top"
+      },
+      "paint": {
+        "text-color": "#0055ff",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1
       }
     }
-    
   ],
   "id": "bright"
 }

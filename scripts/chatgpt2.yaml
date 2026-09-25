@@ -1,0 +1,976 @@
+schema_name: OSM Catalunya Muntanya i Camins
+
+schema_description: >-
+  Cartografia vectorial d'OpenStreetMap orientada a senderisme,
+  muntanya i cartografia general de Catalunya.
+
+attribution: >-
+  <a href="https://www.openstreetmap.org/copyright"
+  target="_blank">&copy; OpenStreetMap contributors</a>
+
+version: "1.0"
+
+is_overlay: false
+
+sources:
+  osm:
+    type: osm
+    local_path: catalunya.pbf
+
+layers:
+  # ============================================================
+  # PARCS NATURALS I ÀREES PROTEGIDES
+  # ============================================================
+
+  - id: protected_areas
+
+    features:
+      # Àrees protegides OSM
+      - source: osm
+        geometry: polygon
+        min_zoom: 8
+
+        include_when:
+          boundary: protected_area
+
+        attributes:
+          - key: boundary
+
+          - key: name
+
+          - key: protect_class
+
+          - key: protect_id
+
+          - key: protection_title
+
+          - key: protection_object
+
+          - key: operator
+
+          - key: website
+
+          - key: wikipedia
+
+          - key: wikidata
+
+      # Parcs nacionals
+      - source: osm
+        geometry: polygon
+        min_zoom: 7
+
+        include_when:
+          boundary: national_park
+
+        attributes:
+          - key: boundary
+
+          - key: name
+
+          - key: operator
+
+          - key: website
+
+          - key: wikipedia
+
+          - key: wikidata
+
+      # Reserves naturals
+      - source: osm
+        geometry: polygon
+        min_zoom: 9
+
+        include_when:
+          leisure: nature_reserve
+
+        attributes:
+          - key: leisure
+
+          - key: name
+
+          - key: operator
+
+          - key: website
+
+          - key: wikipedia
+
+          - key: wikidata
+
+  # ============================================================
+  # BOSCOS
+  # ============================================================
+
+  - id: forests
+
+    features:
+      - source: osm
+        geometry: polygon
+        min_zoom: 10
+
+        include_when:
+          natural: wood
+
+        attributes:
+          - key: natural
+
+          - key: name
+
+  # ============================================================
+  # PRATS I ZONES DE VEGETACIÓ
+  # ============================================================
+
+  - id: natural_areas
+
+    features:
+      - source: osm
+        geometry: polygon
+        min_zoom: 11
+
+        include_when:
+          natural:
+            - grassland
+            - heath
+            - scrub
+            - wetland
+
+        attributes:
+          - key: natural
+
+          - key: name
+
+  # ============================================================
+  # PARCS I ZONES VERDES
+  # ============================================================
+
+  - id: green_areas
+
+    features:
+      - source: osm
+        geometry: polygon
+        min_zoom: 12
+
+        include_when:
+          leisure:
+            - park
+            - garden
+            - nature_reserve
+            - recreation_ground
+
+        attributes:
+          - key: leisure
+
+          - key: name
+
+  # ============================================================
+  # EDIFICIS
+  # ============================================================
+
+  - id: buildings
+
+    features:
+      - source: osm
+        geometry: polygon
+
+        min_zoom: 13
+
+        include_when:
+          building: __any__
+
+        exclude_when:
+          building: no
+
+        attributes:
+          - key: building
+
+          - key: name
+
+          - key: building:levels
+
+          - key: height
+
+          - key: roof:shape
+
+  # ============================================================
+  # EDIFICIS - ETIQUETES
+  # ============================================================
+
+  - id: building_labels
+
+    features:
+      - source: osm
+        geometry: polygon_point_on_surface
+
+        min_zoom: 15
+
+        include_when:
+          building: __any__
+
+        exclude_when:
+          name: ""
+
+        attributes:
+          - key: name
+
+          - key: building
+
+  # ============================================================
+  # CARRETERES, CARRERS, PISTES I SENDES
+  #
+  # highway=__any__ inclou qualsevol element OSM que tingui
+  # l'etiqueta highway.
+  #
+  # Això permet conservar també valors que no haguem previst
+  # explícitament.
+  # ============================================================
+
+  - id: transportation
+
+    features:
+      - source: osm
+        geometry: line
+
+        min_size: 0
+
+        min_zoom:
+          default_value: 12
+
+          overrides:
+            5:
+              highway:
+                - motorway
+                - motorway_link
+
+            6:
+              highway:
+                - trunk
+                - trunk_link
+
+            7:
+              highway:
+                - primary
+                - primary_link
+
+            8:
+              highway:
+                - secondary
+                - secondary_link
+
+            9:
+              highway:
+                - tertiary
+                - tertiary_link
+
+            10:
+              highway:
+                - unclassified
+                - residential
+                - living_street
+
+            11:
+              highway:
+                - service
+                - pedestrian
+                - track
+                - cycleway
+
+            12:
+              highway:
+                - footway
+                - path
+                - bridleway
+                - steps
+
+        include_when:
+          highway: __any__
+
+        attributes:
+          - key: highway
+
+          - key: name
+
+          - key: ref
+
+          - key: surface
+
+          - key: smoothness
+
+          - key: tracktype
+
+          - key: sac_scale
+
+          - key: trail_visibility
+
+          - key: mtb:scale
+
+          - key: mtb:scale:uphill
+
+          - key: bicycle
+
+          - key: foot
+
+          - key: horse
+
+          - key: access
+
+          - key: motor_vehicle
+
+          - key: oneway
+
+          - key: tunnel
+
+          - key: bridge
+
+          - key: class
+
+            value:
+              motorway:
+                highway:
+                  - motorway
+                  - motorway_link
+
+              trunk:
+                highway:
+                  - trunk
+                  - trunk_link
+
+              primary:
+                highway:
+                  - primary
+                  - primary_link
+
+              secondary:
+                highway:
+                  - secondary
+                  - secondary_link
+
+              tertiary:
+                highway:
+                  - tertiary
+                  - tertiary_link
+
+              minor:
+                highway:
+                  - unclassified
+                  - residential
+                  - living_street
+
+              service:
+                highway: service
+
+              track:
+                highway: track
+
+              path:
+                highway:
+                  - path
+                  - footway
+                  - cycleway
+                  - bridleway
+                  - steps
+                  - pedestrian
+
+          - key: subclass
+
+            tag_value: highway
+
+          - key: brunnel
+
+            value:
+              bridge:
+                bridge:
+                  - yes
+                  - "1"
+                  - "true"
+
+              tunnel:
+                tunnel:
+                  - yes
+                  - "1"
+                  - "true"
+
+          - key: ramp
+
+            value:
+              1:
+                highway:
+                  - motorway_link
+                  - trunk_link
+                  - primary_link
+                  - secondary_link
+                  - tertiary_link
+
+              0: otherwise
+
+            type: integer
+
+  # ============================================================
+  # NOMS DELS CAMINS I CARRETERES
+  # ============================================================
+
+  - id: road_labels
+
+    features:
+      - source: osm
+        geometry: line
+
+        min_zoom: 13
+
+        include_when:
+          highway: __any__
+
+        exclude_when:
+          name: ""
+
+        attributes:
+          - key: name
+
+          - key: ref
+
+          - key: highway
+
+  # ============================================================
+  # RIUS, RIERES, RIEROLS I CANALS
+  # ============================================================
+
+  - id: waterways
+
+    features:
+      - source: osm
+        geometry: line
+
+        min_size: 0
+
+        min_zoom:
+          default_value: 11
+
+          overrides:
+            8:
+              waterway: river
+
+            9:
+              waterway:
+                - river
+                - canal
+
+            10:
+              waterway:
+                - river
+                - canal
+                - stream
+
+            11:
+              waterway:
+                - river
+                - canal
+                - stream
+                - ditch
+                - drain
+                - wadi
+
+        include_when:
+          waterway:
+            - river
+            - stream
+            - canal
+            - ditch
+            - drain
+            - wadi
+
+        attributes:
+          - key: waterway
+
+          - key: name
+
+          - key: intermittent
+
+          - key: seasonal
+
+  # ============================================================
+  # NOMS DELS RIUS / RIERES / RIEROLS
+  # ============================================================
+
+  - id: waterway_labels
+
+    features:
+      - source: osm
+        geometry: line
+
+        min_zoom: 13
+
+        include_when:
+          waterway:
+            - river
+            - stream
+            - canal
+            - ditch
+            - drain
+            - wadi
+
+        exclude_when:
+          name: ""
+
+        attributes:
+          - key: name
+
+          - key: waterway
+
+  # ============================================================
+  # CIMS DE MUNTANYA
+  # natural=peak
+  # ============================================================
+
+  - id: peaks
+
+    features:
+      - source: osm
+        geometry: point
+
+        min_zoom: 10
+
+        include_when:
+          natural: peak
+
+        attributes:
+          - key: natural
+
+          - key: name
+
+          - key: ele
+
+          - key: prominence
+
+          - key: wikipedia
+
+          - key: wikidata
+
+  # ============================================================
+  # CIMS - ETIQUETES
+  # ============================================================
+
+  - id: peak_labels
+
+    features:
+      - source: osm
+        geometry: point
+
+        min_zoom: 12
+
+        include_when:
+          natural: peak
+
+        exclude_when:
+          name: ""
+
+        attributes:
+          - key: name
+
+          - key: ele
+
+          - key: prominence
+
+  # ============================================================
+  # REFUGIS DE MUNTANYA
+  # tourism=alpine_hut
+  # tourism=wilderness_hut
+  # amenity=shelter
+  # ============================================================
+
+  - id: shelters
+
+    features:
+      - source: osm
+        geometry: point
+
+        min_zoom: 12
+
+        include_when:
+          tourism:
+            - alpine_hut
+            - wilderness_hut
+
+        attributes:
+          - key: tourism
+
+          - key: name
+
+          - key: ele
+
+          - key: access
+
+          - key: capacity
+
+          - key: operator
+
+          - key: website
+
+      - source: osm
+        geometry: point
+
+        min_zoom: 12
+
+        include_when:
+          amenity: shelter
+
+        attributes:
+          - key: amenity
+
+          - key: name
+
+          - key: shelter_type
+
+          - key: ele
+
+          - key: access
+
+          - key: capacity
+
+          - key: operator
+
+  # ============================================================
+  # MIRADORS
+  # tourism=viewpoint
+  # ============================================================
+
+  - id: viewpoints
+
+    features:
+      - source: osm
+        geometry: point
+
+        min_zoom: 11
+
+        include_when:
+          tourism: viewpoint
+
+        attributes:
+          - key: tourism
+
+          - key: name
+
+          - key: ele
+
+          - key: access
+
+          - key: description
+
+          - key: website
+
+  # ============================================================
+  # FONTS D'AIGUA
+  # amenity=drinking_water
+  # natural=spring
+  # ============================================================
+
+  - id: water_points
+
+    features:
+      - source: osm
+        geometry: point
+
+        min_zoom: 13
+
+        include_when:
+          amenity: drinking_water
+
+        attributes:
+          - key: amenity
+
+          - key: name
+
+          - key: access
+
+          - key: drinking_water
+
+      - source: osm
+        geometry: point
+
+        min_zoom: 13
+
+        include_when:
+          natural: spring
+
+        attributes:
+          - key: natural
+
+          - key: name
+
+          - key: access
+
+  # ============================================================
+  # CASCADES
+  # waterway=waterfall
+  # ============================================================
+
+  - id: waterfalls
+
+    features:
+      - source: osm
+        geometry: point
+
+        min_zoom: 13
+
+        include_when:
+          waterway: waterfall
+
+        attributes:
+          - key: waterway
+
+          - key: name
+
+          - key: height
+
+  # ============================================================
+  # COLLS / COLLADES
+  # natural=saddle
+  # ============================================================
+
+  - id: saddles
+
+    features:
+      - source: osm
+        geometry: point
+
+        min_zoom: 12
+
+        include_when:
+          natural: saddle
+
+        attributes:
+          - key: natural
+
+          - key: name
+
+          - key: ele
+
+  # ============================================================
+  # APARCAMENTS
+  # amenity=parking
+  # ============================================================
+
+  - id: parking
+
+    features:
+      - source: osm
+        geometry: point
+
+        min_zoom: 13
+
+        include_when:
+          amenity: parking
+
+        attributes:
+          - key: amenity
+
+          - key: name
+
+          - key: access
+
+          - key: fee
+
+          - key: capacity
+
+  # ============================================================
+  # PONTS
+  # bridge=yes
+  # ============================================================
+
+  - id: bridges
+
+    features:
+      - source: osm
+        geometry: line
+
+        min_zoom: 12
+
+        include_when:
+          bridge: __any__
+
+        attributes:
+          - key: bridge
+
+          - key: name
+
+          - key: highway
+
+  # ============================================================
+  # TÚNELS
+  # tunnel=yes
+  # ============================================================
+
+  - id: tunnels
+
+    features:
+      - source: osm
+        geometry: line
+
+        min_zoom: 12
+
+        include_when:
+          tunnel: __any__
+
+        attributes:
+          - key: tunnel
+
+          - key: name
+
+          - key: highway
+
+  # ============================================================
+  # ESGLÉSIES / ERMITES / LLOCS DE CULTE
+  # ============================================================
+
+  - id: places_of_worship
+
+    features:
+      - source: osm
+        geometry: point
+
+        min_zoom: 13
+
+        include_when:
+          amenity: place_of_worship
+
+        attributes:
+          - key: amenity
+
+          - key: name
+
+          - key: religion
+
+          - key: denomination
+
+  # ============================================================
+  # CAMPINGS
+  # ============================================================
+
+  - id: campsites
+
+    features:
+      - source: osm
+        geometry: point
+
+        min_zoom: 12
+
+        include_when:
+          tourism:
+            - camp_site
+            - caravan_site
+
+        attributes:
+          - key: tourism
+
+          - key: name
+
+          - key: access
+
+          - key: website
+
+  # ============================================================
+  # ÀREES DE PÍCNIC
+  # ============================================================
+
+  - id: picnic_sites
+
+    features:
+      - source: osm
+        geometry: point
+
+        min_zoom: 13
+
+        include_when:
+          tourism: picnic_site
+
+        attributes:
+          - key: tourism
+
+          - key: name
+
+          - key: access
+
+  # ============================================================
+  # INFORMACIÓ TURÍSTICA
+  # ============================================================
+
+  - id: tourism_information
+
+    features:
+      - source: osm
+        geometry: point
+
+        min_zoom: 13
+
+        include_when:
+          tourism: information
+
+        attributes:
+          - key: tourism
+
+          - key: name
+
+          - key: information
+
+          - key: operator
+
+          - key: website
+
+  # ============================================================
+  # POIS TURÍSTICS ADDICIONALS
+  # ============================================================
+
+  - id: tourism_pois
+
+    features:
+      - source: osm
+        geometry: point
+
+        min_zoom: 13
+
+        include_when:
+          tourism:
+            - hotel
+            - hostel
+            - guest_house
+            - alpine_hut
+            - wilderness_hut
+            - viewpoint
+            - camp_site
+            - picnic_site
+            - information
+
+        attributes:
+          - key: tourism
+
+          - key: name
+
+          - key: ele
+
+          - key: website
+
+          - key: access
+
+  # ============================================================
+  # NATURA ADDICIONAL
+  # ============================================================
+
+  - id: natural_features
+
+    features:
+      - source: osm
+        geometry: point
+
+        min_zoom: 13
+
+        include_when:
+          natural:
+            - cave_entrance
+            - peak
+            - saddle
+            - spring
+            - tree
+
+        attributes:
+          - key: natural
+
+          - key: name
+
+          - key: ele
