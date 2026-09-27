@@ -306,6 +306,7 @@
 
   "offlineTab": "Offline",
   "offlineTapRegion": "Toca dentro del rectángulo para descargar el mapa de Cataluña para uso offline.",
+  "offlineTapRegionInfo": "Toca para descargar «{name}» ({size}) para uso offline.",
   "offlineDownloadTitle": "Mapa offline",
   "offlineDownloadConfirm": "¿Quieres descargar el mapa de Cataluña (~200 MB)? Recomendamos hacerlo con Wi-Fi.",
   "offlineDownloadDone": "Mapa descargado correctamente",
@@ -313,6 +314,12 @@
   "offlineDownloaded": "Mapa de Cataluña descargado",
   "offlineUseOffline": "Usar el mapa offline",
   "offlineDelete": "Eliminar el mapa descargado",
+  "offlineUseAllDownloaded": "Usar los mapas descargados como cartografía offline",
+  "offlineModeLabel": "Modo sin conexión",
+  "offlineExpandPanel": "Expandir panel",
+  "offlineCollapsePanel": "Minimizar panel",
+  "offlineDownloadedBadge": "Descargado",
+  "offlineDownloadedMapsTitle": "Mapas descargados",
   "download": "Descargar",
   "downloading": "Descargando...",
 

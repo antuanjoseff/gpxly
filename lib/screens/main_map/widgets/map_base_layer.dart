@@ -69,11 +69,11 @@ class _MapBaseLayerState extends ConsumerState<MapBaseLayer> {
     final offline = ref.read(offlineMapsProvider);
     debugPrint(
       '🗺️ [BASE LAYER] _loadStyle: enabled=${offline.enabled} '
-      'downloaded=${offline.catalunyaDownloaded}',
+      'hasDownloaded=${offline.hasDownloadedRegions}',
     );
-    if (offline.enabled && offline.catalunyaDownloaded) {
+    if (offline.enabled && offline.hasDownloadedRegions) {
       final style = await OfflineMapsService.instance.buildOfflineStyle(
-        OfflineMapsNotifier.regioCatalunya,
+        offline.downloadedRegionIds,
       );
       debugPrint(
         '🗺️ [BASE LAYER] buildOfflineStyle retornat: '
@@ -111,7 +111,8 @@ class _MapBaseLayerState extends ConsumerState<MapBaseLayer> {
     // una descàrrega: recarrega l'estil del mapa en calent.
     ref.listen(offlineMapsProvider, (previous, next) {
       if (previous?.enabled != next.enabled ||
-          previous?.catalunyaDownloaded != next.catalunyaDownloaded) {
+          previous?.downloadedRegionIds.join(',') !=
+              next.downloadedRegionIds.join(',')) {
         debugPrint(
           '🗺️ [BASE LAYER] Estat offline canviat → recarregant estil',
         );

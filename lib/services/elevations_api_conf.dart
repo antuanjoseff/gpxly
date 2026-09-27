@@ -10,4 +10,5 @@ class ApiConfig {
 
   // Mapes offline: /api/mapes/{regio} i /api/mapes/glyphs
   static const String offlineMapsPath = "api/mapes";
+  static const String mapesBoundsPath = "api/mapes/bounds.geojson";
 }

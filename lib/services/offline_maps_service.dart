@@ -8,10 +8,47 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 
+import '../models/offline_map_region.dart';
 import 'elevations_api_conf.dart';
 
 /// Callback de progrés de descàrrega: (bytesRebuts, bytesTotals o null si desconegut)
 typedef OfflineDownloadProgress = void Function(int received, int? total);
+
+class GeofabrikRegion {
+  final String id;
+  final String name;
+  final String pbfUrl;
+  final double minLon;
+  final double minLat;
+  final double maxLon;
+  final double maxLat;
+
+  const GeofabrikRegion({
+    required this.id,
+    required this.name,
+    required this.pbfUrl,
+    required this.minLon,
+    required this.minLat,
+    required this.maxLon,
+    required this.maxLat,
+  });
+
+  factory GeofabrikRegion.fromFeature(Map<String, dynamic> feature) {
+    final properties =
+        (feature['properties'] as Map?)?.cast<String, dynamic>() ?? {};
+    final urls = (properties['urls'] as Map?)?.cast<String, dynamic>() ?? {};
+    final bbox = (feature['bbox'] as List).cast<num>();
+    return GeofabrikRegion(
+      id: properties['id'].toString(),
+      name: properties['name'].toString(),
+      pbfUrl: urls['pbf'].toString(),
+      minLon: bbox[0].toDouble(),
+      minLat: bbox[1].toDouble(),
+      maxLon: bbox[2].toDouble(),
+      maxLat: bbox[3].toDouble(),
+    );
+  }
+}
 
 /// Servei de mapes offline: descàrrega de fitxers .mbtiles i del paquet
 /// de glyphs (fonts PBF) compartit per totes les regions.
@@ -22,6 +59,16 @@ typedef OfflineDownloadProgress = void Function(int received, int? total);
 class OfflineMapsService {
   OfflineMapsService._();
   static final OfflineMapsService instance = OfflineMapsService._();
+
+  final Map<String, http.Client> _activeDownloadClients = {};
+  final Set<String> _cancelledDownloads = {};
+
+  void cancelRegionDownload(String regio) {
+    final client = _activeDownloadClients[regio];
+    if (client == null) return;
+    _cancelledDownloads.add(regio);
+    client.close();
+  }
 
   // ───────────────────────────────────────────────
   // RUTES LOCALS
@@ -92,6 +139,12 @@ class OfflineMapsService {
     return await f.length() > 0;
   }
 
+  Future<DateTime?> regionLastModified(String regio) async {
+    final file = await _regionFile(regio);
+    if (!await file.exists()) return null;
+    return file.lastModified();
+  }
+
   Future<bool> areGlyphsReady() async {
     final dir = await glyphsDir();
     if (!await dir.exists()) return false;
@@ -108,12 +161,91 @@ class OfflineMapsService {
   }
 
   // ───────────────────────────────────────────────
+  // REGIONS DISPONIBLES (bounding boxes al servidor)
+  // ───────────────────────────────────────────────
+
+  /// Obté la llista de regions (.mbtiles) disponibles al servidor amb el
+  /// seu bounding box, a partir de `api/mapes/bounds.geojson`.
+  Future<List<OfflineMapRegion>> fetchAvailableRegions() async {
+    final uri = Uri.https(ApiConfig.cogApiHost, ApiConfig.mapesBoundsPath);
+    debugPrint('🌍 [OFFLINE] Obtenint regions disponibles: $uri');
+    final response = await http.get(uri);
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Error ${response.statusCode} obtenint les regions disponibles: ${response.body}',
+      );
+    }
+    final data =
+        jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+    final features = (data['features'] as List).cast<Map<String, dynamic>>();
+    return features.map(OfflineMapRegion.fromFeature).toList();
+  }
+
+  Future<List<GeofabrikRegion>> fetchGeofabrikRegions() async {
+    final uri = Uri.https(ApiConfig.cogApiHost, '/api/geofabrik/regions', {
+      '_': DateTime.now().microsecondsSinceEpoch.toString(),
+    });
+    debugPrint('🌍 [OFFLINE] Obtenint regions Geofabrik: $uri');
+    final response = await http.get(uri);
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Error ${response.statusCode} obtenint les regions Geofabrik',
+      );
+    }
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final features = (data['features'] as List).cast<Map<String, dynamic>>();
+    return features
+        .where((feature) {
+          final properties = feature['properties'] as Map?;
+          final urls = properties?['urls'] as Map?;
+          return feature['bbox'] is List &&
+              properties?['name'] != null &&
+              urls?['pbf'] is String;
+        })
+        .map(GeofabrikRegion.fromFeature)
+        .toList();
+  }
+
+  Future<String> requestNewRegion({
+    required String name,
+    required String url,
+    required String email,
+    required String lang,
+  }) async {
+    final uri = Uri.https(ApiConfig.cogApiHost, '/api/mapes/requests');
+    final response = await http.post(
+      uri,
+      headers: const {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'name': name,
+        'url': url,
+        'email': email,
+        'lang': lang,
+      }),
+    );
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception(
+        'Error ${response.statusCode} enviant la petició: ${response.body}',
+      );
+    }
+    try {
+      final payload = jsonDecode(response.body);
+      if (payload is Map && payload['message'] is String) {
+        return payload['message'] as String;
+      }
+    } on FormatException {
+      return response.body;
+    }
+    return response.body;
+  }
+
+  // ───────────────────────────────────────────────
   // DESCÀRREGA DE REGIÓ (.mbtiles)
   // ───────────────────────────────────────────────
 
   /// Descarrega el fitxer .mbtiles de [regio] en streaming.
   /// Llença Exception si el servidor respon amb error.
-  Future<File> downloadRegion(
+  Future<File?> downloadRegion(
     String regio, {
     OfflineDownloadProgress? onProgress,
   }) async {
@@ -124,7 +256,10 @@ class OfflineMapsService {
     debugPrint('⬇️ [OFFLINE] Descarregant regió: $uri');
 
     final client = http.Client();
+    _cancelledDownloads.remove(regio);
+    _activeDownloadClients[regio] = client;
     IOSink? sink;
+    File? tmpFile;
     try {
       final request = http.Request('GET', uri);
       final response = await client.send(request);
@@ -137,7 +272,7 @@ class OfflineMapsService {
       }
 
       final total = response.contentLength;
-      final tmpFile = File('${(await _regionFile(regio)).path}.part');
+      tmpFile = File('${(await _regionFile(regio)).path}.part');
       sink = tmpFile.openWrite();
 
       int received = 0;
@@ -149,9 +284,18 @@ class OfflineMapsService {
       await sink.close();
       sink = null;
 
+      if (_cancelledDownloads.remove(regio)) {
+        if (await tmpFile.exists()) await tmpFile.delete();
+        return null;
+      }
+
       // Renombrem de forma atòmica: mai queda un .mbtiles a mitges
       final finalFile = await _regionFile(regio);
       await tmpFile.rename(finalFile.path);
+      if (_cancelledDownloads.remove(regio)) {
+        if (await finalFile.exists()) await finalFile.delete();
+        return null;
+      }
       debugPrint(
         '✅ [OFFLINE] Regió "$regio" desada (${received ~/ 1024} KB) a ${finalFile.path}',
       );
@@ -161,11 +305,17 @@ class OfflineMapsService {
       // Neteja del fitxer parcial si n'hi ha
       try {
         await sink?.close();
-        final tmp = File('${(await _regionFile(regio)).path}.part');
-        if (await tmp.exists()) await tmp.delete();
+        final partialFile =
+            tmpFile ?? File('${(await _regionFile(regio)).path}.part');
+        if (await partialFile.exists()) await partialFile.delete();
       } catch (_) {}
+      if (_cancelledDownloads.remove(regio)) return null;
       rethrow;
     } finally {
+      if (identical(_activeDownloadClients[regio], client)) {
+        _activeDownloadClients.remove(regio);
+      }
+      _cancelledDownloads.remove(regio);
       client.close();
     }
   }
@@ -212,23 +362,25 @@ class OfflineMapsService {
   // ESTIL OFFLINE (generat en runtime amb rutes reals)
   // ───────────────────────────────────────────────
 
-  /// Genera el JSON d'estil que fa servir el mbtiles local i els glyphs locals.
+  /// Genera el JSON d'estil que fa servir els mbtiles locals de totes les
+  /// [regions] descarregades i els glyphs locals. Cada regió aporta el seu
+  /// propi source vectorial; les capes de l'estil OSM Bright es dupliquen
+  /// per cada source perquè totes es pintin simultàniament.
   /// Carrega l'estil OSM Bright de assets i li canvia el source/glyphs.
-  /// Retorna null si la regió o els glyphs no estan disponibles.
-  Future<String?> buildOfflineStyle(String regio) async {
-    final downloaded = await isRegionDownloaded(regio);
+  /// Retorna null si cap regió ni els glyphs estan disponibles.
+  Future<String?> buildOfflineStyle(List<String> regions) async {
     final glyphsOk = await areGlyphsReady();
+    final downloadedRegions = <String>[];
+    for (final regio in regions) {
+      if (await isRegionDownloaded(regio)) downloadedRegions.add(regio);
+    }
     debugPrint(
-      '🗺️ [OFFLINE STYLE] isRegionDownloaded=$downloaded areGlyphsReady=$glyphsOk',
+      '🗺️ [OFFLINE STYLE] regionsDescarregades=$downloadedRegions areGlyphsReady=$glyphsOk',
     );
-    if (!downloaded) return null;
+    if (downloadedRegions.isEmpty) return null;
     if (!glyphsOk) return null;
 
-    final mbtilesPath = (await _regionFile(regio)).path;
     final glyphsPath = (await glyphsDir()).path;
-    debugPrint(
-      '🗺️ [OFFLINE STYLE] mbtiles=mbtiles://$mbtilesPath glyphs=file://$glyphsPath',
-    );
 
     // Diagnòstic: llista els fontstacks realment disponibles. L'estil demana
     // "Noto Sans Regular/Bold/Italic" — si aquí no hi són, els topònims
@@ -248,12 +400,35 @@ class OfflineMapsService {
     final styleJson = await rootBundle.loadString(
       'assets/osm_bright_offline.json',
     );
-    final Map<String, dynamic> style = jsonDecode(styleJson);
+    final Map<String, dynamic> baseStyle = jsonDecode(styleJson);
+    final baseLayers = (baseStyle['layers'] as List)
+        .cast<Map<String, dynamic>>();
 
-    // Substitueix el source pel mbtiles local
-    style['sources'] = {
-      'openmaptiles': {'type': 'vector', 'url': 'mbtiles://$mbtilesPath'},
-    };
+    final sources = <String, dynamic>{};
+    final layers = <Map<String, dynamic>>[];
+    for (var i = 0; i < downloadedRegions.length; i++) {
+      final regio = downloadedRegions[i];
+      final sourceId = 'openmaptiles_$regio';
+      final mbtilesPath = (await _regionFile(regio)).path;
+      sources[sourceId] = {'type': 'vector', 'url': 'mbtiles://$mbtilesPath'};
+      debugPrint('🗺️ [OFFLINE STYLE] $sourceId=mbtiles://$mbtilesPath');
+
+      for (final layer in baseLayers) {
+        if (layer['source'] == null) {
+          // Capes sense source (p.ex. "background"): només un cop.
+          if (i == 0) layers.add(layer);
+          continue;
+        }
+        final dup = Map<String, dynamic>.from(layer);
+        dup['id'] = '${layer['id']}_$regio';
+        dup['source'] = sourceId;
+        layers.add(dup);
+      }
+    }
+
+    final Map<String, dynamic> style = Map<String, dynamic>.from(baseStyle);
+    style['sources'] = sources;
+    style['layers'] = layers;
 
     // Substitueix glyphs pels locals
     style['glyphs'] = 'file://$glyphsPath/{fontstack}/{range}.pbf';

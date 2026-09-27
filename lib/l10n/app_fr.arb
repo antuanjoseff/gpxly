@@ -307,6 +307,7 @@
 
   "offlineTab": "Offline",
   "offlineTapRegion": "Tap inside the rectangle to download the map of Catalonia for offline use.",
+  "offlineTapRegionInfo": "Tap to download \"{name}\" ({size}) for offline use.",
   "offlineDownloadTitle": "Offline map",
   "offlineDownloadConfirm": "Download the map of Catalonia (~200 MB)? We recommend using Wi-Fi.",
   "offlineDownloadDone": "Map downloaded successfully",
@@ -314,6 +315,12 @@
   "offlineDownloaded": "Map of Catalonia downloaded",
   "offlineUseOffline": "Use the offline map",
   "offlineDelete": "Delete the downloaded map",
+  "offlineUseAllDownloaded": "Use downloaded maps as offline cartography",
+  "offlineModeLabel": "Mode hors ligne",
+  "offlineExpandPanel": "Développer le panneau",
+  "offlineCollapsePanel": "Réduire le panneau",
+  "offlineDownloadedBadge": "Downloaded",
+  "offlineDownloadedMapsTitle": "Downloaded maps",
   "download": "Download",
   "downloading": "Downloading...",
 

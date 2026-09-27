@@ -1588,6 +1588,12 @@ abstract class AppLocalizations {
   /// **'Tap inside the rectangle to download the map of Catalonia for offline use.'**
   String get offlineTapRegion;
 
+  /// No description provided for @offlineTapRegionInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to download \"{name}\" ({size}) for offline use.'**
+  String offlineTapRegionInfo(String name, String size);
+
   /// No description provided for @offlineDownloadTitle.
   ///
   /// In en, this message translates to:
@@ -1629,6 +1635,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delete the downloaded map'**
   String get offlineDelete;
+
+  /// No description provided for @offlineUseAllDownloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Use downloaded maps as offline cartography'**
+  String get offlineUseAllDownloaded;
+
+  /// No description provided for @offlineModeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline mode'**
+  String get offlineModeLabel;
+
+  /// No description provided for @offlineExpandPanel.
+  ///
+  /// In en, this message translates to:
+  /// **'Expand panel'**
+  String get offlineExpandPanel;
+
+  /// No description provided for @offlineCollapsePanel.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimize panel'**
+  String get offlineCollapsePanel;
+
+  /// No description provided for @offlineDownloadedBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloaded'**
+  String get offlineDownloadedBadge;
+
+  /// No description provided for @offlineDownloadedMapsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloaded maps'**
+  String get offlineDownloadedMapsTitle;
 
   /// No description provided for @download.
   ///

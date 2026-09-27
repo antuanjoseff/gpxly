@@ -753,6 +753,11 @@ class AppLocalizationsEs extends AppLocalizations {
   String get offlineTapRegion => 'Toca dentro del rectángulo para descargar el mapa de Cataluña para uso offline.';
 
   @override
+  String offlineTapRegionInfo(String name, String size) {
+    return 'Toca para descargar «$name» ($size) para uso offline.';
+  }
+
+  @override
   String get offlineDownloadTitle => 'Mapa offline';
 
   @override
@@ -772,6 +777,24 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get offlineDelete => 'Eliminar el mapa descargado';
+
+  @override
+  String get offlineUseAllDownloaded => 'Usar los mapas descargados como cartografía offline';
+
+  @override
+  String get offlineModeLabel => 'Modo sin conexión';
+
+  @override
+  String get offlineExpandPanel => 'Expandir panel';
+
+  @override
+  String get offlineCollapsePanel => 'Minimizar panel';
+
+  @override
+  String get offlineDownloadedBadge => 'Descargado';
+
+  @override
+  String get offlineDownloadedMapsTitle => 'Mapas descargados';
 
   @override
   String get download => 'Descargar';
