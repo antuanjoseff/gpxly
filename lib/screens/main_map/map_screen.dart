@@ -151,6 +151,44 @@ class _MapScreenState extends ConsumerState<MapScreen>
       ),
     );
 
+    setTrackLineGeometry(
+      mapController!,
+      ref.read(trackRecordingProvider).coordinates,
+    );
+
+    final importedCoordinates = ref
+        .read(importedTrackProvider.notifier)
+        .visibleCoordinates;
+    try {
+      mapController!.setGeoJsonSource("imported_track", {
+        "type": "FeatureCollection",
+        "features": importedCoordinates.isEmpty
+            ? []
+            : [
+                {
+                  "type": "Feature",
+                  "geometry": {
+                    "type": "LineString",
+                    "coordinates": importedCoordinates,
+                  },
+                },
+              ],
+      });
+    } catch (e) {
+      debugPrint("⚠️ No s'ha pogut restaurar el track importat: $e");
+    }
+
+    updateWaypointSource(
+      mapController!,
+      'waypoints_recorded_source',
+      ref.read(waypointsProvider),
+    );
+    updateWaypointSource(
+      mapController!,
+      'waypoints_imported_source',
+      ref.read(importedWaypointsProvider),
+    );
+
     // 🚀 CLAVE DE SINCRONIZACIÓN:
     // Solo cuando la GPU ha terminado de procesar absolutamente todo el estilo,
     // abrimos las puertas de la interfaz para que el listener de Riverpod pueda operar de forma segura.
