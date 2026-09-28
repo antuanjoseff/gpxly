@@ -98,6 +98,15 @@ class _MapScreenState extends ConsumerState<MapScreen>
   /// Setup complet de les capes un cop l'estil del mapa s'ha carregat.
   /// S'ha de cridar SEMPRE a través de [_styleSetupQueue] (vegeu onStyleLoaded)
   /// per evitar curses quan l'estil es recarrega (canvi online ↔ offline).
+  void _onStyleLoading() {
+    mapAnimator.suspend();
+    if (!mounted) return;
+    setState(() {
+      styleInitialized = false;
+      waypointLayersReady = false;
+    });
+  }
+
   Future<void> _onStyleLoadedSetup() async {
     // 🛡️ MENTRE L'ESTIL ES RECARREGA, BLOQUEM TOTS ELS OIENTS.
     // Tothom comprova `styleInitialized` abans de tocar fonts de la GPU;
@@ -106,13 +115,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
     // 🛡️ El MapAnimator té els seus propis Future.delayed/Timer.periodic que
     // no passen per `styleInitialized`: els suspenem explícitament perquè no
     // escriguin sobre el renderer mentre l'estil es reconstrueix.
-    mapAnimator.suspend();
-    if (mounted) {
-      setState(() {
-        styleInitialized = false;
-        waypointLayersReady = false;
-      });
-    }
+    _onStyleLoading();
 
     await Future.delayed(const Duration(milliseconds: 100));
 
@@ -1332,6 +1335,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                       mapAnimator = MapAnimator(controller);
                       controller.onFeatureTapped.add(_onFeatureTapped);
                     },
+                    onStyleLoading: _onStyleLoading,
                     onStyleLoaded: () {
                       // 🔒 SERIALITZEM EL SETUP: si l'estil es recarrega
                       // (canvi online ↔ offline), les execucions s'encuen i

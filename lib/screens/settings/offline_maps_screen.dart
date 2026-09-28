@@ -398,6 +398,9 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
         break;
       }
     }
+    final downloadTotal = downloadingRegion == null
+        ? null
+        : downloadingRegion.progressTotal ?? downloadingRegion.fileSizeBytes;
 
     ref.listen(offlineMapsProvider, (previous, next) {
       if (previous?.regions != next.regions) {
@@ -537,11 +540,18 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
                               const SizedBox(height: 6),
                               LinearProgressIndicator(
                                 value:
-                                    region.progressTotal != null &&
-                                        region.progressTotal! > 0
-                                    ? (region.progress! / region.progressTotal!)
+                                    downloadTotal != null && downloadTotal > 0
+                                    ? ((region.progress ?? 0) / downloadTotal)
                                           .clamp(0.0, 1.0)
                                     : null,
+                              ),
+                              const SizedBox(height: 4),
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: Text(
+                                  '${_formatBytes(region.progress ?? 0)} / ${downloadTotal == null ? '—' : _formatBytes(downloadTotal)}',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
                               ),
                             ],
                           ),

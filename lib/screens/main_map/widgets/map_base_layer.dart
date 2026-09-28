@@ -14,6 +14,7 @@ class MapBaseLayer extends ConsumerStatefulWidget {
   final void Function(bool) onSmartCenterChanged;
   final void Function(bool) onFullScreenChanged;
   final void Function(MapLibreMapController) onMapCreated;
+  final VoidCallback onStyleLoading;
   final VoidCallback onStyleLoaded;
   final void Function(CameraPosition)? onCameraMove;
   final VoidCallback? onCameraIdle;
@@ -28,6 +29,7 @@ class MapBaseLayer extends ConsumerStatefulWidget {
     required this.onSmartCenterChanged,
     required this.onFullScreenChanged,
     required this.onMapCreated,
+    required this.onStyleLoading,
     required this.onStyleLoaded,
     this.onCameraMove,
     this.onCameraIdle,
@@ -45,6 +47,7 @@ class _MapBaseLayerState extends ConsumerState<MapBaseLayer> {
   /// l'estil online. Evita que el renderer natiu peti processant mbtiles
   /// mentre s'inicialitza (SIGABRT a libmaplibre.so).
   String? _pendingOfflineStyle;
+  bool _hasInitialStyleLoaded = false;
 
   // 🛡️ Evita que dues crides a `_loadStyle` (p.ex. `enabled` i
   // `downloadedRegionIds` canviant gairebé alhora en carregar l'app) es
@@ -90,6 +93,13 @@ class _MapBaseLayerState extends ConsumerState<MapBaseLayer> {
     }
   }
 
+  Future<void> _setStyle(String style) async {
+    final controller = _controller;
+    if (controller == null) return;
+    widget.onStyleLoading();
+    await controller.setStyle(style);
+  }
+
   Future<void> _doLoadStyle() async {
     final offline = ref.read(offlineMapsProvider);
     debugPrint(
@@ -105,27 +115,29 @@ class _MapBaseLayerState extends ConsumerState<MapBaseLayer> {
         '${style == null ? "NULL (fallback online)" : "OK (${style.length} chars)"}',
       );
       if (style != null && mounted) {
-        if (_controller != null) {
+        if (_controller != null && _hasInitialStyleLoaded) {
           // Mapa ja existeix: canvi en calent (funciona bé)
-          await _controller!.setStyle(style);
+          await _setStyle(style);
         } else {
-          // 🛡️ ARRENCADA OFFLINE: no posem l'estil offline com a inicial.
-          // Creem el mapa amb l'estil online primer; el canvi a offline es
-          // farà a onStyleLoaded quan el renderer ja sigui estable.
-          setState(() {
-            _styleString = 'assets/osm_style.json';
-            _pendingOfflineStyle = style;
-          });
+          // El controller es crea abans que el primer Style. Esperem el
+          // primer onStyleLoaded abans de substituir-lo per l'estil offline.
+          _pendingOfflineStyle = style;
+          if (_styleString != 'assets/osm_style.json') {
+            setState(() => _styleString = 'assets/osm_style.json');
+          }
         }
         debugPrint('🗺️ [OFFLINE] Estil offline preparat');
         return;
       }
     }
     if (mounted) {
-      if (_controller != null) {
-        await _controller!.setStyle('assets/osm_style.json');
+      _pendingOfflineStyle = null;
+      if (_controller != null && _hasInitialStyleLoaded) {
+        await _setStyle('assets/osm_style.json');
       } else {
-        setState(() => _styleString = 'assets/osm_style.json');
+        if (_styleString != 'assets/osm_style.json') {
+          setState(() => _styleString = 'assets/osm_style.json');
+        }
       }
     }
   }
@@ -142,6 +154,7 @@ class _MapBaseLayerState extends ConsumerState<MapBaseLayer> {
           '🗺️ [BASE LAYER] Estat offline canviat → recarregant estil',
         );
         _loadStyle();
+        _hasInitialStyleLoaded = true;
       }
     });
 
@@ -181,7 +194,7 @@ class _MapBaseLayerState extends ConsumerState<MapBaseLayer> {
             // al pare que l'estil està llest (que activa els listeners).
             if (_pendingOfflineStyle != null && _controller != null) {
               debugPrint('🗺️ [OFFLINE] Aplicant estil offline pendent...');
-              await _controller!.setStyle(_pendingOfflineStyle!);
+              await _setStyle(_pendingOfflineStyle!);
               _pendingOfflineStyle = null;
               // No cridem widget.onStyleLoaded encara: esperem el proper
               // onStyleLoaded que dispararà el setStyle en calent.
