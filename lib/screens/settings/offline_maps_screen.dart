@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:strack_rec/l10n/app_localizations.dart';
 import 'package:strack_rec/notifiers/offline_maps_notifier.dart';
 import 'package:strack_rec/services/offline_maps_service.dart';
@@ -18,6 +19,7 @@ class OfflineMapsScreen extends ConsumerStatefulWidget {
 }
 
 class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
+  static const String _emailPreferenceKey = 'offline_maps_request_email';
   static const String _sourceId = 'offline-regions-src';
   static const String _fillLayerId = 'offline-regions-fill';
   static const String _lineLayerId = 'offline-regions-line';
@@ -309,19 +311,23 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
     if (!mounted) return;
 
     try {
+      final preferences = await SharedPreferences.getInstance();
+      if (!mounted) return;
       await showModalBottomSheet<void>(
         context: context,
         isScrollControlled: true,
         useSafeArea: true,
         builder: (_) => _GeofabrikRequestSheet(
           regionName: selected.name,
+          savedEmail: preferences.getString(_emailPreferenceKey) ?? '',
           onSubmitEmail: (email) =>
-              OfflineMapsService.instance.requestNewRegion(
-                name: selected.name,
-                url: selected.pbfUrl,
-                email: email,
-                lang: Localizations.localeOf(context).languageCode,
-              ),
+              preferences.setString(_emailPreferenceKey, email),
+          onRequest: (email) => OfflineMapsService.instance.requestNewRegion(
+            name: selected.name,
+            url: selected.pbfUrl,
+            email: email,
+            lang: Localizations.localeOf(context).languageCode,
+          ),
         ),
       );
     } catch (error) {
@@ -559,11 +565,15 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
 
 class _GeofabrikRequestSheet extends StatefulWidget {
   final String regionName;
-  final Future<String> Function(String email) onSubmitEmail;
+  final String savedEmail;
+  final Future<bool> Function(String email) onSubmitEmail;
+  final Future<String> Function(String email) onRequest;
 
   const _GeofabrikRequestSheet({
     required this.regionName,
+    required this.savedEmail,
     required this.onSubmitEmail,
+    required this.onRequest,
   });
 
   @override
@@ -581,7 +591,7 @@ class _GeofabrikRequestSheetState extends State<_GeofabrikRequestSheet> {
   @override
   void initState() {
     super.initState();
-    _emailController = TextEditingController();
+    _emailController = TextEditingController(text: widget.savedEmail);
   }
 
   @override
@@ -594,7 +604,9 @@ class _GeofabrikRequestSheetState extends State<_GeofabrikRequestSheet> {
     if (_submitting || !_formKey.currentState!.validate()) return;
     setState(() => _submitting = true);
     try {
-      final message = await widget.onSubmitEmail(_emailController.text.trim());
+      final email = _emailController.text.trim();
+      await widget.onSubmitEmail(email);
+      final message = await widget.onRequest(email);
       if (!mounted) return;
       setState(() {
         _resultMessage = message;

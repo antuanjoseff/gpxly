@@ -96,8 +96,13 @@ Future<void> _safeMapAdd(Future<void> Function() action, String what) async {
     if ((e.message ?? '').contains('already exists')) {
       debugPrint("ℹ️ $what ja existia a l'estil (recàrrega); es reutilitza.");
     } else {
-      rethrow;
+      // No fem rethrow: un sol layer que falli (p.ex. glyphs no disponibles
+      // en offline) no pot tallar la cadena de `await` i deixar la resta de
+      // capes (waypoints inclosos) sense donar-se d'alta.
+      debugPrint("⚠️ No s'ha pogut donar d'alta $what: ${e.message}");
     }
+  } catch (e) {
+    debugPrint("⚠️ Error inesperat donant d'alta $what: $e");
   }
 }
 

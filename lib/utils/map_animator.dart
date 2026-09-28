@@ -17,7 +17,25 @@ class MapAnimator {
   Timer? _activeTimer;
   bool isAnimating = false;
 
+  // 🛡️ Mentre l'estil es recarrega (canvi online↔offline) els sources/layers
+  // natius es destrueixen i es recreen. Si un Future.delayed o Timer.periodic
+  // pendent d'aquesta classe intenta escriure-hi durant aquesta finestra, el
+  // renderer natiu peta amb SIGABRT (JNI). Aquest flag talla en sec totes les
+  // escriptures mentre l'estil no és estable.
+  bool _suspended = false;
+
   MapAnimator(this.controller);
+
+  void suspend() {
+    _suspended = true;
+    _activeTimer?.cancel();
+    _activeTimer = null;
+    isAnimating = false;
+  }
+
+  void resume() {
+    _suspended = false;
+  }
 
   // ─────────────────────────────────────────────────────────────
   // 🛰️ 0. NOU CENTRE DE MAPA SEGONS PADDING INFERIOR
@@ -47,7 +65,7 @@ class MapAnimator {
   // 🛰️ 1. LLISCAMENT DEL CERCLE BLAU (Mantenim l'oient A del GPS)
   // ─────────────────────────────────────────────────────────────
   void animateUserPosition(LatLng? newPos, {double bottomPadding = 0.0}) {
-    if (newPos == null || isAnimating) {
+    if (newPos == null || isAnimating || _suspended) {
       return; // Si està corrent la gravació, el bucle unificat ja ho mourà
     }
 
@@ -67,7 +85,9 @@ class MapAnimator {
 
     for (int i = 0; i <= steps; i++) {
       Future.delayed(dt * i, () {
-        if (isAnimating) return; // Salvaguarda si arrenca una passa de track
+        // 🛡️ Salvaguarda: si s'ha activat una passa de track o l'estil s'està
+        // recarregant, avortem per no escriure sobre un renderer inestable.
+        if (isAnimating || _suspended) return;
         final t = i / steps;
         final lat = from.latitude + (to.latitude - from.latitude) * t;
         final lon = from.longitude + (to.longitude - from.longitude) * t;
@@ -137,6 +157,13 @@ class MapAnimator {
     // Arrenquem un ÚNIC rellotge controlat per a coordinar totes les geometries
     // Arrenquem un ÚNIC rellotge controlat per a coordinar totes les geometries
     _activeTimer = Timer.periodic(const Duration(milliseconds: 30), (timer) {
+      // 🛡️ Si l'estil s'està recarregant, aturem el rellotge immediatament.
+      if (_suspended) {
+        timer.cancel();
+        _activeTimer = null;
+        isAnimating = false;
+        return;
+      }
       currentStep++;
       final double t = currentStep / totalSteps;
 

@@ -103,6 +103,10 @@ class _MapScreenState extends ConsumerState<MapScreen>
     // Tothom comprova `styleInitialized` abans de tocar fonts de la GPU;
     // si no el baixem aquí, un `setGeoJsonSource` pot arribar mentre el
     // renderer natiu reconstrueix l'estil i peta JNI (SIGABRT a libmaplibre).
+    // 🛡️ El MapAnimator té els seus propis Future.delayed/Timer.periodic que
+    // no passen per `styleInitialized`: els suspenem explícitament perquè no
+    // escriguin sobre el renderer mentre l'estil es reconstrueix.
+    mapAnimator.suspend();
     if (mounted) {
       setState(() {
         styleInitialized = false;
@@ -189,7 +193,31 @@ class _MapScreenState extends ConsumerState<MapScreen>
       ref.read(importedWaypointsProvider),
     );
 
-    // 🚀 CLAVE DE SINCRONIZACIÓN:
+    // �️ RESTAURACIÓ D'OPACITAT: `setupWaypointLayers` crea les capes amb
+    // opacitat 0 (per l'animació d'aparició d'un waypoint nou). Com que la
+    // recàrrega d'estil (online↔offline) no dispara els listeners de
+    // waypointsProvider/importedWaypointsProvider, ningú restaurava
+    // l'opacitat i els waypoints quedaven invisibles fins afegir-ne un de nou.
+    try {
+      await mapController!.setLayerProperties(
+        "waypoints_recorded_layer",
+        const CircleLayerProperties(
+          circleOpacity: 1.0,
+          circleStrokeOpacity: 1.0,
+        ),
+      );
+      await mapController!.setLayerProperties(
+        "waypoints_imported_layer",
+        const CircleLayerProperties(
+          circleOpacity: 1.0,
+          circleStrokeOpacity: 1.0,
+        ),
+      );
+    } catch (e) {
+      debugPrint("⚠️ No s'ha pogut restaurar l'opacitat dels waypoints: $e");
+    }
+
+    // �🚀 CLAVE DE SINCRONIZACIÓN:
     // Solo cuando la GPU ha terminado de procesar absolutamente todo el estilo,
     // abrimos las puertas de la interfaz para que el listener de Riverpod pueda operar de forma segura.
     if (!mounted) return;
@@ -197,6 +225,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
       waypointLayersReady = true;
       styleInitialized = true;
     });
+    mapAnimator.resume();
   }
 
   // Índexs del gràfic

@@ -46,6 +46,12 @@ class _MapBaseLayerState extends ConsumerState<MapBaseLayer> {
   /// mentre s'inicialitza (SIGABRT a libmaplibre.so).
   String? _pendingOfflineStyle;
 
+  // 🛡️ Evita que dues crides a `_loadStyle` (p.ex. `enabled` i
+  // `downloadedRegionIds` canviant gairebé alhora en carregar l'app) es
+  // solapin i disparin dos `setStyle` concurrents sobre el mateix controlador.
+  bool _isLoadingStyle = false;
+  bool _reloadRequestedWhileLoading = false;
+
   @override
   void initState() {
     super.initState();
@@ -66,6 +72,25 @@ class _MapBaseLayerState extends ConsumerState<MapBaseLayer> {
   /// simplement fem `setStyle` en calent — això funciona bé perquè el
   /// renderer ja està inicialitzat.
   Future<void> _loadStyle() async {
+    if (_isLoadingStyle) {
+      // Ja hi ha una càrrega en curs: la reprogramem per quan acabi en lloc
+      // de disparar un segon `setStyle` concurrent.
+      _reloadRequestedWhileLoading = true;
+      return;
+    }
+    _isLoadingStyle = true;
+    try {
+      await _doLoadStyle();
+    } finally {
+      _isLoadingStyle = false;
+      if (_reloadRequestedWhileLoading) {
+        _reloadRequestedWhileLoading = false;
+        _loadStyle();
+      }
+    }
+  }
+
+  Future<void> _doLoadStyle() async {
     final offline = ref.read(offlineMapsProvider);
     debugPrint(
       '🗺️ [BASE LAYER] _loadStyle: enabled=${offline.enabled} '
