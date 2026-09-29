@@ -324,29 +324,22 @@ class OfflineMapsService {
   // GLYPHS (una sola vegada, compartits per totes les regions)
   // ───────────────────────────────────────────────
 
-  /// Garanteix que els glyphs estan descomprimits al dispositiu.
-  /// Si ja hi són, no fa res. Si no, baixa el zip del servidor i el descomprimeix.
+  /// Garanteix que els glyphs inclosos a assets estan descomprimits al dispositiu.
   Future<void> ensureGlyphs({OfflineDownloadProgress? onProgress}) async {
     if (await areGlyphsReady()) return;
 
-    final uri = Uri.https(
-      ApiConfig.cogApiHost,
-      '${ApiConfig.offlineMapsPath}/glyphs',
+    debugPrint('📦 [MAP STYLE] Descomprimint glyphs inclosos als assets');
+    final data = await rootBundle.load('assets/glyphs.zip');
+    final bytes = data.buffer.asUint8List(
+      data.offsetInBytes,
+      data.lengthInBytes,
     );
-    debugPrint('⬇️ [OFFLINE] Descarregant glyphs: $uri');
-
-    final response = await http.get(uri);
-    if (response.statusCode != 200) {
-      throw Exception(
-        'Error ${response.statusCode} descarregant els glyphs: ${response.body}',
-      );
-    }
-    onProgress?.call(response.bodyBytes.length, response.bodyBytes.length);
+    onProgress?.call(bytes.length, bytes.length);
 
     final glyphsPath = await glyphsDir();
     if (!await glyphsPath.exists()) await glyphsPath.create(recursive: true);
 
-    final archive = ZipDecoder().decodeBytes(response.bodyBytes);
+    final archive = ZipDecoder().decodeBytes(bytes);
     for (final entry in archive) {
       final outPath = '${glyphsPath.path}/${entry.name}';
       if (entry.isFile) {
@@ -358,6 +351,16 @@ class OfflineMapsService {
     debugPrint('✅ [OFFLINE] Glyphs descomprimits a ${glyphsPath.path}');
   }
 
+  /// Retorna l'estil online amb els glyphs del bundle disponibles localment.
+  Future<String> buildOnlineStyle() async {
+    await ensureGlyphs();
+    final styleJson = await rootBundle.loadString('assets/osm_style.json');
+    final style = jsonDecode(styleJson) as Map<String, dynamic>;
+    final glyphsPath = (await glyphsDir()).path;
+    style['glyphs'] = 'file://$glyphsPath/{fontstack}/{range}.pbf';
+    return jsonEncode(style);
+  }
+
   // ───────────────────────────────────────────────
   // ESTIL OFFLINE (generat en runtime amb rutes reals)
   // ───────────────────────────────────────────────
@@ -367,8 +370,9 @@ class OfflineMapsService {
   /// propi source vectorial; les capes de l'estil OSM Bright es dupliquen
   /// per cada source perquè totes es pintin simultàniament.
   /// Carrega l'estil OSM Bright de assets i li canvia el source/glyphs.
-  /// Retorna null si cap regió ni els glyphs estan disponibles.
+  /// Retorna null si no hi ha cap regió disponible.
   Future<String?> buildOfflineStyle(List<String> regions) async {
+    await ensureGlyphs();
     final glyphsOk = await areGlyphsReady();
     final downloadedRegions = <String>[];
     for (final regio in regions) {

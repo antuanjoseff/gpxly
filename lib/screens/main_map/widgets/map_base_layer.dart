@@ -132,11 +132,13 @@ class _MapBaseLayerState extends ConsumerState<MapBaseLayer> {
     }
     if (mounted) {
       _pendingOfflineStyle = null;
+      final style = await OfflineMapsService.instance.buildOnlineStyle();
+      if (!mounted) return;
       if (_controller != null && _hasInitialStyleLoaded) {
-        await _setStyle('assets/osm_style.json');
+        await _setStyle(style);
       } else {
-        if (_styleString != 'assets/osm_style.json') {
-          setState(() => _styleString = 'assets/osm_style.json');
+        if (_styleString != style) {
+          setState(() => _styleString = style);
         }
       }
     }

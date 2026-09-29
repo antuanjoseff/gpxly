@@ -427,8 +427,8 @@ Future<void> setupWaypointLayers(
         circleColor: "#4CAF50",
         circleStrokeWidth: 2.0,
         circleStrokeColor: "#FFFFFF",
-        circleOpacity: 0.0,
-        circleStrokeOpacity: 0.0,
+        circleOpacity: 1.0,
+        circleStrokeOpacity: 1.0,
         circleBlur: 0.0,
       ),
     ),
@@ -447,8 +447,8 @@ Future<void> setupWaypointLayers(
         circleColor: "#4CAF50",
         circleStrokeWidth: 2.0,
         circleStrokeColor: "#FFFFFF",
-        circleOpacity: 0.0,
-        circleStrokeOpacity: 0.0,
+        circleOpacity: 1.0,
+        circleStrokeOpacity: 1.0,
         circleBlur: 0.0,
       ),
     ),
@@ -458,13 +458,10 @@ Future<void> setupWaypointLayers(
   if (!canContinue()) return;
 
   // 🏷️ ETIQUETES AMB EL NOM DEL WAYPOINT
-  // Requereix 'glyphs' a l'estil (veure assets/osm_style.json).
-  // La font HA d'existir al servidor de glifos: demotiles només serveix
-  // "Open Sans Semibold". Si la font retorna 404, MapLibre no completa
-  // el layout del símbol i desapareix sencer (icona inclosa).
+  // La font ha de coincidir amb els fontstacks inclosos a assets/glyphs.zip.
   const SymbolLayerProperties waypointLabelProps = SymbolLayerProperties(
     textField: [Expressions.get, 'name'],
-    textFont: ['Open Sans Semibold'],
+    textFont: ['Noto Sans Regular'],
     textSize: 12.0,
     textColor: '#1A1A1A',
     textHaloColor: '#FFFFFF',
