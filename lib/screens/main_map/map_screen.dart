@@ -98,7 +98,11 @@ class _MapScreenState extends ConsumerState<MapScreen>
   /// Setup complet de les capes un cop l'estil del mapa s'ha carregat.
   /// S'ha de cridar SEMPRE a través de [_styleSetupQueue] (vegeu onStyleLoaded)
   /// per evitar curses quan l'estil es recarrega (canvi online ↔ offline).
+  int _styleLoadGeneration = 0;
+  int? _styleSetupQueuedGeneration;
+
   void _onStyleLoading() {
+    _styleLoadGeneration++;
     mapAnimator.suspend();
     if (!mounted) return;
     setState(() {
@@ -107,7 +111,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
     });
   }
 
-  Future<void> _onStyleLoadedSetup() async {
+  Future<void> _onStyleLoadedSetup(int generation) async {
     // 🛡️ MENTRE L'ESTIL ES RECARREGA, BLOQUEM TOTS ELS OIENTS.
     // Tothom comprova `styleInitialized` abans de tocar fonts de la GPU;
     // si no el baixem aquí, un `setGeoJsonSource` pot arribar mentre el
@@ -115,18 +119,31 @@ class _MapScreenState extends ConsumerState<MapScreen>
     // 🛡️ El MapAnimator té els seus propis Future.delayed/Timer.periodic que
     // no passen per `styleInitialized`: els suspenem explícitament perquè no
     // escriguin sobre el renderer mentre l'estil es reconstrueix.
-    _onStyleLoading();
+    mapAnimator.suspend();
+
+    bool isStyleGenerationCurrent() =>
+        mounted && generation == _styleLoadGeneration;
 
     await Future.delayed(const Duration(milliseconds: 100));
 
-    if (!mounted || mapController == null) return;
+    if (!isStyleGenerationCurrent() || mapController == null) {
+      return;
+    }
 
     final trackSettings = ref.read(trackSettingsProvider);
     final importedSettings = ref.read(importedTrackSettingsProvider);
 
     // 1. Damos de alta todas las fuentes y capas base en la GPU nativa
-    await setupUserLocationLayer(mapController!);
-    await setupWaypointLayers(mapController!);
+    await setupUserLocationLayer(
+      mapController!,
+      isCurrent: isStyleGenerationCurrent,
+    );
+    if (!isStyleGenerationCurrent()) return;
+    await setupWaypointLayers(
+      mapController!,
+      isCurrent: isStyleGenerationCurrent,
+    );
+    if (!isStyleGenerationCurrent()) return;
 
     // 🚀 CORRECCIÓ DEFINITIVA 1 (Ruta gravada):
     // Creem un objecte LineLayerProperties real tal com demana MapLibre.
@@ -143,6 +160,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
         lineWidth: trackSettings.width.toDouble(), // 🎯 Forcem double pur!
       ),
     );
+    if (!mounted || generation != _styleLoadGeneration) return;
 
     // 🚀 CORRECCIÓ DEFINITIVA 2 (Ruta importada):
     final String importedColorHex =
@@ -157,6 +175,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
         lineWidth: importedSettings.width.toDouble(), // 🎯 Forcem double pur!
       ),
     );
+    if (!mounted || generation != _styleLoadGeneration) return;
 
     setTrackLineGeometry(
       mapController!,
@@ -694,7 +713,11 @@ class _MapScreenState extends ConsumerState<MapScreen>
     // ─────────────────────────────────────────────────────────────
     // OIENT 1 RECEPTOR DE SELECCIÓ DE TRAM
     ref.listen(elevationSelectionProvider, (previous, next) async {
-      if (!styleInitialized || mapController == null || !mounted) return;
+      final int generation = _styleLoadGeneration;
+      bool isStyleGenerationCurrent() =>
+          mounted && styleInitialized && generation == _styleLoadGeneration;
+
+      if (!isStyleGenerationCurrent() || mapController == null) return;
 
       // --- la resta del teu codi de l’oient 1 ---
       final geom = MapGeometryHelper(ref: ref, mapController: mapController);
@@ -714,15 +737,16 @@ class _MapScreenState extends ConsumerState<MapScreen>
         }
 
         await updateSelectionCircles(mapController!, next, coordsActuales);
-        if (!mounted) return;
+        if (!isStyleGenerationCurrent()) return;
 
         await updateSelectedSegmentGeometry(
           mapController!,
           next,
           coordsActuales,
+          isCurrent: isStyleGenerationCurrent,
         );
 
-        if (!mounted) return;
+        if (!isStyleGenerationCurrent()) return;
         await setChartInteractionGeometry(
           mapController!,
           rangeStartCoords: geom.getCoordsFromGlobalIndex(
@@ -1337,12 +1361,20 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     },
                     onStyleLoading: _onStyleLoading,
                     onStyleLoaded: () {
-                      // 🔒 SERIALITZEM EL SETUP: si l'estil es recarrega
-                      // (canvi online ↔ offline), les execucions s'encuen i
-                      // mai no corren en paral·lel. Això elimina la cursa que
-                      // provocava "Source imported_track already exists".
+                      final generation = _styleLoadGeneration;
+                      if (_styleSetupQueuedGeneration == generation) return;
+                      _styleSetupQueuedGeneration = generation;
+
+                      // Serialitzem els setups i descartem callbacks repetits
+                      // o obsolets abans que tornin a donar d'alta les fonts.
                       _styleSetupQueue = _styleSetupQueue
-                          .then((_) => _onStyleLoadedSetup())
+                          .then((_) async {
+                            if (!mounted ||
+                                generation != _styleLoadGeneration) {
+                              return;
+                            }
+                            await _onStyleLoadedSetup(generation);
+                          })
                           .catchError((Object e) {
                             debugPrint("⚠️ Error en el setup de l'estil: $e");
                           });

@@ -137,8 +137,8 @@ class OfflineMapsNotifier extends Notifier<OfflineMapsState> {
   Future<void> _init() async {
     final prefs = await SharedPreferences.getInstance();
     final enabled = prefs.getBool(_prefsKeyEnabled) ?? false;
-    state = state.copyWith(enabled: enabled);
     await reloadRegions();
+    state = state.copyWith(enabled: enabled);
   }
 
   /// Recarrega la llista de regions disponibles al servidor i el seu estat

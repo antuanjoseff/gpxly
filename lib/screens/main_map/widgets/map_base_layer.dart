@@ -145,16 +145,16 @@ class _MapBaseLayerState extends ConsumerState<MapBaseLayer> {
   @override
   Widget build(BuildContext context) {
     // Reacciona quan l'usuari activa/desactiva el mode offline o acaba
-    // una descàrrega: recarrega l'estil del mapa en calent.
+    // una descàrrega mentre el mode offline està actiu.
     ref.listen(offlineMapsProvider, (previous, next) {
       if (previous?.enabled != next.enabled ||
-          previous?.downloadedRegionIds.join(',') !=
-              next.downloadedRegionIds.join(',')) {
+          (next.enabled &&
+              previous?.downloadedRegionIds.join(',') !=
+                  next.downloadedRegionIds.join(','))) {
         debugPrint(
           '🗺️ [BASE LAYER] Estat offline canviat → recarregant estil',
         );
         _loadStyle();
-        _hasInitialStyleLoaded = true;
       }
     });
 
@@ -200,6 +200,7 @@ class _MapBaseLayerState extends ConsumerState<MapBaseLayer> {
               // onStyleLoaded que dispararà el setStyle en calent.
               return;
             }
+            _hasInitialStyleLoaded = true;
             widget.onStyleLoaded();
           },
         ),

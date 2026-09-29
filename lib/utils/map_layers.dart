@@ -89,8 +89,24 @@ void _updateWaypointPulse(MapLibreMapController controller) {
 /// Quan l'estil del mapa es recarrega (mode offline/online), el setup pot
 /// executar-se més d'una vegada sobre el mateix estil; sense aquesta protecció
 /// MapLibre llança [PlatformException] i l'app es tanca.
-Future<void> _safeMapAdd(Future<void> Function() action, String what) async {
+Future<void> _safeMapAdd(
+  MapLibreMapController controller,
+  Future<void> Function() action,
+  String what, {
+  bool Function()? isCurrent,
+  bool checkLayerExists = true,
+}) async {
   try {
+    if (isCurrent?.call() == false) return;
+    if (checkLayerExists) {
+      final List<String> existingLayers = (await controller.getLayerIds())
+          .cast<String>();
+      if (isCurrent?.call() == false) return;
+      if (existingLayers.contains(what)) {
+        debugPrint("ℹ️ $what ja existia a l'estil (recàrrega); es reutilitza.");
+        return;
+      }
+    }
     await action();
   } on PlatformException catch (e) {
     if ((e.message ?? '').contains('already exists')) {
@@ -106,19 +122,51 @@ Future<void> _safeMapAdd(Future<void> Function() action, String what) async {
   }
 }
 
-Future<void> setupUserLocationLayer(MapLibreMapController controller) async {
+Future<void> _safeAddGeoJsonSource(
+  MapLibreMapController controller,
+  String sourceId,
+  Map<String, dynamic> data, {
+  bool Function()? isCurrent,
+}) async {
+  try {
+    if (isCurrent?.call() == false) return;
+    final List<String> existingSources = await controller.getSourceIds();
+    if (isCurrent?.call() == false) return;
+    if (existingSources.contains(sourceId)) {
+      debugPrint(
+        "ℹ️ $sourceId ja existia a l'estil (recàrrega); es reutilitza.",
+      );
+      return;
+    }
+    await controller.addSource(sourceId, GeojsonSourceProperties(data: data));
+  } on PlatformException catch (e) {
+    if ((e.message ?? '').contains('already exists')) {
+      debugPrint(
+        "ℹ️ $sourceId ja existia a l'estil (recàrrega); es reutilitza.",
+      );
+    } else {
+      debugPrint("⚠️ No s'ha pogut donar d'alta $sourceId: ${e.message}");
+    }
+  } catch (e) {
+    debugPrint("⚠️ Error inesperat donant d'alta $sourceId: $e");
+  }
+}
+
+Future<void> setupUserLocationLayer(
+  MapLibreMapController controller, {
+  bool Function()? isCurrent,
+}) async {
+  bool canContinue() => isCurrent?.call() ?? true;
+
   // imported_track
-  await _safeMapAdd(
-    () => controller.addSource(
-      "imported_track",
-      const GeojsonSourceProperties(
-        data: {"type": "FeatureCollection", "features": []},
-      ),
-    ),
-    "imported_track",
-  );
+  await _safeAddGeoJsonSource(controller, "imported_track", const {
+    "type": "FeatureCollection",
+    "features": [],
+  }, isCurrent: isCurrent);
+  if (!canContinue()) return;
 
   await _safeMapAdd(
+    controller,
     () => controller.addLayer(
       "imported_track",
       "imported_track_layer",
@@ -130,20 +178,19 @@ Future<void> setupUserLocationLayer(MapLibreMapController controller) async {
       ),
     ),
     "imported_track_layer",
+    isCurrent: isCurrent,
   );
+  if (!canContinue()) return;
 
   // track_line
-  await _safeMapAdd(
-    () => controller.addSource(
-      "track_line",
-      const GeojsonSourceProperties(
-        data: {"type": "FeatureCollection", "features": []},
-      ),
-    ),
-    "track_line",
-  );
+  await _safeAddGeoJsonSource(controller, "track_line", const {
+    "type": "FeatureCollection",
+    "features": [],
+  }, isCurrent: isCurrent);
+  if (!canContinue()) return;
 
   await _safeMapAdd(
+    controller,
     () => controller.addLayer(
       "track_line",
       "track_line_layer",
@@ -155,20 +202,19 @@ Future<void> setupUserLocationLayer(MapLibreMapController controller) async {
       ),
     ),
     "track_line_layer",
+    isCurrent: isCurrent,
   );
+  if (!canContinue()) return;
 
   // selected_segment_source
-  await _safeMapAdd(
-    () => controller.addSource(
-      "selected_segment_source",
-      const GeojsonSourceProperties(
-        data: {"type": "FeatureCollection", "features": []},
-      ),
-    ),
-    "selected_segment_source",
-  );
+  await _safeAddGeoJsonSource(controller, "selected_segment_source", const {
+    "type": "FeatureCollection",
+    "features": [],
+  }, isCurrent: isCurrent);
+  if (!canContinue()) return;
 
   await _safeMapAdd(
+    controller,
     () => controller.addLayer(
       "selected_segment_source",
       "selected_segment_casing_layer",
@@ -181,9 +227,12 @@ Future<void> setupUserLocationLayer(MapLibreMapController controller) async {
       ),
     ),
     "selected_segment_casing_layer",
+    isCurrent: isCurrent,
   );
+  if (!canContinue()) return;
 
   await _safeMapAdd(
+    controller,
     () => controller.addLayer(
       "selected_segment_source",
       "selected_segment_layer",
@@ -197,20 +246,19 @@ Future<void> setupUserLocationLayer(MapLibreMapController controller) async {
       ),
     ),
     "selected_segment_layer",
+    isCurrent: isCurrent,
   );
+  if (!canContinue()) return;
 
   // track_animating_segment
-  await _safeMapAdd(
-    () => controller.addSource(
-      "track_animating_segment",
-      const GeojsonSourceProperties(
-        data: {"type": "FeatureCollection", "features": []},
-      ),
-    ),
-    "track_animating_segment",
-  );
+  await _safeAddGeoJsonSource(controller, "track_animating_segment", const {
+    "type": "FeatureCollection",
+    "features": [],
+  }, isCurrent: isCurrent);
+  if (!canContinue()) return;
 
   await _safeMapAdd(
+    controller,
     () => controller.addLayer(
       "track_animating_segment",
       "track_animating_layer",
@@ -222,26 +270,30 @@ Future<void> setupUserLocationLayer(MapLibreMapController controller) async {
       ),
     ),
     "track_animating_layer",
+    isCurrent: isCurrent,
   );
+  if (!canContinue()) return;
 
   final Uint8List blueDot = await _createBlueDot();
+  if (!canContinue()) return;
   await _safeMapAdd(
+    controller,
     () => controller.addImage("user_icon", blueDot),
     "user_icon",
+    isCurrent: isCurrent,
+    checkLayerExists: false,
   );
+  if (!canContinue()) return;
 
   // user_location
-  await _safeMapAdd(
-    () => controller.addSource(
-      "user_location",
-      const GeojsonSourceProperties(
-        data: {"type": "FeatureCollection", "features": []},
-      ),
-    ),
-    "user_location",
-  );
+  await _safeAddGeoJsonSource(controller, "user_location", const {
+    "type": "FeatureCollection",
+    "features": [],
+  }, isCurrent: isCurrent);
+  if (!canContinue()) return;
 
   await _safeMapAdd(
+    controller,
     () => controller.addLayer(
       "user_location",
       "user_location_layer",
@@ -253,6 +305,7 @@ Future<void> setupUserLocationLayer(MapLibreMapController controller) async {
       ),
     ),
     "user_location_layer",
+    isCurrent: isCurrent,
   );
 }
 
@@ -344,30 +397,28 @@ Future<void> animateWaypointAppearance(
   }
 }
 
-Future<void> setupWaypointLayers(MapLibreMapController controller) async {
-  await _safeMapAdd(
-    () => controller.addSource(
-      'waypoints_recorded_source',
-      const GeojsonSourceProperties(
-        data: {"type": "FeatureCollection", "features": []},
-      ),
-    ),
-    'waypoints_recorded_source',
-  );
+Future<void> setupWaypointLayers(
+  MapLibreMapController controller, {
+  bool Function()? isCurrent,
+}) async {
+  bool canContinue() => isCurrent?.call() ?? true;
 
-  await _safeMapAdd(
-    () => controller.addSource(
-      'waypoints_imported_source',
-      const GeojsonSourceProperties(
-        data: {"type": "FeatureCollection", "features": []},
-      ),
-    ),
-    'waypoints_imported_source',
-  );
+  await _safeAddGeoJsonSource(controller, 'waypoints_recorded_source', const {
+    "type": "FeatureCollection",
+    "features": [],
+  }, isCurrent: isCurrent);
+  if (!canContinue()) return;
+
+  await _safeAddGeoJsonSource(controller, 'waypoints_imported_source', const {
+    "type": "FeatureCollection",
+    "features": [],
+  }, isCurrent: isCurrent);
+  if (!canContinue()) return;
 
   // 🚀 BLINDADO CONTRA EL LOG 'circle-blur Expected number but found string instead':
   // Inyectamos la configuración nativa de la GPU mediante mapas planos directos al inicializar la capa.
   await _safeMapAdd(
+    controller,
     () => controller.addLayer(
       'waypoints_recorded_source',
       'waypoints_recorded_layer',
@@ -382,9 +433,12 @@ Future<void> setupWaypointLayers(MapLibreMapController controller) async {
       ),
     ),
     'waypoints_recorded_layer',
+    isCurrent: isCurrent,
   );
+  if (!canContinue()) return;
 
   await _safeMapAdd(
+    controller,
     () => controller.addLayer(
       'waypoints_imported_source',
       'waypoints_imported_layer',
@@ -399,7 +453,9 @@ Future<void> setupWaypointLayers(MapLibreMapController controller) async {
       ),
     ),
     'waypoints_imported_layer',
+    isCurrent: isCurrent,
   );
+  if (!canContinue()) return;
 
   // 🏷️ ETIQUETES AMB EL NOM DEL WAYPOINT
   // Requereix 'glyphs' a l'estil (veure assets/osm_style.json).
@@ -424,21 +480,26 @@ Future<void> setupWaypointLayers(MapLibreMapController controller) async {
   );
 
   await _safeMapAdd(
+    controller,
     () => controller.addLayer(
       'waypoints_recorded_source',
       'waypoints_recorded_label_layer',
       waypointLabelProps,
     ),
     'waypoints_recorded_label_layer',
+    isCurrent: isCurrent,
   );
+  if (!canContinue()) return;
 
   await _safeMapAdd(
+    controller,
     () => controller.addLayer(
       'waypoints_imported_source',
       'waypoints_imported_label_layer',
       waypointLabelProps,
     ),
     'waypoints_imported_label_layer',
+    isCurrent: isCurrent,
   );
 }
 
@@ -788,8 +849,13 @@ Future<void> updateSelectionCircles(
 Future<void> updateSelectedSegmentGeometry(
   MapLibreMapController controller,
   ElevationSelectionState sel,
-  List<List<double>> trackCoords,
-) async {
+  List<List<double>> trackCoords, {
+  bool Function()? isCurrent,
+}) async {
+  bool canContinue() => isCurrent?.call() ?? true;
+
+  if (!canContinue()) return;
+
   try {
     // 1. Preparar les coordenades del segment de forma segura (Definitiu o elàstic)
     List<List<double>> segmentCoords = [];
@@ -833,6 +899,8 @@ Future<void> updateSelectedSegmentGeometry(
 
     // 3. Comprovar l'existència real de la font a la GPU nativa
     final List<String> existingSources = await controller.getSourceIds();
+    if (!canContinue()) return;
+
     final bool sourceExists = existingSources.contains(
       "selected_segment_source",
     );
@@ -847,10 +915,12 @@ Future<void> updateSelectedSegmentGeometry(
         GeojsonSourceProperties(data: geojson),
       );
     }
+    if (!canContinue()) return;
 
     // 4. 🎯 ASSEGURAR LES DUES CAPES PER A L'EFECTE UNIFICAT (FONTS + GUIONS)
     final List<String> existingLayers = (await controller.getLayerIds())
         .cast<String>();
+    if (!canContinue()) return;
 
     // Capa Inferior: El fons blanc gruixut (Contorn/Casing)
     if (!existingLayers.contains("selected_segment_casing_layer")) {
@@ -864,6 +934,7 @@ Future<void> updateSelectedSegmentGeometry(
           lineCap: "round",
         ),
       );
+      if (!canContinue()) return;
     }
 
     // Capa Superior: La línia taronja discontínua a sobre
@@ -879,6 +950,7 @@ Future<void> updateSelectedSegmentGeometry(
           lineDasharray: [2.0, 2.0], // 💡 PATRÓN DISCONTINUO UNIFICAT
         ),
       );
+      if (!canContinue()) return;
     }
 
     // 5. Control de visibilitat segons si hi ha dades o està buit
@@ -887,6 +959,7 @@ Future<void> updateSelectedSegmentGeometry(
         "selected_segment_casing_layer",
         const LineLayerProperties(visibility: "none"),
       );
+      if (!canContinue()) return;
       await controller.setLayerProperties(
         "selected_segment_layer",
         const LineLayerProperties(visibility: "none"),
@@ -896,6 +969,7 @@ Future<void> updateSelectedSegmentGeometry(
         "selected_segment_casing_layer",
         const LineLayerProperties(visibility: "visible"),
       );
+      if (!canContinue()) return;
       await controller.setLayerProperties(
         "selected_segment_layer",
         const LineLayerProperties(visibility: "visible"),
