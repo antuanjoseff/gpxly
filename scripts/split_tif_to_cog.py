@@ -85,7 +85,7 @@ def processar_fitxers():
                         continue
 
                     # Llegir les dades de la finestra
-                    dades = src.read(window=window)
+                    dades = np.rint(src.read(window=window)).astype("int16")
 
                     # Si tot el tros són dades buides (NoData), es pot saltar per estalviar espai
                     if src.nodata is not None and np.all(dades == src.nodata):
@@ -99,6 +99,8 @@ def processar_fitxers():
                     meta_sortida.update(
                         {
                             "driver": "GTiff",  # El driver de GDAL per a COG segueix sent GTiff
+                            "dtype": "int16",
+                            "nodata": -32768,
                             "height": window.height,
                             "width": window.width,
                             "transform": nova_transform,

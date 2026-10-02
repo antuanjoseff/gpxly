@@ -268,38 +268,21 @@ class CogService {
 
     // Bloc de diagnòstic per cada lectura de píxel
     double getV(int r, int c) {
-      final int offset = (r * map.width + c) * 4;
+      final int offset = (r * map.width + c) * 2;
 
       // Control de desbordament de memòria física
-      if (offset < 0 || offset + 4 > map.data!.length) {
+      if (offset < 0 || offset + 2 > map.data!.length) {
         debugPrint(
           "❌ [COG CÀLCUL] Fora de rang a la matriu de bytes! Offset: $offset, Longitud data: ${map.data!.length}",
         );
         return -9999;
       }
 
-      // Llegim els bytes bruts abans d'interpretar-los com a Float32
-      final Uint8List rawBytes = map.data!.sublist(offset, offset + 4);
-      final double valLittle = ByteData.sublistView(
+      return ByteData.sublistView(
         map.data!,
         offset,
-        offset + 4,
-      ).getFloat32(0, Endian.little);
-      final double valBig = ByteData.sublistView(
-        map.data!,
-        offset,
-        offset + 4,
-      ).getFloat32(0, Endian.big);
-
-      // Aquest print només s'executarà per al primer píxel per no col·lapsar la consola, actuant com a mostra de format
-      if (r == y1 && c == x1) {
-        debugPrint("🧬 [COG BINARI] Mostra píxel primordial [$r,$c]:");
-        debugPrint("   - Bytes bruts (Hex/Int): $rawBytes");
-        debugPrint("   - Si fos Little Endian Float32: $valLittle m");
-        debugPrint("   - Si fos Big Endian Float32: $valBig m");
-      }
-
-      return valLittle; // Mantenim la teva lògica original per defecte
+        offset + 2,
+      ).getInt16(0, Endian.little).toDouble();
     }
 
     final v11 = getV(y1, x1);
@@ -377,16 +360,16 @@ class CogService {
         );
 
         // Verificació matemàtica del format del resultat
-        final int expectedSize = width * height * 4;
+        final int expectedSize = width * height * 2;
         debugPrint(
-          "🧮 [COG COHERÈNCIA] Esperat per Float32: $width * $height * 4 = $expectedSize bytes.",
+          "🧮 [COG COHERÈNCIA] Esperat per Int16: $width * $height * 2 = $expectedSize bytes.",
         );
 
         if (bytesLength != expectedSize) {
           debugPrint("🚨 [COG ALERTA] EL FORMAT DEL RESULTAT NO QUADRA!");
-          if (bytesLength == width * height * 2) {
+          if (bytesLength == width * height * 4) {
             debugPrint(
-              "💡 PISTA: El resultat fa exactament la meitat. FastAPI t'està enviant INT16 (2 bytes) en comptes de FLOAT32 (4 bytes)!",
+              "💡 PISTA: El resultat fa exactament el doble. FastAPI t'està enviant FLOAT32 (4 bytes) en comptes de INT16 (2 bytes)!",
             );
           } else if (bytesLength == width * height * 8) {
             debugPrint(

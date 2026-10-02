@@ -101,7 +101,7 @@ def get_tile(
                 height=500,
             )
 
-            raw_data = img.data.astype(np.float32).tobytes()
+            raw_data = np.rint(img.data).astype("<i2").tobytes()
 
             headers = {
                 "Content-Disposition": f"attachment; filename={os.path.basename(ruta_fitxer_local)}.bin",
@@ -141,7 +141,7 @@ def get_tile_grid(lat: float = Query(...), lon: float = Query(...)):
 
             img = cog.part(bbox)
 
-            raw_data = img.data.astype(np.float32).tobytes()
+            raw_data = np.rint(img.data).astype("<i2").tobytes()
 
             headers = {
                 "Content-Disposition": f"attachment; filename=tile_{tile_lat}_{tile_lon}.bin",
