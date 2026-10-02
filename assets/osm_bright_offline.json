@@ -326,6 +326,60 @@
       }
     },
     {
+      "id": "contour-lines",
+      "type": "line",
+      "source": "openmaptiles",
+      "source-layer": "contour",
+      "filter": [
+        "!=",
+        ["%", ["get", "ele"], 100],
+        0
+      ],
+      "minzoom": 11,
+      "layout": {
+        "line-cap": "round",
+        "line-join": "round"
+      },
+      "paint": {
+        "line-color": "#c8bda9",
+        "line-opacity": 0.55,
+        "line-width": {
+          "base": 1.3,
+          "stops": [
+            [11, 0.35],
+            [14, 0.85]
+          ]
+        }
+      }
+    },
+    {
+      "id": "contour-lines-major",
+      "type": "line",
+      "source": "openmaptiles",
+      "source-layer": "contour",
+      "filter": [
+        "==",
+        ["%", ["get", "ele"], 100],
+        0
+      ],
+      "minzoom": 11,
+      "layout": {
+        "line-cap": "round",
+        "line-join": "round"
+      },
+      "paint": {
+        "line-color": "#9b8b72",
+        "line-opacity": 0.8,
+        "line-width": {
+          "base": 1.3,
+          "stops": [
+            [11, 0.55],
+            [14, 1.25]
+          ]
+        }
+      }
+    },
+    {
       "id": "waterway_tunnel",
       "type": "line",
       "source": "openmaptiles",
@@ -1488,7 +1542,7 @@
         ]
       ],
       "paint": {
-        "line-color": "#cba",
+        "line-color": "#cf6f68",
         "line-dasharray": [
           1.5,
           0.75
@@ -2889,7 +2943,7 @@
         ]
       ],
       "paint": {
-        "line-color": "#cba",
+        "line-color": "#cf6f68",
         "line-dasharray": [
           1.5,
           0.75
@@ -4152,7 +4206,7 @@
         ]
       ],
       "paint": {
-        "line-color": "#cba",
+        "line-color": "#cf6f68",
         "line-dasharray": [
           1.5,
           0.75
@@ -4865,6 +4919,60 @@
             ]
           ]
         }
+      }
+    },
+    {
+      "id": "contour-labels",
+      "type": "symbol",
+      "source": "openmaptiles",
+      "source-layer": "contour",
+      "minzoom": 12,
+      "filter": [
+        "==",
+        ["%", ["get", "ele"], 100],
+        0
+      ],
+      "layout": {
+        "symbol-placement": "line",
+        "symbol-spacing": 220,
+        "text-field": ["concat", ["to-string", ["get", "ele"]], " m"],
+        "text-font": ["Noto Sans Regular"],
+        "text-rotation-alignment": "map",
+        "text-keep-upright": true,
+        "text-size": 10,
+        "text-padding": 3
+      },
+      "paint": {
+        "text-color": "#8f816c",
+        "text-halo-color": "#f8f4f0",
+        "text-halo-width": 1.25
+      }
+    },
+    {
+      "id": "contour-labels-minor",
+      "type": "symbol",
+      "source": "openmaptiles",
+      "source-layer": "contour",
+      "minzoom": 13,
+      "filter": [
+        "!=",
+        ["%", ["get", "ele"], 100],
+        0
+      ],
+      "layout": {
+        "symbol-placement": "line",
+        "symbol-spacing": 320,
+        "text-field": ["concat", ["to-string", ["get", "ele"]], " m"],
+        "text-font": ["Noto Sans Regular"],
+        "text-rotation-alignment": "map",
+        "text-keep-upright": true,
+        "text-size": 8,
+        "text-padding": 3
+      },
+      "paint": {
+        "text-color": "#9b8b72",
+        "text-halo-color": "#f8f4f0",
+        "text-halo-width": 1
       }
     },
     {
