@@ -321,7 +321,7 @@
   "offlineDownloadedBadge": "Downloaded",
   "offlineDownloadedMapsTitle": "Downloaded maps",
   "download": "Download",
-  "downloading": "Downloading...",
+  "downloading": "Download in corso...",
 
   "record": "Registra",
   "recordPaused": "In pausa",

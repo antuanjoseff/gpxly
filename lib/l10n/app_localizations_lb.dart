@@ -800,7 +800,7 @@ class AppLocalizationsLb extends AppLocalizations {
   String get download => 'Download';
 
   @override
-  String get downloading => 'Downloading...';
+  String get downloading => 'Erofgelueden...';
 
   @override
   String get record => 'Opzeechnen';

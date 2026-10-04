@@ -5,6 +5,7 @@ import 'package:strack_rec/models/track.dart';
 import 'package:strack_rec/notifiers/alarm_settings_notifier.dart';
 import 'package:strack_rec/notifiers/gps_accuracy_notifier.dart';
 import 'package:strack_rec/notifiers/gps_debug_notifier.dart';
+import 'package:strack_rec/notifiers/gps_speed_notifier.dart';
 import 'package:strack_rec/notifiers/permissions_notifier.dart';
 import 'package:strack_rec/notifiers/recording_notifier.dart';
 import 'package:strack_rec/notifiers/timer_notifier.dart';
@@ -126,6 +127,20 @@ class MapAppBar extends ConsumerWidget implements PreferredSizeWidget {
           : null,
 
       actions: [
+        // TEMPORAL: depuració del zoom
+        Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: Center(
+            child: Text(
+              'Z ${ref.watch(mapZoomProvider).toStringAsFixed(2)}',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
         if (gpsDebugEnabled)
           Padding(
             padding: const EdgeInsets.only(right: 8),

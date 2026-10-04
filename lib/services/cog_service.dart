@@ -16,6 +16,8 @@ class CogMap {
   final String path;
   final double minLon, minLat, maxLon, maxLat;
   final int width, height;
+  // 2 = Int16 (format antic), 4 = Float32
+  final int bytesPerPixel;
   DateTime lastUsed;
   Uint8List? data; // 🧠 Millora: Dades en memòria
 
@@ -27,6 +29,7 @@ class CogMap {
     required this.maxLat,
     required this.width,
     required this.height,
+    this.bytesPerPixel = 2,
     this.data,
   }) : lastUsed = DateTime.now();
 
@@ -42,6 +45,7 @@ class CogMap {
     'maxLat': maxLat,
     'width': width,
     'height': height,
+    'bytesPerPixel': bytesPerPixel,
     'lastUsed': lastUsed.toIso8601String(),
   };
 
@@ -54,6 +58,7 @@ class CogMap {
     maxLat: json['maxLat'],
     width: json['width'],
     height: json['height'],
+    bytesPerPixel: json['bytesPerPixel'] ?? 2,
   )..lastUsed = DateTime.parse(json['lastUsed']);
 }
 
@@ -268,21 +273,21 @@ class CogService {
 
     // Bloc de diagnòstic per cada lectura de píxel
     double getV(int r, int c) {
-      final int offset = (r * map.width + c) * 2;
+      final int bpp = map.bytesPerPixel;
+      final int offset = (r * map.width + c) * bpp;
 
       // Control de desbordament de memòria física
-      if (offset < 0 || offset + 2 > map.data!.length) {
+      if (offset < 0 || offset + bpp > map.data!.length) {
         debugPrint(
           "❌ [COG CÀLCUL] Fora de rang a la matriu de bytes! Offset: $offset, Longitud data: ${map.data!.length}",
         );
         return -9999;
       }
 
-      return ByteData.sublistView(
-        map.data!,
-        offset,
-        offset + 2,
-      ).getInt16(0, Endian.little).toDouble();
+      final bd = ByteData.sublistView(map.data!, offset, offset + bpp);
+      return bpp == 4
+          ? bd.getFloat32(0, Endian.little)
+          : bd.getInt16(0, Endian.little).toDouble();
     }
 
     final v11 = getV(y1, x1);
@@ -290,7 +295,14 @@ class CogService {
     final v12 = getV(y2, x1);
     final v22 = getV(y2, x2);
 
-    if (v11 < -1000 || v21 < -1000 || v12 < -1000 || v22 < -1000) {
+    if (v11.isNaN ||
+        v21.isNaN ||
+        v12.isNaN ||
+        v22.isNaN ||
+        v11 < -1000 ||
+        v21 < -1000 ||
+        v12 < -1000 ||
+        v22 < -1000) {
       debugPrint(
         "⚠️ [COG] S'ha detectat un valor NoData (menor a -1000): [$v11, $v21, $v12, $v22]",
       );
@@ -328,7 +340,36 @@ class CogService {
     );
 
     try {
-      final response = await http.get(uri).timeout(const Duration(seconds: 15));
+      final client = http.Client();
+      late final http.Response response;
+      try {
+        final streamed = await client
+            .send(http.Request('GET', uri))
+            .timeout(const Duration(seconds: 15));
+        final total = streamed.contentLength;
+        final notifier = ref.read(demBoundsProvider.notifier);
+        notifier.setDownloadProgress(0, total);
+        final builder = BytesBuilder(copy: false);
+        final stopwatch = Stopwatch()..start();
+        await for (final chunk in streamed.stream.timeout(
+          const Duration(seconds: 15),
+        )) {
+          builder.add(chunk);
+          if (stopwatch.elapsedMilliseconds >= 100) {
+            stopwatch.reset();
+            notifier.setDownloadProgress(builder.length, total);
+          }
+        }
+        notifier.setDownloadProgress(builder.length, total);
+        response = http.Response.bytes(
+          builder.takeBytes(),
+          streamed.statusCode,
+          headers: streamed.headers,
+          request: streamed.request,
+        );
+      } finally {
+        client.close();
+      }
 
       debugPrint(
         "📥 [COG RESPOSTA] Resposta rebuda d'Arsys (FastAPI). Status: ${response.statusCode}",
@@ -360,9 +401,10 @@ class CogService {
         );
 
         // Verificació matemàtica del format del resultat
-        final int expectedSize = width * height * 2;
+        final int bytesPerPixel = bytesLength == width * height * 4 ? 4 : 2;
+        final int expectedSize = width * height * bytesPerPixel;
         debugPrint(
-          "🧮 [COG COHERÈNCIA] Esperat per Int16: $width * $height * 2 = $expectedSize bytes.",
+          "🧮 [COG COHERÈNCIA] Esperat (${bytesPerPixel == 4 ? 'Float32' : 'Int16'}): $width * $height * $bytesPerPixel = $expectedSize bytes.",
         );
 
         if (bytesLength != expectedSize) {
@@ -397,6 +439,7 @@ class CogService {
           maxLat: bbox[3],
           width: width,
           height: height,
+          bytesPerPixel: bytesPerPixel,
           data: response.bodyBytes,
         );
 

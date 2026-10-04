@@ -800,7 +800,7 @@ class AppLocalizationsDa extends AppLocalizations {
   String get download => 'Download';
 
   @override
-  String get downloading => 'Downloading...';
+  String get downloading => 'Downloader...';
 
   @override
   String get record => 'Optag';

@@ -24,6 +24,7 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
   MapAnimator? _mapAnimator;
 
   bool _styleLoaded = false;
+  bool _coverageRendered = false;
   bool _isHudCollapsed = true;
 
   // Controls de guàrdia per saber si l'usuari interacciona amb el mapa
@@ -65,8 +66,12 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
 
           bool isDownloaded = false;
           for (final cell in downloadedCells) {
-            if ((cell.minLat - minLat).abs() < 0.01 &&
-                (cell.minLon - minLon).abs() < 0.01) {
+            final centerLat = minLat + 0.1;
+            final centerLon = minLon + 0.1;
+            if (centerLat >= cell.minLat &&
+                centerLat <= cell.maxLat &&
+                centerLon >= cell.minLon &&
+                centerLon <= cell.maxLon) {
               isDownloaded = true;
               break;
             }
@@ -326,6 +331,12 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
         const LineLayerProperties(lineColor: "#e74c3c", lineWidth: 1.5),
       );
     }
+
+    if (mounted &&
+        !_coverageRendered &&
+        !ref.read(footprintProvider).isLoading) {
+      setState(() => _coverageRendered = true);
+    }
   }
 
   void _onGridFeatureTapped(Map<String, dynamic> feature) {
@@ -357,6 +368,11 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
     });
   }
 
+  String _formatBytes(int bytes) {
+    final mb = bytes / (1024 * 1024);
+    return '${mb.toStringAsFixed(1)} MB';
+  }
+
   Future<void> _downloadCellManual(
     double centerLat,
     double centerLon,
@@ -379,6 +395,7 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
       _selectedCellProps = null;
       _selectedKey = null;
     });
+    await _refreshGridGeometry();
   }
 
   @override
@@ -387,7 +404,8 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
 
     // Cada cop que hi hagi un canvi al proveïdor, forçarem el refresc automàtic de la quadrícula al mapa
     ref.listen(demBoundsProvider, (previous, next) {
-      if (_styleLoaded) {
+      // Ignorem els canvis de progrés: només cal refrescar si canvien les cel·les
+      if (_styleLoaded && previous?.cells != next.cells) {
         _refreshGridGeometry();
       }
     });
@@ -406,9 +424,9 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
       }
     });
 
+    final isCoverageLoading = !_coverageRendered;
     final demState = ref.watch(demBoundsProvider);
     final downloadedCells = demState.cells;
-    final isDownloadingGlobal = demState.isDownloading;
 
     final int downloadedCount = downloadedCells.length;
     final bool isLimitReached = downloadedCount >= _maxDownloadedCellsLimit;
@@ -532,15 +550,16 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
             ),
           ),
 
-          if (isDownloadingGlobal)
-            const Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: LinearProgressIndicator(
-                backgroundColor: Colors.transparent,
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.orangeAccent),
-                minHeight: 4,
+          if (isCoverageLoading)
+            const Positioned.fill(
+              child: IgnorePointer(
+                child: Center(
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Colors.orangeAccent,
+                    ),
+                  ),
+                ),
               ),
             ),
 
@@ -711,7 +730,7 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
                             selStatus == 2
                                 ? t.demCellDownloaded
                                 : (selStatus == 1
-                                      ? "Descarregant d'Azure..."
+                                      ? t.downloading
                                       : t.demCellAvailable),
                             style: TextStyle(
                               fontSize: 12,
@@ -723,23 +742,29 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
                               fontWeight: FontWeight.w500,
                             ),
                           ),
+                          if (selStatus == 1 || _downloadingKey == selKey) ...[
+                            const SizedBox(height: 6),
+                            LinearProgressIndicator(
+                              value: (demState.downloadTotal ?? 0) > 0
+                                  ? (demState.downloadProgress /
+                                            demState.downloadTotal!)
+                                        .clamp(0.0, 1.0)
+                                  : null,
+                            ),
+                            const SizedBox(height: 4),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: Text(
+                                '${_formatBytes(demState.downloadProgress)} / ${demState.downloadTotal == null ? '—' : _formatBytes(demState.downloadTotal!)}',
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),
                     if (selStatus == 1 || _downloadingKey == selKey)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 8),
-                        child: SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.5,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.orange,
-                            ),
-                          ),
-                        ),
-                      )
+                      const SizedBox.shrink()
                     else ...[
                       if (selStatus == 2)
                         IconButton(

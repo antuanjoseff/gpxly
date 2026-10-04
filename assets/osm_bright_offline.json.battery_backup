@@ -92,8 +92,7 @@
             ]
           ]
         }
-      },
-      "minzoom": 8
+      }
     },
     {
       "id": "landuse-residential",
@@ -130,8 +129,7 @@
             ]
           ]
         }
-      },
-      "minzoom": 11
+      }
     },
     {
       "id": "landuse-commercial",
@@ -159,8 +157,7 @@
       },
       "paint": {
         "fill-color": "hsla(0, 60%, 87%, 0.23)"
-      },
-      "minzoom": 11
+      }
     },
     {
       "id": "landuse-industrial",
@@ -187,8 +184,7 @@
       },
       "paint": {
         "fill-color": "hsla(49, 100%, 88%, 0.34)"
-      },
-      "minzoom": 11
+      }
     },
     {
       "id": "landuse-cemetery",
@@ -205,8 +201,7 @@
       ],
       "paint": {
         "fill-color": "#e0e4dd"
-      },
-      "minzoom": 11
+      }
     },
     {
       "id": "landuse-hospital",
@@ -223,8 +218,7 @@
       ],
       "paint": {
         "fill-color": "#fde"
-      },
-      "minzoom": 11
+      }
     },
     {
       "id": "landuse-school",
@@ -241,8 +235,7 @@
       ],
       "paint": {
         "fill-color": "#f0e8f8"
-      },
-      "minzoom": 11
+      }
     },
     {
       "id": "landuse-railway",
@@ -262,8 +255,7 @@
       },
       "paint": {
         "fill-color": "hsla(30, 19%, 90%, 0.4)"
-      },
-      "minzoom": 11
+      }
     },
     {
       "id": "landcover-wood",
@@ -292,10 +284,10 @@
             ]
           ]
         },
-        "fill-color": "#EBF6E7",
+        "fill-color": "#6a4",
+        "fill-opacity": 0.1,
         "fill-outline-color": "hsla(0, 0%, 0%, 0.03)"
-      },
-      "minzoom": 9
+      }
     },
     {
       "id": "landcover-grass",
@@ -311,9 +303,9 @@
         "grass"
       ],
       "paint": {
-        "fill-color": "#D8E8C8"
-      },
-      "minzoom": 11
+        "fill-color": "#d8e8c8",
+        "fill-opacity": 1
+      }
     },
     {
       "id": "landcover-grass-park",
@@ -329,9 +321,9 @@
         "public_park"
       ],
       "paint": {
-        "fill-color": "#E0ECCB"
-      },
-      "minzoom": 11
+        "fill-color": "#d8e8c8",
+        "fill-opacity": 0.8
+      }
     },
     {
       "id": "contour-lines",
@@ -340,14 +332,7 @@
       "source-layer": "contour",
       "filter": [
         "!=",
-        [
-          "%",
-          [
-            "get",
-            "ele"
-          ],
-          100
-        ],
+        ["%", ["get", "ele"], 100],
         0
       ],
       "minzoom": 11,
@@ -361,14 +346,8 @@
         "line-width": {
           "base": 1.3,
           "stops": [
-            [
-              11,
-              0.35
-            ],
-            [
-              14,
-              0.85
-            ]
+            [11, 0.35],
+            [14, 0.85]
           ]
         }
       }
@@ -380,14 +359,7 @@
       "source-layer": "contour",
       "filter": [
         "==",
-        [
-          "%",
-          [
-            "get",
-            "ele"
-          ],
-          100
-        ],
+        ["%", ["get", "ele"], 100],
         0
       ],
       "minzoom": 11,
@@ -401,14 +373,8 @@
         "line-width": {
           "base": 1.3,
           "stops": [
-            [
-              11,
-              0.55
-            ],
-            [
-              14,
-              1.25
-            ]
+            [11, 0.55],
+            [14, 1.25]
           ]
         }
       }
@@ -501,18 +467,14 @@
             ]
           ]
         }
-      },
-      "minzoom": 11
+      }
     },
     {
       "id": "waterway-all-proportional",
       "type": "line",
       "source": "openmaptiles",
       "source-layer": "waterway",
-      "filter": [
-        "has",
-        "class"
-      ],
+      "filter": ["has", "class"],
       "layout": {
         "line-cap": "round",
         "visibility": "visible"
@@ -521,45 +483,19 @@
         "line-color": "#a0c8f0",
         "line-width": [
           "match",
-          [
-            "get",
-            "class"
-          ],
-          "river",
-          2.0,
-          "canal",
-          1.5,
-          "stream",
-          1.0,
-          0.5
+          ["get", "class"],
+          "river", 2.0,
+          "canal", 1.5,
+          "stream", 1.0,
+          0.5           
         ],
         "line-dasharray": [
           "case",
-          [
-            "boolean",
-            [
-              "get",
-              "intermittent"
-            ],
-            false
-          ],
-          [
-            "literal",
-            [
-              4,
-              3
-            ]
-          ],
-          [
-            "literal",
-            [
-              1,
-              0
-            ]
-          ]
+          ["boolean", ["get", "intermittent"], false],
+          ["literal", [4, 3]],
+          ["literal", [1, 0]]
         ]
-      },
-      "minzoom": 11
+      }
     },
     {
       "id": "waterway-stream-canal",
@@ -607,8 +543,7 @@
             ]
           ]
         }
-      },
-      "minzoom": 11
+      }
     },
     {
       "id": "waterway-stream-canal-intermittent",
@@ -660,8 +595,7 @@
             ]
           ]
         }
-      },
-      "minzoom": 11
+      }
     },
     {
       "id": "waterway-river",
@@ -708,8 +642,7 @@
             ]
           ]
         }
-      },
-      "minzoom": 9
+      }
     },
     {
       "id": "waterway-river-intermittent",
@@ -760,8 +693,7 @@
             ]
           ]
         }
-      },
-      "minzoom": 9
+      }
     },
     {
       "id": "water-offset",
@@ -802,8 +734,7 @@
             ]
           ]
         }
-      },
-      "minzoom": 11
+      }
     },
     {
       "id": "water",
@@ -853,7 +784,8 @@
         "visibility": "visible"
       },
       "paint": {
-        "fill-color": "#D2E3F4"
+        "fill-color": "hsl(210, 67%, 85%)",
+        "fill-opacity": 0.7
       }
     },
     {
@@ -876,8 +808,7 @@
           0,
           2.5
         ]
-      },
-      "minzoom": 11
+      }
     },
     {
       "id": "coastline",
@@ -950,8 +881,7 @@
             ]
           ]
         }
-      },
-      "minzoom": 8
+      }
     },
     {
       "id": "landcover-sand",
@@ -972,8 +902,7 @@
       "paint": {
         "fill-color": "rgba(245, 238, 188, 1)",
         "fill-opacity": 1
-      },
-      "minzoom": 11
+      }
     },
     {
       "id": "building",
@@ -998,8 +927,7 @@
             ]
           ]
         }
-      },
-      "minzoom": 13
+      }
     },
     {
       "id": "building-top",
@@ -1047,8 +975,7 @@
             ]
           ]
         }
-      },
-      "minzoom": 13
+      }
     },
     {
       "id": "tunnel-service-track-casing",
@@ -1098,8 +1025,7 @@
             ]
           ]
         }
-      },
-      "minzoom": 11
+      }
     },
     {
       "id": "tunnel-motorway-link-casing",
@@ -1158,8 +1084,7 @@
             ]
           ]
         }
-      },
-      "minzoom": 11
+      }
     },
     {
       "id": "tunnel-minor-casing",
@@ -1224,8 +1149,7 @@
           0.5,
           0.25
         ]
-      },
-      "minzoom": 11
+      }
     },
     {
       "id": "tunnel-link-casing",
@@ -1287,8 +1211,7 @@
           0.5,
           0.25
         ]
-      },
-      "minzoom": 11
+      }
     },
     {
       "id": "tunnel-secondary-tertiary-casing",
@@ -1340,8 +1263,7 @@
           0.5,
           0.25
         ]
-      },
-      "minzoom": 11
+      }
     },
     {
       "id": "tunnel-trunk-primary-casing",
@@ -1396,8 +1318,7 @@
             ]
           ]
         }
-      },
-      "minzoom": 8
+      }
     },
     {
       "id": "tunnel-motorway-casing",
@@ -1529,8 +1450,7 @@
           0.5,
           0.25
         ]
-      },
-      "minzoom": 11
+      }
     },
     {
       "id": "tunnel-path-steps",
@@ -1588,8 +1508,7 @@
           0.5,
           0.25
         ]
-      },
-      "minzoom": 11
+      }
     },
     {
       "id": "tunnel-path",
@@ -1641,8 +1560,7 @@
             ]
           ]
         }
-      },
-      "minzoom": 11
+      }
     },
     {
       "id": "tunnel-motorway-link",
@@ -1697,8 +1615,7 @@
             ]
           ]
         }
-      },
-      "minzoom": 11
+      }
     },
     {
       "id": "tunnel-service-track",
@@ -1744,8 +1661,7 @@
             ]
           ]
         }
-      },
-      "minzoom": 11
+      }
     },
     {
       "id": "tunnel-link",
@@ -1802,8 +1718,7 @@
             ]
           ]
         }
-      },
-      "minzoom": 11
+      }
     },
     {
       "id": "tunnel-minor",
@@ -1849,8 +1764,7 @@
             ]
           ]
         }
-      },
-      "minzoom": 11
+      }
     },
     {
       "id": "tunnel-secondary-tertiary",
@@ -1901,8 +1815,7 @@
             ]
           ]
         }
-      },
-      "minzoom": 11
+      }
     },
     {
       "id": "tunnel-trunk-primary",
@@ -1953,8 +1866,7 @@
             ]
           ]
         }
-      },
-      "minzoom": 8
+      }
     },
     {
       "id": "tunnel-motorway",
@@ -2051,8 +1963,7 @@
             ]
           ]
         }
-      },
-      "minzoom": 9
+      }
     },
     {
       "id": "ferry",
@@ -2088,7 +1999,7 @@
       },
       "source": "openmaptiles",
       "source-layer": "aeroway",
-      "minzoom": 10,
+      "minzoom": 12,
       "filter": [
         "all",
         [
@@ -2128,7 +2039,7 @@
       },
       "source": "openmaptiles",
       "source-layer": "aeroway",
-      "minzoom": 10,
+      "minzoom": 12,
       "filter": [
         "all",
         [
@@ -2168,7 +2079,7 @@
       },
       "source": "openmaptiles",
       "source-layer": "aeroway",
-      "minzoom": 10,
+      "minzoom": 4,
       "filter": [
         "all",
         [
@@ -2211,7 +2122,7 @@
       },
       "source": "openmaptiles",
       "source-layer": "aeroway",
-      "minzoom": 10,
+      "minzoom": 4,
       "filter": [
         "all",
         [
@@ -2268,7 +2179,7 @@
       },
       "source": "openmaptiles",
       "source-layer": "aeroway",
-      "minzoom": 10,
+      "minzoom": 4,
       "filter": [
         "all",
         [
@@ -2413,8 +2324,7 @@
         "fill-color": "hsla(0, 0%, 89%, 0.56)",
         "fill-opacity": 0.9,
         "fill-outline-color": "#cfcdca"
-      },
-      "minzoom": 12
+      }
     },
     {
       "id": "highway-motorway-construction",
@@ -2544,8 +2454,7 @@
             ]
           ]
         }
-      },
-      "minzoom": 11
+      }
     },
     {
       "id": "highway-motorway-link-casing",
@@ -2613,7 +2522,7 @@
       },
       "source": "openmaptiles",
       "source-layer": "transportation",
-      "minzoom": 11,
+      "minzoom": 13,
       "filter": [
         "all",
         [
@@ -2734,8 +2643,7 @@
             ]
           ]
         }
-      },
-      "minzoom": 11
+      }
     },
     {
       "id": "highway-secondary-tertiary-casing",
@@ -2786,8 +2694,7 @@
             ]
           ]
         }
-      },
-      "minzoom": 11
+      }
     },
     {
       "id": "highway-primary-casing",
@@ -2797,7 +2704,7 @@
       },
       "source": "openmaptiles",
       "source-layer": "transportation",
-      "minzoom": 8,
+      "minzoom": 5,
       "filter": [
         "all",
         [
@@ -3054,8 +2961,7 @@
             ]
           ]
         }
-      },
-      "minzoom": 11
+      }
     },
     {
       "id": "highway-path-steps",
@@ -3114,8 +3020,7 @@
           0.5,
           0.25
         ]
-      },
-      "minzoom": 11
+      }
     },
     {
       "id": "highway-motorway-link",
@@ -3182,7 +3087,7 @@
       },
       "source": "openmaptiles",
       "source-layer": "transportation",
-      "minzoom": 11,
+      "minzoom": 13,
       "filter": [
         "all",
         [
@@ -3287,8 +3192,7 @@
             ]
           ]
         }
-      },
-      "minzoom": 11
+      }
     },
     {
       "id": "highway-secondary-tertiary",
@@ -3342,8 +3246,7 @@
             ]
           ]
         }
-      },
-      "minzoom": 11
+      }
     },
     {
       "id": "highway-primary",
@@ -3401,8 +3304,7 @@
             ]
           ]
         }
-      },
-      "minzoom": 8
+      }
     },
     {
       "id": "highway-trunk",
@@ -3565,8 +3467,7 @@
             ]
           ]
         }
-      },
-      "minzoom": 11
+      }
     },
     {
       "id": "railway-transit-hatching",
@@ -3620,8 +3521,7 @@
             ]
           ]
         }
-      },
-      "minzoom": 11
+      }
     },
     {
       "id": "railway-service",
@@ -3663,8 +3563,7 @@
             ]
           ]
         }
-      },
-      "minzoom": 11
+      }
     },
     {
       "id": "railway-service-hatching",
@@ -3717,8 +3616,7 @@
             ]
           ]
         }
-      },
-      "minzoom": 11
+      }
     },
     {
       "id": "railway",
@@ -3770,8 +3668,7 @@
             ]
           ]
         }
-      },
-      "minzoom": 9
+      }
     },
     {
       "id": "railway-hatching",
@@ -3827,8 +3724,7 @@
             ]
           ]
         }
-      },
-      "minzoom": 9
+      }
     },
     {
       "id": "bridge-motorway-link-casing",
@@ -3883,8 +3779,7 @@
             ]
           ]
         }
-      },
-      "minzoom": 11
+      }
     },
     {
       "id": "bridge-link-casing",
@@ -3942,8 +3837,7 @@
             ]
           ]
         }
-      },
-      "minzoom": 11
+      }
     },
     {
       "id": "bridge-secondary-tertiary-casing",
@@ -3999,8 +3893,7 @@
             ]
           ]
         }
-      },
-      "minzoom": 11
+      }
     },
     {
       "id": "bridge-trunk-primary-casing",
@@ -4055,8 +3948,7 @@
             ]
           ]
         }
-      },
-      "minzoom": 8
+      }
     },
     {
       "id": "bridge-motorway-casing",
@@ -4179,8 +4071,7 @@
             ]
           ]
         }
-      },
-      "minzoom": 11
+      }
     },
     {
       "id": "bridge-path-casing",
@@ -4223,8 +4114,7 @@
             ]
           ]
         }
-      },
-      "minzoom": 11
+      }
     },
     {
       "id": "bridge-path-steps",
@@ -4282,8 +4172,7 @@
           0.5,
           0.25
         ]
-      },
-      "minzoom": 11
+      }
     },
     {
       "id": "bridge-path",
@@ -4335,8 +4224,7 @@
             ]
           ]
         }
-      },
-      "minzoom": 11
+      }
     },
     {
       "id": "bridge-motorway-link",
@@ -4390,8 +4278,7 @@
             ]
           ]
         }
-      },
-      "minzoom": 11
+      }
     },
     {
       "id": "bridge-link",
@@ -4448,8 +4335,7 @@
             ]
           ]
         }
-      },
-      "minzoom": 11
+      }
     },
     {
       "id": "bridge-minor",
@@ -4503,8 +4389,7 @@
             ]
           ]
         }
-      },
-      "minzoom": 11
+      }
     },
     {
       "id": "bridge-secondary-tertiary",
@@ -4555,8 +4440,7 @@
             ]
           ]
         }
-      },
-      "minzoom": 11
+      }
     },
     {
       "id": "bridge-trunk-primary",
@@ -4607,8 +4491,7 @@
             ]
           ]
         }
-      },
-      "minzoom": 8
+      }
     },
     {
       "id": "bridge-motorway",
@@ -4700,8 +4583,7 @@
             ]
           ]
         }
-      },
-      "minzoom": 9
+      }
     },
     {
       "id": "bridge-railway-hatching",
@@ -4747,8 +4629,7 @@
             ]
           ]
         }
-      },
-      "minzoom": 9
+      }
     },
     {
       "id": "cablecar",
@@ -4823,7 +4704,7 @@
       "type": "line",
       "source": "openmaptiles",
       "source-layer": "boundary",
-      "minzoom": 8,
+      "minzoom": 2,
       "filter": [
         "all",
         [
@@ -5048,33 +4929,14 @@
       "minzoom": 12,
       "filter": [
         "==",
-        [
-          "%",
-          [
-            "get",
-            "ele"
-          ],
-          100
-        ],
+        ["%", ["get", "ele"], 100],
         0
       ],
       "layout": {
         "symbol-placement": "line",
         "symbol-spacing": 220,
-        "text-field": [
-          "concat",
-          [
-            "to-string",
-            [
-              "get",
-              "ele"
-            ]
-          ],
-          " m"
-        ],
-        "text-font": [
-          "Noto Sans Regular"
-        ],
+        "text-field": ["concat", ["to-string", ["get", "ele"]], " m"],
+        "text-font": ["Noto Sans Regular"],
         "text-rotation-alignment": "map",
         "text-keep-upright": true,
         "text-size": 10,
@@ -5094,33 +4956,14 @@
       "minzoom": 13,
       "filter": [
         "!=",
-        [
-          "%",
-          [
-            "get",
-            "ele"
-          ],
-          100
-        ],
+        ["%", ["get", "ele"], 100],
         0
       ],
       "layout": {
         "symbol-placement": "line",
         "symbol-spacing": 320,
-        "text-field": [
-          "concat",
-          [
-            "to-string",
-            [
-              "get",
-              "ele"
-            ]
-          ],
-          " m"
-        ],
-        "text-font": [
-          "Noto Sans Regular"
-        ],
+        "text-field": ["concat", ["to-string", ["get", "ele"]], " m"],
+        "text-font": ["Noto Sans Regular"],
         "text-rotation-alignment": "map",
         "text-keep-upright": true,
         "text-size": 8,
@@ -5194,8 +5037,7 @@
         "text-color": "#74aee9",
         "text-halo-color": "rgba(255,255,255,0.7)",
         "text-halo-width": 1.5
-      },
-      "minzoom": 11
+      }
     },
     {
       "id": "water-name-ocean",
@@ -5279,8 +5121,7 @@
         "text-color": "#74aee9",
         "text-halo-color": "rgba(255,255,255,0.7)",
         "text-halo-width": 1.5
-      },
-      "minzoom": 11
+      }
     },
     {
       "id": "road_oneway",
@@ -5385,7 +5226,7 @@
       "type": "symbol",
       "source": "openmaptiles",
       "source-layer": "poi",
-      "minzoom": 14,
+      "minzoom": 12,
       "filter": [
         "all",
         [
@@ -5583,7 +5424,7 @@
       "type": "symbol",
       "source": "openmaptiles",
       "source-layer": "poi",
-      "minzoom": 14,
+      "minzoom": 12,
       "filter": [
         "all",
         [
@@ -5629,7 +5470,7 @@
       "type": "symbol",
       "source": "openmaptiles",
       "source-layer": "poi",
-      "minzoom": 14,
+      "minzoom": 13,
       "filter": [
         "all",
         [
@@ -5752,7 +5593,7 @@
       "type": "symbol",
       "source": "openmaptiles",
       "source-layer": "poi",
-      "minzoom": 14,
+      "minzoom": 13,
       "filter": [
         "all",
         [
@@ -5967,7 +5808,7 @@
       "type": "symbol",
       "source": "openmaptiles",
       "source-layer": "poi",
-      "minzoom": 14,
+      "minzoom": 13,
       "filter": [
         "all",
         [
@@ -6023,7 +5864,7 @@
       "type": "symbol",
       "source": "openmaptiles",
       "source-layer": "transportation_name",
-      "minzoom": 14,
+      "minzoom": 15.5,
       "filter": [
         "==",
         "class",
@@ -6061,7 +5902,7 @@
       "type": "symbol",
       "source": "openmaptiles",
       "source-layer": "transportation_name",
-      "minzoom": 14,
+      "minzoom": 15,
       "filter": [
         "all",
         [
@@ -6432,8 +6273,7 @@
         "text-color": "#333",
         "text-halo-color": "rgba(255,255,255,0.8)",
         "text-halo-width": 1.2
-      },
-      "minzoom": 11
+      }
     },
     {
       "id": "place-town",
@@ -6473,8 +6313,7 @@
         "text-color": "#333",
         "text-halo-color": "rgba(255,255,255,0.8)",
         "text-halo-width": 1.2
-      },
-      "minzoom": 9
+      }
     },
     {
       "id": "place-state",
@@ -6953,6 +6792,7 @@
         "text-halo-width": 1.5
       }
     }
+    
   ],
   "id": "bright"
 }

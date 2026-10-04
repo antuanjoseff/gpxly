@@ -800,7 +800,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get download => 'Download';
 
   @override
-  String get downloading => 'Downloading...';
+  String get downloading => 'A transferir...';
 
   @override
   String get record => 'Gravar';

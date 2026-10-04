@@ -800,7 +800,7 @@ class AppLocalizationsIt extends AppLocalizations {
   String get download => 'Download';
 
   @override
-  String get downloading => 'Downloading...';
+  String get downloading => 'Download in corso...';
 
   @override
   String get record => 'Registra';

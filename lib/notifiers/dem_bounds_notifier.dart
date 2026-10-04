@@ -40,13 +40,28 @@ class DemBounds {
 class DemBoundsState {
   final List<DemBounds> cells;
   final bool isDownloading;
+  final int downloadProgress;
+  final int? downloadTotal;
 
-  const DemBoundsState({required this.cells, required this.isDownloading});
+  const DemBoundsState({
+    required this.cells,
+    required this.isDownloading,
+    this.downloadProgress = 0,
+    this.downloadTotal,
+  });
 
-  DemBoundsState copyWith({List<DemBounds>? cells, bool? isDownloading}) {
+  DemBoundsState copyWith({
+    List<DemBounds>? cells,
+    bool? isDownloading,
+    int? downloadProgress,
+    int? downloadTotal,
+    bool clearTotal = false,
+  }) {
     return DemBoundsState(
       cells: cells ?? this.cells,
       isDownloading: isDownloading ?? this.isDownloading,
+      downloadProgress: downloadProgress ?? this.downloadProgress,
+      downloadTotal: clearTotal ? null : (downloadTotal ?? this.downloadTotal),
     );
   }
 }
@@ -58,7 +73,15 @@ class DemBoundsNotifier extends Notifier<DemBoundsState> {
   }
 
   void setDownloading(bool value) {
-    state = state.copyWith(isDownloading: value);
+    state = state.copyWith(
+      isDownloading: value,
+      downloadProgress: 0,
+      clearTotal: true,
+    );
+  }
+
+  void setDownloadProgress(int received, int? total) {
+    state = state.copyWith(downloadProgress: received, downloadTotal: total);
   }
 
   void addCell(double minLon, double minLat, double maxLon, double maxLat) {

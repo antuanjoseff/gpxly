@@ -800,7 +800,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get download => 'Download';
 
   @override
-  String get downloading => 'Downloading...';
+  String get downloading => 'Downloaden...';
 
   @override
   String get record => 'Opnemen';
@@ -1698,7 +1698,7 @@ class AppLocalizationsNlBe extends AppLocalizationsNl {
   String get download => 'Download';
 
   @override
-  String get downloading => 'Downloading...';
+  String get downloading => 'Downloaden...';
 
   @override
   String get record => 'Opnemen';
