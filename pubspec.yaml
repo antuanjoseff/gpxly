@@ -96,6 +96,8 @@ flutter:
   assets:
     - assets/osm_style.json
     - assets/osm_bright_offline.json
+    - assets/world_offline_style.json
+    - assets/mbtiles/world.mbtiles
     - assets/sprites/
     - assets/glyphs.zip
     - assets/sound/off_track.mp3

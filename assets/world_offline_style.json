@@ -1,0 +1,91 @@
+{
+  "version": 8,
+  "name": "World Offline",
+  "metadata": {
+    "attribution": "Natural Earth"
+  },
+  "sources": {
+    "world": {
+      "type": "vector",
+      "url": "mbtiles://WORLD_MBTILES_PATH"
+    }
+  },
+  "layers": [
+    {
+      "id": "world-background",
+      "type": "background",
+      "paint": {
+        "background-color": "#8fc8e5"
+      }
+    },
+    {
+      "id": "world-land",
+      "type": "fill",
+      "source": "world",
+      "source-layer": "land",
+      "paint": {
+        "fill-color": "#e8e5d9"
+      }
+    },
+    {
+      "id": "world-country-boundaries",
+      "type": "line",
+      "source": "world",
+      "source-layer": "boundary",
+      "paint": {
+        "line-color": "#89959a",
+        "line-width": [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          0,
+          0.35,
+          5,
+          0.8,
+          7,
+          1.1
+        ]
+      }
+    },
+    {
+      "id": "world-admin1-boundaries",
+      "type": "line",
+      "source": "world",
+      "source-layer": "admin1",
+      "minzoom": 4,
+      "paint": {
+        "line-color": "#a6aaa1",
+        "line-width": 0.55
+      }
+    },
+    {
+      "id": "world-coastline",
+      "type": "line",
+      "source": "world",
+      "source-layer": "coastline",
+      "paint": {
+        "line-color": "#4a8cac",
+        "line-width": 0.65
+      }
+    },
+    {
+      "id": "world-admin1-labels",
+      "type": "symbol",
+      "source": "world",
+      "source-layer": "admin1_label",
+      "minzoom": 5,
+      "layout": {
+        "text-field": ["get", "name"],
+        "text-font": ["Noto Sans Regular"],
+        "text-size": 11,
+        "text-max-width": 9,
+        "text-allow-overlap": false
+      },
+      "paint": {
+        "text-color": "#43545a",
+        "text-halo-color": "#f4f1e8",
+        "text-halo-width": 1.2
+      }
+    }
+  ]
+}

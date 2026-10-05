@@ -4,9 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:strack_rec/l10n/app_localizations.dart';
 import 'package:strack_rec/notifiers/alarm_settings_notifier.dart';
 import 'package:strack_rec/notifiers/navigation_notifier.dart';
-import 'package:strack_rec/screens/settings/offline_maps_screen.dart';
+import 'package:strack_rec/screens/settings/tabs/offline_maps_tab.dart';
 import 'package:strack_rec/screens/settings/tabs/alarm_settings_tab.dart';
-import 'package:strack_rec/screens/settings/tabs/barometer_settings_tab.dart';
+import 'package:strack_rec/screens/settings/tabs/mdt_settings_tab.dart';
 import 'package:strack_rec/screens/settings/tabs/gps_settings_tab.dart';
 import 'package:strack_rec/screens/settings/tabs/gpx_settings_tab.dart';
 import 'package:strack_rec/screens/settings/tabs/imported_track_settings_tab.dart';
@@ -186,7 +186,7 @@ class SettingsScreen extends ConsumerWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => const BarometerSettingsTab(),
+                          builder: (_) => const MdtSettingsTab(),
                         ),
                       );
                     },

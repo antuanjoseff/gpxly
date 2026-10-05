@@ -129,6 +129,19 @@ class OfflineMapsService {
     return File('${dir.path}/${regio.toLowerCase()}.mbtiles');
   }
 
+  Future<File> _worldMbtilesFile() async {
+    final dir = await _offlineMapsDir();
+    final file = File('${dir.path}/world.mbtiles');
+    if (!await file.exists() || await file.length() == 0) {
+      final data = await rootBundle.load('assets/mbtiles/world.mbtiles');
+      await file.writeAsBytes(
+        data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes),
+        flush: true,
+      );
+    }
+    return file;
+  }
+
   // ───────────────────────────────────────────────
   // ESTAT
   // ───────────────────────────────────────────────
@@ -365,13 +378,11 @@ class OfflineMapsService {
   // ESTIL OFFLINE (generat en runtime amb rutes reals)
   // ───────────────────────────────────────────────
 
-  /// Genera el JSON d'estil que fa servir els mbtiles locals de totes les
-  /// [regions] descarregades i els glyphs locals. Cada regió aporta el seu
-  /// propi source vectorial; les capes de l'estil OSM Bright es dupliquen
-  /// per cada source perquè totes es pintin simultàniament.
-  /// Carrega l'estil OSM Bright de assets i li canvia el source/glyphs.
-  /// Retorna null si no hi ha cap regió disponible.
-  Future<String?> buildOfflineStyle(List<String> regions) async {
+  /// Genera l'estil offline mundial i hi afegeix les regions descarregades.
+  ///
+  /// El mapa mundial sempre forma part de l'estil offline; les regions només
+  /// n'aporten detall local addicional.
+  Future<String> buildOfflineStyle(List<String> regions) async {
     await ensureGlyphs();
     final glyphsOk = await areGlyphsReady();
     final downloadedRegions = <String>[];
@@ -381,8 +392,9 @@ class OfflineMapsService {
     debugPrint(
       '🗺️ [OFFLINE STYLE] regionsDescarregades=$downloadedRegions areGlyphsReady=$glyphsOk',
     );
-    if (downloadedRegions.isEmpty) return null;
-    if (!glyphsOk) return null;
+    if (!glyphsOk) {
+      throw StateError("No s'han pogut preparar els glyphs del mapa offline");
+    }
 
     final glyphsPath = (await glyphsDir()).path;
 
@@ -400,37 +412,57 @@ class OfflineMapsService {
       debugPrint('⚠️ [OFFLINE STYLE] No he pogut llistar fontstacks: $e');
     }
 
-    // Carrega l'estil OSM Bright base des de assets
-    final styleJson = await rootBundle.loadString(
-      'assets/osm_bright_offline.json',
+    final worldMbtiles = await _worldMbtilesFile();
+    final worldStyleJson = await rootBundle.loadString(
+      'assets/world_offline_style.json',
     );
-    final Map<String, dynamic> baseStyle = jsonDecode(styleJson);
-    final baseLayers = (baseStyle['layers'] as List)
+    final worldStyle = jsonDecode(worldStyleJson) as Map<String, dynamic>;
+    final worldSources = worldStyle['sources'] as Map<String, dynamic>;
+    worldSources['world'] = {
+      'type': 'vector',
+      'url': 'mbtiles://${worldMbtiles.path}',
+    };
+    final worldLayers = (worldStyle['layers'] as List)
         .cast<Map<String, dynamic>>();
 
-    final sources = <String, dynamic>{};
-    final layers = <Map<String, dynamic>>[];
-    for (var i = 0; i < downloadedRegions.length; i++) {
-      final regio = downloadedRegions[i];
-      final sourceId = 'openmaptiles_$regio';
-      final mbtilesPath = (await _regionFile(regio)).path;
-      sources[sourceId] = {'type': 'vector', 'url': 'mbtiles://$mbtilesPath'};
-      debugPrint('🗺️ [OFFLINE STYLE] $sourceId=mbtiles://$mbtilesPath');
+    final sources = Map<String, dynamic>.from(worldSources);
+    final layers = worldLayers
+        .where((layer) => layer['type'] != 'symbol')
+        .toList();
 
-      for (final layer in baseLayers) {
-        if (layer['source'] == null) {
-          // Capes sense source (p.ex. "background"): només un cop.
-          if (i == 0) layers.add(layer);
-          continue;
+    if (downloadedRegions.isNotEmpty) {
+      final styleJson = await rootBundle.loadString(
+        'assets/osm_bright_offline.json',
+      );
+      final Map<String, dynamic> baseStyle = jsonDecode(styleJson);
+      final baseLayers = (baseStyle['layers'] as List)
+          .cast<Map<String, dynamic>>();
+
+      for (var i = 0; i < downloadedRegions.length; i++) {
+        final regio = downloadedRegions[i];
+        final sourceId = 'openmaptiles_$regio';
+        final mbtilesPath = (await _regionFile(regio)).path;
+        sources[sourceId] = {'type': 'vector', 'url': 'mbtiles://$mbtilesPath'};
+        debugPrint('🗺️ [OFFLINE STYLE] $sourceId=mbtiles://$mbtilesPath');
+
+        for (final layer in baseLayers) {
+          if (layer['type'] == 'background') continue;
+          if (layer['source'] == null) {
+            if (i == 0) layers.add(layer);
+            continue;
+          }
+          final dup = Map<String, dynamic>.from(layer);
+          dup['id'] = '${layer['id']}_$regio';
+          dup['source'] = sourceId;
+          layers.add(dup);
         }
-        final dup = Map<String, dynamic>.from(layer);
-        dup['id'] = '${layer['id']}_$regio';
-        dup['source'] = sourceId;
-        layers.add(dup);
       }
     }
 
-    final Map<String, dynamic> style = Map<String, dynamic>.from(baseStyle);
+    // Les etiquetes mundials queden per sobre del detall de les regions.
+    layers.addAll(worldLayers.where((layer) => layer['type'] == 'symbol'));
+
+    final Map<String, dynamic> style = Map<String, dynamic>.from(worldStyle);
     style['sources'] = sources;
     style['layers'] = layers;
 

@@ -23,6 +23,7 @@ import 'package:strack_rec/notifiers/location_notifier.dart';
 import 'package:strack_rec/notifiers/map_bearing_provider.dart';
 import 'package:strack_rec/notifiers/map_selection_tool_notifier.dart';
 import 'package:strack_rec/notifiers/navigation_notifier.dart';
+import 'package:strack_rec/notifiers/offline_maps_notifier.dart';
 import 'package:strack_rec/notifiers/permissions_notifier.dart';
 import 'package:strack_rec/notifiers/recording_notifier.dart';
 import 'package:strack_rec/notifiers/track_settings_notifier.dart';
@@ -703,6 +704,36 @@ class _MapScreenState extends ConsumerState<MapScreen>
   @override
   Widget build(BuildContext context) {
     final double systemBottomPadding = MediaQuery.of(context).padding.bottom;
+
+    ref.listen(offlineMapsProvider, (previous, next) {
+      final regionId = next.mapFocusRegionId;
+      if (previous == null ||
+          next.mapFocusRevision == previous.mapFocusRevision ||
+          regionId == null ||
+          !styleInitialized ||
+          mapController == null) {
+        return;
+      }
+      final region = next.regions
+          .where((candidate) => candidate.id == regionId)
+          .firstOrNull;
+      if (region == null || !region.downloaded) return;
+
+      unawaited(
+        mapController!.animateCamera(
+          CameraUpdate.newLatLngBounds(
+            LatLngBounds(
+              southwest: LatLng(region.minLat, region.minLon),
+              northeast: LatLng(region.maxLat, region.maxLon),
+            ),
+            left: 48,
+            top: 48,
+            right: 48,
+            bottom: 48,
+          ),
+        ),
+      );
+    });
 
     final pressure = ref.watch(barometerProvider).value;
     final isRunning = ref.watch(locationProvider.notifier).isSimulationRunning;

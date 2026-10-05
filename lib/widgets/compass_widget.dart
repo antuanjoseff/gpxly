@@ -2,14 +2,18 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:strack_rec/notifiers/gps_bearing_notifier.dart';
 import 'package:strack_rec/notifiers/gps_speed_notifier.dart';
 import 'package:strack_rec/notifiers/map_bearing_provider.dart';
 import 'package:strack_rec/theme/app_colors.dart';
 
 class CompassScalePanel extends ConsumerWidget {
   final VoidCallback? onTapCompass;
-  const CompassScalePanel({super.key, this.onTapCompass});
+  final bool showScale;
+  const CompassScalePanel({
+    super.key,
+    this.onTapCompass,
+    this.showScale = true,
+  });
 
   String _formatMeters(double m) {
     if (m >= 1000) {
@@ -21,8 +25,82 @@ class CompassScalePanel extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final deviceHeading = ref.watch(gpsBearingProvider);
     final mapBearing = ref.watch(mapBearingProvider);
+    final compass = GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTapCompass,
+      child: SizedBox(
+        width: 36,
+        height: 36,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.9),
+              ),
+            ),
+            AnimatedRotation(
+              turns: -mapBearing / 360,
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeOut,
+              child: Stack(
+                children: [
+                  Positioned(
+                    top: 2,
+                    left: 0,
+                    right: 0,
+                    child: Center(child: _label("N")),
+                  ),
+                  Positioned(
+                    bottom: 2,
+                    left: 0,
+                    right: 0,
+                    child: Center(child: _label("S")),
+                  ),
+                  Positioned(
+                    left: 2,
+                    top: 0,
+                    bottom: 0,
+                    child: Center(child: _label("W")),
+                  ),
+                  Positioned(
+                    right: 2,
+                    top: 0,
+                    bottom: 0,
+                    child: Center(child: _label("E")),
+                  ),
+                ],
+              ),
+            ),
+            AnimatedRotation(
+              turns: -mapBearing / 360,
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeOut,
+              child: CustomPaint(
+                size: const Size(12, 14),
+                painter: _CompassArrowPainter(),
+              ),
+            ),
+            Container(
+              width: 2.5,
+              height: 2.5,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.black,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (!showScale) {
+      return SizedBox(width: 48, height: 48, child: Center(child: compass));
+    }
 
     final zoom = ref.watch(mapZoomProvider);
     final latitude = ref.watch(mapCenterLatProvider);
@@ -79,87 +157,7 @@ class CompassScalePanel extends ConsumerWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // 🧭 BRÚIXOLA REPROPORCIONADA (Pugem a 36px perquè llueixi simètrica amb els 56px de fons)
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: onTapCompass,
-            child: SizedBox(
-              width: 36,
-              height: 36,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white.withOpacity(0.9),
-                    ),
-                  ),
-
-                  // 🔥 CAPA 1: LES LLETRES GIREN AMB EL MAPA
-                  AnimatedRotation(
-                    turns: -mapBearing / 360,
-                    duration: const Duration(milliseconds: 250),
-                    curve: Curves.easeOut,
-                    child: Stack(
-                      children: [
-                        Positioned(
-                          top: 2,
-                          left: 0,
-                          right: 0,
-                          child: Center(child: _label("N")),
-                        ),
-                        Positioned(
-                          bottom: 2,
-                          left: 0,
-                          right: 0,
-                          child: Center(child: _label("S")),
-                        ),
-                        Positioned(
-                          left: 2,
-                          top: 0,
-                          bottom: 0,
-                          child: Center(child: _label("W")),
-                        ),
-                        Positioned(
-                          right: 2,
-                          top: 0,
-                          bottom: 0,
-                          child: Center(child: _label("E")),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // 🔥 CAPA 2: LA FLETXA VA INDEPENDENT
-                  AnimatedRotation(
-                    turns: deviceHeading / 360,
-                    duration: const Duration(milliseconds: 250),
-                    curve: Curves.easeOut,
-                    child: CustomPaint(
-                      size: const Size(
-                        12,
-                        14,
-                      ), // Un pèl més gran perquè acompanyi el nou diàmetre de 36px
-                      painter: _CompassArrowPainter(),
-                    ),
-                  ),
-
-                  Container(
-                    width: 2.5,
-                    height: 2.5,
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.black,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
+          compass,
           const SizedBox(height: 10),
 
           // 📏 ESCALA

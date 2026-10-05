@@ -785,6 +785,21 @@ class AppLocalizationsCa extends AppLocalizations {
   String get offlineModeLabel => 'Activar mode offline';
 
   @override
+  String get onlineLabel => 'En línia';
+
+  @override
+  String get offlineEnableAfterDownload => 'Vols activar el mode offline ara per utilitzar el mapa descarregat?';
+
+  @override
+  String get offlineActivate => 'Activar';
+
+  @override
+  String get offlineModeActive => 'Offline actiu';
+
+  @override
+  String get offlineModeInactive => 'Offline inactiu';
+
+  @override
   String get offlineExpandPanel => 'Desplega el panell';
 
   @override

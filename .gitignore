@@ -46,3 +46,6 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+scripts/env/
+scripts/env/pyvenv.cfg
+scripts/*.bat

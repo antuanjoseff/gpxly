@@ -1648,6 +1648,36 @@ abstract class AppLocalizations {
   /// **'Offline mode'**
   String get offlineModeLabel;
 
+  /// No description provided for @onlineLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Online'**
+  String get onlineLabel;
+
+  /// No description provided for @offlineEnableAfterDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Would you like to activate offline mode now to use the downloaded map?'**
+  String get offlineEnableAfterDownload;
+
+  /// No description provided for @offlineActivate.
+  ///
+  /// In en, this message translates to:
+  /// **'Activate'**
+  String get offlineActivate;
+
+  /// No description provided for @offlineModeActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline active'**
+  String get offlineModeActive;
+
+  /// No description provided for @offlineModeInactive.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline inactive'**
+  String get offlineModeInactive;
+
   /// No description provided for @offlineExpandPanel.
   ///
   /// In en, this message translates to:

@@ -414,6 +414,60 @@
       }
     },
     {
+      "id": "contour-lines",
+      "type": "line",
+      "source": "openmaptiles",
+      "source-layer": "contour",
+      "filter": [
+        "!=",
+        ["%", ["get", "ele"], 100],
+        0
+      ],
+      "minzoom": 11,
+      "layout": {
+        "line-cap": "round",
+        "line-join": "round"
+      },
+      "paint": {
+        "line-color": "#c8bda9",
+        "line-opacity": 0.55,
+        "line-width": {
+          "base": 1.3,
+          "stops": [
+            [11, 0.35],
+            [14, 0.85]
+          ]
+        }
+      }
+    },
+    {
+      "id": "contour-lines-major",
+      "type": "line",
+      "source": "openmaptiles",
+      "source-layer": "contour",
+      "filter": [
+        "==",
+        ["%", ["get", "ele"], 100],
+        0
+      ],
+      "minzoom": 11,
+      "layout": {
+        "line-cap": "round",
+        "line-join": "round"
+      },
+      "paint": {
+        "line-color": "#9b8b72",
+        "line-opacity": 0.8,
+        "line-width": {
+          "base": 1.3,
+          "stops": [
+            [11, 0.55],
+            [14, 1.25]
+          ]
+        }
+      }
+    },
+    {
       "id": "waterway_tunnel",
       "type": "line",
       "source": "openmaptiles",
@@ -5048,6 +5102,7 @@
       "minzoom": 12,
       "filter": [
         "==",
+<<<<<<< HEAD
         [
           "%",
           [
@@ -5056,11 +5111,15 @@
           ],
           100
         ],
+=======
+        ["%", ["get", "ele"], 100],
+>>>>>>> offline
         0
       ],
       "layout": {
         "symbol-placement": "line",
         "symbol-spacing": 220,
+<<<<<<< HEAD
         "text-field": [
           "concat",
           [
@@ -5075,6 +5134,10 @@
         "text-font": [
           "Noto Sans Regular"
         ],
+=======
+        "text-field": ["concat", ["to-string", ["get", "ele"]], " m"],
+        "text-font": ["Noto Sans Regular"],
+>>>>>>> offline
         "text-rotation-alignment": "map",
         "text-keep-upright": true,
         "text-size": 10,
@@ -5094,6 +5157,7 @@
       "minzoom": 13,
       "filter": [
         "!=",
+<<<<<<< HEAD
         [
           "%",
           [
@@ -5102,11 +5166,15 @@
           ],
           100
         ],
+=======
+        ["%", ["get", "ele"], 100],
+>>>>>>> offline
         0
       ],
       "layout": {
         "symbol-placement": "line",
         "symbol-spacing": 320,
+<<<<<<< HEAD
         "text-field": [
           "concat",
           [
@@ -5121,6 +5189,10 @@
         "text-font": [
           "Noto Sans Regular"
         ],
+=======
+        "text-field": ["concat", ["to-string", ["get", "ele"]], " m"],
+        "text-font": ["Noto Sans Regular"],
+>>>>>>> offline
         "text-rotation-alignment": "map",
         "text-keep-upright": true,
         "text-size": 8,
