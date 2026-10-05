@@ -785,6 +785,18 @@ class AppLocalizationsPt extends AppLocalizations {
   String get offlineModeLabel => 'Modo offline';
 
   @override
+  String get offlineEnableAfterDownload => 'Pretende ativar o modo offline agora para utilizar o mapa descarregado?';
+
+  @override
+  String get offlineActivate => 'Ativar';
+
+  @override
+  String get offlineModeActive => 'Offline ativo';
+
+  @override
+  String get offlineModeInactive => 'Offline inativo';
+
+  @override
   String get offlineExpandPanel => 'Expandir painel';
 
   @override

@@ -785,6 +785,18 @@ class AppLocalizationsNl extends AppLocalizations {
   String get offlineModeLabel => 'Offlinemodus';
 
   @override
+  String get offlineEnableAfterDownload => 'Wil je de offlinemodus nu inschakelen om de gedownloade kaart te gebruiken?';
+
+  @override
+  String get offlineActivate => 'Inschakelen';
+
+  @override
+  String get offlineModeActive => 'Offline actief';
+
+  @override
+  String get offlineModeInactive => 'Offline inactief';
+
+  @override
   String get offlineExpandPanel => 'Paneel uitklappen';
 
   @override
@@ -1681,6 +1693,18 @@ class AppLocalizationsNlBe extends AppLocalizationsNl {
 
   @override
   String get offlineModeLabel => 'Offlinemodus';
+
+  @override
+  String get offlineEnableAfterDownload => 'Wil je de offlinemodus nu inschakelen om de gedownloade kaart te gebruiken?';
+
+  @override
+  String get offlineActivate => 'Inschakelen';
+
+  @override
+  String get offlineModeActive => 'Offline actief';
+
+  @override
+  String get offlineModeInactive => 'Offline inactief';
 
   @override
   String get offlineExpandPanel => 'Paneel uitklappen';

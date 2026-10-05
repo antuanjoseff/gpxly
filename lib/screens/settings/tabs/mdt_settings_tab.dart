@@ -4,22 +4,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:strack_rec/l10n/app_localizations.dart';
 import 'package:strack_rec/notifiers/dem_bounds_notifier.dart';
+import 'package:strack_rec/notifiers/map_bearing_provider.dart';
 import 'package:strack_rec/services/cog_service.dart';
 import 'package:strack_rec/theme/app_colors.dart';
 import 'package:strack_rec/ui/app_messages.dart';
 import 'package:strack_rec/notifiers/location_notifier.dart';
 import 'package:strack_rec/utils/map_animator.dart';
 import 'package:strack_rec/utils/map_constants.dart';
+import 'package:strack_rec/widgets/compass_widget.dart';
 
-class BarometerSettingsTab extends ConsumerStatefulWidget {
-  const BarometerSettingsTab({super.key});
+class MdtSettingsTab extends ConsumerStatefulWidget {
+  const MdtSettingsTab({super.key});
 
   @override
-  ConsumerState<BarometerSettingsTab> createState() =>
-      _BarometerSettingsTabState();
+  ConsumerState<MdtSettingsTab> createState() => _BarometerSettingsTabState();
 }
 
-class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
+class _BarometerSettingsTabState extends ConsumerState<MdtSettingsTab> {
   MapLibreMapController? _mapController;
   MapAnimator? _mapAnimator;
 
@@ -443,6 +444,13 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
           ),
         ),
         elevation: 0,
+        actions: [
+          CompassScalePanel(
+            showScale: false,
+            onTapCompass: () =>
+                _mapController?.animateCamera(CameraUpdate.bearingTo(0)),
+          ),
+        ],
       ),
       body: Stack(
         children: [
@@ -450,6 +458,7 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
             // 🟢 SOLUCIÓ COMPLETADA: S'esborra el GestureDetector que segrestava el pan i el zoom de la GPU
             child: MapLibreMap(
               tiltGesturesEnabled: false,
+              trackCameraPosition: true,
               compassEnabled: false,
               styleString: "assets/osm_style.json",
               myLocationEnabled: true,
@@ -464,6 +473,10 @@ class _BarometerSettingsTabState extends ConsumerState<BarometerSettingsTab> {
               // 🔥 CONTROL NATIU DE MOVIMENT (PAN / ZOOM MANUAL):
               // S'executa a l'instant cada cop que els dits de l'usuari desplacen el mapa.
               onCameraMove: (cameraPosition) {
+                ref
+                    .read(mapBearingProvider.notifier)
+                    .update(cameraPosition.bearing);
+
                 // Filtrem el semàfor de l'animador del track unificat per evitar falsos positius de fons
                 final bool isAnimating = _mapAnimator?.isAnimating ?? false;
 

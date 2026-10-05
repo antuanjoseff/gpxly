@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
@@ -106,15 +105,15 @@ class _MapBaseLayerState extends ConsumerState<MapBaseLayer> {
       '🗺️ [BASE LAYER] _loadStyle: enabled=${offline.enabled} '
       'hasDownloaded=${offline.hasDownloadedRegions}',
     );
-    if (offline.enabled && offline.hasDownloadedRegions) {
+    if (offline.enabled) {
       final style = await OfflineMapsService.instance.buildOfflineStyle(
         offline.downloadedRegionIds,
       );
       debugPrint(
         '🗺️ [BASE LAYER] buildOfflineStyle retornat: '
-        '${style == null ? "NULL (fallback online)" : "OK (${style.length} chars)"}',
+        'OK (${style.length} chars)',
       );
-      if (style != null && mounted) {
+      if (mounted) {
         if (_controller != null && _hasInitialStyleLoaded) {
           // Mapa ja existeix: canvi en calent (funciona bé)
           await _setStyle(style);

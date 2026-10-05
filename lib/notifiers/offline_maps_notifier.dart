@@ -94,11 +94,15 @@ class OfflineMapsState {
   final bool enabled;
   final bool loadingRegions;
   final List<OfflineRegionInfo> regions;
+  final int mapFocusRevision;
+  final String? mapFocusRegionId;
 
   const OfflineMapsState({
     required this.enabled,
     required this.loadingRegions,
     required this.regions,
+    required this.mapFocusRevision,
+    required this.mapFocusRegionId,
   });
 
   List<String> get downloadedRegionIds =>
@@ -110,11 +114,15 @@ class OfflineMapsState {
     bool? enabled,
     bool? loadingRegions,
     List<OfflineRegionInfo>? regions,
+    int? mapFocusRevision,
+    String? mapFocusRegionId,
   }) {
     return OfflineMapsState(
       enabled: enabled ?? this.enabled,
       loadingRegions: loadingRegions ?? this.loadingRegions,
       regions: regions ?? this.regions,
+      mapFocusRevision: mapFocusRevision ?? this.mapFocusRevision,
+      mapFocusRegionId: mapFocusRegionId ?? this.mapFocusRegionId,
     );
   }
 }
@@ -131,6 +139,8 @@ class OfflineMapsNotifier extends Notifier<OfflineMapsState> {
       enabled: false,
       loadingRegions: true,
       regions: [],
+      mapFocusRevision: 0,
+      mapFocusRegionId: null,
     );
   }
 
@@ -225,6 +235,10 @@ class OfflineMapsNotifier extends Notifier<OfflineMapsState> {
           progressTotal: () => null,
           downloadedAt: DateTime.now(),
         ),
+      );
+      state = state.copyWith(
+        mapFocusRevision: state.mapFocusRevision + 1,
+        mapFocusRegionId: regionId,
       );
       return true;
     } catch (e) {

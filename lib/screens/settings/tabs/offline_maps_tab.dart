@@ -4,9 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:strack_rec/l10n/app_localizations.dart';
+import 'package:strack_rec/notifiers/map_bearing_provider.dart';
 import 'package:strack_rec/notifiers/offline_maps_notifier.dart';
 import 'package:strack_rec/services/offline_maps_service.dart';
 import 'package:strack_rec/theme/app_colors.dart';
+import 'package:strack_rec/widgets/compass_widget.dart';
 
 /// Pantalla de gestió del mapa offline.
 ///
@@ -225,9 +227,26 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
       try {
         final downloaded = await notifier.downloadRegion(regionId);
         if (downloaded && mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(t.offlineDownloadDone)));
+          final activateOffline = await showDialog<bool>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: Text(t.offlineDownloadDone),
+              content: Text(t.offlineEnableAfterDownload),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: Text(t.cancel),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  child: Text(t.offlineActivate),
+                ),
+              ],
+            ),
+          );
+          if (activateOffline == true && mounted) {
+            await notifier.setEnabled(true);
+          }
         }
       } catch (e) {
         if (mounted) {
@@ -414,25 +433,40 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.primary,
         iconTheme: const IconThemeData(color: Colors.white),
-        title: Text(
-          t.offlineTab,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        elevation: 0,
-        actions: [
-          if (offline.hasDownloadedRegions)
-            Tooltip(
-              message: t.offlineModeLabel,
-              child: Switch(
-                value: offline.enabled,
-                onChanged: notifier.setEnabled,
-                activeTrackColor: Colors.white,
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              offline.hasDownloadedRegions
+                  ? offline.enabled
+                        ? t.offlineModeActive
+                        : t.offlineModeInactive
+                  : t.offlineTab,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
               ),
             ),
+            if (offline.hasDownloadedRegions)
+              Tooltip(
+                message: t.offlineModeLabel,
+                child: Switch(
+                  value: offline.enabled,
+                  onChanged: notifier.setEnabled,
+                  activeTrackColor: Colors.white,
+                ),
+              ),
+          ],
+        ),
+        centerTitle: false,
+        elevation: 0,
+        actions: [
+          CompassScalePanel(
+            showScale: false,
+            onTapCompass: () =>
+                _controller?.animateCamera(CameraUpdate.bearingTo(0)),
+          ),
         ],
       ),
       body: SafeArea(
@@ -441,7 +475,8 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
             Positioned.fill(
               child: MapLibreMap(
                 tiltGesturesEnabled: false,
-                rotateGesturesEnabled: false,
+                rotateGesturesEnabled: true,
+                trackCameraPosition: true,
                 compassEnabled: false,
                 styleString: "assets/osm_style.json",
                 initialCameraPosition: const CameraPosition(
@@ -463,6 +498,11 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
                     }
                   });
                 },
+                onCameraMove: (cameraPosition) {
+                  ref
+                      .read(mapBearingProvider.notifier)
+                      .update(cameraPosition.bearing);
+                },
                 onStyleLoadedCallback: () async {
                   if (_disposed || _controller == null) return;
                   await _addOrUpdateRegionLayers(offline.regions);
@@ -474,15 +514,15 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
             ),
 
             if (offline.loadingRegions || _loadingGeofabrikRegions)
-              const Positioned(
-                top: 74,
-                left: 0,
-                right: 0,
+              const Positioned.fill(
                 child: Center(
                   child: SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.orange),
+                    ),
                   ),
                 ),
               ),
