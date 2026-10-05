@@ -26,6 +26,8 @@ class _BarometerSettingsTabState extends ConsumerState<MdtSettingsTab> {
 
   bool _styleLoaded = false;
   bool _isHudCollapsed = true;
+  bool _isLoadingMdtData = true;
+  bool _mdtDataLoaded = false;
 
   // Controls de guàrdia per saber si l'usuari interacciona amb el mapa
   final bool _hasCenteredOnUser = false;
@@ -40,9 +42,20 @@ class _BarometerSettingsTabState extends ConsumerState<MdtSettingsTab> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await CogService().initService(ref);
+      try {
+        await CogService().initService(ref);
+        await Future.wait<Object?>([
+          ref.read(availableTilesProvider.future),
+          ref.read(footprintProvider.future),
+        ]);
+      } catch (error) {
+        debugPrint('Error carregant dades del mapa MDT: $error');
+      }
+
+      _mdtDataLoaded = true;
       if (mounted && _styleLoaded) {
-        _refreshGridGeometry();
+        await _refreshGridGeometry();
+        if (mounted) setState(() => _isLoadingMdtData = false);
       }
     });
   }
@@ -410,6 +423,10 @@ class _BarometerSettingsTabState extends ConsumerState<MdtSettingsTab> {
     final demState = ref.watch(demBoundsProvider);
     final downloadedCells = demState.cells;
     final isDownloadingGlobal = demState.isDownloading;
+    final isLoadingTiles = ref.watch(availableTilesProvider).isLoading;
+    final isLoadingFootprint = ref.watch(footprintProvider).isLoading;
+    final isLoadingMdtData =
+        _isLoadingMdtData || isLoadingTiles || isLoadingFootprint;
 
     final int downloadedCount = downloadedCells.length;
     final bool isLimitReached = downloadedCount >= _maxDownloadedCellsLimit;
@@ -510,6 +527,9 @@ class _BarometerSettingsTabState extends ConsumerState<MdtSettingsTab> {
 
                 setState(() => _styleLoaded = true);
                 await _refreshGridGeometry();
+                if (mounted && _mdtDataLoaded) {
+                  setState(() => _isLoadingMdtData = false);
+                }
               },
               onMapCreated: (controller) {
                 _mapController = controller;
@@ -544,6 +564,20 @@ class _BarometerSettingsTabState extends ConsumerState<MdtSettingsTab> {
               onCameraIdle: () {},
             ),
           ),
+
+          if (isLoadingMdtData)
+            const Positioned.fill(
+              child: Center(
+                child: SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.5,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.orange),
+                  ),
+                ),
+              ),
+            ),
 
           if (isDownloadingGlobal)
             const Positioned(
