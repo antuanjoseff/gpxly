@@ -785,6 +785,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get offlineModeLabel => 'Mode hors ligne';
 
   @override
+  String get onlineLabel => 'En ligne';
+
+  @override
   String get offlineEnableAfterDownload => 'Voulez-vous activer le mode hors ligne maintenant pour utiliser la carte téléchargée ?';
 
   @override

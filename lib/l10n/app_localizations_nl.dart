@@ -785,6 +785,9 @@ class AppLocalizationsNl extends AppLocalizations {
   String get offlineModeLabel => 'Offlinemodus';
 
   @override
+  String get onlineLabel => 'Online';
+
+  @override
   String get offlineEnableAfterDownload => 'Wil je de offlinemodus nu inschakelen om de gedownloade kaart te gebruiken?';
 
   @override
@@ -1693,6 +1696,9 @@ class AppLocalizationsNlBe extends AppLocalizationsNl {
 
   @override
   String get offlineModeLabel => 'Offlinemodus';
+
+  @override
+  String get onlineLabel => 'Online';
 
   @override
   String get offlineEnableAfterDownload => 'Wil je de offlinemodus nu inschakelen om de gedownloade kaart te gebruiken?';

@@ -1648,6 +1648,12 @@ abstract class AppLocalizations {
   /// **'Offline mode'**
   String get offlineModeLabel;
 
+  /// No description provided for @onlineLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Online'**
+  String get onlineLabel;
+
   /// No description provided for @offlineEnableAfterDownload.
   ///
   /// In en, this message translates to:

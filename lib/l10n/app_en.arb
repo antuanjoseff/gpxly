@@ -323,6 +323,7 @@
   "offlineDelete": "Delete the downloaded map",
   "offlineUseAllDownloaded": "Use downloaded maps as offline cartography",
   "offlineModeLabel": "Offline mode",
+  "onlineLabel": "Online",
   "offlineEnableAfterDownload": "Would you like to activate offline mode now to use the downloaded map?",
   "offlineActivate": "Activate",
   "offlineModeActive": "Offline active",

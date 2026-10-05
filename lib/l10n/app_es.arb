@@ -316,6 +316,7 @@
   "offlineDelete": "Eliminar el mapa descargado",
   "offlineUseAllDownloaded": "Usar los mapas descargados como cartografía offline",
   "offlineModeLabel": "Modo sin conexión",
+  "onlineLabel": "En línea",
   "offlineEnableAfterDownload": "¿Quieres activar ahora el modo sin conexión para usar el mapa descargado?",
   "offlineActivate": "Activar",
   "offlineModeActive": "Offline activo",

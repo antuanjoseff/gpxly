@@ -785,6 +785,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get offlineModeLabel => 'Offline-Modus';
 
   @override
+  String get onlineLabel => 'Online';
+
+  @override
   String get offlineEnableAfterDownload => 'Möchtest du den Offline-Modus jetzt aktivieren, um die heruntergeladene Karte zu verwenden?';
 
   @override

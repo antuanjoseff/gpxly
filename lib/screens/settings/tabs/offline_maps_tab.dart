@@ -437,11 +437,7 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              offline.hasDownloadedRegions
-                  ? offline.enabled
-                        ? t.offlineModeActive
-                        : t.offlineModeInactive
-                  : t.offlineTab,
+              offline.enabled ? t.offlineTab : t.onlineLabel,
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 18,

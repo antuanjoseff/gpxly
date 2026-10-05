@@ -785,6 +785,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get offlineModeLabel => 'Modo sin conexión';
 
   @override
+  String get onlineLabel => 'En línea';
+
+  @override
   String get offlineEnableAfterDownload => '¿Quieres activar ahora el modo sin conexión para usar el mapa descargado?';
 
   @override
