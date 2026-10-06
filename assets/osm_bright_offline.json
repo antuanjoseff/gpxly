@@ -5102,7 +5102,6 @@
       "minzoom": 12,
       "filter": [
         "==",
-<<<<<<< HEAD
         [
           "%",
           [
@@ -5111,15 +5110,11 @@
           ],
           100
         ],
-=======
-        ["%", ["get", "ele"], 100],
->>>>>>> offline
         0
       ],
       "layout": {
         "symbol-placement": "line",
         "symbol-spacing": 220,
-<<<<<<< HEAD
         "text-field": [
           "concat",
           [
@@ -5134,10 +5129,6 @@
         "text-font": [
           "Noto Sans Regular"
         ],
-=======
-        "text-field": ["concat", ["to-string", ["get", "ele"]], " m"],
-        "text-font": ["Noto Sans Regular"],
->>>>>>> offline
         "text-rotation-alignment": "map",
         "text-keep-upright": true,
         "text-size": 10,
@@ -5157,7 +5148,6 @@
       "minzoom": 13,
       "filter": [
         "!=",
-<<<<<<< HEAD
         [
           "%",
           [
@@ -5166,15 +5156,11 @@
           ],
           100
         ],
-=======
-        ["%", ["get", "ele"], 100],
->>>>>>> offline
         0
       ],
       "layout": {
         "symbol-placement": "line",
         "symbol-spacing": 320,
-<<<<<<< HEAD
         "text-field": [
           "concat",
           [
@@ -5189,10 +5175,6 @@
         "text-font": [
           "Noto Sans Regular"
         ],
-=======
-        "text-field": ["concat", ["to-string", ["get", "ele"]], " m"],
-        "text-font": ["Noto Sans Regular"],
->>>>>>> offline
         "text-rotation-alignment": "map",
         "text-keep-upright": true,
         "text-size": 8,
