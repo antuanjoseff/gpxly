@@ -205,7 +205,8 @@ class OfflineMapsService {
         'Error ${response.statusCode} obtenint les regions Geofabrik',
       );
     }
-    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final data =
+        jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
     final features = (data['features'] as List).cast<Map<String, dynamic>>();
     return features
         .where((feature) {
