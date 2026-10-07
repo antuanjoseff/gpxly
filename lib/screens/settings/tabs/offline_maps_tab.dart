@@ -227,7 +227,7 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
     if (confirm == true && mounted) {
       try {
         final downloaded = await notifier.downloadRegion(regionId);
-        if (downloaded && mounted) {
+        if (downloaded && mounted && !ref.read(offlineMapsProvider).enabled) {
           final activateOffline = await showDialog<bool>(
             context: context,
             builder: (ctx) => AlertDialog(
