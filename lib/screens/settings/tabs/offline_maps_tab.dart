@@ -1,4 +1,5 @@
 // lib/screens/settings/offline_maps_screen.dart
+import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
@@ -277,13 +278,36 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
 
   Future<void> _onMapClick(LatLng latLng) async {
     if (_disposed) return;
-    final regions = ref.read(offlineMapsProvider).regions;
+    final region = _smallestRegionAt(
+      ref.read(offlineMapsProvider).regions,
+      latLng,
+    );
+    if (region != null) await _onRegionTap(region.id);
+  }
+
+  /// Si diverses regions se solapen, la més petita té prioritat.
+  OfflineRegionInfo? _smallestRegionAt(
+    List<OfflineRegionInfo> regions,
+    LatLng p,
+  ) {
+    OfflineRegionInfo? best;
+    var bestArea = double.infinity;
     for (final r in regions) {
-      if (_isInsideRegion(r, latLng)) {
-        await _onRegionTap(r.id);
-        return;
+      if (!_isInsideRegion(r, p)) continue;
+      final area = (r.maxLon - r.minLon) * (r.maxLat - r.minLat);
+      if (area < bestArea) {
+        best = r;
+        bestArea = area;
       }
     }
+    return best;
+  }
+
+  void _showMessage(String text) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(text)));
   }
 
   Future<void> _focusCameraOnRegion(GeofabrikRegion region) async {
@@ -308,7 +332,12 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
   Future<void> _onMapLongClick(LatLng point) async {
     if (_disposed) return;
     final available = ref.read(offlineMapsProvider).regions;
-    if (available.any((region) => _isInsideRegion(region, point))) return;
+    final existing = _smallestRegionAt(available, point);
+    if (existing != null) {
+      _showMessage('Aquesta zona ja està generada');
+      await _onRegionTap(existing.id);
+      return;
+    }
 
     final matches = _geofabrikRegions.where(
       (region) =>
@@ -317,7 +346,10 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
           point.latitude >= region.minLat &&
           point.latitude <= region.maxLat,
     );
-    if (matches.isEmpty) return;
+    if (matches.isEmpty) {
+      _showMessage('Aquesta zona no es pot generar');
+      return;
+    }
     final selected = matches.reduce((a, b) {
       final areaA = (a.maxLon - a.minLon) * (a.maxLat - a.minLat);
       final areaB = (b.maxLon - b.minLon) * (b.maxLat - b.minLat);
@@ -417,6 +449,8 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
         break;
       }
     }
+    final hasAvailable = offline.regions.any((r) => !r.downloaded);
+    final hasDownloaded = offline.hasDownloadedRegions;
     final downloadTotal = downloadingRegion == null
         ? null
         : downloadingRegion.progressTotal ?? downloadingRegion.fileSizeBytes;
@@ -444,15 +478,6 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
                 fontWeight: FontWeight.w600,
               ),
             ),
-            if (offline.hasDownloadedRegions)
-              Tooltip(
-                message: t.offlineModeLabel,
-                child: Switch(
-                  value: offline.enabled,
-                  onChanged: notifier.setEnabled,
-                  activeTrackColor: Colors.white,
-                ),
-              ),
           ],
         ),
         centerTitle: false,
@@ -482,15 +507,17 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
                 onMapCreated: (controller) {
                   _controller = controller;
 
+                  // Si el toc cau sobre una regió, només es dispara
+                  // onFeatureTapped (no onMapClick).
                   controller.onFeatureTapped.add((
                     point,
                     latLng,
                     featureId,
                     layerId,
                     annotation,
-                  ) async {
+                  ) {
                     if (layerId == _fillLayerId || layerId == _lineLayerId) {
-                      await _onRegionTap(featureId);
+                      _onMapClick(latLng);
                     }
                   });
                 },
@@ -526,32 +553,81 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
               top: 8,
               left: 8,
               right: 8,
-              child: Material(
-                color: Colors.white.withValues(alpha: 0.94),
-                elevation: 2,
-                borderRadius: BorderRadius.circular(8),
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                  child: Wrap(
-                    alignment: WrapAlignment.spaceAround,
-                    runSpacing: 8,
-                    spacing: 12,
-                    children: [
-                      _LegendItem(
-                        color: Color(0xFF1E88E5),
-                        label: 'Cartografia disponible',
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Material(
+                    color: Colors.white.withValues(alpha: 0.94),
+                    elevation: 2,
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 8,
                       ),
-                      _LegendItem(
-                        color: Color(0xFF2E7D32),
-                        label: 'Cartografia descarregada',
+                      child: _OfflineSwitchRow(
+                        value: offline.hasDownloadedRegions && offline.enabled,
+                        enabled: offline.hasDownloadedRegions,
+                        onChanged: notifier.setEnabled,
                       ),
-                      _LegendItem(
-                        icon: Icons.touch_app_outlined,
-                        label: 'Mantén premut fora dels rectangles',
-                      ),
-                    ],
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 8),
+                  Material(
+                    color: Colors.white.withValues(alpha: 0.94),
+                    elevation: 2,
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 8,
+                      ),
+                      child: AnimatedSize(
+                        duration: const Duration(milliseconds: 180),
+                        alignment: Alignment.topCenter,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const _LegendItem(
+                              icon: Icons.touch_app_outlined,
+                              label:
+                                  'Mantén premut en una zona buida per generar-hi mapa',
+                            ),
+                            if (hasAvailable || hasDownloaded) ...[
+                              const SizedBox(height: 6),
+                              Wrap(
+                                runSpacing: 6,
+                                spacing: 12,
+                                children: [
+                                  if (hasAvailable)
+                                    const _LegendItem(
+                                      color: Color(0xFF1E88E5),
+                                      icon: Icons.download_outlined,
+                                      label: 'Disponible: toca per descarregar',
+                                    ),
+                                  if (hasDownloaded)
+                                    const _LegendItem(
+                                      color: Color(0xFF2E7D32),
+                                      icon: Icons.check_circle_outline,
+                                      label: 'Descarregada: toca per gestionar',
+                                    ),
+                                ],
+                              ),
+                            ],
+                            if (!offline.hasDownloadedRegions) ...[
+                              const SizedBox(height: 6),
+                              Text(
+                                'Descarrega una zona per activar el mode offline',
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             if (downloadingRegion case final region?)
@@ -814,18 +890,131 @@ class _LegendItem extends StatelessWidget {
       children: [
         if (color != null)
           Container(
-            width: 12,
-            height: 12,
+            width: 20,
+            height: 20,
             decoration: BoxDecoration(
               color: color,
-              borderRadius: BorderRadius.circular(2),
+              borderRadius: BorderRadius.circular(4),
             ),
+            child: icon == null
+                ? null
+                : Icon(icon, size: 14, color: Colors.white),
           )
         else
           Icon(icon, size: 18),
         const SizedBox(width: 6),
-        Text(label, style: const TextStyle(fontSize: 12)),
+        Flexible(child: Text(label, style: const TextStyle(fontSize: 12))),
       ],
+    );
+  }
+}
+
+class _OfflineSwitchRow extends StatelessWidget {
+  final bool value;
+  final bool enabled;
+  final ValueChanged<bool> onChanged;
+
+  const _OfflineSwitchRow({
+    required this.value,
+    required this.enabled,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Opacity(
+      opacity: enabled ? 1 : 0.5,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: enabled
+            ? () {
+                HapticFeedback.lightImpact();
+                onChanged(!value);
+              }
+            : null,
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                value ? 'Offline activat' : 'Offline desactivat',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: value ? AppColors.primary : Colors.black87,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: 58,
+              height: 28,
+              padding: const EdgeInsets.all(3),
+              decoration: BoxDecoration(
+                color: value
+                    ? AppColors.primary.withAlpha(40)
+                    : Colors.grey.shade200,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: value ? AppColors.primary : Colors.grey.shade300,
+                  width: 1,
+                ),
+              ),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Positioned(
+                    left: 6,
+                    child: Text(
+                      'ON',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: value ? AppColors.primary : Colors.transparent,
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    right: 6,
+                    child: Text(
+                      'OFF',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: !value
+                            ? Colors.grey.shade600
+                            : Colors.transparent,
+                      ),
+                    ),
+                  ),
+                  AnimatedAlign(
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeInOut,
+                    alignment: value
+                        ? Alignment.centerRight
+                        : Alignment.centerLeft,
+                    child: Container(
+                      width: 22,
+                      height: 22,
+                      decoration: BoxDecoration(
+                        color: value ? AppColors.primary : Colors.grey.shade500,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withAlpha(20),
+                            blurRadius: 2,
+                            offset: const Offset(0, 1),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
