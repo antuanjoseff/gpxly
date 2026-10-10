@@ -1633,7 +1633,7 @@ abstract class AppLocalizations {
   /// No description provided for @offlineDelete.
   ///
   /// In en, this message translates to:
-  /// **'Delete the downloaded map'**
+  /// **'Delete'**
   String get offlineDelete;
 
   /// No description provided for @offlineUseAllDownloaded.

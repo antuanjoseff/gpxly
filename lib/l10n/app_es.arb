@@ -313,7 +313,7 @@
   "offlineDownloadError": "Error en la descarga. Inténtalo de nuevo.",
   "offlineDownloaded": "Mapa de Cataluña descargado",
   "offlineUseOffline": "Usar el mapa offline",
-  "offlineDelete": "Eliminar el mapa descargado",
+  "offlineDelete": "Eliminar",
   "offlineUseAllDownloaded": "Usar los mapas descargados como cartografía offline",
   "offlineModeLabel": "Modo sin conexión",
   "onlineLabel": "En línea",

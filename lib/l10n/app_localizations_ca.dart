@@ -776,7 +776,7 @@ class AppLocalizationsCa extends AppLocalizations {
   String get offlineUseOffline => 'Fer servir el mapa offline';
 
   @override
-  String get offlineDelete => 'Eliminar el mapa descarregat';
+  String get offlineDelete => 'Eliminar';
 
   @override
   String get offlineUseAllDownloaded => 'Fes servir els mapes descarregats com a cartografia offline';

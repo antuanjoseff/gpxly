@@ -1,3 +1,4 @@
+import 'dart:async';
 // lib/screens/settings/offline_maps_screen.dart
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
@@ -37,6 +38,9 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
   bool _loadingGeofabrikRegions = true;
   List<GeofabrikRegion> _geofabrikRegions = [];
   GeofabrikRegion? _proposedRegion;
+  bool _showAvailable = true;
+  bool _showDownloaded = true;
+  bool _handlingTap = false;
 
   @override
   void initState() {
@@ -54,10 +58,15 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
   Map<String, dynamic> _buildFeatureCollection(
     List<OfflineRegionInfo> regions,
   ) {
+    // Els més grans primer (a sota) i els més petits al final (a sobre).
+    double area(OfflineRegionInfo r) =>
+        (r.maxLon - r.minLon) * (r.maxLat - r.minLat);
+    final sorted = regions.where(_isRegionVisible).toList()
+      ..sort((a, b) => area(b).compareTo(area(a)));
     return {
       "type": "FeatureCollection",
       "features": [
-        for (final r in regions)
+        for (final r in sorted)
           {
             "type": "Feature",
             "id": r.id,
@@ -71,6 +80,9 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
       ],
     };
   }
+
+  bool _isRegionVisible(OfflineRegionInfo r) =>
+      r.downloaded ? _showDownloaded : _showAvailable;
 
   Map<String, dynamic> _buildProposalFeatureCollection() {
     final region = _proposedRegion;
@@ -276,24 +288,32 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
         p.latitude <= r.maxLat;
   }
 
+  /// Un sol toc sobre un rectangle visible obre el diàleg de descàrrega
+  /// (blau) o d'eliminació (verd).
   Future<void> _onMapClick(LatLng latLng) async {
-    if (_disposed) return;
-    final region = _smallestRegionAt(
-      ref.read(offlineMapsProvider).regions,
-      latLng,
-    );
-    if (region != null) await _onRegionTap(region.id);
+    if (_disposed || _requestPanel != null || _handlingTap) return;
+    final regions = ref.read(offlineMapsProvider).regions;
+    final region = _smallestRegionAt(regions, latLng, onlyVisible: true);
+    if (region == null) return;
+    _handlingTap = true;
+    try {
+      await _onRegionTap(region.id);
+    } finally {
+      _handlingTap = false;
+    }
   }
 
   /// Si diverses regions se solapen, la més petita té prioritat.
   OfflineRegionInfo? _smallestRegionAt(
     List<OfflineRegionInfo> regions,
-    LatLng p,
-  ) {
+    LatLng p, {
+    bool onlyVisible = false,
+  }) {
     OfflineRegionInfo? best;
     var bestArea = double.infinity;
     for (final r in regions) {
       if (!_isInsideRegion(r, p)) continue;
+      if (onlyVisible && !_isRegionVisible(r)) continue;
       final area = (r.maxLon - r.minLon) * (r.maxLat - r.minLat);
       if (area < bestArea) {
         best = r;
@@ -303,18 +323,27 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
     return best;
   }
 
-  void _showMessage(String text) {
+  void _showMessage(String text, {bool success = false}) {
     if (!mounted) return;
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(text)));
+      ..showSnackBar(
+        SnackBar(
+          content: Text(text),
+          backgroundColor: success
+              ? Colors.green.shade700
+              : Colors.red.shade700,
+        ),
+      );
   }
 
   Future<void> _focusCameraOnRegion(GeofabrikRegion region) async {
     if (_disposed || _controller == null) return;
-    final bottomPadding = (MediaQuery.sizeOf(context).height * 0.34)
-        .clamp(220.0, 340.0)
-        .toDouble();
+    final panelBox = _requestPanelKey.currentContext?.findRenderObject();
+    final panelHeight = panelBox is RenderBox && panelBox.hasSize
+        ? panelBox.size.height
+        : 0.0;
+    final bottomPadding = panelHeight > 0 ? panelHeight + 8 + 24 : 240.0;
     await _controller!.animateCamera(
       CameraUpdate.newLatLngBounds(
         LatLngBounds(
@@ -322,7 +351,7 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
           northeast: LatLng(region.maxLat, region.maxLon),
         ),
         left: 40,
-        top: 86,
+        top: 40,
         right: 40,
         bottom: bottomPadding,
       ),
@@ -332,11 +361,19 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
   Future<void> _onMapLongClick(LatLng point) async {
     if (_disposed) return;
     final available = ref.read(offlineMapsProvider).regions;
-    final existing = _smallestRegionAt(available, point);
-    if (existing != null) {
+    if (_requestPanel != null) return;
+    if (_smallestRegionAt(available, point, onlyVisible: true) != null) {
       _showMessage('Aquesta zona ja està generada');
-      await _onRegionTap(existing.id);
       return;
+    }
+
+    if (_geofabrikRegions.isEmpty) {
+      await _loadGeofabrikRegions();
+      if (!mounted) return;
+      if (_geofabrikRegions.isEmpty) {
+        _showMessage('No s’han pogut carregar les zones generables');
+        return;
+      }
     }
 
     final matches = _geofabrikRegions.where(
@@ -358,19 +395,19 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
 
     setState(() => _proposedRegion = selected);
     await _addOrUpdateRegionLayers(available);
-    await _focusCameraOnRegion(selected);
     if (!mounted) return;
 
     try {
       final preferences = await SharedPreferences.getInstance();
       if (!mounted) return;
-      await showModalBottomSheet<void>(
-        context: context,
-        isScrollControlled: true,
-        useSafeArea: true,
-        builder: (_) => _GeofabrikRequestSheet(
+      final closed = Completer<void>();
+      setState(() {
+        _requestPanel = _GeofabrikRequestSheet(
           regionName: selected.name,
           savedEmail: preferences.getString(_emailPreferenceKey) ?? '',
+          onClose: () {
+            if (!closed.isCompleted) closed.complete();
+          },
           onSubmitEmail: (email) =>
               preferences.setString(_emailPreferenceKey, email),
           onRequest: (email) => OfflineMapsService.instance.requestNewRegion(
@@ -379,8 +416,12 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
             email: email,
             lang: Localizations.localeOf(context).languageCode,
           ),
-        ),
-      );
+        );
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _requestPanel != null) _focusCameraOnRegion(selected);
+      });
+      await closed.future;
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -392,9 +433,13 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
       }
       debugPrint('Error enviant petició de mapa offline: $error');
     } finally {
+      if (mounted) setState(() => _requestPanel = null);
       _clearProposal();
     }
   }
+
+  Widget? _requestPanel;
+  final GlobalKey _requestPanelKey = GlobalKey();
 
   void _clearProposal() {
     if (!mounted) return;
@@ -549,87 +594,130 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
                   ),
                 ),
               ),
-            Positioned(
-              top: 8,
-              left: 8,
-              right: 8,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Material(
-                    color: Colors.white.withValues(alpha: 0.94),
-                    elevation: 2,
-                    borderRadius: BorderRadius.circular(8),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 8,
-                      ),
-                      child: _OfflineSwitchRow(
-                        value: offline.hasDownloadedRegions && offline.enabled,
-                        enabled: offline.hasDownloadedRegions,
-                        onChanged: notifier.setEnabled,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Material(
-                    color: Colors.white.withValues(alpha: 0.94),
-                    elevation: 2,
-                    borderRadius: BorderRadius.circular(8),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 8,
-                      ),
-                      child: AnimatedSize(
-                        duration: const Duration(milliseconds: 180),
-                        alignment: Alignment.topCenter,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const _LegendItem(
-                              icon: Icons.touch_app_outlined,
-                              label:
-                                  'Mantén premut en una zona buida per generar-hi mapa',
-                            ),
-                            if (hasAvailable || hasDownloaded) ...[
-                              const SizedBox(height: 6),
-                              Wrap(
-                                runSpacing: 6,
-                                spacing: 12,
-                                children: [
-                                  if (hasAvailable)
-                                    const _LegendItem(
-                                      color: Color(0xFF1E88E5),
-                                      icon: Icons.download_outlined,
-                                      label: 'Disponible: toca per descarregar',
-                                    ),
-                                  if (hasDownloaded)
-                                    const _LegendItem(
-                                      color: Color(0xFF2E7D32),
-                                      icon: Icons.check_circle_outline,
-                                      label: 'Descarregada: toca per gestionar',
-                                    ),
-                                ],
-                              ),
-                            ],
-                            if (!offline.hasDownloadedRegions) ...[
-                              const SizedBox(height: 6),
-                              Text(
-                                'Descarrega una zona per activar el mode offline',
-                                style: Theme.of(context).textTheme.bodySmall,
-                              ),
-                            ],
-                          ],
+            if (_requestPanel == null)
+              Positioned(
+                top: 8,
+                left: 8,
+                right: 8,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Material(
+                      color: Colors.white.withValues(alpha: 0.94),
+                      elevation: 2,
+                      borderRadius: BorderRadius.circular(8),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 8,
+                        ),
+                        child: _OfflineSwitchRow(
+                          value:
+                              offline.hasDownloadedRegions && offline.enabled,
+                          enabled: offline.hasDownloadedRegions,
+                          onChanged: notifier.setEnabled,
                         ),
                       ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 8),
+                    Material(
+                      color: Colors.white.withValues(alpha: 0.94),
+                      elevation: 2,
+                      borderRadius: BorderRadius.circular(8),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 8,
+                        ),
+                        child: AnimatedSize(
+                          duration: const Duration(milliseconds: 180),
+                          alignment: Alignment.topCenter,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (hasAvailable)
+                                _LegendCheckRow(
+                                  color: const Color(0xFF1E88E5),
+                                  icon: Icons.download_outlined,
+                                  label: 'Disponible: toca per descarregar',
+                                  value: _showAvailable,
+                                  onChanged: (v) {
+                                    setState(() => _showAvailable = v);
+                                    _addOrUpdateRegionLayers(offline.regions);
+                                  },
+                                ),
+                              if (hasDownloaded)
+                                _LegendCheckRow(
+                                  color: const Color(0xFF2E7D32),
+                                  icon: Icons.check_circle_outline,
+                                  label: 'Descarregada: toca per eliminar',
+                                  value: _showDownloaded,
+                                  onChanged: (v) {
+                                    setState(() => _showDownloaded = v);
+                                    _addOrUpdateRegionLayers(offline.regions);
+                                  },
+                                ),
+                              if (!offline.hasDownloadedRegions) ...[
+                                if (hasAvailable) const SizedBox(height: 6),
+                                Text(
+                                  'Descarrega una zona per activar el mode offline',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
+            if (_requestPanel == null && downloadingRegion == null)
+              Positioned(
+                left: 8,
+                right: 8,
+                bottom: 8,
+                child: Material(
+                  color: Colors.white.withValues(alpha: 0.94),
+                  elevation: 2,
+                  borderRadius: BorderRadius.circular(8),
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    child: _LegendItem(
+                      icon: Icons.touch_app_outlined,
+                      label:
+                          'Mantén premut en una zona buida per generar-hi mapa',
+                    ),
+                  ),
+                ),
+              ),
+            if (_requestPanel case final panel?)
+              Positioned(
+                bottom: 8,
+                left: 8,
+                right: 8,
+                child: NotificationListener<SizeChangedLayoutNotification>(
+                  onNotification: (_) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      final region = _proposedRegion;
+                      if (mounted && region != null) {
+                        _focusCameraOnRegion(region);
+                      }
+                    });
+                    return false;
+                  },
+                  child: SizeChangedLayoutNotifier(
+                    child: Material(
+                      key: _requestPanelKey,
+                      color: Colors.white.withValues(alpha: 0.97),
+                      elevation: 4,
+                      borderRadius: BorderRadius.circular(12),
+                      child: panel,
+                    ),
+                  ),
+                ),
+              ),
             if (downloadingRegion case final region?)
               Positioned(
                 left: 12,
@@ -688,12 +776,14 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
 class _GeofabrikRequestSheet extends StatefulWidget {
   final String regionName;
   final String savedEmail;
+  final VoidCallback onClose;
   final Future<bool> Function(String email) onSubmitEmail;
   final Future<String> Function(String email) onRequest;
 
   const _GeofabrikRequestSheet({
     required this.regionName,
     required this.savedEmail,
+    required this.onClose,
     required this.onSubmitEmail,
     required this.onRequest,
   });
@@ -748,24 +838,16 @@ class _GeofabrikRequestSheetState extends State<_GeofabrikRequestSheet> {
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context)!;
-    return SafeArea(
-      top: false,
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(
-          24,
-          20,
-          24,
-          MediaQuery.viewInsetsOf(context).bottom + 16,
-        ),
-        child: AnimatedSize(
-          duration: const Duration(milliseconds: 180),
-          alignment: Alignment.topCenter,
-          child: _resultMessage != null
-              ? _buildResultStep()
-              : _enteringEmail
-              ? _buildEmailStep(t)
-              : _buildConfirmStep(t),
-        ),
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: AnimatedSize(
+        duration: const Duration(milliseconds: 180),
+        alignment: Alignment.topCenter,
+        child: _resultMessage != null
+            ? _buildResultStep()
+            : _enteringEmail
+            ? _buildEmailStep(t)
+            : _buildConfirmStep(t),
       ),
     );
   }
@@ -776,17 +858,15 @@ class _GeofabrikRequestSheetState extends State<_GeofabrikRequestSheet> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Generar cartografia offline?',
-          style: Theme.of(context).textTheme.titleLarge,
+          'Vols iniciar la generació de cartografia offline per a ${widget.regionName}?',
+          style: Theme.of(context).textTheme.titleMedium,
         ),
-        const SizedBox(height: 8),
-        Text('Vols iniciar la generació per a ${widget.regionName}?'),
         const SizedBox(height: 20),
         Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => widget.onClose(),
               child: Text(t.cancel),
             ),
             const SizedBox(width: 8),
@@ -833,7 +913,7 @@ class _GeofabrikRequestSheetState extends State<_GeofabrikRequestSheet> {
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
             TextButton(
-              onPressed: _submitting ? null : () => Navigator.pop(context),
+              onPressed: _submitting ? null : () => widget.onClose(),
               child: Text(t.cancel),
             ),
             const SizedBox(width: 8),
@@ -867,7 +947,7 @@ class _GeofabrikRequestSheetState extends State<_GeofabrikRequestSheet> {
         Align(
           alignment: Alignment.centerRight,
           child: FilledButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => widget.onClose(),
             child: const Text('OK'),
           ),
         ),
@@ -905,6 +985,42 @@ class _LegendItem extends StatelessWidget {
         const SizedBox(width: 6),
         Flexible(child: Text(label, style: const TextStyle(fontSize: 12))),
       ],
+    );
+  }
+}
+
+class _LegendCheckRow extends StatelessWidget {
+  final Color color;
+  final IconData icon;
+  final String label;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  const _LegendCheckRow({
+    required this.color,
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () => onChanged(!value),
+      child: Row(
+        children: [
+          Expanded(
+            child: _LegendItem(color: color, icon: icon, label: label),
+          ),
+          Checkbox(
+            value: value,
+            visualDensity: VisualDensity.compact,
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            onChanged: (v) => onChanged(v ?? false),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -146,8 +146,14 @@ class OfflineMapsNotifier extends Notifier<OfflineMapsState> {
 
   Future<void> _init() async {
     final prefs = await SharedPreferences.getInstance();
-    final enabled = prefs.getBool(_prefsKeyEnabled) ?? false;
+    var enabled = prefs.getBool(_prefsKeyEnabled) ?? false;
     await reloadRegions();
+    // Sense cartografia descarregada el mode offline no té sentit (p. ex.
+    // preferència restaurada d'una còpia de seguretat): tornem a online.
+    if (enabled && state.regions.isNotEmpty && !state.hasDownloadedRegions) {
+      enabled = false;
+      await prefs.setBool(_prefsKeyEnabled, false);
+    }
     state = state.copyWith(enabled: enabled);
   }
 

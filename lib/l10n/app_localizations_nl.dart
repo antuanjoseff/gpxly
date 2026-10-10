@@ -776,7 +776,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get offlineUseOffline => 'Use the offline map';
 
   @override
-  String get offlineDelete => 'Delete the downloaded map';
+  String get offlineDelete => 'Verwijderen';
 
   @override
   String get offlineUseAllDownloaded => 'Use downloaded maps as offline cartography';
@@ -1689,7 +1689,7 @@ class AppLocalizationsNlBe extends AppLocalizationsNl {
   String get offlineUseOffline => 'Use the offline map';
 
   @override
-  String get offlineDelete => 'Delete the downloaded map';
+  String get offlineDelete => 'Verwijderen';
 
   @override
   String get offlineUseAllDownloaded => 'Use downloaded maps as offline cartography';

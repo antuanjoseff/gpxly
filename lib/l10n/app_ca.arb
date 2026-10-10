@@ -312,7 +312,7 @@
   "offlineDownloadError": "Error en la descàrrega. Torna-ho a provar.",
   "offlineDownloaded": "Mapa de Catalunya descarregat",
   "offlineUseOffline": "Fer servir el mapa offline",
-  "offlineDelete": "Eliminar el mapa descarregat",
+  "offlineDelete": "Eliminar",
   "offlineUseAllDownloaded": "Fes servir els mapes descarregats com a cartografia offline",
   "offlineModeLabel": "Activar mode offline",
   "onlineLabel": "En línia",
