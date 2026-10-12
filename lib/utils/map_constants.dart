@@ -2,10 +2,10 @@
 
 class MapConstants {
   /// Límits de la vista inicial del mapa DEM
-  static const double demViewMinLongitude = -19.0;
+  static const double demViewMinLongitude = -25.0;
   static const double demViewMinLatitude = 27.0;
   static const double demViewMaxLongitude = 19.0;
-  static const double demViewMaxLatitude = 52.0;
+  static const double demViewMaxLatitude = 67.0;
 
   /// Centre derivat dels límits per a la càmera inicial
   static const double demViewCenterLatitude =

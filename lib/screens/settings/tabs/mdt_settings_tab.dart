@@ -539,7 +539,7 @@ class _BarometerSettingsTabState extends ConsumerState<MdtSettingsTab> {
                     ),
                     left: 20,
                     right: 20,
-                    top: 40,
+                    top: 80, // espai pel HUD minimitzat
                     bottom: 40,
                   ),
                 );

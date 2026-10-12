@@ -1,4 +1,5 @@
 // lib/widgets/map_app_bar.dart
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:strack_rec/models/track.dart';
@@ -127,20 +128,20 @@ class MapAppBar extends ConsumerWidget implements PreferredSizeWidget {
           : null,
 
       actions: [
-        // TEMPORAL: depuració del zoom
-        Padding(
-          padding: const EdgeInsets.only(right: 8),
-          child: Center(
-            child: Text(
-              'Z ${ref.watch(mapZoomProvider).toStringAsFixed(2)}',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 13,
-                fontWeight: FontWeight.bold,
+        if (kDebugMode)
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: Center(
+              child: Text(
+                'Z ${ref.watch(mapZoomProvider).toStringAsFixed(2)}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
-        ),
         if (gpsDebugEnabled)
           Padding(
             padding: const EdgeInsets.only(right: 8),
