@@ -733,7 +733,7 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
                     elevation: 2,
                     borderRadius: BorderRadius.circular(8),
                     child: Padding(
-                      padding: EdgeInsets.symmetric(
+                      padding: const EdgeInsets.symmetric(
                         horizontal: 10,
                         vertical: 8,
                       ),
