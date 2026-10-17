@@ -818,6 +818,18 @@ class AppLocalizationsDa extends AppLocalizations {
   String get downloading => 'Downloader...';
 
   @override
+  String get offlineDownloadInProgress => 'En download er i gang';
+
+  @override
+  String get offlineExitCancelConfirm => 'En kortdownload er i gang.\n\nHvis du forlader nu, vil downloaden blive annulleret. Vil du annullere og forlade?';
+
+  @override
+  String get offlineKeepDownloading => 'Fortsæt download';
+
+  @override
+  String get offlineCancelAndExit => 'Annuller og forlad';
+
+  @override
   String get record => 'Optag';
 
   @override

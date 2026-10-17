@@ -818,6 +818,18 @@ class AppLocalizationsLb extends AppLocalizations {
   String get downloading => 'Erofgelueden...';
 
   @override
+  String get offlineDownloadInProgress => 'En Download leeft';
+
+  @override
+  String get offlineExitCancelConfirm => 'En Kaartendownload leeft.\n\nWann Dir elo erausgitt, gëtt den Download ofgebrach. Wëllt Dir ofbriechen an erausgoen?';
+
+  @override
+  String get offlineKeepDownloading => 'Weider eroflueden';
+
+  @override
+  String get offlineCancelAndExit => 'Ofbriechen an erausgoen';
+
+  @override
   String get record => 'Opzeechnen';
 
   @override

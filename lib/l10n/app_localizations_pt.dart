@@ -818,6 +818,18 @@ class AppLocalizationsPt extends AppLocalizations {
   String get downloading => 'A transferir...';
 
   @override
+  String get offlineDownloadInProgress => 'Um descarregamento está em curso';
+
+  @override
+  String get offlineExitCancelConfirm => 'Um descarregamento de mapa está em curso.\n\nSe sair agora, o descarregamento será cancelado. Deseja cancelar e sair?';
+
+  @override
+  String get offlineKeepDownloading => 'Continuar a descarregar';
+
+  @override
+  String get offlineCancelAndExit => 'Cancelar e sair';
+
+  @override
   String get record => 'Gravar';
 
   @override

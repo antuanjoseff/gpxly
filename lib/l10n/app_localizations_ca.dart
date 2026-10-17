@@ -818,6 +818,18 @@ class AppLocalizationsCa extends AppLocalizations {
   String get downloading => 'Descarregant...';
 
   @override
+  String get offlineDownloadInProgress => 'Hi ha una descàrrega en curs';
+
+  @override
+  String get offlineExitCancelConfirm => 'Hi ha una descàrrega de cartografia en curs.\n\nSi surts ara, la descàrrega es cancel·larà. Vols cancel·lar-la i sortir?';
+
+  @override
+  String get offlineKeepDownloading => 'Continuar descarregant';
+
+  @override
+  String get offlineCancelAndExit => 'Cancel·lar i sortir';
+
+  @override
   String get record => 'Gravar';
 
   @override

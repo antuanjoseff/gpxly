@@ -13,7 +13,6 @@ import 'package:strack_rec/notifiers/waypoint_eta_notifier.dart';
 import 'package:strack_rec/providers/barometer_provider.dart';
 import 'package:strack_rec/screens/stats/notifiers/stats_prefs_notifier.dart';
 import 'package:strack_rec/theme/app_colors.dart';
-import 'package:strack_rec/utils/calculations.dart';
 import 'package:strack_rec/widgets/gps_accuracy_bars.dart';
 
 class MapStatsOverlay extends ConsumerWidget {
@@ -47,15 +46,6 @@ class MapStatsOverlay extends ConsumerWidget {
     return '$degrees°$minutes\'$seconds"$direction';
   }
 
-  (double, double) _gain(dynamic track) {
-    if (track == null || track.altitudes.length < 2) return (0, 0);
-    final gain = ElevationUtils.computeGain(
-      (track.altitudes as List).cast<double>(),
-      distances: (track.distances as List).cast<double>(),
-    );
-    return (gain.ascent, gain.descent);
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = AppLocalizations.of(context)!;
@@ -79,7 +69,7 @@ class MapStatsOverlay extends ConsumerWidget {
     final nav = ref.watch(waypointEtaProvider);
     final (ascent, descent) = useLive
         ? (liveStats.ascent, liveStats.descent)
-        : _gain(track);
+        : (track?.stats.ascent ?? 0.0, track?.stats.descent ?? 0.0);
     final duration = useLive
         ? liveStats.duration
         : track?.stats.duration ?? Duration.zero;
@@ -99,8 +89,8 @@ class MapStatsOverlay extends ConsumerWidget {
               0;
     final altitude = useLive
         ? liveStats.currentAltitude
-        : track != null && track.altitudes.isNotEmpty
-        ? track.altitudes.last
+        : track != null && track.points.isNotEmpty
+        ? track.points.last.altitude
         : null;
     final remaining =
         isFollowing && importedTrack != null && importedTrack.points.isNotEmpty

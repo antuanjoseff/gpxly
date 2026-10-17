@@ -818,6 +818,18 @@ class AppLocalizationsNl extends AppLocalizations {
   String get downloading => 'Downloaden...';
 
   @override
+  String get offlineDownloadInProgress => 'Er is een download bezig';
+
+  @override
+  String get offlineExitCancelConfirm => 'Er is een kaartdownload bezig.\n\nAls je nu weggaat, wordt de download geannuleerd. Wil je annuleren en afsluiten?';
+
+  @override
+  String get offlineKeepDownloading => 'Verder downloaden';
+
+  @override
+  String get offlineCancelAndExit => 'Annuleren en afsluiten';
+
+  @override
   String get record => 'Opnemen';
 
   @override
@@ -1729,6 +1741,18 @@ class AppLocalizationsNlBe extends AppLocalizationsNl {
 
   @override
   String get downloading => 'Downloaden...';
+
+  @override
+  String get offlineDownloadInProgress => 'Er is een download bezig';
+
+  @override
+  String get offlineExitCancelConfirm => 'Er is een kaartdownload bezig.\n\nAls je nu weggaat, wordt de download geannuleerd. Wil je annuleren en afsluiten?';
+
+  @override
+  String get offlineKeepDownloading => 'Verder downloaden';
+
+  @override
+  String get offlineCancelAndExit => 'Annuleren en afsluiten';
 
   @override
   String get record => 'Opnemen';

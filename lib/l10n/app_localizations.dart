@@ -1714,6 +1714,30 @@ abstract class AppLocalizations {
   /// **'Downloading...'**
   String get downloading;
 
+  /// No description provided for @offlineDownloadInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'A download is in progress'**
+  String get offlineDownloadInProgress;
+
+  /// No description provided for @offlineExitCancelConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'A map download is in progress.\n\nIf you leave now, the download will be cancelled. Do you want to cancel and leave?'**
+  String get offlineExitCancelConfirm;
+
+  /// No description provided for @offlineKeepDownloading.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep downloading'**
+  String get offlineKeepDownloading;
+
+  /// No description provided for @offlineCancelAndExit.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel and leave'**
+  String get offlineCancelAndExit;
+
   /// No description provided for @record.
   ///
   /// In en, this message translates to:

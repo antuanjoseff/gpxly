@@ -818,6 +818,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get downloading => 'Downloading...';
 
   @override
+  String get offlineDownloadInProgress => 'A download is in progress';
+
+  @override
+  String get offlineExitCancelConfirm => 'A map download is in progress.\n\nIf you leave now, the download will be cancelled. Do you want to cancel and leave?';
+
+  @override
+  String get offlineKeepDownloading => 'Keep downloading';
+
+  @override
+  String get offlineCancelAndExit => 'Cancel and leave';
+
+  @override
   String get record => 'Record';
 
   @override

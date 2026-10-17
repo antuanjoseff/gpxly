@@ -818,6 +818,18 @@ class AppLocalizationsFr extends AppLocalizations {
   String get downloading => 'Téléchargement...';
 
   @override
+  String get offlineDownloadInProgress => 'Un téléchargement est en cours';
+
+  @override
+  String get offlineExitCancelConfirm => 'Un téléchargement de carte est en cours.\n\nSi vous quittez maintenant, le téléchargement sera annulé. Voulez-vous annuler et quitter ?';
+
+  @override
+  String get offlineKeepDownloading => 'Continuer le téléchargement';
+
+  @override
+  String get offlineCancelAndExit => 'Annuler et quitter';
+
+  @override
   String get record => 'Enregistrer';
 
   @override

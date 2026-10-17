@@ -334,6 +334,10 @@
   "offlineDownloadedMapsTitle": "Downloaded maps",
   "download": "Download",
   "downloading": "Downloading...",
+  "offlineDownloadInProgress": "A download is in progress",
+  "offlineExitCancelConfirm": "A map download is in progress.\n\nIf you leave now, the download will be cancelled. Do you want to cancel and leave?",
+  "offlineKeepDownloading": "Keep downloading",
+  "offlineCancelAndExit": "Cancel and leave",
 
   "record": "Record",
   "recordPaused": "Paused",

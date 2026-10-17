@@ -326,6 +326,10 @@
   "offlineDownloadedMapsTitle": "Mapes descarregats",
   "download": "Descarregar",
   "downloading": "Descarregant...",
+  "offlineDownloadInProgress": "Hi ha una descàrrega en curs",
+  "offlineExitCancelConfirm": "Hi ha una descàrrega de cartografia en curs.\n\nSi surts ara, la descàrrega es cancel·larà. Vols cancel·lar-la i sortir?",
+  "offlineKeepDownloading": "Continuar descarregant",
+  "offlineCancelAndExit": "Cancel·lar i sortir",
 
   "record": "Gravar",
   "recordPaused": "Pausat",

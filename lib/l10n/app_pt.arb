@@ -326,6 +326,10 @@
   "offlineDownloadedMapsTitle": "Downloaded maps",
   "download": "Download",
   "downloading": "A transferir...",
+  "offlineDownloadInProgress": "Um descarregamento está em curso",
+  "offlineExitCancelConfirm": "Um descarregamento de mapa está em curso.\n\nSe sair agora, o descarregamento será cancelado. Deseja cancelar e sair?",
+  "offlineKeepDownloading": "Continuar a descarregar",
+  "offlineCancelAndExit": "Cancelar e sair",
 
 "record": "Gravar",
 "recordPaused": "Pausado",

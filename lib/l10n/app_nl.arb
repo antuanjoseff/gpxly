@@ -326,6 +326,10 @@
   "offlineDownloadedMapsTitle": "Downloaded maps",
   "download": "Download",
   "downloading": "Downloaden...",
+  "offlineDownloadInProgress": "Er is een download bezig",
+  "offlineExitCancelConfirm": "Er is een kaartdownload bezig.\n\nAls je nu weggaat, wordt de download geannuleerd. Wil je annuleren en afsluiten?",
+  "offlineKeepDownloading": "Verder downloaden",
+  "offlineCancelAndExit": "Annuleren en afsluiten",
 
 "record": "Opnemen",
 "recordPaused": "Gepauzeerd",

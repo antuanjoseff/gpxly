@@ -326,6 +326,10 @@
   "offlineDownloadedMapsTitle": "Downloaded maps",
   "download": "Download",
   "downloading": "Downloader...",
+  "offlineDownloadInProgress": "En download er i gang",
+  "offlineExitCancelConfirm": "En kortdownload er i gang.\n\nHvis du forlader nu, vil downloaden blive annulleret. Vil du annullere og forlade?",
+  "offlineKeepDownloading": "Fortsæt download",
+  "offlineCancelAndExit": "Annuller og forlad",
 
   "record": "Optag",
   "recordPaused": "Pauset",

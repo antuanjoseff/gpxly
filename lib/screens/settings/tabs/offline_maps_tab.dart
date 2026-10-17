@@ -360,7 +360,13 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
 
   Future<void> _onMapLongClick(LatLng point) async {
     if (_disposed) return;
-    final available = ref.read(offlineMapsProvider).regions;
+    final offline = ref.read(offlineMapsProvider);
+    if (offline.regions.any((region) => region.downloading)) {
+      final t = AppLocalizations.of(context)!;
+      _showMessage(t.offlineDownloadInProgress);
+      return;
+    }
+    final available = offline.regions;
     if (_requestPanel != null) return;
     if (_smallestRegionAt(available, point, onlyVisible: true) != null) {
       _showMessage('Aquesta zona ja està generada');
@@ -500,14 +506,32 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
         ? null
         : downloadingRegion.progressTotal ?? downloadingRegion.fileSizeBytes;
 
+    final bool isDownloading = downloadingRegion != null;
+
     ref.listen(offlineMapsProvider, (previous, next) {
-      if (previous?.regions != next.regions) {
+      final prevDownloaded = previous?.regions
+          .map((r) => '${r.id}:${r.downloaded}')
+          .join(',');
+      final nextDownloaded =
+          next.regions.map((r) => '${r.id}:${r.downloaded}').join(',');
+      if (previous?.regions.length != next.regions.length ||
+          prevDownloaded != nextDownloaded) {
         _addOrUpdateRegionLayers(next.regions);
         _fitCameraToRegions(next.regions);
       }
     });
 
-    return Scaffold(
+    return PopScope(
+      canPop: !isDownloading,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        final shouldExit = await _showCancelDownloadConfirmDialog(context);
+        if (shouldExit == true && mounted) {
+          notifier.cancelDownload();
+          Navigator.of(context).pop();
+        }
+      },
+      child: Scaffold(
       backgroundColor: const Color(0xFFF5F5F7),
       appBar: AppBar(
         backgroundColor: AppColors.primary,
@@ -773,6 +797,30 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
               ),
           ],
         ),
+      ),
+    ),
+  );
+}
+
+  Future<bool?> _showCancelDownloadConfirmDialog(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
+    return showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: Text(t.offlineDownloadTitle),
+        content: Text(t.offlineExitCancelConfirm),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(t.offlineKeepDownloading),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red.shade700),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(t.offlineCancelAndExit),
+          ),
+        ],
       ),
     );
   }

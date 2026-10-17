@@ -326,6 +326,10 @@
   "offlineDownloadedMapsTitle": "Downloaded maps",
   "download": "Download",
   "downloading": "Erofgelueden...",
+  "offlineDownloadInProgress": "En Download leeft",
+  "offlineExitCancelConfirm": "En Kaartendownload leeft.\n\nWann Dir elo erausgitt, gëtt den Download ofgebrach. Wëllt Dir ofbriechen an erausgoen?",
+  "offlineKeepDownloading": "Weider eroflueden",
+  "offlineCancelAndExit": "Ofbriechen an erausgoen",
 
 "record": "Opzeechnen",
 "recordPaused": "Pauséiert",
