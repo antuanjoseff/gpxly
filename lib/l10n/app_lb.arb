@@ -330,6 +330,38 @@
   "offlineExitCancelConfirm": "En Kaartendownload leeft.\n\nWann Dir elo erausgitt, gëtt den Download ofgebrach. Wëllt Dir ofbriechen an erausgoen?",
   "offlineKeepDownloading": "Weider eroflueden",
   "offlineCancelAndExit": "Ofbriechen an erausgoen",
+  "offlineRegionAlreadyGenerated": "Dës Géigend gouf scho generéiert",
+  "offlineRegionsLoadFailed": "Déi verfügbare Géigende konnten net geluede ginn",
+  "offlineRegionUnavailable": "Dës Géigend kann net generéiert ginn",
+  "offlineRequestFailed": "D’Ufro konnt net geschéckt ginn",
+  "offlineRequestFailedDetails": "D’Ufro konnt net geschéckt ginn.\n\n{error}",
+  "@offlineRequestFailedDetails": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "offlineAvailableRegionHint": "Verfügbar: tippen fir erofzelueden",
+  "offlineDownloadedRegionHint": "Erofgelueden: tippen fir ze läschen",
+  "offlineEnableHint": "Luet eng Géigend erof, fir den Offline-Modus ze aktivéieren",
+  "offlineLongPressHint": "Laang op eng fräi Plaz drécken, fir eng Kaart unzefroen",
+  "offlineRequestConfirm": "Wëllt Dir d’Generéiere vun enger Offline-Kaart fir {regionName} starten?",
+  "@offlineRequestConfirm": {
+    "placeholders": {
+      "regionName": {"type": "String"}
+    }
+  },
+  "offlineContinue": "Weider",
+  "offlineEmailRequestHint": "Gitt Är E-Mail-Adress an, fir de Link ze kréien.",
+  "offlineEmailLabel": "E-Mail-Adress",
+  "offlineEmailInvalid": "Gitt eng gëlteg E-Mail-Adress an",
+  "offlineSend": "Schécken",
+  "offlineRequestTitle": "Ufro: {regionName}",
+  "@offlineRequestTitle": {
+    "placeholders": {
+      "regionName": {"type": "String"}
+    }
+  },
+  "offlineRequestSent": "Ufro geschéckt",
 
 "record": "Opzeechnen",
 "recordPaused": "Pauséiert",

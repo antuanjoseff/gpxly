@@ -330,6 +330,38 @@
   "offlineExitCancelConfirm": "En kortdownload er i gang.\n\nHvis du forlader nu, vil downloaden blive annulleret. Vil du annullere og forlade?",
   "offlineKeepDownloading": "Fortsæt download",
   "offlineCancelAndExit": "Annuller og forlad",
+  "offlineRegionAlreadyGenerated": "Dette område er allerede genereret",
+  "offlineRegionsLoadFailed": "De tilgængelige områder kunne ikke indlæses",
+  "offlineRegionUnavailable": "Dette område kan ikke genereres",
+  "offlineRequestFailed": "Anmodningen kunne ikke sendes",
+  "offlineRequestFailedDetails": "Anmodningen kunne ikke sendes.\n\n{error}",
+  "@offlineRequestFailedDetails": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "offlineAvailableRegionHint": "Tilgængelig: tryk for at downloade",
+  "offlineDownloadedRegionHint": "Downloadet: tryk for at slette",
+  "offlineEnableHint": "Download et område for at aktivere offlinetilstand",
+  "offlineLongPressHint": "Tryk længe på et tomt område for at anmode om et kort",
+  "offlineRequestConfirm": "Vil du starte genereringen af et offlinekort for {regionName}?",
+  "@offlineRequestConfirm": {
+    "placeholders": {
+      "regionName": {"type": "String"}
+    }
+  },
+  "offlineContinue": "Fortsæt",
+  "offlineEmailRequestHint": "Indtast din e-mailadresse for at modtage linket.",
+  "offlineEmailLabel": "E-mailadresse",
+  "offlineEmailInvalid": "Indtast en gyldig e-mailadresse",
+  "offlineSend": "Send",
+  "offlineRequestTitle": "Anmodning: {regionName}",
+  "@offlineRequestTitle": {
+    "placeholders": {
+      "regionName": {"type": "String"}
+    }
+  },
+  "offlineRequestSent": "Anmodning sendt",
 
   "record": "Optag",
   "recordPaused": "Pauset",

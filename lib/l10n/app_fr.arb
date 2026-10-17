@@ -332,6 +332,38 @@
   "offlineExitCancelConfirm": "Un téléchargement de carte est en cours.\n\nSi vous quittez maintenant, le téléchargement sera annulé. Voulez-vous annuler et quitter ?",
   "offlineKeepDownloading": "Continuer le téléchargement",
   "offlineCancelAndExit": "Annuler et quitter",
+  "offlineRegionAlreadyGenerated": "Cette zone a déjà été générée",
+  "offlineRegionsLoadFailed": "Impossible de charger les zones disponibles à générer",
+  "offlineRegionUnavailable": "Cette zone ne peut pas être générée",
+  "offlineRequestFailed": "Impossible d’envoyer la demande",
+  "offlineRequestFailedDetails": "Impossible d’envoyer la demande.\n\n{error}",
+  "@offlineRequestFailedDetails": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "offlineAvailableRegionHint": "Disponible : toucher pour télécharger",
+  "offlineDownloadedRegionHint": "Téléchargée : toucher pour supprimer",
+  "offlineEnableHint": "Téléchargez une zone pour activer le mode hors ligne",
+  "offlineLongPressHint": "Appuyez longuement sur une zone vide pour demander une carte",
+  "offlineRequestConfirm": "Voulez-vous lancer la génération d’une carte hors ligne pour {regionName} ?",
+  "@offlineRequestConfirm": {
+    "placeholders": {
+      "regionName": {"type": "String"}
+    }
+  },
+  "offlineContinue": "Continuer",
+  "offlineEmailRequestHint": "Saisissez votre adresse e-mail pour recevoir le lien.",
+  "offlineEmailLabel": "Adresse e-mail",
+  "offlineEmailInvalid": "Saisissez une adresse e-mail valide",
+  "offlineSend": "Envoyer",
+  "offlineRequestTitle": "Demande : {regionName}",
+  "@offlineRequestTitle": {
+    "placeholders": {
+      "regionName": {"type": "String"}
+    }
+  },
+  "offlineRequestSent": "Demande envoyée",
 
   "record": "Enregistrer",
   "recordPaused": "En pause",

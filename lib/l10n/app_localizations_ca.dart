@@ -830,6 +830,63 @@ class AppLocalizationsCa extends AppLocalizations {
   String get offlineCancelAndExit => 'Cancel·lar i sortir';
 
   @override
+  String get offlineRegionAlreadyGenerated => 'Aquesta zona ja està generada';
+
+  @override
+  String get offlineRegionsLoadFailed => 'No s’han pogut carregar les zones generables';
+
+  @override
+  String get offlineRegionUnavailable => 'Aquesta zona no es pot generar';
+
+  @override
+  String get offlineRequestFailed => 'No s’ha pogut enviar la sol·licitud';
+
+  @override
+  String offlineRequestFailedDetails(String error) {
+    return 'No s’ha pogut enviar la sol·licitud.\n\n$error';
+  }
+
+  @override
+  String get offlineAvailableRegionHint => 'Disponible: toca per descarregar';
+
+  @override
+  String get offlineDownloadedRegionHint => 'Descarregada: toca per eliminar';
+
+  @override
+  String get offlineEnableHint => 'Descarrega una zona per activar el mode offline';
+
+  @override
+  String get offlineLongPressHint => 'Mantén premut en una zona buida per sol·licitar un mapa';
+
+  @override
+  String offlineRequestConfirm(String regionName) {
+    return 'Vols iniciar la generació d’un mapa offline per a $regionName?';
+  }
+
+  @override
+  String get offlineContinue => 'Continuar';
+
+  @override
+  String get offlineEmailRequestHint => 'Introdueix el correu electrònic per rebre l’enllaç.';
+
+  @override
+  String get offlineEmailLabel => 'Correu electrònic';
+
+  @override
+  String get offlineEmailInvalid => 'Introdueix un correu vàlid';
+
+  @override
+  String get offlineSend => 'Enviar';
+
+  @override
+  String offlineRequestTitle(String regionName) {
+    return 'Sol·licitud: $regionName';
+  }
+
+  @override
+  String get offlineRequestSent => 'Sol·licitud enviada';
+
+  @override
   String get record => 'Gravar';
 
   @override

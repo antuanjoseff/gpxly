@@ -330,6 +330,38 @@
   "offlineExitCancelConfirm": "Hi ha una descàrrega de cartografia en curs.\n\nSi surts ara, la descàrrega es cancel·larà. Vols cancel·lar-la i sortir?",
   "offlineKeepDownloading": "Continuar descarregant",
   "offlineCancelAndExit": "Cancel·lar i sortir",
+  "offlineRegionAlreadyGenerated": "Aquesta zona ja està generada",
+  "offlineRegionsLoadFailed": "No s’han pogut carregar les zones generables",
+  "offlineRegionUnavailable": "Aquesta zona no es pot generar",
+  "offlineRequestFailed": "No s’ha pogut enviar la sol·licitud",
+  "offlineRequestFailedDetails": "No s’ha pogut enviar la sol·licitud.\n\n{error}",
+  "@offlineRequestFailedDetails": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "offlineAvailableRegionHint": "Disponible: toca per descarregar",
+  "offlineDownloadedRegionHint": "Descarregada: toca per eliminar",
+  "offlineEnableHint": "Descarrega una zona per activar el mode offline",
+  "offlineLongPressHint": "Mantén premut en una zona buida per sol·licitar un mapa",
+  "offlineRequestConfirm": "Vols iniciar la generació d’un mapa offline per a {regionName}?",
+  "@offlineRequestConfirm": {
+    "placeholders": {
+      "regionName": {"type": "String"}
+    }
+  },
+  "offlineContinue": "Continuar",
+  "offlineEmailRequestHint": "Introdueix el correu electrònic per rebre l’enllaç.",
+  "offlineEmailLabel": "Correu electrònic",
+  "offlineEmailInvalid": "Introdueix un correu vàlid",
+  "offlineSend": "Enviar",
+  "offlineRequestTitle": "Sol·licitud: {regionName}",
+  "@offlineRequestTitle": {
+    "placeholders": {
+      "regionName": {"type": "String"}
+    }
+  },
+  "offlineRequestSent": "Sol·licitud enviada",
 
   "record": "Gravar",
   "recordPaused": "Pausat",

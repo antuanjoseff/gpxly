@@ -330,6 +330,38 @@
   "offlineExitCancelConfirm": "Ein Kartendownload läuft.\n\nWenn du jetzt gehst, wird der Download abgebrochen. Möchtest du abbrechen und verlassen?",
   "offlineKeepDownloading": "Weiter herunterladen",
   "offlineCancelAndExit": "Abbrechen und verlassen",
+  "offlineRegionAlreadyGenerated": "Dieses Gebiet wurde bereits erstellt",
+  "offlineRegionsLoadFailed": "Die verfügbaren Gebiete konnten nicht geladen werden",
+  "offlineRegionUnavailable": "Dieses Gebiet kann nicht erstellt werden",
+  "offlineRequestFailed": "Die Anfrage konnte nicht gesendet werden",
+  "offlineRequestFailedDetails": "Die Anfrage konnte nicht gesendet werden.\n\n{error}",
+  "@offlineRequestFailedDetails": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "offlineAvailableRegionHint": "Verfügbar: zum Herunterladen tippen",
+  "offlineDownloadedRegionHint": "Heruntergeladen: zum Löschen tippen",
+  "offlineEnableHint": "Lade ein Gebiet herunter, um den Offline-Modus zu aktivieren",
+  "offlineLongPressHint": "Drücke lange auf einen freien Bereich, um eine Karte anzufordern",
+  "offlineRequestConfirm": "Möchtest du die Erstellung einer Offline-Karte für {regionName} starten?",
+  "@offlineRequestConfirm": {
+    "placeholders": {
+      "regionName": {"type": "String"}
+    }
+  },
+  "offlineContinue": "Weiter",
+  "offlineEmailRequestHint": "Gib deine E-Mail-Adresse ein, um den Link zu erhalten.",
+  "offlineEmailLabel": "E-Mail-Adresse",
+  "offlineEmailInvalid": "Gib eine gültige E-Mail-Adresse ein",
+  "offlineSend": "Senden",
+  "offlineRequestTitle": "Anfrage: {regionName}",
+  "@offlineRequestTitle": {
+    "placeholders": {
+      "regionName": {"type": "String"}
+    }
+  },
+  "offlineRequestSent": "Anfrage gesendet",
 
 "record": "Aufzeichnen",
 "recordPaused": "Pausiert",

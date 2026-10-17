@@ -830,6 +830,63 @@ class AppLocalizationsLb extends AppLocalizations {
   String get offlineCancelAndExit => 'Ofbriechen an erausgoen';
 
   @override
+  String get offlineRegionAlreadyGenerated => 'Dës Géigend gouf scho generéiert';
+
+  @override
+  String get offlineRegionsLoadFailed => 'Déi verfügbare Géigende konnten net geluede ginn';
+
+  @override
+  String get offlineRegionUnavailable => 'Dës Géigend kann net generéiert ginn';
+
+  @override
+  String get offlineRequestFailed => 'D’Ufro konnt net geschéckt ginn';
+
+  @override
+  String offlineRequestFailedDetails(String error) {
+    return 'D’Ufro konnt net geschéckt ginn.\n\n$error';
+  }
+
+  @override
+  String get offlineAvailableRegionHint => 'Verfügbar: tippen fir erofzelueden';
+
+  @override
+  String get offlineDownloadedRegionHint => 'Erofgelueden: tippen fir ze läschen';
+
+  @override
+  String get offlineEnableHint => 'Luet eng Géigend erof, fir den Offline-Modus ze aktivéieren';
+
+  @override
+  String get offlineLongPressHint => 'Laang op eng fräi Plaz drécken, fir eng Kaart unzefroen';
+
+  @override
+  String offlineRequestConfirm(String regionName) {
+    return 'Wëllt Dir d’Generéiere vun enger Offline-Kaart fir $regionName starten?';
+  }
+
+  @override
+  String get offlineContinue => 'Weider';
+
+  @override
+  String get offlineEmailRequestHint => 'Gitt Är E-Mail-Adress an, fir de Link ze kréien.';
+
+  @override
+  String get offlineEmailLabel => 'E-Mail-Adress';
+
+  @override
+  String get offlineEmailInvalid => 'Gitt eng gëlteg E-Mail-Adress an';
+
+  @override
+  String get offlineSend => 'Schécken';
+
+  @override
+  String offlineRequestTitle(String regionName) {
+    return 'Ufro: $regionName';
+  }
+
+  @override
+  String get offlineRequestSent => 'Ufro geschéckt';
+
+  @override
   String get record => 'Opzeechnen';
 
   @override

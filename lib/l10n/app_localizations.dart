@@ -1738,6 +1738,108 @@ abstract class AppLocalizations {
   /// **'Cancel and leave'**
   String get offlineCancelAndExit;
 
+  /// No description provided for @offlineRegionAlreadyGenerated.
+  ///
+  /// In en, this message translates to:
+  /// **'This area has already been generated'**
+  String get offlineRegionAlreadyGenerated;
+
+  /// No description provided for @offlineRegionsLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load areas available for generation'**
+  String get offlineRegionsLoadFailed;
+
+  /// No description provided for @offlineRegionUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This area cannot be generated'**
+  String get offlineRegionUnavailable;
+
+  /// No description provided for @offlineRequestFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not send the request'**
+  String get offlineRequestFailed;
+
+  /// No description provided for @offlineRequestFailedDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not send the request.\n\n{error}'**
+  String offlineRequestFailedDetails(String error);
+
+  /// No description provided for @offlineAvailableRegionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Available: tap to download'**
+  String get offlineAvailableRegionHint;
+
+  /// No description provided for @offlineDownloadedRegionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloaded: tap to delete'**
+  String get offlineDownloadedRegionHint;
+
+  /// No description provided for @offlineEnableHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Download an area to enable offline mode'**
+  String get offlineEnableHint;
+
+  /// No description provided for @offlineLongPressHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Long-press an empty area to request a map'**
+  String get offlineLongPressHint;
+
+  /// No description provided for @offlineRequestConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Start generating an offline map for {regionName}?'**
+  String offlineRequestConfirm(String regionName);
+
+  /// No description provided for @offlineContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get offlineContinue;
+
+  /// No description provided for @offlineEmailRequestHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your email address to receive the link.'**
+  String get offlineEmailRequestHint;
+
+  /// No description provided for @offlineEmailLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Email address'**
+  String get offlineEmailLabel;
+
+  /// No description provided for @offlineEmailInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid email address'**
+  String get offlineEmailInvalid;
+
+  /// No description provided for @offlineSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get offlineSend;
+
+  /// No description provided for @offlineRequestTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Request: {regionName}'**
+  String offlineRequestTitle(String regionName);
+
+  /// No description provided for @offlineRequestSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Request sent'**
+  String get offlineRequestSent;
+
   /// No description provided for @record.
   ///
   /// In en, this message translates to:

@@ -830,6 +830,63 @@ class AppLocalizationsEn extends AppLocalizations {
   String get offlineCancelAndExit => 'Cancel and leave';
 
   @override
+  String get offlineRegionAlreadyGenerated => 'This area has already been generated';
+
+  @override
+  String get offlineRegionsLoadFailed => 'Could not load areas available for generation';
+
+  @override
+  String get offlineRegionUnavailable => 'This area cannot be generated';
+
+  @override
+  String get offlineRequestFailed => 'Could not send the request';
+
+  @override
+  String offlineRequestFailedDetails(String error) {
+    return 'Could not send the request.\n\n$error';
+  }
+
+  @override
+  String get offlineAvailableRegionHint => 'Available: tap to download';
+
+  @override
+  String get offlineDownloadedRegionHint => 'Downloaded: tap to delete';
+
+  @override
+  String get offlineEnableHint => 'Download an area to enable offline mode';
+
+  @override
+  String get offlineLongPressHint => 'Long-press an empty area to request a map';
+
+  @override
+  String offlineRequestConfirm(String regionName) {
+    return 'Start generating an offline map for $regionName?';
+  }
+
+  @override
+  String get offlineContinue => 'Continue';
+
+  @override
+  String get offlineEmailRequestHint => 'Enter your email address to receive the link.';
+
+  @override
+  String get offlineEmailLabel => 'Email address';
+
+  @override
+  String get offlineEmailInvalid => 'Enter a valid email address';
+
+  @override
+  String get offlineSend => 'Send';
+
+  @override
+  String offlineRequestTitle(String regionName) {
+    return 'Request: $regionName';
+  }
+
+  @override
+  String get offlineRequestSent => 'Request sent';
+
+  @override
   String get record => 'Record';
 
   @override

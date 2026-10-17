@@ -830,6 +830,63 @@ class AppLocalizationsNl extends AppLocalizations {
   String get offlineCancelAndExit => 'Annuleren en afsluiten';
 
   @override
+  String get offlineRegionAlreadyGenerated => 'Dit gebied is al gegenereerd';
+
+  @override
+  String get offlineRegionsLoadFailed => 'De beschikbare gebieden konden niet worden geladen';
+
+  @override
+  String get offlineRegionUnavailable => 'Dit gebied kan niet worden gegenereerd';
+
+  @override
+  String get offlineRequestFailed => 'Het verzoek kon niet worden verzonden';
+
+  @override
+  String offlineRequestFailedDetails(String error) {
+    return 'Het verzoek kon niet worden verzonden.\n\n$error';
+  }
+
+  @override
+  String get offlineAvailableRegionHint => 'Beschikbaar: tik om te downloaden';
+
+  @override
+  String get offlineDownloadedRegionHint => 'Gedownload: tik om te verwijderen';
+
+  @override
+  String get offlineEnableHint => 'Download een gebied om de offlinemodus in te schakelen';
+
+  @override
+  String get offlineLongPressHint => 'Houd een leeg gebied ingedrukt om een kaart aan te vragen';
+
+  @override
+  String offlineRequestConfirm(String regionName) {
+    return 'Wil je het genereren van een offlinekaart voor $regionName starten?';
+  }
+
+  @override
+  String get offlineContinue => 'Doorgaan';
+
+  @override
+  String get offlineEmailRequestHint => 'Voer je e-mailadres in om de link te ontvangen.';
+
+  @override
+  String get offlineEmailLabel => 'E-mailadres';
+
+  @override
+  String get offlineEmailInvalid => 'Voer een geldig e-mailadres in';
+
+  @override
+  String get offlineSend => 'Verzenden';
+
+  @override
+  String offlineRequestTitle(String regionName) {
+    return 'Aanvraag: $regionName';
+  }
+
+  @override
+  String get offlineRequestSent => 'Aanvraag verzonden';
+
+  @override
   String get record => 'Opnemen';
 
   @override
@@ -1753,6 +1810,63 @@ class AppLocalizationsNlBe extends AppLocalizationsNl {
 
   @override
   String get offlineCancelAndExit => 'Annuleren en afsluiten';
+
+  @override
+  String get offlineRegionAlreadyGenerated => 'Dit gebied is al gegenereerd';
+
+  @override
+  String get offlineRegionsLoadFailed => 'De beschikbare gebieden konden niet worden geladen';
+
+  @override
+  String get offlineRegionUnavailable => 'Dit gebied kan niet worden gegenereerd';
+
+  @override
+  String get offlineRequestFailed => 'De aanvraag kon niet worden verzonden';
+
+  @override
+  String offlineRequestFailedDetails(String error) {
+    return 'De aanvraag kon niet worden verzonden.\n\n$error';
+  }
+
+  @override
+  String get offlineAvailableRegionHint => 'Beschikbaar: tik om te downloaden';
+
+  @override
+  String get offlineDownloadedRegionHint => 'Gedownload: tik om te verwijderen';
+
+  @override
+  String get offlineEnableHint => 'Download een gebied om de offlinemodus in te schakelen';
+
+  @override
+  String get offlineLongPressHint => 'Houd een leeg gebied ingedrukt om een kaart aan te vragen';
+
+  @override
+  String offlineRequestConfirm(String regionName) {
+    return 'Wil je het genereren van een offlinekaart voor $regionName starten?';
+  }
+
+  @override
+  String get offlineContinue => 'Doorgaan';
+
+  @override
+  String get offlineEmailRequestHint => 'Voer je e-mailadres in om de link te ontvangen.';
+
+  @override
+  String get offlineEmailLabel => 'E-mailadres';
+
+  @override
+  String get offlineEmailInvalid => 'Voer een geldig e-mailadres in';
+
+  @override
+  String get offlineSend => 'Verzenden';
+
+  @override
+  String offlineRequestTitle(String regionName) {
+    return 'Aanvraag: $regionName';
+  }
+
+  @override
+  String get offlineRequestSent => 'Aanvraag verzonden';
 
   @override
   String get record => 'Opnemen';

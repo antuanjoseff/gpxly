@@ -830,6 +830,63 @@ class AppLocalizationsDa extends AppLocalizations {
   String get offlineCancelAndExit => 'Annuller og forlad';
 
   @override
+  String get offlineRegionAlreadyGenerated => 'Dette område er allerede genereret';
+
+  @override
+  String get offlineRegionsLoadFailed => 'De tilgængelige områder kunne ikke indlæses';
+
+  @override
+  String get offlineRegionUnavailable => 'Dette område kan ikke genereres';
+
+  @override
+  String get offlineRequestFailed => 'Anmodningen kunne ikke sendes';
+
+  @override
+  String offlineRequestFailedDetails(String error) {
+    return 'Anmodningen kunne ikke sendes.\n\n$error';
+  }
+
+  @override
+  String get offlineAvailableRegionHint => 'Tilgængelig: tryk for at downloade';
+
+  @override
+  String get offlineDownloadedRegionHint => 'Downloadet: tryk for at slette';
+
+  @override
+  String get offlineEnableHint => 'Download et område for at aktivere offlinetilstand';
+
+  @override
+  String get offlineLongPressHint => 'Tryk længe på et tomt område for at anmode om et kort';
+
+  @override
+  String offlineRequestConfirm(String regionName) {
+    return 'Vil du starte genereringen af et offlinekort for $regionName?';
+  }
+
+  @override
+  String get offlineContinue => 'Fortsæt';
+
+  @override
+  String get offlineEmailRequestHint => 'Indtast din e-mailadresse for at modtage linket.';
+
+  @override
+  String get offlineEmailLabel => 'E-mailadresse';
+
+  @override
+  String get offlineEmailInvalid => 'Indtast en gyldig e-mailadresse';
+
+  @override
+  String get offlineSend => 'Send';
+
+  @override
+  String offlineRequestTitle(String regionName) {
+    return 'Anmodning: $regionName';
+  }
+
+  @override
+  String get offlineRequestSent => 'Anmodning sendt';
+
+  @override
   String get record => 'Optag';
 
   @override

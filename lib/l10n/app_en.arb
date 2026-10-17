@@ -338,6 +338,38 @@
   "offlineExitCancelConfirm": "A map download is in progress.\n\nIf you leave now, the download will be cancelled. Do you want to cancel and leave?",
   "offlineKeepDownloading": "Keep downloading",
   "offlineCancelAndExit": "Cancel and leave",
+  "offlineRegionAlreadyGenerated": "This area has already been generated",
+  "offlineRegionsLoadFailed": "Could not load areas available for generation",
+  "offlineRegionUnavailable": "This area cannot be generated",
+  "offlineRequestFailed": "Could not send the request",
+  "offlineRequestFailedDetails": "Could not send the request.\n\n{error}",
+  "@offlineRequestFailedDetails": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "offlineAvailableRegionHint": "Available: tap to download",
+  "offlineDownloadedRegionHint": "Downloaded: tap to delete",
+  "offlineEnableHint": "Download an area to enable offline mode",
+  "offlineLongPressHint": "Long-press an empty area to request a map",
+  "offlineRequestConfirm": "Start generating an offline map for {regionName}?",
+  "@offlineRequestConfirm": {
+    "placeholders": {
+      "regionName": {"type": "String"}
+    }
+  },
+  "offlineContinue": "Continue",
+  "offlineEmailRequestHint": "Enter your email address to receive the link.",
+  "offlineEmailLabel": "Email address",
+  "offlineEmailInvalid": "Enter a valid email address",
+  "offlineSend": "Send",
+  "offlineRequestTitle": "Request: {regionName}",
+  "@offlineRequestTitle": {
+    "placeholders": {
+      "regionName": {"type": "String"}
+    }
+  },
+  "offlineRequestSent": "Request sent",
 
   "record": "Record",
   "recordPaused": "Paused",

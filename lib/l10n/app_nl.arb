@@ -330,6 +330,38 @@
   "offlineExitCancelConfirm": "Er is een kaartdownload bezig.\n\nAls je nu weggaat, wordt de download geannuleerd. Wil je annuleren en afsluiten?",
   "offlineKeepDownloading": "Verder downloaden",
   "offlineCancelAndExit": "Annuleren en afsluiten",
+  "offlineRegionAlreadyGenerated": "Dit gebied is al gegenereerd",
+  "offlineRegionsLoadFailed": "De beschikbare gebieden konden niet worden geladen",
+  "offlineRegionUnavailable": "Dit gebied kan niet worden gegenereerd",
+  "offlineRequestFailed": "Het verzoek kon niet worden verzonden",
+  "offlineRequestFailedDetails": "Het verzoek kon niet worden verzonden.\n\n{error}",
+  "@offlineRequestFailedDetails": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "offlineAvailableRegionHint": "Beschikbaar: tik om te downloaden",
+  "offlineDownloadedRegionHint": "Gedownload: tik om te verwijderen",
+  "offlineEnableHint": "Download een gebied om de offlinemodus in te schakelen",
+  "offlineLongPressHint": "Houd een leeg gebied ingedrukt om een kaart aan te vragen",
+  "offlineRequestConfirm": "Wil je het genereren van een offlinekaart voor {regionName} starten?",
+  "@offlineRequestConfirm": {
+    "placeholders": {
+      "regionName": {"type": "String"}
+    }
+  },
+  "offlineContinue": "Doorgaan",
+  "offlineEmailRequestHint": "Voer je e-mailadres in om de link te ontvangen.",
+  "offlineEmailLabel": "E-mailadres",
+  "offlineEmailInvalid": "Voer een geldig e-mailadres in",
+  "offlineSend": "Verzenden",
+  "offlineRequestTitle": "Aanvraag: {regionName}",
+  "@offlineRequestTitle": {
+    "placeholders": {
+      "regionName": {"type": "String"}
+    }
+  },
+  "offlineRequestSent": "Aanvraag verzonden",
 
 "record": "Opnemen",
 "recordPaused": "Gepauzeerd",

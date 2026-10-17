@@ -374,7 +374,7 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
     final available = offline.regions;
     if (_requestPanel != null) return;
     if (_smallestRegionAt(available, point, onlyVisible: true) != null) {
-      _showMessage('Aquesta zona ja està generada');
+      _showMessage(AppLocalizations.of(context)!.offlineRegionAlreadyGenerated);
       return;
     }
 
@@ -382,7 +382,7 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
       await _loadGeofabrikRegions();
       if (!mounted) return;
       if (_geofabrikRegions.isEmpty) {
-        _showMessage('No s’han pogut carregar les zones generables');
+        _showMessage(AppLocalizations.of(context)!.offlineRegionsLoadFailed);
         return;
       }
     }
@@ -395,7 +395,7 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
           point.latitude <= region.maxLat,
     );
     if (matches.isEmpty) {
-      _showMessage('Aquesta zona no es pot generar');
+      _showMessage(AppLocalizations.of(context)!.offlineRegionUnavailable);
       return;
     }
     final selected = matches.reduce((a, b) {
@@ -435,9 +435,10 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
       await closed.future;
     } catch (error) {
       if (mounted) {
+        final t = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('No s’ha pogut enviar la sol·licitud'),
+          SnackBar(
+            content: Text(t.offlineRequestFailed),
             backgroundColor: Colors.red,
           ),
         );
@@ -463,7 +464,10 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
     List<OfflineRegionInfo> regions, {
     bool force = false,
   }) async {
-    if ((_cameraFitted && !force) || _disposed || _controller == null || regions.isEmpty) {
+    if ((_cameraFitted && !force) ||
+        _disposed ||
+        _controller == null ||
+        regions.isEmpty) {
       return;
     }
     _cameraFitted = true;
@@ -520,8 +524,9 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
       final prevDownloaded = previous?.regions
           .map((r) => '${r.id}:${r.downloaded}')
           .join(',');
-      final nextDownloaded =
-          next.regions.map((r) => '${r.id}:${r.downloaded}').join(',');
+      final nextDownloaded = next.regions
+          .map((r) => '${r.id}:${r.downloaded}')
+          .join(',');
       if (previous?.regions.length != next.regions.length ||
           prevDownloaded != nextDownloaded) {
         _addOrUpdateRegionLayers(next.regions);
@@ -545,276 +550,282 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
         }
       },
       child: Scaffold(
-      backgroundColor: const Color(0xFFF5F5F7),
-      appBar: AppBar(
-        backgroundColor: AppColors.primary,
-        iconTheme: const IconThemeData(color: Colors.white),
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              offline.enabled ? t.offlineTab : t.onlineLabel,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
+        backgroundColor: const Color(0xFFF5F5F7),
+        appBar: AppBar(
+          backgroundColor: AppColors.primary,
+          iconTheme: const IconThemeData(color: Colors.white),
+          title: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                offline.enabled ? t.offlineTab : t.onlineLabel,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
+            ],
+          ),
+          centerTitle: false,
+          elevation: 0,
+          actions: [
+            CompassScalePanel(
+              showScale: false,
+              onTapCompass: () =>
+                  _controller?.animateCamera(CameraUpdate.bearingTo(0)),
             ),
           ],
         ),
-        centerTitle: false,
-        elevation: 0,
-        actions: [
-          CompassScalePanel(
-            showScale: false,
-            onTapCompass: () =>
-                _controller?.animateCamera(CameraUpdate.bearingTo(0)),
-          ),
-        ],
-      ),
-      body: SafeArea(
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: MapLibreMap(
-                tiltGesturesEnabled: false,
-                rotateGesturesEnabled: true,
-                trackCameraPosition: true,
-                compassEnabled: false,
-                styleString: "assets/osm_style.json",
-                initialCameraPosition: const CameraPosition(
-                  target: LatLng(41.7, 1.7), // centre de Catalunya
-                  zoom: 6.2,
-                ),
-                onMapCreated: (controller) {
-                  _controller = controller;
-
-                  // Si el toc cau sobre una regió, només es dispara
-                  // onFeatureTapped (no onMapClick).
-                  controller.onFeatureTapped.add((
-                    point,
-                    latLng,
-                    featureId,
-                    layerId,
-                    annotation,
-                  ) {
-                    if (layerId == _fillLayerId || layerId == _lineLayerId) {
-                      _onMapClick(latLng);
-                    }
-                  });
-                },
-                onCameraMove: (cameraPosition) {
-                  ref
-                      .read(mapBearingProvider.notifier)
-                      .update(cameraPosition.bearing);
-                },
-                onStyleLoadedCallback: () async {
-                  if (_disposed || _controller == null) return;
-                  final current = ref.read(offlineMapsProvider).regions;
-                  await _addOrUpdateRegionLayers(current);
-                  await _fitCameraToRegions(current);
-                },
-                onMapClick: (point, latLng) => _onMapClick(latLng),
-                onMapLongClick: (point, latLng) => _onMapLongClick(latLng),
-              ),
-            ),
-
-            if (offline.loadingRegions || _loadingGeofabrikRegions)
+        body: SafeArea(
+          child: Stack(
+            children: [
               Positioned.fill(
-                child: AbsorbPointer(
-                  child: ColoredBox(
-                    color: Colors.transparent,
-                    child: Center(
-                      child: SizedBox(
-                        width: 40,
-                        height: 40,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 4,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      ),
-                    ),
+                child: MapLibreMap(
+                  tiltGesturesEnabled: false,
+                  rotateGesturesEnabled: true,
+                  trackCameraPosition: true,
+                  compassEnabled: false,
+                  styleString: "assets/osm_style.json",
+                  initialCameraPosition: const CameraPosition(
+                    target: LatLng(41.7, 1.7), // centre de Catalunya
+                    zoom: 6.2,
                   ),
-                ),
-              ),
-            if (_requestPanel == null)
-              Positioned(
-                top: 8,
-                left: 8,
-                right: 8,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Material(
-                      color: Colors.white.withValues(alpha: 0.94),
-                      elevation: 2,
-                      borderRadius: BorderRadius.circular(8),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 8,
-                        ),
-                        child: _OfflineSwitchRow(
-                          value:
-                              offline.hasDownloadedRegions && offline.enabled,
-                          enabled: offline.hasDownloadedRegions,
-                          onChanged: notifier.setEnabled,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Material(
-                      color: Colors.white.withValues(alpha: 0.94),
-                      elevation: 2,
-                      borderRadius: BorderRadius.circular(8),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 8,
-                        ),
-                        child: AnimatedSize(
-                          duration: const Duration(milliseconds: 180),
-                          alignment: Alignment.topCenter,
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (hasAvailable)
-                                _LegendCheckRow(
-                                  color: const Color(0xFF1E88E5),
-                                  icon: Icons.download_outlined,
-                                  label: 'Disponible: toca per descarregar',
-                                  value: _showAvailable,
-                                  onChanged: (v) {
-                                    setState(() => _showAvailable = v);
-                                    _addOrUpdateRegionLayers(offline.regions);
-                                  },
-                                ),
-                              if (hasDownloaded)
-                                _LegendCheckRow(
-                                  color: const Color(0xFF2E7D32),
-                                  icon: Icons.check_circle_outline,
-                                  label: 'Descarregada: toca per eliminar',
-                                  value: _showDownloaded,
-                                  onChanged: (v) {
-                                    setState(() => _showDownloaded = v);
-                                    _addOrUpdateRegionLayers(offline.regions);
-                                  },
-                                ),
-                              if (!offline.hasDownloadedRegions) ...[
-                                if (hasAvailable) const SizedBox(height: 6),
-                                Text(
-                                  'Descarrega una zona per activar el mode offline',
-                                  style: Theme.of(context).textTheme.bodySmall,
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            if (_requestPanel == null && downloadingRegion == null)
-              Positioned(
-                left: 8,
-                right: 8,
-                bottom: 8,
-                child: Material(
-                  color: Colors.white.withValues(alpha: 0.94),
-                  elevation: 2,
-                  borderRadius: BorderRadius.circular(8),
-                  child: const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    child: _LegendItem(
-                      icon: Icons.touch_app_outlined,
-                      label:
-                          'Mantén premut en una zona buida per generar-hi mapa',
-                    ),
-                  ),
-                ),
-              ),
-            if (_requestPanel case final panel?)
-              Positioned(
-                bottom: 8,
-                left: 8,
-                right: 8,
-                child: NotificationListener<SizeChangedLayoutNotification>(
-                  onNotification: (_) {
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      final region = _proposedRegion;
-                      if (mounted && region != null) {
-                        _focusCameraOnRegion(region);
+                  onMapCreated: (controller) {
+                    _controller = controller;
+
+                    // Si el toc cau sobre una regió, només es dispara
+                    // onFeatureTapped (no onMapClick).
+                    controller.onFeatureTapped.add((
+                      point,
+                      latLng,
+                      featureId,
+                      layerId,
+                      annotation,
+                    ) {
+                      if (layerId == _fillLayerId || layerId == _lineLayerId) {
+                        _onMapClick(latLng);
                       }
                     });
-                    return false;
                   },
-                  child: SizeChangedLayoutNotifier(
-                    child: Material(
-                      key: _requestPanelKey,
-                      color: Colors.white.withValues(alpha: 0.97),
-                      elevation: 4,
-                      borderRadius: BorderRadius.circular(12),
-                      child: panel,
-                    ),
-                  ),
+                  onCameraMove: (cameraPosition) {
+                    ref
+                        .read(mapBearingProvider.notifier)
+                        .update(cameraPosition.bearing);
+                  },
+                  onStyleLoadedCallback: () async {
+                    if (_disposed || _controller == null) return;
+                    final current = ref.read(offlineMapsProvider).regions;
+                    await _addOrUpdateRegionLayers(current);
+                    await _fitCameraToRegions(current);
+                  },
+                  onMapClick: (point, latLng) => _onMapClick(latLng),
+                  onMapLongClick: (point, latLng) => _onMapLongClick(latLng),
                 ),
               ),
-            if (downloadingRegion case final region?)
-              Positioned(
-                left: 12,
-                right: 12,
-                bottom: 12,
-                child: Material(
-                  color: Colors.white.withValues(alpha: 0.96),
-                  elevation: 3,
-                  borderRadius: BorderRadius.circular(8),
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text('${t.downloading} ${region.name}'),
-                              const SizedBox(height: 6),
-                              LinearProgressIndicator(
-                                value:
-                                    downloadTotal != null && downloadTotal > 0
-                                    ? ((region.progress ?? 0) / downloadTotal)
-                                          .clamp(0.0, 1.0)
-                                    : null,
-                              ),
-                              const SizedBox(height: 4),
-                              Align(
-                                alignment: Alignment.centerRight,
-                                child: Text(
-                                  '${_formatBytes(region.progress ?? 0)} / ${downloadTotal == null ? '—' : _formatBytes(downloadTotal)}',
-                                  style: Theme.of(context).textTheme.bodySmall,
-                                ),
-                              ),
-                            ],
+
+              if (offline.loadingRegions || _loadingGeofabrikRegions)
+                Positioned.fill(
+                  child: AbsorbPointer(
+                    child: ColoredBox(
+                      color: Colors.transparent,
+                      child: Center(
+                        child: SizedBox(
+                          width: 40,
+                          height: 40,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 4,
+                            color: Theme.of(context).colorScheme.primary,
                           ),
                         ),
-                        IconButton(
-                          tooltip: t.cancel,
-                          onPressed: notifier.cancelDownload,
-                          icon: const Icon(Icons.close),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-          ],
+              if (_requestPanel == null)
+                Positioned(
+                  top: 8,
+                  left: 8,
+                  right: 8,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Material(
+                        color: Colors.white.withValues(alpha: 0.94),
+                        elevation: 2,
+                        borderRadius: BorderRadius.circular(8),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 8,
+                          ),
+                          child: _OfflineSwitchRow(
+                            value:
+                                offline.hasDownloadedRegions && offline.enabled,
+                            enabled: offline.hasDownloadedRegions,
+                            onChanged: notifier.setEnabled,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Material(
+                        color: Colors.white.withValues(alpha: 0.94),
+                        elevation: 2,
+                        borderRadius: BorderRadius.circular(8),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 8,
+                          ),
+                          child: AnimatedSize(
+                            duration: const Duration(milliseconds: 180),
+                            alignment: Alignment.topCenter,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (hasAvailable)
+                                  _LegendCheckRow(
+                                    color: const Color(0xFF1E88E5),
+                                    icon: Icons.download_outlined,
+                                    label: t.offlineAvailableRegionHint,
+                                    value: _showAvailable,
+                                    onChanged: (v) {
+                                      setState(() => _showAvailable = v);
+                                      _addOrUpdateRegionLayers(offline.regions);
+                                    },
+                                  ),
+                                if (hasDownloaded)
+                                  _LegendCheckRow(
+                                    color: const Color(0xFF2E7D32),
+                                    icon: Icons.check_circle_outline,
+                                    label: t.offlineDownloadedRegionHint,
+                                    value: _showDownloaded,
+                                    onChanged: (v) {
+                                      setState(() => _showDownloaded = v);
+                                      _addOrUpdateRegionLayers(offline.regions);
+                                    },
+                                  ),
+                                if (!offline.hasDownloadedRegions) ...[
+                                  if (hasAvailable) const SizedBox(height: 6),
+                                  Text(
+                                    t.offlineEnableHint,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodySmall,
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              if (_requestPanel == null && downloadingRegion == null)
+                Positioned(
+                  left: 8,
+                  right: 8,
+                  bottom: 8,
+                  child: Material(
+                    color: Colors.white.withValues(alpha: 0.94),
+                    elevation: 2,
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 8,
+                      ),
+                      child: _LegendItem(
+                        icon: Icons.touch_app_outlined,
+                        label: t.offlineLongPressHint,
+                      ),
+                    ),
+                  ),
+                ),
+              if (_requestPanel case final panel?)
+                Positioned(
+                  bottom: 8,
+                  left: 8,
+                  right: 8,
+                  child: NotificationListener<SizeChangedLayoutNotification>(
+                    onNotification: (_) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        final region = _proposedRegion;
+                        if (mounted && region != null) {
+                          _focusCameraOnRegion(region);
+                        }
+                      });
+                      return false;
+                    },
+                    child: SizeChangedLayoutNotifier(
+                      child: Material(
+                        key: _requestPanelKey,
+                        color: Colors.white.withValues(alpha: 0.97),
+                        elevation: 4,
+                        borderRadius: BorderRadius.circular(12),
+                        child: panel,
+                      ),
+                    ),
+                  ),
+                ),
+              if (downloadingRegion case final region?)
+                Positioned(
+                  left: 12,
+                  right: 12,
+                  bottom: 12,
+                  child: Material(
+                    color: Colors.white.withValues(alpha: 0.96),
+                    elevation: 3,
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text('${t.downloading} ${region.name}'),
+                                const SizedBox(height: 6),
+                                LinearProgressIndicator(
+                                  value:
+                                      downloadTotal != null && downloadTotal > 0
+                                      ? ((region.progress ?? 0) / downloadTotal)
+                                            .clamp(0.0, 1.0)
+                                      : null,
+                                ),
+                                const SizedBox(height: 4),
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: Text(
+                                    '${_formatBytes(region.progress ?? 0)} / ${downloadTotal == null ? '—' : _formatBytes(downloadTotal)}',
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodySmall,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            tooltip: t.cancel,
+                            onPressed: notifier.cancelDownload,
+                            icon: const Icon(Icons.close),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Future<bool?> _showCancelDownloadConfirmDialog(BuildContext context) {
     final t = AppLocalizations.of(context)!;
@@ -895,7 +906,9 @@ class _GeofabrikRequestSheetState extends State<_GeofabrikRequestSheet> {
       debugPrint('Error enviant petició de mapa offline: $error');
       if (!mounted) return;
       setState(() {
-        _resultMessage = 'No s’ha pogut enviar la sol·licitud.\n\n$error';
+        _resultMessage = AppLocalizations.of(
+          context,
+        )!.offlineRequestFailedDetails(error.toString());
         _requestFailed = true;
         _submitting = false;
       });
@@ -911,7 +924,7 @@ class _GeofabrikRequestSheetState extends State<_GeofabrikRequestSheet> {
         duration: const Duration(milliseconds: 180),
         alignment: Alignment.topCenter,
         child: _resultMessage != null
-            ? _buildResultStep()
+            ? _buildResultStep(t)
             : _enteringEmail
             ? _buildEmailStep(t)
             : _buildConfirmStep(t),
@@ -925,7 +938,7 @@ class _GeofabrikRequestSheetState extends State<_GeofabrikRequestSheet> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Vols iniciar la generació de cartografia offline per a ${widget.regionName}?',
+          t.offlineRequestConfirm(widget.regionName),
           style: Theme.of(context).textTheme.titleMedium,
         ),
         const SizedBox(height: 20),
@@ -939,7 +952,7 @@ class _GeofabrikRequestSheetState extends State<_GeofabrikRequestSheet> {
             const SizedBox(width: 8),
             FilledButton(
               onPressed: () => setState(() => _enteringEmail = true),
-              child: const Text('Continuar'),
+              child: Text(t.offlineContinue),
             ),
           ],
         ),
@@ -953,11 +966,11 @@ class _GeofabrikRequestSheetState extends State<_GeofabrikRequestSheet> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Sol·licitud: ${widget.regionName}',
+          t.offlineRequestTitle(widget.regionName),
           style: Theme.of(context).textTheme.titleLarge,
         ),
         const SizedBox(height: 8),
-        const Text('Introdueix el correu electrònic per rebre l’enllaç.'),
+        Text(t.offlineEmailRequestHint),
         const SizedBox(height: 16),
         Form(
           key: _formKey,
@@ -965,12 +978,12 @@ class _GeofabrikRequestSheetState extends State<_GeofabrikRequestSheet> {
             controller: _emailController,
             keyboardType: TextInputType.emailAddress,
             textInputAction: TextInputAction.done,
-            decoration: const InputDecoration(labelText: 'Correu electrònic'),
+            decoration: InputDecoration(labelText: t.offlineEmailLabel),
             validator: (value) {
               final email = value?.trim() ?? '';
               return RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email)
                   ? null
-                  : 'Introdueix un correu vàlid';
+                  : t.offlineEmailInvalid;
             },
             onFieldSubmitted: (_) => _submitEmail(),
           ),
@@ -991,7 +1004,7 @@ class _GeofabrikRequestSheetState extends State<_GeofabrikRequestSheet> {
                       dimension: 20,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text('Enviar'),
+                  : Text(t.offlineSend),
             ),
           ],
         ),
@@ -999,13 +1012,13 @@ class _GeofabrikRequestSheetState extends State<_GeofabrikRequestSheet> {
     );
   }
 
-  Widget _buildResultStep() {
+  Widget _buildResultStep(AppLocalizations t) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          _requestFailed ? 'Error' : 'Sol·licitud enviada',
+          _requestFailed ? t.error : t.offlineRequestSent,
           style: Theme.of(context).textTheme.titleLarge,
         ),
         const SizedBox(height: 12),
@@ -1015,7 +1028,7 @@ class _GeofabrikRequestSheetState extends State<_GeofabrikRequestSheet> {
           alignment: Alignment.centerRight,
           child: FilledButton(
             onPressed: () => widget.onClose(),
-            child: const Text('OK'),
+            child: Text(t.ok),
           ),
         ),
       ],
@@ -1105,6 +1118,7 @@ class _OfflineSwitchRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
     return Opacity(
       opacity: enabled ? 1 : 0.5,
       child: InkWell(
@@ -1119,7 +1133,7 @@ class _OfflineSwitchRow extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                value ? 'Offline activat' : 'Offline desactivat',
+                value ? t.offlineModeActive : t.offlineModeInactive,
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,

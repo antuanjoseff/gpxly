@@ -330,6 +330,38 @@
   "offlineExitCancelConfirm": "Um descarregamento de mapa está em curso.\n\nSe sair agora, o descarregamento será cancelado. Deseja cancelar e sair?",
   "offlineKeepDownloading": "Continuar a descarregar",
   "offlineCancelAndExit": "Cancelar e sair",
+  "offlineRegionAlreadyGenerated": "Esta área já foi gerada",
+  "offlineRegionsLoadFailed": "Não foi possível carregar as áreas disponíveis para gerar",
+  "offlineRegionUnavailable": "Não é possível gerar esta área",
+  "offlineRequestFailed": "Não foi possível enviar o pedido",
+  "offlineRequestFailedDetails": "Não foi possível enviar o pedido.\n\n{error}",
+  "@offlineRequestFailedDetails": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "offlineAvailableRegionHint": "Disponível: toque para descarregar",
+  "offlineDownloadedRegionHint": "Descarregada: toque para eliminar",
+  "offlineEnableHint": "Descarregue uma área para ativar o modo offline",
+  "offlineLongPressHint": "Prima sem soltar numa área vazia para pedir um mapa",
+  "offlineRequestConfirm": "Quer iniciar a geração de um mapa offline para {regionName}?",
+  "@offlineRequestConfirm": {
+    "placeholders": {
+      "regionName": {"type": "String"}
+    }
+  },
+  "offlineContinue": "Continuar",
+  "offlineEmailRequestHint": "Introduza o seu endereço de e-mail para receber a ligação.",
+  "offlineEmailLabel": "Endereço de e-mail",
+  "offlineEmailInvalid": "Introduza um endereço de e-mail válido",
+  "offlineSend": "Enviar",
+  "offlineRequestTitle": "Pedido: {regionName}",
+  "@offlineRequestTitle": {
+    "placeholders": {
+      "regionName": {"type": "String"}
+    }
+  },
+  "offlineRequestSent": "Pedido enviado",
 
 "record": "Gravar",
 "recordPaused": "Pausado",
