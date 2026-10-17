@@ -46,6 +46,11 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
   void initState() {
     super.initState();
     _loadGeofabrikRegions();
+    // El provider és global i només es carrega a l'arrencada: refresquem la
+    // llista de regions disponibles cada cop que s'obre la pantalla.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) ref.read(offlineMapsProvider.notifier).reloadRegions();
+    });
   }
 
   @override
@@ -454,8 +459,11 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
   }
 
   /// Ajusta la càmera perquè es vegin tots els bboxes disponibles.
-  Future<void> _fitCameraToRegions(List<OfflineRegionInfo> regions) async {
-    if (_cameraFitted || _disposed || _controller == null || regions.isEmpty) {
+  Future<void> _fitCameraToRegions(
+    List<OfflineRegionInfo> regions, {
+    bool force = false,
+  }) async {
+    if ((_cameraFitted && !force) || _disposed || _controller == null || regions.isEmpty) {
       return;
     }
     _cameraFitted = true;
@@ -518,6 +526,11 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
           prevDownloaded != nextDownloaded) {
         _addOrUpdateRegionLayers(next.regions);
         _fitCameraToRegions(next.regions);
+      }
+      // Acabada la recàrrega en obrir la pantalla: reajusta el zoom a la
+      // llista actualitzada de regions.
+      if (previous?.loadingRegions == true && !next.loadingRegions) {
+        _fitCameraToRegions(next.regions, force: true);
       }
     });
 
@@ -597,8 +610,9 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
                 },
                 onStyleLoadedCallback: () async {
                   if (_disposed || _controller == null) return;
-                  await _addOrUpdateRegionLayers(offline.regions);
-                  await _fitCameraToRegions(offline.regions);
+                  final current = ref.read(offlineMapsProvider).regions;
+                  await _addOrUpdateRegionLayers(current);
+                  await _fitCameraToRegions(current);
                 },
                 onMapClick: (point, latLng) => _onMapClick(latLng),
                 onMapLongClick: (point, latLng) => _onMapLongClick(latLng),

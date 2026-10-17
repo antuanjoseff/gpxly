@@ -131,6 +131,7 @@ class OfflineMapsNotifier extends Notifier<OfflineMapsState> {
   static const String _prefsKeyEnabled = 'offline_maps_enabled';
   String? _activeDownloadId;
   bool _cancelRequested = false;
+  bool _reloading = false;
 
   @override
   OfflineMapsState build() {
@@ -160,6 +161,8 @@ class OfflineMapsNotifier extends Notifier<OfflineMapsState> {
   /// Recarrega la llista de regions disponibles al servidor i el seu estat
   /// de descàrrega local.
   Future<void> reloadRegions() async {
+    if (_reloading) return;
+    _reloading = true;
     state = state.copyWith(loadingRegions: true);
     try {
       final fetched = await OfflineMapsService.instance.fetchAvailableRegions();
@@ -183,6 +186,8 @@ class OfflineMapsNotifier extends Notifier<OfflineMapsState> {
     } catch (e) {
       debugPrint('💥 [OFFLINE] Error carregant regions disponibles: $e');
       state = state.copyWith(loadingRegions: false);
+    } finally {
+      _reloading = false;
     }
   }
 
