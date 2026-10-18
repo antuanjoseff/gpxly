@@ -83,11 +83,16 @@ class SegmentStatsNotifier extends Notifier<SegmentStats> {
         (selection.mode == SelectionMode.range) ||
         (selection.mapToolState == MapSelectionToolState.selected);
 
+    final int? selectedEndIndex =
+        selection.mapToolState == MapSelectionToolState.selectingEnd
+        ? selection.provisionalEndIndex
+        : selection.endTrackIndex;
+
     if (hiHaTram &&
         selection.startTrackIndex != null &&
-        selection.endTrackIndex != null) {
+        selectedEndIndex != null) {
       start = selection.startTrackIndex!.clamp(0, globalDists.length - 1);
-      end = selection.endTrackIndex!.clamp(0, globalDists.length - 1);
+      end = selectedEndIndex.clamp(0, globalDists.length - 1);
       if (start > end) {
         final tmp = start;
         start = end;
