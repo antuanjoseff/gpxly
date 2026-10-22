@@ -142,7 +142,7 @@ class LiveFollowStatsNotifier extends Notifier<LiveFollowStats> {
 
     final currentSpeedKmh = _smoothedSpeedFor(point, previousPoint);
     _updateStoppedDuration(point);
-    final gain = _elevationGain.add(point.altitude, _distanceMeters);
+    final gain = _elevationGain.add(point.altitude);
 
     _maxElevation = _pointCount == 1
         ? point.altitude

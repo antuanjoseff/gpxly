@@ -163,10 +163,7 @@ class RecordingNotifier extends Notifier<Track> {
     );
     if (sustainedSpeed > newMaxSpeed) newMaxSpeed = sustainedSpeed;
 
-    final gain = _elevationGain.add(
-      newPoint.altitude,
-      calculatedDistanceAtPoint,
-    );
+    final gain = _elevationGain.add(newPoint.altitude);
     newAscent = gain.ascent;
     newDescent = gain.descent;
 
@@ -489,7 +486,7 @@ class RecordingNotifier extends Notifier<Track> {
   void _rebuildIncrementalState(List<UserPosition> points) {
     _resetIncrementalState();
     for (final point in points) {
-      _elevationGain.add(point.altitude, point.distanceAtPoint);
+      _elevationGain.add(point.altitude);
       _speedSum += point.speed;
       _speedCount += 1;
       if (point.speed > 0.0) {
