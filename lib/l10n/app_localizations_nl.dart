@@ -920,7 +920,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get navigationStart => 'Starten';
 
   @override
-  String get navigationCancel => 'Annuleren';
+  String get navigationCancel => 'Verwijderen';
 
   @override
   String get navigationStop => 'Beëindigen';
@@ -1902,7 +1902,7 @@ class AppLocalizationsNlBe extends AppLocalizationsNl {
   String get navigationStart => 'Starten';
 
   @override
-  String get navigationCancel => 'Annuleren';
+  String get navigationCancel => 'Verwijderen';
 
   @override
   String get navigationStop => 'Beëindigen';

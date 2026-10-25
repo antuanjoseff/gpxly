@@ -1909,7 +1909,7 @@ abstract class AppLocalizations {
   /// No description provided for @navigationCancel.
   ///
   /// In en, this message translates to:
-  /// **'Cancel'**
+  /// **'Remove'**
   String get navigationCancel;
 
   /// No description provided for @navigationStop.

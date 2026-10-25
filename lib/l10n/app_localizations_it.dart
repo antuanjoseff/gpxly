@@ -920,7 +920,7 @@ class AppLocalizationsIt extends AppLocalizations {
   String get navigationStart => 'Avvia';
 
   @override
-  String get navigationCancel => 'Annulla';
+  String get navigationCancel => 'Rimuovi';
 
   @override
   String get navigationStop => 'Termina';

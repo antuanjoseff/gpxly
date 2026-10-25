@@ -920,7 +920,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get navigationStart => 'Iniciar';
 
   @override
-  String get navigationCancel => 'Cancelar';
+  String get navigationCancel => 'Eliminar';
 
   @override
   String get navigationStop => 'Finalizar';

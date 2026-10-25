@@ -920,7 +920,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get navigationStart => 'Iniciar';
 
   @override
-  String get navigationCancel => 'Cancelar';
+  String get navigationCancel => 'Remover';
 
   @override
   String get navigationStop => 'Terminar';

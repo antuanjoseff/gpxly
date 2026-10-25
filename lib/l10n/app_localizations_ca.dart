@@ -920,7 +920,7 @@ class AppLocalizationsCa extends AppLocalizations {
   String get navigationStart => 'Iniciar';
 
   @override
-  String get navigationCancel => 'Cancel·lar';
+  String get navigationCancel => 'Eliminar';
 
   @override
   String get navigationStop => 'Finalitzar';
