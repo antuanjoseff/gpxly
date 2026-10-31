@@ -15,7 +15,7 @@ class TrackSounds {
     android: const AudioContextAndroid(
       usageType: AndroidUsageType.alarm,
       contentType: AndroidContentType.music,
-      audioFocus: AndroidAudioFocus.gainTransientMayDuck,
+      audioFocus: AndroidAudioFocus.none,
     ),
     iOS: AudioContextIOS(
       category: AVAudioSessionCategory.playback,
@@ -23,13 +23,19 @@ class TrackSounds {
     ),
   );
 
+  // Sense gestió de focus, una trucada no deixa el reproductor aturat; abans
+  // de cada so es reinicia l'estat per recuperar-se d'una interrupció.
+  Future<void> _play(Source source) async {
+    try {
+      await player.stop();
+    } catch (_) {}
+    await player.setAudioContext(_alarmContext);
+    await player.play(source, volume: _volume, ctx: _alarmContext);
+  }
+
   Future<void> playOffTrackSound() async {
     try {
-      await player.play(
-        AssetSource('sound/off_track.mp3'),
-        volume: _volume,
-        ctx: _alarmContext,
-      );
+      await _play(AssetSource('sound/off_track.mp3'));
     } catch (e) {
       print("Error playing off-track sound: $e");
     }
@@ -37,11 +43,7 @@ class TrackSounds {
 
   Future<void> playBackOnTrackSound() async {
     try {
-      await player.play(
-        AssetSource('sound/back_on_track.mp3'),
-        volume: _volume,
-        ctx: _alarmContext,
-      );
+      await _play(AssetSource('sound/back_on_track.mp3'));
     } catch (e) {
       print("Error playing back-on-track sound: $e");
     }
@@ -53,11 +55,7 @@ class TrackSounds {
           ? 'sound/five_door_knocks.mp3'
           : 'sound/metal_hammer.mp3';
 
-      await player.play(
-        AssetSource(fileName),
-        volume: _volume,
-        ctx: _alarmContext,
-      );
+      await _play(AssetSource(fileName));
     } catch (e) {
       print("Error playing reversed-track sound: $e");
     }
@@ -69,11 +67,7 @@ class TrackSounds {
           ? 'sound/fireworks.mp3'
           : 'sound/fireworks2.mp3';
 
-      await player.play(
-        AssetSource(fileName),
-        volume: _volume,
-        ctx: _alarmContext,
-      );
+      await _play(AssetSource(fileName));
     } catch (e) {
       print("Error playing end-track sound: $e");
     }
@@ -81,11 +75,7 @@ class TrackSounds {
 
   Future<void> playDistanceAlarm() async {
     try {
-      await player.play(
-        AssetSource('sound/sonar_sound.mp3'),
-        volume: _volume,
-        ctx: _alarmContext,
-      );
+      await _play(AssetSource('sound/sonar_sound.mp3'));
     } catch (e) {
       print("Error playing distance alarm: $e");
     }
@@ -93,11 +83,7 @@ class TrackSounds {
 
   Future<void> playWaypointAlarm() async {
     try {
-      await player.play(
-        AssetSource('sound/success_wpt.mp3'),
-        volume: _volume,
-        ctx: _alarmContext,
-      );
+      await _play(AssetSource('sound/success_wpt.mp3'));
     } catch (e) {
       print("Error playing waypoint alarm: $e");
     }
@@ -105,11 +91,7 @@ class TrackSounds {
 
   Future<void> playCotaAlarm() async {
     try {
-      await player.play(
-        AssetSource('sound/owl_sound.mp3'),
-        volume: _volume,
-        ctx: _alarmContext,
-      );
+      await _play(AssetSource('sound/owl_sound.mp3'));
     } catch (e) {
       print("Error playing altitude alarm: $e");
     }
@@ -117,11 +99,7 @@ class TrackSounds {
 
   Future<void> playAccumulatedAlarm() async {
     try {
-      await player.play(
-        AssetSource('sound/cardinal_sound.mp3'),
-        volume: _volume,
-        ctx: _alarmContext,
-      );
+      await _play(AssetSource('sound/cardinal_sound.mp3'));
     } catch (e) {
       print("Error playing altitude alarm: $e");
     }
@@ -129,11 +107,7 @@ class TrackSounds {
 
   Future<void> playTimeAlarm() async {
     try {
-      await player.play(
-        AssetSource('sound/beep_sound.mp3'),
-        volume: _volume,
-        ctx: _alarmContext,
-      );
+      await _play(AssetSource('sound/beep_sound.mp3'));
     } catch (e) {
       print("Error playing time alarm: $e");
     }

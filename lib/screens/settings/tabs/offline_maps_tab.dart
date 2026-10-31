@@ -66,8 +66,11 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
     // Els més grans primer (a sota) i els més petits al final (a sobre).
     double area(OfflineRegionInfo r) =>
         (r.maxLon - r.minLon) * (r.maxLat - r.minLat);
-    final sorted = regions.where(_isRegionVisible).toList()
-      ..sort((a, b) => area(b).compareTo(area(a)));
+    final sorted =
+        regions
+            .where((r) => r.geometry.isNotEmpty && _isRegionVisible(r))
+            .toList()
+          ..sort((a, b) => area(b).compareTo(area(a)));
     return {
       "type": "FeatureCollection",
       "features": [
@@ -660,9 +663,11 @@ class _OfflineMapsScreenState extends ConsumerState<OfflineMapsScreen> {
                             vertical: 8,
                           ),
                           child: _OfflineSwitchRow(
-                            value:
-                                offline.hasDownloadedRegions && offline.enabled,
-                            enabled: offline.hasDownloadedRegions,
+                            value: offline.enabled,
+                            // Si ja està activat sempre es pot desactivar,
+                            // encara que no hi hagi cap regió descarregada.
+                            enabled:
+                                offline.hasDownloadedRegions || offline.enabled,
                             onChanged: notifier.setEnabled,
                           ),
                         ),

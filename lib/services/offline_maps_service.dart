@@ -152,6 +152,20 @@ class OfflineMapsService {
     return await f.length() > 0;
   }
 
+  /// Ids de les regions amb un .mbtiles local (exclou el mapa base `world`).
+  Future<List<String>> localRegionIds() async {
+    final dir = await _offlineMapsDir();
+    final ids = <String>[];
+    await for (final e in dir.list()) {
+      if (e is! File || !e.path.endsWith('.mbtiles')) continue;
+      final name = e.uri.pathSegments.last;
+      final id = name.substring(0, name.length - '.mbtiles'.length);
+      if (id == 'world' || await e.length() == 0) continue;
+      ids.add(id);
+    }
+    return ids;
+  }
+
   Future<DateTime?> regionLastModified(String regio) async {
     final file = await _regionFile(regio);
     if (!await file.exists()) return null;
@@ -188,10 +202,37 @@ class OfflineMapsService {
         'Error ${response.statusCode} obtenint les regions disponibles: ${response.body}',
       );
     }
-    final data =
-        jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+    final body = utf8.decode(response.bodyBytes);
+    final data = jsonDecode(body) as Map<String, dynamic>;
     final features = (data['features'] as List).cast<Map<String, dynamic>>();
-    return features.map(OfflineMapRegion.fromFeature).toList();
+    final regions = features.map(OfflineMapRegion.fromFeature).toList();
+    try {
+      await _boundsCacheFile().then((f) => f.writeAsString(body));
+    } catch (e) {
+      debugPrint('⚠️ [OFFLINE] No s\'ha pogut desar la cache de regions: $e');
+    }
+    return regions;
+  }
+
+  Future<File> _boundsCacheFile() async {
+    final dir = await _offlineMapsDir();
+    return File('${dir.path}/regions_bounds_cache.json');
+  }
+
+  /// Regions de l'última resposta correcta del servidor (per mostrar els
+  /// rectangles de les regions descarregades sense connexió).
+  Future<List<OfflineMapRegion>> cachedRegions() async {
+    try {
+      final file = await _boundsCacheFile();
+      if (!await file.exists()) return [];
+      final data =
+          jsonDecode(await file.readAsString()) as Map<String, dynamic>;
+      final features = (data['features'] as List).cast<Map<String, dynamic>>();
+      return features.map(OfflineMapRegion.fromFeature).toList();
+    } catch (e) {
+      debugPrint('⚠️ [OFFLINE] Error llegint la cache de regions: $e');
+      return [];
+    }
   }
 
   Future<List<GeofabrikRegion>> fetchGeofabrikRegions() async {

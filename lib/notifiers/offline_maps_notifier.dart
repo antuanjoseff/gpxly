@@ -164,13 +164,23 @@ class OfflineMapsNotifier extends Notifier<OfflineMapsState> {
     if (_reloading) return;
     _reloading = true;
     state = state.copyWith(loadingRegions: true);
+    final infos = <OfflineRegionInfo>[];
     try {
-      final fetched = await OfflineMapsService.instance.fetchAvailableRegions();
-      final infos = <OfflineRegionInfo>[];
+      var fetched = <OfflineMapRegion>[];
+      var fromServer = true;
+      try {
+        fetched = await OfflineMapsService.instance.fetchAvailableRegions();
+      } catch (e) {
+        debugPrint('💥 [OFFLINE] Error carregant regions disponibles: $e');
+        fromServer = false;
+        fetched = await OfflineMapsService.instance.cachedRegions();
+      }
       for (final region in fetched) {
         final downloaded = await OfflineMapsService.instance.isRegionDownloaded(
           region.id,
         );
+        // Sense connexió només mostrem les descarregades (de la cache).
+        if (!fromServer && !downloaded) continue;
         final downloadedAt = downloaded
             ? await OfflineMapsService.instance.regionLastModified(region.id)
             : null;
@@ -182,11 +192,35 @@ class OfflineMapsNotifier extends Notifier<OfflineMapsState> {
           ),
         );
       }
-      state = state.copyWith(regions: infos, loadingRegions: false);
     } catch (e) {
-      debugPrint('💥 [OFFLINE] Error carregant regions disponibles: $e');
-      state = state.copyWith(loadingRegions: false);
+      debugPrint('💥 [OFFLINE] Error processant regions: $e');
+    }
+    try {
+      // Mapes descarregats que ja no són al servidor (o sense connexió).
+      final known = infos.map((r) => r.id.toLowerCase()).toSet();
+      for (final id in await OfflineMapsService.instance.localRegionIds()) {
+        if (known.contains(id.toLowerCase())) continue;
+        infos.add(
+          OfflineRegionInfo(
+            id: id,
+            name: id,
+            minLon: 0,
+            minLat: 0,
+            maxLon: 0,
+            maxLat: 0,
+            geometry: const {},
+            downloaded: true,
+            downloading: false,
+            downloadedAt: await OfflineMapsService.instance.regionLastModified(
+              id,
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('💥 [OFFLINE] Error llegint regions locals: $e');
     } finally {
+      state = state.copyWith(regions: infos, loadingRegions: false);
       _reloading = false;
     }
   }
